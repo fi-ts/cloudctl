@@ -1,13 +1,21 @@
 package pkg
 
 import (
+	gardencorev1alpha1 "github.com/gardener/gardener/pkg/apis/core/v1alpha1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+
 	gardenv1beta1 "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
 	garden "github.com/gardener/gardener/pkg/client/garden/clientset/versioned"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 )
 
-func CreateShoot(client *garden.Clientset, project *gardenv1beta1.Project, purpose, k8sVersion string) (*gardenv1beta1.Shoot, error) {
+// CreateShoot create a shoot for a project
+func CreateShoot(client *garden.Clientset, project *gardenv1beta1.Project, secretBinding *gardenv1beta1.SecretBinding, purpose, k8sVersion string) (*gardenv1beta1.Shoot, error) {
+	project, err := client.GardenV1beta1().Projects().Get(project.GetName(), metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
 	var createdBy string
 	if project.Spec.CreatedBy != nil {
 		createdBy = project.Spec.CreatedBy.Name
@@ -16,8 +24,16 @@ func CreateShoot(client *garden.Clientset, project *gardenv1beta1.Project, purpo
 	autoUpdate := false
 	beginMaintenance := "230000+0000"
 	endMaintenance := "000000+0000"
+
+	maxSurge := intstr.FromInt(1)
+	maxUnavailable := intstr.FromInt(1)
+
+	nodesCIDR := gardencorev1alpha1.CIDR("")
+	podsCIDR := gardencorev1alpha1.CIDR("")
+	servicesCIDR := gardencorev1alpha1.CIDR("")
 	shoot := &gardenv1beta1.Shoot{
 		ObjectMeta: metav1.ObjectMeta{
+			Name: project.Name,
 			Annotations: map[string]string{
 				"garden.sapcloud.io/createdBy": createdBy,
 				"garden.sapcloud.io/purpose":   purpose,
@@ -34,16 +50,53 @@ func CreateShoot(client *garden.Clientset, project *gardenv1beta1.Project, purpo
 					Addon: gardenv1beta1.Addon{Enabled: true},
 				},
 			},
-			// FIXME wrong dependency to upstream gardener does not have gardenv1beta1.Metal
-			// Cloud: gardenv1beta1.Metal,
+			Cloud: gardenv1beta1.Cloud{
+				Profile: "metal",
+				Region:  "fra",
+				SecretBindingRef: corev1.LocalObjectReference{
+					Name: secretBinding.Name,
+				},
+				Metal: &gardenv1beta1.MetalCloud{
+					LoadBalancerProvider: "metallb",
+					MachineImage: &gardenv1beta1.MachineImage{
+						Name:    "metal",
+						Version: "ubuntu-19.04",
+					},
+					FirewallImage: "firewall-1",
+					FirewallSize:  "c1-xlarge-x86",
+					Networks: gardenv1beta1.MetalNetworks{
+						K8SNetworks: gardencorev1alpha1.K8SNetworks{
+							Nodes:    &nodesCIDR,
+							Pods:     &podsCIDR,
+							Services: &servicesCIDR,
+						},
+						Additional: []string{"internet-fra"},
+					},
+					Workers: []gardenv1beta1.MetalWorker{
+						gardenv1beta1.MetalWorker{
+							Worker: gardenv1beta1.Worker{
+								Name:           "c1-xlarge-x86",
+								MachineType:    "c1-xlarge-x86",
+								AutoScalerMin:  1,
+								AutoScalerMax:  1,
+								MaxSurge:       &maxSurge,
+								MaxUnavailable: &maxUnavailable,
+							},
+							VolumeType: "storage_1",
+							VolumeSize: "200Gi",
+						},
+					},
+					Zones: []string{"nbg-w8101"},
+				},
+			},
 			Kubernetes: gardenv1beta1.Kubernetes{
 				AllowPrivilegedContainers: &allowPrivilegedContainers,
 				Version:                   k8sVersion,
 			},
 			Maintenance: &gardenv1beta1.Maintenance{
 				AutoUpdate: &gardenv1beta1.MaintenanceAutoUpdate{
-					KubernetesVersion:   autoUpdate,
-					MachineImageVersion: &autoUpdate,
+					KubernetesVersion: autoUpdate,
+					// MachineImageVersion: &autoUpdate,
 				},
 				TimeWindow: &gardenv1beta1.MaintenanceTimeWindow{
 					Begin: beginMaintenance,

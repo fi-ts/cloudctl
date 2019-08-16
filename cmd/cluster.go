@@ -79,6 +79,12 @@ func clusterCreate() error {
 	}
 	fmt.Printf("SecretBinding:%s created\n", sb.GetName())
 
+	shoot, err := pkg.CreateShoot(client, project, sb, "production", "1.14.3")
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Shoot:%s created\n", shoot.GetName())
+
 	return nil
 }
 

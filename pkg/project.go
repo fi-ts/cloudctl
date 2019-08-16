@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"fmt"
 	"time"
 
 	gardenv1beta1 "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
@@ -65,6 +66,7 @@ func CreateSecretBinding(client *garden.Clientset, project *gardenv1beta1.Projec
 		if p.Spec.Namespace != nil {
 			namespace = *p.Spec.Namespace
 		}
+		fmt.Printf("namespace:%s\n", namespace)
 		time.Sleep(10 * time.Millisecond)
 	}
 
@@ -75,7 +77,7 @@ func CreateSecretBinding(client *garden.Clientset, project *gardenv1beta1.Projec
 			Labels:    map[string]string{"cloudprofile.garden.sapcloud.io/name": "metal"},
 		},
 		SecretRef: corev1.SecretReference{
-			Name:      "cloudprovider-config",
+			Name:      "seed-nbg-gardener-test-01",
 			Namespace: "garden",
 		},
 	}
