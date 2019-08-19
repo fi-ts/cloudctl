@@ -36,7 +36,7 @@ var (
 func init() {
 	clusterCreateCmd.Flags().StringP("name", "", "", "name of the cluster. [required]")
 	clusterCreateCmd.Flags().StringP("description", "", "", "description of the cluster. [required]")
-	clusterCreateCmd.Flags().StringP("purpose", "", "production", "purpose of the cluster, can be one of production|dev|eval. [required]")
+	clusterCreateCmd.Flags().StringP("purpose", "", "production", "purpose of the cluster, can be one of production|dev|eval.")
 	clusterCreateCmd.Flags().StringP("owner", "", "", "owner of the cluster. [required]")
 	clusterCreateCmd.Flags().StringP("partition", "", "nbg-w8101", "partition of the cluster. [required]")
 	clusterCreateCmd.Flags().StringP("version", "", "1.14.3", "kubernetes version of the cluster. [required]")
@@ -48,7 +48,10 @@ func init() {
 	clusterCreateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
 	clusterCreateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster.")
 
+	clusterCreateCmd.MarkFlagRequired("name")
+	clusterCreateCmd.MarkFlagRequired("description")
 	clusterCreateCmd.MarkFlagRequired("owner")
+	clusterCreateCmd.MarkFlagRequired("partition")
 
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
@@ -112,13 +115,9 @@ func clusterCreate() error {
 }
 
 func clusterList() error {
-	// projects, err := client.GardenV1beta1().Projects().List(metav1.ListOptions{})
-
-	// if err != nil {
-	// 	return err
-	// }
-	// for _, project := range projects.Items {
-	// 	fmt.Println(project.Name)
-	// }
-	return nil
+	shoots, err := gardener.ListShoots()
+	if err != nil {
+		return err
+	}
+	return printer.Print(shoots)
 }

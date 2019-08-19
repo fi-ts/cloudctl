@@ -15,6 +15,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// ListShoots list all shoots
+func (g *Gardener) ListShoots() ([]gardenv1beta1.Shoot, error) {
+	shootList, err := g.client.GardenV1beta1().Shoots("").List(metav1.ListOptions{})
+	if err != nil {
+		fmt.Printf("Error listing shoots: %v", err)
+		return nil, err
+	}
+	fmt.Printf("found shoots:%d\n", len(shootList.Items))
+	return shootList.Items, nil
+}
+
 // CreateShoot create a shoot for a project
 func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoot, error) {
 	p, err := g.CreateProject(scr.Owner)

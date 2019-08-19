@@ -161,6 +161,8 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 func (t TablePrinter) Print(data interface{}) error {
 	switch d := data.(type) {
 	case *v1beta1.Shoot:
+		ShootTablePrinter{t}.Print([]v1beta1.Shoot{*d})
+	case []v1beta1.Shoot:
 		ShootTablePrinter{t}.Print(d)
 	default:
 		return fmt.Errorf("unknown table printer for type: %T", d)
