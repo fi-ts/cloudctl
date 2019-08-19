@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	garden "github.com/gardener/gardener/pkg/client/garden/clientset/versioned"
+	"git.f-i-ts.de/cloud-native/cloudctl/pkg"
 	"github.com/metal-pod/v"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -19,8 +19,8 @@ const (
 )
 
 var (
-	client  *garden.Clientset
-	printer Printer
+	gardener *pkg.Gardener
+	printer  Printer
 	// will bind all viper flags to subcommands and
 	// prevent overwrite of identical flag names from other commands
 	// see https://github.com/spf13/viper/issues/233#issuecomment-386791444
@@ -92,7 +92,7 @@ func initConfig() {
 
 	kubeConfig := viper.GetString("kubeconfig")
 	var err error
-	client, err = gardenClient(kubeConfig)
+	gardener, err = pkg.NewGardener(kubeConfig)
 	if err != nil {
 		log.Fatal(err)
 	}

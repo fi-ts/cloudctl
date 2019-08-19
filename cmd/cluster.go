@@ -3,10 +3,9 @@ package cmd
 import (
 	"fmt"
 
-	"git.f-i-ts.de/cloud-native/cloudctl/pkg"
+	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -37,10 +36,17 @@ var (
 func init() {
 	clusterCreateCmd.Flags().StringP("name", "", "", "name of the cluster. [required]")
 	clusterCreateCmd.Flags().StringP("description", "", "", "description of the cluster. [required]")
+	clusterCreateCmd.Flags().StringP("purpose", "", "production", "purpose of the cluster, can be one of production|dev|eval. [required]")
 	clusterCreateCmd.Flags().StringP("owner", "", "", "owner of the cluster. [required]")
-	clusterCreateCmd.Flags().StringP("partition", "", "", "partition of the cluster. [required]")
+	clusterCreateCmd.Flags().StringP("partition", "", "nbg-w8101", "partition of the cluster. [required]")
+	clusterCreateCmd.Flags().StringP("version", "", "1.14.3", "kubernetes version of the cluster. [required]")
+	clusterCreateCmd.Flags().IntP("minsize", "", 1, "minimal workers of the cluster.")
+	clusterCreateCmd.Flags().IntP("maxsize", "", 1, "maximal workers of the cluster.")
+	clusterCreateCmd.Flags().IntP("maxsurge", "", 1, "max number of workers created during a update of the cluster.")
+	clusterCreateCmd.Flags().IntP("maxunavailable", "", 1, "max number of workers that can be unavailable during a update of the cluster.")
 	clusterCreateCmd.Flags().StringSlice("labels", []string{}, "labels of the cluster")
 	clusterCreateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
+	clusterCreateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster.")
 
 	clusterCreateCmd.MarkFlagRequired("owner")
 
@@ -50,36 +56,52 @@ func init() {
 }
 
 func clusterCreate() error {
-	// spec:
-	// namespace: garden-<cluster-id>
-	// createdBy:
-	//     apiGroup: rbac.authorization.k8s.io
-	//     kind: User
-	//     name: heinz.schenk@f-i-ts.de
-	// members:
-	// - apiGroup: rbac.authorization.k8s.io
-	//     kind: User
-	//     name: heinz.schenk@f-i-ts.de
-	// owner:
-	//     apiGroup: rbac.authorization.k8s.io
-	//     kind: User
-	//     name: heinz.schenk@f-i-ts.de
-
 	owner := viper.GetString("owner")
-
-	project, err := pkg.CreateProject(client, owner)
-	if err != nil {
-		return err
+	desc := viper.GetString("description")
+	purpose := viper.GetString("purpose")
+	partition := viper.GetString("partition")
+	// FIXME helper and validation
+	networks := viper.GetStringSlice("external-networks")
+	scr := &api.ShootCreateRequest{
+		CreatedBy:            owner,
+		Owner:                owner,
+		Description:          &desc,
+		Purpose:              &purpose,
+		LoadBalancerProvider: api.DefaultLoadBalancerProvider,
+		MachineImage:         api.DefaultMachineImage,
+		FirewallImage:        api.DefaultFirewallImage,
+		FirewallSize:         api.DefaultFirewallSize,
+		Workers: []api.Worker{
+			{
+				Name:           "default-worker",
+				MachineType:    api.DefaultMachineType,
+				AutoScalerMin:  viper.GetInt("minsize"),
+				AutoScalerMax:  viper.GetInt("maxsize"),
+				MaxSurge:       viper.GetInt("maxsurge"),
+				MaxUnavailable: viper.GetInt("maxunavailable"),
+				VolumeType:     api.DefaultVolumeType,
+				VolumeSize:     api.DefaultVolumeSize,
+			},
+		},
+		Kubernetes: api.Kubernetes{
+			AllowPrivilegedContainers: viper.GetBool("allowprivileged"),
+			Version:                   viper.GetString("version"),
+		},
+		Maintenance: api.Maintenance{
+			AutoUpdate: &api.MaintenanceAutoUpdate{
+				KubernetesVersion: false,
+				MachineImage:      false,
+			},
+			TimeWindow: &api.MaintenanceTimeWindow{
+				Begin: "220000+0100",
+				End:   "233000+0100",
+			},
+		},
+		Networks: networks,
+		Zones:    []string{partition},
 	}
-	fmt.Printf("Project:%s Namespace:%s UID: %s created\n", project.GetName(), project.GetNamespace(), project.GetUID())
 
-	sb, err := pkg.CreateSecretBinding(client, project)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("SecretBinding:%s created\n", sb.GetName())
-
-	shoot, err := pkg.CreateShoot(client, project, sb, "production", "1.14.3")
+	shoot, err := gardener.CreateShoot(scr)
 	if err != nil {
 		return err
 	}
@@ -89,13 +111,13 @@ func clusterCreate() error {
 }
 
 func clusterList() error {
-	projects, err := client.GardenV1beta1().Projects().List(metav1.ListOptions{})
+	// projects, err := client.GardenV1beta1().Projects().List(metav1.ListOptions{})
 
-	if err != nil {
-		return err
-	}
-	for _, project := range projects.Items {
-		fmt.Println(project.Name)
-	}
+	// if err != nil {
+	// 	return err
+	// }
+	// for _, project := range projects.Items {
+	// 	fmt.Println(project.Name)
+	// }
 	return nil
 }

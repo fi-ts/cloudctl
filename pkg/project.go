@@ -5,13 +5,27 @@ import (
 	"time"
 
 	gardenv1beta1 "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
-	garden "github.com/gardener/gardener/pkg/client/garden/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func CreateProject(client *garden.Clientset, owner string) (*gardenv1beta1.Project, error) {
+// CreateProject create a gardener project with the given owner
+func (g *Gardener) CreateProject(owner string) (*gardenv1beta1.Project, error) {
+	// spec:
+	// namespace: garden-<cluster-id>
+	// createdBy:
+	//     apiGroup: rbac.authorization.k8s.io
+	//     kind: User
+	//     name: heinz.schenk@f-i-ts.de
+	// members:
+	// - apiGroup: rbac.authorization.k8s.io
+	//     kind: User
+	//     name: heinz.schenk@f-i-ts.de
+	// owner:
+	//     apiGroup: rbac.authorization.k8s.io
+	//     kind: User
+	//     name: heinz.schenk@f-i-ts.de
 	c := rbacv1.Subject{
 		Kind:     rbacv1.UserKind,
 		Name:     owner,
@@ -28,7 +42,7 @@ func CreateProject(client *garden.Clientset, owner string) (*gardenv1beta1.Proje
 
 	p := &gardenv1beta1.Project{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "mtl-",
+			GenerateName: "p-",
 		},
 		Spec: gardenv1beta1.ProjectSpec{
 			CreatedBy: &c,
@@ -36,14 +50,15 @@ func CreateProject(client *garden.Clientset, owner string) (*gardenv1beta1.Proje
 			Members:   members,
 		},
 	}
-	project, err := client.GardenV1beta1().Projects().Create(p)
+	project, err := g.client.GardenV1beta1().Projects().Create(p)
 	if err != nil {
 		return nil, err
 	}
 	return project, nil
 }
 
-func CreateSecretBinding(client *garden.Clientset, project *gardenv1beta1.Project) (*gardenv1beta1.SecretBinding, error) {
+// CreateSecretBinding creates a secretbinding to a existing secret
+func (g *Gardener) CreateSecretBinding(project *gardenv1beta1.Project) (*gardenv1beta1.SecretBinding, error) {
 	// 	apiVersion: garden.sapcloud.io/v1beta1
 	// kind: SecretBinding
 	// metadata:
@@ -59,7 +74,7 @@ func CreateSecretBinding(client *garden.Clientset, project *gardenv1beta1.Projec
 
 	// FIXME this must be implemented with a Watcher until Namespace is set in the project.
 	for namespace == "" {
-		p, err := client.GardenV1beta1().Projects().Get(project.GetName(), metav1.GetOptions{})
+		p, err := g.client.GardenV1beta1().Projects().Get(project.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -81,7 +96,7 @@ func CreateSecretBinding(client *garden.Clientset, project *gardenv1beta1.Projec
 			Namespace: "garden",
 		},
 	}
-	secretBinding, err := client.GardenV1beta1().SecretBindings(namespace).Create(sb)
+	secretBinding, err := g.client.GardenV1beta1().SecretBindings(namespace).Create(sb)
 	if err != nil {
 		return nil, err
 	}

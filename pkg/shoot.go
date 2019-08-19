@@ -1,18 +1,35 @@
 package pkg
 
 import (
+	"fmt"
+	"strings"
+
 	gardencorev1alpha1 "github.com/gardener/gardener/pkg/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	gardenv1beta1 "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
-	garden "github.com/gardener/gardener/pkg/client/garden/clientset/versioned"
+
 	corev1 "k8s.io/api/core/v1"
+
+	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // CreateShoot create a shoot for a project
-func CreateShoot(client *garden.Clientset, project *gardenv1beta1.Project, secretBinding *gardenv1beta1.SecretBinding, purpose, k8sVersion string) (*gardenv1beta1.Shoot, error) {
-	project, err := client.GardenV1beta1().Projects().Get(project.GetName(), metav1.GetOptions{})
+func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoot, error) {
+	p, err := g.CreateProject(scr.Owner)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("Project:%s Namespace:%s UID: %s created\n", p.GetName(), p.GetNamespace(), p.GetUID())
+
+	sb, err := g.CreateSecretBinding(p)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("SecretBinding:%s created\n", sb.GetName())
+
+	project, err := g.client.GardenV1beta1().Projects().Get(p.GetName(), metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -20,23 +37,21 @@ func CreateShoot(client *garden.Clientset, project *gardenv1beta1.Project, secre
 	if project.Spec.CreatedBy != nil {
 		createdBy = project.Spec.CreatedBy.Name
 	}
-	allowPrivilegedContainers := true
-	autoUpdate := false
-	beginMaintenance := "230000+0000"
-	endMaintenance := "000000+0000"
 
-	maxSurge := intstr.FromInt(1)
-	maxUnavailable := intstr.FromInt(1)
+	maxSurge := intstr.FromInt(scr.Workers[0].MaxSurge)
+	maxUnavailable := intstr.FromInt(scr.Workers[0].MaxUnavailable)
 
 	nodesCIDR := gardencorev1alpha1.CIDR("")
 	podsCIDR := gardencorev1alpha1.CIDR("")
 	servicesCIDR := gardencorev1alpha1.CIDR("")
+	// FIXME helper method
+	region := strings.Split(scr.Zones[0], "-")[0]
 	shoot := &gardenv1beta1.Shoot{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: project.Name,
 			Annotations: map[string]string{
 				"garden.sapcloud.io/createdBy": createdBy,
-				"garden.sapcloud.io/purpose":   purpose,
+				"garden.sapcloud.io/purpose":   *scr.Purpose,
 				"cluster.metal-pod.io/project": project.Name,
 			},
 			Namespace: *project.Spec.Namespace,
@@ -52,61 +67,61 @@ func CreateShoot(client *garden.Clientset, project *gardenv1beta1.Project, secre
 			},
 			Cloud: gardenv1beta1.Cloud{
 				Profile: "metal",
-				Region:  "fra",
+				Region:  region,
 				SecretBindingRef: corev1.LocalObjectReference{
-					Name: secretBinding.Name,
+					Name: sb.Name,
 				},
 				Metal: &gardenv1beta1.MetalCloud{
-					LoadBalancerProvider: "metallb",
+					LoadBalancerProvider: scr.LoadBalancerProvider,
 					MachineImage: &gardenv1beta1.MachineImage{
-						Name:    "metal",
-						Version: "ubuntu-19.04",
+						Name:    scr.MachineImage.Name,
+						Version: scr.MachineImage.Version,
 					},
-					FirewallImage: "firewall-1",
-					FirewallSize:  "c1-xlarge-x86",
+					FirewallImage: scr.FirewallImage,
+					FirewallSize:  scr.FirewallSize,
 					Networks: gardenv1beta1.MetalNetworks{
 						K8SNetworks: gardencorev1alpha1.K8SNetworks{
 							Nodes:    &nodesCIDR,
 							Pods:     &podsCIDR,
 							Services: &servicesCIDR,
 						},
-						Additional: []string{"internet-fra"},
+						Additional: scr.Networks,
 					},
 					Workers: []gardenv1beta1.MetalWorker{
 						gardenv1beta1.MetalWorker{
 							Worker: gardenv1beta1.Worker{
-								Name:           "c1-xlarge-x86",
-								MachineType:    "c1-xlarge-x86",
-								AutoScalerMin:  1,
-								AutoScalerMax:  1,
+								Name:           scr.Workers[0].Name,
+								MachineType:    scr.Workers[0].MachineType,
+								AutoScalerMin:  scr.Workers[0].AutoScalerMin,
+								AutoScalerMax:  scr.Workers[0].AutoScalerMax,
 								MaxSurge:       &maxSurge,
 								MaxUnavailable: &maxUnavailable,
 							},
-							VolumeType: "storage_1",
-							VolumeSize: "200Gi",
+							VolumeType: scr.Workers[0].VolumeType,
+							VolumeSize: scr.Workers[0].VolumeSize,
 						},
 					},
-					Zones: []string{"nbg-w8101"},
+					Zones: scr.Zones,
 				},
 			},
 			Kubernetes: gardenv1beta1.Kubernetes{
-				AllowPrivilegedContainers: &allowPrivilegedContainers,
-				Version:                   k8sVersion,
+				AllowPrivilegedContainers: &scr.Kubernetes.AllowPrivilegedContainers,
+				Version:                   scr.Kubernetes.Version,
 			},
 			Maintenance: &gardenv1beta1.Maintenance{
 				AutoUpdate: &gardenv1beta1.MaintenanceAutoUpdate{
-					KubernetesVersion: autoUpdate,
+					KubernetesVersion: scr.Maintenance.AutoUpdate.KubernetesVersion,
 					// MachineImageVersion: &autoUpdate,
 				},
 				TimeWindow: &gardenv1beta1.MaintenanceTimeWindow{
-					Begin: beginMaintenance,
-					End:   endMaintenance,
+					Begin: scr.Maintenance.TimeWindow.Begin,
+					End:   scr.Maintenance.TimeWindow.End,
 				},
 			},
 		},
 	}
 
-	return client.GardenV1beta1().Shoots(*project.Spec.Namespace).Create(shoot)
+	return g.client.GardenV1beta1().Shoots(*project.Spec.Namespace).Create(shoot)
 	// 	apiVersion: garden.sapcloud.io/v1beta1
 	// kind: Shoot
 	// metadata:
