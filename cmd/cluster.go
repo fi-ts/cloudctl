@@ -108,7 +108,7 @@ func clusterCreate() error {
 	}
 	fmt.Printf("Shoot:%s created\n", shoot.GetName())
 
-	return nil
+	return printer.Print(shoot)
 }
 
 func clusterList() error {

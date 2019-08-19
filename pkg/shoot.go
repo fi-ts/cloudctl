@@ -48,11 +48,13 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 	region := strings.Split(scr.Zones[0], "-")[0]
 	shoot := &gardenv1beta1.Shoot{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: scr.Name,
+			GenerateName: "s-",
 			Annotations: map[string]string{
-				"garden.sapcloud.io/createdBy": createdBy,
-				"garden.sapcloud.io/purpose":   *scr.Purpose,
-				"cluster.metal-pod.io/project": project.Name,
+				"garden.sapcloud.io/createdBy":     createdBy,
+				"garden.sapcloud.io/purpose":       *scr.Purpose,
+				"cluster.metal-pod.io/project":     project.Name,
+				"cluster.metal-pod.io/description": *scr.Description,
+				"cluster.metal-pod.io/name":        scr.Name,
 			},
 			Namespace: *project.Spec.Namespace,
 		},
