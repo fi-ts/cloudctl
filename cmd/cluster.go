@@ -65,6 +65,7 @@ func clusterCreate() error {
 	scr := &api.ShootCreateRequest{
 		CreatedBy:            owner,
 		Owner:                owner,
+		Name:                 viper.GetString("name"),
 		Description:          &desc,
 		Purpose:              &purpose,
 		LoadBalancerProvider: api.DefaultLoadBalancerProvider,

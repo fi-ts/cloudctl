@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	output "git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
 	"git.f-i-ts.de/cloud-native/cloudctl/pkg"
 	"github.com/metal-pod/v"
 	"github.com/pkg/errors"
@@ -20,7 +21,7 @@ const (
 
 var (
 	gardener *pkg.Gardener
-	printer  Printer
+	printer  output.Printer
 	// will bind all viper flags to subcommands and
 	// prevent overwrite of identical flag names from other commands
 	// see https://github.com/spf13/viper/issues/233#issuecomment-386791444
@@ -32,7 +33,7 @@ var (
 		Use:     programName,
 		Aliases: []string{"m"},
 		Short:   "a cli to manage cloud entities.",
-		Long:    "",
+		Long:    "with cloudctl you can manage kubernetes cluster, view networks et.al.",
 		Version: v.V.String(),
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			initPrinter()
@@ -90,9 +91,9 @@ func initConfig() {
 		}
 	}
 
-	kubeConfig := viper.GetString("kubeconfig")
+	kubeconfig := viper.GetString("kubeconfig")
 	var err error
-	gardener, err = pkg.NewGardener(kubeConfig)
+	gardener, err = pkg.NewGardener(kubeconfig)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -100,7 +101,7 @@ func initConfig() {
 
 func initPrinter() {
 	var err error
-	printer, err = NewPrinter(
+	printer, err = output.NewPrinter(
 		viper.GetString("output-format"),
 		viper.GetString("order"),
 		viper.GetString("template"),

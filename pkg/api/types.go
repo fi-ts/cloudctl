@@ -16,12 +16,14 @@ const (
 type (
 	// ShootCreateRequest is used to create new Metal Shoot cluster
 	ShootCreateRequest struct {
-		// CreatedBy is a subject representing a user name, an email address, or any other identifier of a user
-		// who created the project.
-		CreatedBy string
+		// Name is a human-readable name of the cluster
+		Name string
 		// Description is a human-readable description of what the cluster is used for.
 		// +optional
 		Description *string
+		// CreatedBy is a subject representing a user name, an email address, or any other identifier of a user
+		// who created the project.
+		CreatedBy string
 		// Owner is a subject representing a user name, an email address, or any other identifier of a user owning
 		// the project.
 		Owner string
