@@ -27,6 +27,8 @@ type (
 		// Owner is a subject representing a user name, an email address, or any other identifier of a user owning
 		// the project.
 		Owner string
+		// Tenant is a the customer who owns this cluster.
+		Tenant string
 		// Purpose is a human-readable explanation of the project's purpose.
 		// +optional
 		Purpose *string

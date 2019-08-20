@@ -58,7 +58,7 @@ func (g *Gardener) CreateProject(owner string) (*gardenv1beta1.Project, error) {
 }
 
 // CreateSecretBinding creates a secretbinding to a existing secret
-func (g *Gardener) CreateSecretBinding(project *gardenv1beta1.Project) (*gardenv1beta1.SecretBinding, error) {
+func (g *Gardener) CreateSecretBinding(project *gardenv1beta1.Project, partition string) (*gardenv1beta1.SecretBinding, error) {
 	// 	apiVersion: garden.sapcloud.io/v1beta1
 	// kind: SecretBinding
 	// metadata:
@@ -92,7 +92,7 @@ func (g *Gardener) CreateSecretBinding(project *gardenv1beta1.Project) (*gardenv
 			Labels:    map[string]string{"cloudprofile.garden.sapcloud.io/name": "metal"},
 		},
 		SecretRef: corev1.SecretReference{
-			Name:      "seed-nbg-gardener-test-01",
+			Name:      secretReferenceOfPartition[partition],
 			Namespace: "garden",
 		},
 	}

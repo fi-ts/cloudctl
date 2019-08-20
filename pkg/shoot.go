@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
+
 	gardencorev1alpha1 "github.com/gardener/gardener/pkg/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -34,7 +36,8 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 	}
 	fmt.Printf("Project:%s Namespace:%s UID: %s created\n", p.GetName(), p.GetNamespace(), p.GetUID())
 
-	sb, err := g.CreateSecretBinding(p)
+	partition := scr.Zones[0]
+	sb, err := g.CreateSecretBinding(p, partition)
 	if err != nil {
 		return nil, err
 	}
@@ -52,20 +55,42 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 	maxSurge := intstr.FromInt(scr.Workers[0].MaxSurge)
 	maxUnavailable := intstr.FromInt(scr.Workers[0].MaxUnavailable)
 
-	nodesCIDR := gardencorev1alpha1.CIDR("")
-	podsCIDR := gardencorev1alpha1.CIDR("")
-	servicesCIDR := gardencorev1alpha1.CIDR("")
+	// FIXME
+	nodesCIDR := gardencorev1alpha1.CIDR("10.250.0.0/16")
+	podsCIDR := gardencorev1alpha1.CIDR("10.242.0.0/16")
+	servicesCIDR := gardencorev1alpha1.CIDR("10.243.0.0/16")
+
 	// FIXME helper method
-	region := strings.Split(scr.Zones[0], "-")[0]
+	region := strings.Split(partition, "-")[0]
+
+	name := scr.Name
+	if name == "" {
+		name = uuid.Must(uuid.NewRandom()).String()[:10]
+	}
+
+	networks := []string{}
+	for _, nw := range scr.Networks {
+		nwOfPartition, ok := networksOfPartition[partition]
+		if !ok {
+			continue
+		}
+		network, ok := nwOfPartition[nw]
+		if !ok {
+			continue
+		}
+		networks = append(networks, network)
+	}
+
 	shoot := &gardenv1beta1.Shoot{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "s-",
+			Name: name,
 			Annotations: map[string]string{
 				"garden.sapcloud.io/createdBy":     createdBy,
 				"garden.sapcloud.io/purpose":       *scr.Purpose,
 				"cluster.metal-pod.io/project":     project.Name,
 				"cluster.metal-pod.io/description": *scr.Description,
 				"cluster.metal-pod.io/name":        scr.Name,
+				"cluster.metal-pod.io/tenant":      scr.Tenant,
 			},
 			Namespace: *project.Spec.Namespace,
 		},
@@ -98,7 +123,7 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 							Pods:     &podsCIDR,
 							Services: &servicesCIDR,
 						},
-						Additional: scr.Networks,
+						Additional: networks,
 					},
 					Workers: []gardenv1beta1.MetalWorker{
 						gardenv1beta1.MetalWorker{

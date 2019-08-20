@@ -34,7 +34,7 @@ var (
 )
 
 func init() {
-	clusterCreateCmd.Flags().StringP("name", "", "", "name of the cluster. [required]")
+	clusterCreateCmd.Flags().StringP("name", "", "", "name of the cluster, max 10 characters. [required]")
 	clusterCreateCmd.Flags().StringP("description", "", "", "description of the cluster. [required]")
 	clusterCreateCmd.Flags().StringP("purpose", "", "production", "purpose of the cluster, can be one of production|dev|eval.")
 	clusterCreateCmd.Flags().StringP("owner", "", "", "owner of the cluster. [required]")
@@ -45,7 +45,7 @@ func init() {
 	clusterCreateCmd.Flags().IntP("maxsurge", "", 1, "max number of workers created during a update of the cluster.")
 	clusterCreateCmd.Flags().IntP("maxunavailable", "", 1, "max number of workers that can be unavailable during a update of the cluster.")
 	clusterCreateCmd.Flags().StringSlice("labels", []string{}, "labels of the cluster")
-	clusterCreateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
+	clusterCreateCmd.Flags().StringSlice("external-networks", []string{"internet"}, "external networks of the cluster, can be internet,mpls")
 	clusterCreateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster.")
 
 	clusterCreateCmd.MarkFlagRequired("name")
@@ -66,7 +66,8 @@ func clusterCreate() error {
 	// FIXME helper and validation
 	networks := viper.GetStringSlice("external-networks")
 	scr := &api.ShootCreateRequest{
-		CreatedBy:            owner,
+		CreatedBy:            owner, // FIXME from token
+		Tenant:               owner, // FIXME from token
 		Owner:                owner,
 		Name:                 viper.GetString("name"),
 		Description:          &desc,
