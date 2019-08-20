@@ -9,7 +9,7 @@ binary:
     - bin/cloudctl-linux-amd64 update dump bin/cloudctl-linux-amd64 > version-linux-amd64.json
     - bin/cloudctl-linux-amd64 update dump bin/cloudctl-windows-amd64 > version-windows-amd64.json
     - bin/cloudctl-linux-amd64 update dump bin/cloudctl-darwin-amd64 > version-darwin-amd64.json
-    - mc config host add fits https://blobstore.fi-ts.io $ACCESS_KEY "${SECRET_KEY}"
+    - mc config host add fits https://blobstore.fi-ts.io $BLOB_ACCESS_KEY "${BLOB_SECRET_KEY}"
     # compatibility
     - mc cp bin/cloudctl-linux-amd64 fits/metal/cloudctl/cloudctl
     - mc cp bin/cloudctl* fits/metal/cloudctl/
