@@ -10,12 +10,63 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	gardenv1beta1 "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
-
 	corev1 "k8s.io/api/core/v1"
 
 	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// ShootCredentials get shoot credentials
+func (g *Gardener) ShootCredentials(uid string) (string, error) {
+	shoot, err := g.GetShoot(uid)
+	if err != nil {
+		return "", err
+	}
+	secret, err := g.k8sclient.CoreV1().Secrets(shoot.GetNamespace()).Get(shoot.Name+".kubeconfig", metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	config, ok := secret.Data["kubeconfig"]
+	if !ok {
+		return "", fmt.Errorf("unable to extract kubeconfig from shoot secret")
+	}
+	return string(config), nil
+}
+
+// DeleteShoot with uid
+func (g *Gardener) DeleteShoot(uid string) (*gardenv1beta1.Shoot, error) {
+	shoot, err := g.GetShoot(uid)
+	if err != nil {
+		return shoot, err
+	}
+	// 'confirmation.garden.sapcloud.io/deletion': 'true'
+	shoot.ObjectMeta.Annotations["confirmation.garden.sapcloud.io/deletion"] = "true"
+	shoot, err = g.client.GardenV1beta1().Shoots(shoot.GetNamespace()).Update(shoot)
+	if err != nil {
+		return shoot, err
+	}
+	err = g.client.GardenV1beta1().Shoots(shoot.GetNamespace()).Delete(shoot.Name, &metav1.DeleteOptions{})
+	return shoot, err
+}
+
+// GetShoot shot with uid
+func (g *Gardener) GetShoot(uid string) (*gardenv1beta1.Shoot, error) {
+	shoots, err := g.client.GardenV1beta1().Shoots("").List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	var shoot *gardenv1beta1.Shoot
+	for _, s := range shoots.Items {
+		if string(s.Status.UID) == uid {
+			shoot = &s
+			break
+		}
+	}
+	if shoot == nil {
+		return nil, fmt.Errorf("unable to find shoot for uid:%s", uid)
+	}
+	return shoot, nil
+}
 
 // ListShoots list all shoots
 func (g *Gardener) ListShoots() ([]gardenv1beta1.Shoot, error) {
@@ -24,7 +75,6 @@ func (g *Gardener) ListShoots() ([]gardenv1beta1.Shoot, error) {
 		fmt.Printf("Error listing shoots: %v", err)
 		return nil, err
 	}
-	fmt.Printf("found shoots:%d\n", len(shootList.Items))
 	return shootList.Items, nil
 }
 

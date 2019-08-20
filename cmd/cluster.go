@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"git.f-i-ts.de/cloud-native/cloudctl/cmd/helper"
 	"git.f-i-ts.de/cloud-native/cloudctl/pkg"
 	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
 	"github.com/spf13/cobra"
@@ -35,6 +36,24 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+	clusterDeleteCmd = &cobra.Command{
+		Use:   "delete <uid>",
+		Short: "delete clusters",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			initGardener()
+			return clusterDelete(args)
+		},
+		PreRun: bindPFlags,
+	}
+	clusterCredentialsCmd = &cobra.Command{
+		Use:   "credentials <uid>",
+		Short: "get cluster credentials",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			initGardener()
+			return clusterCredentials(args)
+		},
+		PreRun: bindPFlags,
+	}
 )
 
 func init() {
@@ -59,7 +78,8 @@ func init() {
 
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
-
+	clusterCmd.AddCommand(clusterCredentialsCmd)
+	clusterCmd.AddCommand(clusterDeleteCmd)
 }
 
 func initGardener() {
@@ -133,4 +153,23 @@ func clusterList() error {
 		return err
 	}
 	return printer.Print(shoots)
+}
+func clusterCredentials(args []string) error {
+	credentials, err := gardener.ShootCredentials(args[0])
+	if err != nil {
+		return err
+	}
+	fmt.Println(credentials)
+	return nil
+}
+
+func clusterDelete(args []string) error {
+	shoot, err := gardener.GetShoot(args[0])
+	printer.Print(shoot)
+	helper.Prompt("Press Enter to delete above cluster.")
+	shoot, err = gardener.DeleteShoot(args[0])
+	if err != nil {
+		return err
+	}
+	return printer.Print(shoot)
 }
