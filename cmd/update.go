@@ -7,18 +7,16 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"math"
 	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"time"
 
 	"github.com/metal-pod/v"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-
+	"git.f-i-ts.de/cloud-native/cloudctl/cmd/helper"
 	"github.com/cheggaaa/pb/v3"
 )
 
@@ -164,7 +162,7 @@ func updateCheck() error {
 	fmt.Printf("local  version:%s\n", version.Format(time.RFC3339))
 
 	if age > 24*time.Hour {
-		fmt.Printf("%s is %s old, please run '%s update do'\n", programName, humanizeDuration(age), programName)
+		fmt.Printf("%s is %s old, please run '%s update do'\n", programName, helper.HumanizeDuration(age), programName)
 		fmt.Printf("%s location:%s\n", programName, location)
 	} else {
 		fmt.Printf("%s is up to date\n", programName)
@@ -257,39 +255,4 @@ func copy(src, dst string) error {
 		return err
 	}
 	return nil
-}
-func humanizeDuration(duration time.Duration) string {
-	days := int64(duration.Hours() / 24)
-	hours := int64(math.Mod(duration.Hours(), 24))
-	minutes := int64(math.Mod(duration.Minutes(), 60))
-	seconds := int64(math.Mod(duration.Seconds(), 60))
-
-	chunks := []struct {
-		singularName string
-		amount       int64
-	}{
-		{"d", days},
-		{"h", hours},
-		{"m", minutes},
-		{"s", seconds},
-	}
-
-	parts := []string{}
-
-	for _, chunk := range chunks {
-		switch chunk.amount {
-		case 0:
-			continue
-		default:
-			parts = append(parts, fmt.Sprintf("%d%s", chunk.amount, chunk.singularName))
-		}
-	}
-
-	if len(parts) == 0 {
-		return "0s"
-	}
-	if len(parts) > 2 {
-		parts = parts[:2]
-	}
-	return strings.Join(parts, " ")
 }
