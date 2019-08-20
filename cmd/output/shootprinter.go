@@ -48,8 +48,16 @@ func (s ShootTablePrinter) Print(data []v1beta1.Shoot) {
 			operation = string(shoot.Status.LastOperation.State)
 			progress = fmt.Sprintf("%d%%", shoot.Status.LastOperation.Progress)
 		}
+		seed := ""
+		if shoot.Spec.Cloud.Seed != nil {
+			seed = *shoot.Spec.Cloud.Seed
+		}
+		dnsdomain := ""
+		if shoot.Spec.DNS.Domain != nil {
+			dnsdomain = *shoot.Spec.DNS.Domain
+		}
 		wide := []string{string(shoot.UID), shoot.Name,
-			shoot.Spec.Kubernetes.Version, *shoot.Spec.Cloud.Seed, *shoot.Spec.DNS.Domain,
+			shoot.Spec.Kubernetes.Version, seed, dnsdomain,
 			operation,
 			progress,
 			apiserver, controlplane, nodes, system,

@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"fmt"
 	"time"
 
 	gardenv1beta1 "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
@@ -81,7 +80,6 @@ func (g *Gardener) CreateSecretBinding(project *gardenv1beta1.Project, partition
 		if p.Spec.Namespace != nil {
 			namespace = *p.Spec.Namespace
 		}
-		fmt.Printf("namespace:%s\n", namespace)
 		time.Sleep(10 * time.Millisecond)
 	}
 

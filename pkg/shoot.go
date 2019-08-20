@@ -84,14 +84,12 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("Project:%s Namespace:%s UID: %s created\n", p.GetName(), p.GetNamespace(), p.GetUID())
 
 	partition := scr.Zones[0]
 	sb, err := g.CreateSecretBinding(p, partition)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("SecretBinding:%s created\n", sb.GetName())
 
 	project, err := g.client.GardenV1beta1().Projects().Get(p.GetName(), metav1.GetOptions{})
 	if err != nil {

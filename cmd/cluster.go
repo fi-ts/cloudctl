@@ -153,8 +153,6 @@ func clusterCreate() error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Shoot:%s created\n", shoot.GetName())
-
 	return printer.Print(shoot)
 }
 
