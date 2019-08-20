@@ -28,6 +28,7 @@ const (
 	binaryURL         = downloadURLPrefix + programName + "-" + runtime.GOOS + "-" + runtime.GOARCH
 )
 
+// FIXME duplicate from metalctl, move to package on github ?
 var (
 	updateCmd = &cobra.Command{
 		Use:   "update",
