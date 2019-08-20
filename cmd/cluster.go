@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"git.f-i-ts.de/cloud-native/cloudctl/cmd/helper"
+	output "git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
 	"git.f-i-ts.de/cloud-native/cloudctl/pkg"
 	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
 	"github.com/spf13/cobra"
@@ -38,10 +39,19 @@ var (
 	}
 	clusterDeleteCmd = &cobra.Command{
 		Use:   "delete <uid>",
-		Short: "delete clusters",
+		Short: "delete a cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			initGardener()
 			return clusterDelete(args)
+		},
+		PreRun: bindPFlags,
+	}
+	clusterDescribeCmd = &cobra.Command{
+		Use:   "describe <uid>",
+		Short: "describe a cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			initGardener()
+			return clusterDescribe(args)
 		},
 		PreRun: bindPFlags,
 	}
@@ -80,6 +90,7 @@ func init() {
 	clusterCmd.AddCommand(clusterListCmd)
 	clusterCmd.AddCommand(clusterCredentialsCmd)
 	clusterCmd.AddCommand(clusterDeleteCmd)
+	clusterCmd.AddCommand(clusterDescribeCmd)
 }
 
 func initGardener() {
@@ -172,4 +183,11 @@ func clusterDelete(args []string) error {
 		return err
 	}
 	return printer.Print(shoot)
+}
+func clusterDescribe(args []string) error {
+	shoot, err := gardener.GetShoot(args[0])
+	if err != nil {
+		return err
+	}
+	return output.YAMLPrinter{}.Print(shoot)
 }
