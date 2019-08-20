@@ -4,13 +4,13 @@ go 1.12
 
 require (
 	github.com/Masterminds/semver v1.4.2 // indirect
+	github.com/cheggaaa/pb/v3 v3.0.1
 	github.com/gardener/gardener v0.0.0-20190816140908-ed26a3fdf2d6
 	github.com/google/uuid v1.1.1
 	github.com/googleapis/gnostic v0.3.1 // indirect
 	github.com/hashicorp/go-multierror v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/json-iterator/go v1.1.7 // indirect
-	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/metal-pod/v v0.0.2
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/olekukonko/tablewriter v0.0.1

@@ -20,8 +20,9 @@ const (
 )
 
 var (
-	gardener *pkg.Gardener
-	printer  output.Printer
+	kubeconfig string
+	gardener   *pkg.Gardener
+	printer    output.Printer
 	// will bind all viper flags to subcommands and
 	// prevent overwrite of identical flag names from other commands
 	// see https://github.com/spf13/viper/issues/233#issuecomment-386791444
@@ -59,6 +60,7 @@ func init() {
 	rootCmd.PersistentFlags().String("kubeconfig", "", "Path to the kube-config to use for authentication and authorization. Is updated by login.")
 	rootCmd.PersistentFlags().StringP("output-format", "o", "table", "output format (table|wide|markdown|json|yaml|template), wide is a table with more columns.")
 	rootCmd.AddCommand(clusterCmd)
+	rootCmd.AddCommand(updateCmd)
 
 	err := viper.BindPFlags(rootCmd.PersistentFlags())
 	if err != nil {
@@ -92,12 +94,7 @@ func initConfig() {
 		}
 	}
 
-	kubeconfig := viper.GetString("kubeconfig")
-	var err error
-	gardener, err = pkg.NewGardener(kubeconfig)
-	if err != nil {
-		log.Fatal(err)
-	}
+	kubeconfig = viper.GetString("kubeconfig")
 }
 
 func initPrinter() {

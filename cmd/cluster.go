@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 
+	"git.f-i-ts.de/cloud-native/cloudctl/pkg"
 	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -18,6 +20,7 @@ var (
 		Use:   "create",
 		Short: "create a cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			initGardener()
 			return clusterCreate()
 		},
 		PreRun: bindPFlags,
@@ -27,6 +30,7 @@ var (
 		Use:   "list",
 		Short: "list clusters",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			initGardener()
 			return clusterList()
 		},
 		PreRun: bindPFlags,
@@ -56,6 +60,14 @@ func init() {
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
 
+}
+
+func initGardener() {
+	var err error
+	gardener, err = pkg.NewGardener(kubeconfig)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func clusterCreate() error {
