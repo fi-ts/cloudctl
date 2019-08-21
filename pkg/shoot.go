@@ -2,9 +2,11 @@ package pkg
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/google/uuid"
+	jsoniter "github.com/json-iterator/go"
 
 	gardencorev1alpha1 "github.com/gardener/gardener/pkg/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -14,7 +16,11 @@ import (
 
 	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	types "k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/strategicpatch"
 )
+
+var json = jsoniter.ConfigFastest
 
 // ShootCredentials get shoot credentials
 func (g *Gardener) ShootCredentials(uid string) (string, error) {
@@ -40,8 +46,10 @@ func (g *Gardener) DeleteShoot(uid string) (*gardenv1beta1.Shoot, error) {
 		return shoot, err
 	}
 	// 'confirmation.garden.sapcloud.io/deletion': 'true'
-	shoot.ObjectMeta.Annotations["confirmation.garden.sapcloud.io/deletion"] = "true"
-	shoot, err = g.client.GardenV1beta1().Shoots(shoot.GetNamespace()).Update(shoot)
+	annotations := map[string]string{
+		"confirmation.garden.sapcloud.io/deletion": "true",
+	}
+	err = g.annotateShoot(shoot, annotations)
 	if err != nil {
 		return shoot, err
 	}
@@ -269,4 +277,60 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 	//         begin: 230000+0000
 	//         end: 000000+0000
 
+}
+
+// Helpers
+
+// annotateShoot adds shoot annotation(s)
+func (g *Gardener) annotateShoot(shoot *gardenv1beta1.Shoot, annotations map[string]string) error {
+	shootCopy := shoot.DeepCopy()
+
+	for annotationKey, annotationValue := range annotations {
+		metav1.SetMetaDataAnnotation(&shootCopy.ObjectMeta, annotationKey, annotationValue)
+	}
+
+	err := g.mergePatch(shoot, shootCopy)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// mergePath merge newshoot into oldshoot
+func (g *Gardener) mergePatch(oldShoot, newShoot *gardenv1beta1.Shoot) error {
+	patchBytes, err := createTwoWayMergePatch(oldShoot, newShoot)
+	if err != nil {
+		return fmt.Errorf("failed to patch bytes")
+	}
+
+	_, err = g.client.GardenV1beta1().Shoots(oldShoot.GetNamespace()).Patch(oldShoot.Name, types.StrategicMergePatchType, patchBytes)
+	return err
+}
+
+// CreateTwoWayMergePatch creates a two way merge patch of the given objects.
+// The two objects have to be pointers implementing the interfaces.
+func createTwoWayMergePatch(obj1 metav1.Object, obj2 metav1.Object) ([]byte, error) {
+	t1, t2 := reflect.TypeOf(obj1), reflect.TypeOf(obj2)
+	if t1 != t2 {
+		return nil, fmt.Errorf("cannot patch two objects of different type: %q - %q", t1, t2)
+	}
+	if t1.Kind() != reflect.Ptr {
+		return nil, fmt.Errorf("type has to be of kind pointer but got %q", t1)
+	}
+
+	obj1Data, err := json.Marshal(obj1)
+	if err != nil {
+		return nil, err
+	}
+
+	obj2Data, err := json.Marshal(obj2)
+	if err != nil {
+		return nil, err
+	}
+
+	dataStructType := t1.Elem()
+	dataStruct := reflect.New(dataStructType).Elem().Interface()
+
+	return strategicpatch.CreateTwoWayMergePatch(obj1Data, obj2Data, dataStruct)
 }
