@@ -51,6 +51,7 @@ func (t *TablePrinter) render() {
 			t.table.AppendBulk(t.shortData)
 		}
 		t.table.Render()
+		t.table.ClearRows()
 	} else {
 		rows := t.shortData
 		if t.wide {
@@ -62,6 +63,8 @@ func (t *TablePrinter) render() {
 			}
 			fmt.Println(row[0])
 		}
+		t.shortData = [][]string{}
+		t.wideData = [][]string{}
 	}
 }
 func (t *TablePrinter) addShortData(row []string, data interface{}) {
