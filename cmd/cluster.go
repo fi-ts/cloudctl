@@ -8,6 +8,7 @@ import (
 	output "git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
 	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
 	g "git.f-i-ts.de/cloud-native/cloudctl/pkg/gardener"
+	metalgo "github.com/metal-pod/metal-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -71,6 +72,7 @@ func init() {
 	clusterCreateCmd.Flags().StringP("description", "", "", "description of the cluster. [required]")
 	clusterCreateCmd.Flags().StringP("purpose", "", "production", "purpose of the cluster, can be one of production|dev|eval.")
 	clusterCreateCmd.Flags().StringP("owner", "", "", "owner of the cluster. [required]")
+	clusterCreateCmd.Flags().StringP("project", "", "", "project where this cluster should belong to. [required]")
 	clusterCreateCmd.Flags().StringP("partition", "", "nbg-w8101", "partition of the cluster. [required]")
 	clusterCreateCmd.Flags().StringP("version", "", "1.14.3", "kubernetes version of the cluster. [required]")
 	clusterCreateCmd.Flags().IntP("minsize", "", 1, "minimal workers of the cluster.")
@@ -85,6 +87,7 @@ func init() {
 	clusterCreateCmd.MarkFlagRequired("description")
 	clusterCreateCmd.MarkFlagRequired("owner")
 	clusterCreateCmd.MarkFlagRequired("partition")
+	clusterCreateCmd.MarkFlagRequired("project")
 
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
@@ -106,8 +109,28 @@ func clusterCreate() error {
 	desc := viper.GetString("description")
 	purpose := viper.GetString("purpose")
 	partition := viper.GetString("partition")
+	project := viper.GetString("project")
 	// FIXME helper and validation
 	networks := viper.GetStringSlice("external-networks")
+
+	nar := metalgo.NetworkAcquireRequest{
+		Description: desc,
+		Name:        "",
+		PartitionID: partition,
+		ProjectID:   project,
+		// Labels map[string]string `json:"labels"`
+	}
+	nw, err := metal.NetworkAcquire(&nar)
+	if err != nil {
+		return err
+	}
+
+	nodeNetwork := nw.Network
+
+	if len(nodeNetwork.Prefixes) != 1 {
+		return fmt.Errorf("node network creation failed, no or more than one entry for prefixes was/were acquired.")
+	}
+
 	scr := &api.ShootCreateRequest{
 		CreatedBy:            owner, // FIXME from token
 		Tenant:               owner, // FIXME from token
@@ -145,8 +168,9 @@ func clusterCreate() error {
 				End:   "233000+0100",
 			},
 		},
-		Networks: networks,
-		Zones:    []string{partition},
+		NodeNetwork:        nodeNetwork.Prefixes[0],
+		AdditionalNetworks: networks,
+		Zones:              []string{partition},
 	}
 
 	shoot, err := gardener.CreateShoot(scr)
@@ -174,6 +198,9 @@ func clusterCredentials(args []string) error {
 
 func clusterDelete(args []string) error {
 	shoot, err := gardener.GetShoot(args[0])
+	if err != nil {
+		return err
+	}
 	printer.Print(shoot)
 	helper.Prompt("Press Enter to delete above cluster.")
 	shoot, err = gardener.DeleteShoot(args[0])

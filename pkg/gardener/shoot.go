@@ -111,8 +111,7 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 	maxSurge := intstr.FromInt(scr.Workers[0].MaxSurge)
 	maxUnavailable := intstr.FromInt(scr.Workers[0].MaxUnavailable)
 
-	// FIXME
-	nodesCIDR := gardencorev1alpha1.CIDR("10.250.0.0/16")
+	nodesCIDR := gardencorev1alpha1.CIDR(scr.NodeNetwork)
 	podsCIDR := gardencorev1alpha1.CIDR("10.242.0.0/16")
 	servicesCIDR := gardencorev1alpha1.CIDR("10.243.0.0/16")
 
@@ -125,7 +124,7 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 	}
 
 	networks := []string{}
-	for _, nw := range scr.Networks {
+	for _, nw := range scr.AdditionalNetworks {
 		nwOfPartition, ok := pkg.NetworksOfPartition[partition]
 		if !ok {
 			continue

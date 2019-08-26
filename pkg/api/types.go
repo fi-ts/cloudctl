@@ -43,8 +43,10 @@ type (
 		FirewallImage string
 		// FirewallSize is the size of the firewall machine
 		FirewallSize string
-		// Networks holds information about the Kubernetes and infrastructure networks.
-		Networks []string
+		// NodeNetwork is the network cidr where all machines/nodes will have their private network
+		NodeNetwork string
+		// AdditionalNetworks holds information about the Kubernetes and infrastructure networks except Nodenetwork.
+		AdditionalNetworks []string
 		// Workers is a list of worker groups.
 		Workers []Worker
 		// Zones is a list of availability zones to deploy the Shoot cluster to.
