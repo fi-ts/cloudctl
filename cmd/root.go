@@ -61,6 +61,8 @@ func init() {
 	rootCmd.PersistentFlags().StringP("output-format", "o", "table", "output format (table|wide|markdown|json|yaml|template), wide is a table with more columns.")
 	rootCmd.AddCommand(clusterCmd)
 	rootCmd.AddCommand(updateCmd)
+	rootCmd.AddCommand(loginCmd)
+	rootCmd.AddCommand(whoamiCmd)
 
 	err := viper.BindPFlags(rootCmd.PersistentFlags())
 	if err != nil {
