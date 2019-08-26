@@ -28,7 +28,7 @@ func (g *Gardener) ShootCredentials(uid string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	secret, err := g.k8sclient.CoreV1().Secrets(shoot.GetNamespace()).Get(shoot.Name+".kubeconfig", metav1.GetOptions{})
+	secret, err := g.kclient.CoreV1().Secrets(shoot.GetNamespace()).Get(shoot.Name+".kubeconfig", metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -53,13 +53,13 @@ func (g *Gardener) DeleteShoot(uid string) (*gardenv1beta1.Shoot, error) {
 	if err != nil {
 		return shoot, err
 	}
-	err = g.client.GardenV1beta1().Shoots(shoot.GetNamespace()).Delete(shoot.Name, &metav1.DeleteOptions{})
+	err = g.gclient.GardenV1beta1().Shoots(shoot.GetNamespace()).Delete(shoot.Name, &metav1.DeleteOptions{})
 	return shoot, err
 }
 
 // GetShoot shot with uid
 func (g *Gardener) GetShoot(uid string) (*gardenv1beta1.Shoot, error) {
-	shoots, err := g.client.GardenV1beta1().Shoots("").List(metav1.ListOptions{})
+	shoots, err := g.gclient.GardenV1beta1().Shoots("").List(metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (g *Gardener) GetShoot(uid string) (*gardenv1beta1.Shoot, error) {
 
 // ListShoots list all shoots
 func (g *Gardener) ListShoots() ([]gardenv1beta1.Shoot, error) {
-	shootList, err := g.client.GardenV1beta1().Shoots("").List(metav1.ListOptions{})
+	shootList, err := g.gclient.GardenV1beta1().Shoots("").List(metav1.ListOptions{})
 	if err != nil {
 		fmt.Printf("Error listing shoots: %v", err)
 		return nil, err
@@ -99,7 +99,7 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 		return nil, err
 	}
 
-	project, err := g.client.GardenV1beta1().Projects().Get(p.GetName(), metav1.GetOptions{})
+	project, err := g.gclient.GardenV1beta1().Projects().Get(p.GetName(), metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +215,7 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 		},
 	}
 
-	return g.client.GardenV1beta1().Shoots(*project.Spec.Namespace).Create(shoot)
+	return g.gclient.GardenV1beta1().Shoots(*project.Spec.Namespace).Create(shoot)
 	// 	apiVersion: garden.sapcloud.io/v1beta1
 	// kind: Shoot
 	// metadata:
@@ -304,7 +304,7 @@ func (g *Gardener) mergePatch(oldShoot, newShoot *gardenv1beta1.Shoot) error {
 		return fmt.Errorf("failed to patch bytes")
 	}
 
-	_, err = g.client.GardenV1beta1().Shoots(oldShoot.GetNamespace()).Patch(oldShoot.Name, types.StrategicMergePatchType, patchBytes)
+	_, err = g.gclient.GardenV1beta1().Shoots(oldShoot.GetNamespace()).Patch(oldShoot.Name, types.StrategicMergePatchType, patchBytes)
 	return err
 }
 

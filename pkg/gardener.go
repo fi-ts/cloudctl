@@ -47,5 +47,5 @@ func NewGardener(kubeconfig string) (*Gardener, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Gardener{client: gclientset, k8sclient: k8sclientset}, nil
+	return &Gardener{gclient: gclientset, kclient: k8sclientset}, nil
 }

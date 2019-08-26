@@ -49,7 +49,7 @@ func (g *Gardener) CreateProject(owner string) (*gardenv1beta1.Project, error) {
 			Members:   members,
 		},
 	}
-	project, err := g.client.GardenV1beta1().Projects().Create(p)
+	project, err := g.gclient.GardenV1beta1().Projects().Create(p)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (g *Gardener) CreateSecretBinding(project *gardenv1beta1.Project, partition
 
 	// FIXME this must be implemented with a Watcher until Namespace is set in the project.
 	for namespace == "" {
-		p, err := g.client.GardenV1beta1().Projects().Get(project.GetName(), metav1.GetOptions{})
+		p, err := g.gclient.GardenV1beta1().Projects().Get(project.GetName(), metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -94,7 +94,7 @@ func (g *Gardener) CreateSecretBinding(project *gardenv1beta1.Project, partition
 			Namespace: "garden",
 		},
 	}
-	secretBinding, err := g.client.GardenV1beta1().SecretBindings(namespace).Create(sb)
+	secretBinding, err := g.gclient.GardenV1beta1().SecretBindings(namespace).Create(sb)
 	if err != nil {
 		return nil, err
 	}
