@@ -19,8 +19,8 @@ import (
 
 // Gardener provides gardener functions
 type Gardener struct {
-	client    *garden.Clientset
-	k8sclient *kubernetes.Clientset
+	gclient *garden.Clientset
+	kclient *kubernetes.Clientset
 }
 
 // NewGardener create a new Gardener struct from a kubeconfig
