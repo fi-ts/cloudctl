@@ -1,7 +1,8 @@
-package pkg
+package gardener
 
 import (
 	"time"
+	"git.f-i-ts.de/cloud-native/cloudctl/pkg"
 
 	gardenv1beta1 "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -90,7 +91,7 @@ func (g *Gardener) CreateSecretBinding(project *gardenv1beta1.Project, partition
 			Labels:    map[string]string{"cloudprofile.garden.sapcloud.io/name": "metal"},
 		},
 		SecretRef: corev1.SecretReference{
-			Name:      secretReferenceOfPartition[partition],
+			Name:      pkg.SecretReferenceOfPartition[partition],
 			Namespace: "garden",
 		},
 	}

@@ -6,8 +6,8 @@ import (
 
 	"git.f-i-ts.de/cloud-native/cloudctl/cmd/helper"
 	output "git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
-	"git.f-i-ts.de/cloud-native/cloudctl/pkg"
 	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
+	g "git.f-i-ts.de/cloud-native/cloudctl/pkg/gardener"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -95,7 +95,7 @@ func init() {
 
 func initGardener() {
 	var err error
-	gardener, err = pkg.NewGardener(kubeconfig)
+	gardener, err = g.NewGardener(kubeconfig)
 	if err != nil {
 		log.Fatal(err)
 	}

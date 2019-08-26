@@ -1,4 +1,4 @@
-package pkg
+package gardener
 
 import (
 	"fmt"
@@ -11,10 +11,10 @@ import (
 	gardencorev1alpha1 "github.com/gardener/gardener/pkg/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"git.f-i-ts.de/cloud-native/cloudctl/pkg"
+	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
 	gardenv1beta1 "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-
-	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
@@ -126,7 +126,7 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 
 	networks := []string{}
 	for _, nw := range scr.Networks {
-		nwOfPartition, ok := networksOfPartition[partition]
+		nwOfPartition, ok := pkg.NetworksOfPartition[partition]
 		if !ok {
 			continue
 		}

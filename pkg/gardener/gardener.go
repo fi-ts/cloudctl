@@ -1,4 +1,4 @@
-package pkg
+package gardener
 
 import (
 	"k8s.io/client-go/kubernetes"

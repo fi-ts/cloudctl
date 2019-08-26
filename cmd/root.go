@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	output "git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
-	"git.f-i-ts.de/cloud-native/cloudctl/pkg"
+	g "git.f-i-ts.de/cloud-native/cloudctl/pkg/gardener"
 	"github.com/metal-pod/v"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -21,7 +21,7 @@ const (
 
 var (
 	kubeconfig string
-	gardener   *pkg.Gardener
+	gardener   *g.Gardener
 	printer    output.Printer
 	// will bind all viper flags to subcommands and
 	// prevent overwrite of identical flag names from other commands
