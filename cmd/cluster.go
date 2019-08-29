@@ -106,6 +106,7 @@ func initGardener() {
 
 func clusterCreate() error {
 	owner := viper.GetString("owner")
+	name := viper.GetString("name")
 	desc := viper.GetString("description")
 	purpose := viper.GetString("purpose")
 	partition := viper.GetString("partition")
@@ -115,7 +116,7 @@ func clusterCreate() error {
 
 	nar := metalgo.NetworkAcquireRequest{
 		Description: desc,
-		Name:        "",
+		Name:        name,
 		PartitionID: partition,
 		ProjectID:   project,
 		// Labels map[string]string `json:"labels"`
@@ -135,7 +136,8 @@ func clusterCreate() error {
 		CreatedBy:            owner, // FIXME from token
 		Tenant:               owner, // FIXME from token
 		Owner:                owner,
-		Name:                 viper.GetString("name"),
+		ProjectID:            project,
+		Name:                 name,
 		Description:          &desc,
 		Purpose:              &purpose,
 		LoadBalancerProvider: api.DefaultLoadBalancerProvider,

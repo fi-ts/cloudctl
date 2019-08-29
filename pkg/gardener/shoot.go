@@ -115,6 +115,9 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 	podsCIDR := gardencorev1alpha1.CIDR("10.242.0.0/16")
 	servicesCIDR := gardencorev1alpha1.CIDR("10.243.0.0/16")
 
+	// TODO: This has to be calculated from the node network and not statically set.
+	nodeCidrMaskSize := 22
+
 	// FIXME helper method
 	region := strings.Split(partition, "-")[0]
 
@@ -165,8 +168,9 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 					Name: sb.Name,
 				},
 				Metal: &gardenv1beta1.MetalCloud{
+					ProjectID:            scr.ProjectID,
 					LoadBalancerProvider: scr.LoadBalancerProvider,
-					MachineImage: &gardenv1beta1.MachineImage{
+					MachineImage: &gardenv1beta1.ShootMachineImage{
 						Name:    scr.MachineImage.Name,
 						Version: scr.MachineImage.Version,
 					},
@@ -200,6 +204,9 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 			Kubernetes: gardenv1beta1.Kubernetes{
 				AllowPrivilegedContainers: &scr.Kubernetes.AllowPrivilegedContainers,
 				Version:                   scr.Kubernetes.Version,
+				KubeControllerManager: &gardenv1beta1.KubeControllerManagerConfig{
+					NodeCIDRMaskSize: &nodeCidrMaskSize,
+				},
 			},
 			Maintenance: &gardenv1beta1.Maintenance{
 				AutoUpdate: &gardenv1beta1.MaintenanceAutoUpdate{

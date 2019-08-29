@@ -73,27 +73,6 @@ func init() {
 	if err != nil {
 		log.Fatalf("error setup root cmd:%v", err)
 	}
-
-	driverURL := viper.GetString("url")
-	apiToken := viper.GetString("apitoken")
-	hmacKey := viper.GetString("hmac")
-
-	// if there is no api token explicitly specified we try to pull it out of
-	// the kubeconfig context
-	if apiToken == "" {
-		kubeconfig := viper.GetString("kubeconfig")
-		authContext, err := auth.CurrentAuthContext(kubeconfig)
-		// if there is an error, no kubeconfig exists for us ... this is not really an error
-		// if metalctl is used in scripting with an hmac-key
-		if err == nil {
-			apiToken = authContext.IDToken
-		}
-	}
-
-	metal, err = m.New(driverURL, apiToken, hmacKey)
-	if err != nil {
-		log.Fatalf("error setup root cmd:%v", err)
-	}
 }
 
 func initConfig() {
@@ -123,6 +102,28 @@ func initConfig() {
 	}
 
 	kubeconfig = viper.GetString("kubeconfig")
+
+	driverURL := viper.GetString("url")
+	apiToken := viper.GetString("apitoken")
+	hmacKey := viper.GetString("hmac")
+
+	// if there is no api token explicitly specified we try to pull it out of
+	// the kubeconfig context
+	if apiToken == "" {
+		kubeconfig := viper.GetString("kubeconfig")
+		authContext, err := auth.CurrentAuthContext(kubeconfig)
+		// if there is an error, no kubeconfig exists for us ... this is not really an error
+		// if metalctl is used in scripting with an hmac-key
+		if err == nil {
+			apiToken = authContext.IDToken
+		}
+	}
+
+	var err error
+	metal, err = m.New(driverURL, apiToken, hmacKey)
+	if err != nil {
+		log.Fatalf("error setup root cmd:%v", err)
+	}
 }
 
 func initPrinter() {
