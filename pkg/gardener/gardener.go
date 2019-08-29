@@ -1,4 +1,4 @@
-package pkg
+package gardener
 
 import (
 	"k8s.io/client-go/kubernetes"
@@ -19,8 +19,8 @@ import (
 
 // Gardener provides gardener functions
 type Gardener struct {
-	client    *garden.Clientset
-	k8sclient *kubernetes.Clientset
+	gclient *garden.Clientset
+	kclient *kubernetes.Clientset
 }
 
 // NewGardener create a new Gardener struct from a kubeconfig
@@ -47,5 +47,5 @@ func NewGardener(kubeconfig string) (*Gardener, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Gardener{client: gclientset, k8sclient: k8sclientset}, nil
+	return &Gardener{gclient: gclientset, kclient: k8sclientset}, nil
 }

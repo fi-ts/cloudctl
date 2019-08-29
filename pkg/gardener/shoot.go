@@ -1,4 +1,4 @@
-package pkg
+package gardener
 
 import (
 	"fmt"
@@ -11,10 +11,10 @@ import (
 	gardencorev1alpha1 "github.com/gardener/gardener/pkg/apis/core/v1alpha1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	"git.f-i-ts.de/cloud-native/cloudctl/pkg"
+	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
 	gardenv1beta1 "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-
-	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
@@ -28,7 +28,7 @@ func (g *Gardener) ShootCredentials(uid string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	secret, err := g.k8sclient.CoreV1().Secrets(shoot.GetNamespace()).Get(shoot.Name+".kubeconfig", metav1.GetOptions{})
+	secret, err := g.kclient.CoreV1().Secrets(shoot.GetNamespace()).Get(shoot.Name+".kubeconfig", metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -53,13 +53,13 @@ func (g *Gardener) DeleteShoot(uid string) (*gardenv1beta1.Shoot, error) {
 	if err != nil {
 		return shoot, err
 	}
-	err = g.client.GardenV1beta1().Shoots(shoot.GetNamespace()).Delete(shoot.Name, &metav1.DeleteOptions{})
+	err = g.gclient.GardenV1beta1().Shoots(shoot.GetNamespace()).Delete(shoot.Name, &metav1.DeleteOptions{})
 	return shoot, err
 }
 
 // GetShoot shot with uid
 func (g *Gardener) GetShoot(uid string) (*gardenv1beta1.Shoot, error) {
-	shoots, err := g.client.GardenV1beta1().Shoots("").List(metav1.ListOptions{})
+	shoots, err := g.gclient.GardenV1beta1().Shoots("").List(metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (g *Gardener) GetShoot(uid string) (*gardenv1beta1.Shoot, error) {
 
 // ListShoots list all shoots
 func (g *Gardener) ListShoots() ([]gardenv1beta1.Shoot, error) {
-	shootList, err := g.client.GardenV1beta1().Shoots("").List(metav1.ListOptions{})
+	shootList, err := g.gclient.GardenV1beta1().Shoots("").List(metav1.ListOptions{})
 	if err != nil {
 		fmt.Printf("Error listing shoots: %v", err)
 		return nil, err
@@ -99,7 +99,7 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 		return nil, err
 	}
 
-	project, err := g.client.GardenV1beta1().Projects().Get(p.GetName(), metav1.GetOptions{})
+	project, err := g.gclient.GardenV1beta1().Projects().Get(p.GetName(), metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -111,10 +111,12 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 	maxSurge := intstr.FromInt(scr.Workers[0].MaxSurge)
 	maxUnavailable := intstr.FromInt(scr.Workers[0].MaxUnavailable)
 
-	// FIXME
-	nodesCIDR := gardencorev1alpha1.CIDR("10.250.0.0/16")
+	nodesCIDR := gardencorev1alpha1.CIDR(scr.NodeNetwork)
 	podsCIDR := gardencorev1alpha1.CIDR("10.242.0.0/16")
 	servicesCIDR := gardencorev1alpha1.CIDR("10.243.0.0/16")
+
+	// TODO: This has to be calculated from the node network and not statically set.
+	nodeCidrMaskSize := 22
 
 	// FIXME helper method
 	region := strings.Split(partition, "-")[0]
@@ -125,8 +127,8 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 	}
 
 	networks := []string{}
-	for _, nw := range scr.Networks {
-		nwOfPartition, ok := networksOfPartition[partition]
+	for _, nw := range scr.AdditionalNetworks {
+		nwOfPartition, ok := pkg.NetworksOfPartition[partition]
 		if !ok {
 			continue
 		}
@@ -166,8 +168,9 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 					Name: sb.Name,
 				},
 				Metal: &gardenv1beta1.MetalCloud{
+					ProjectID:            scr.ProjectID,
 					LoadBalancerProvider: scr.LoadBalancerProvider,
-					MachineImage: &gardenv1beta1.MachineImage{
+					MachineImage: &gardenv1beta1.ShootMachineImage{
 						Name:    scr.MachineImage.Name,
 						Version: scr.MachineImage.Version,
 					},
@@ -201,6 +204,9 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 			Kubernetes: gardenv1beta1.Kubernetes{
 				AllowPrivilegedContainers: &scr.Kubernetes.AllowPrivilegedContainers,
 				Version:                   scr.Kubernetes.Version,
+				KubeControllerManager: &gardenv1beta1.KubeControllerManagerConfig{
+					NodeCIDRMaskSize: &nodeCidrMaskSize,
+				},
 			},
 			Maintenance: &gardenv1beta1.Maintenance{
 				AutoUpdate: &gardenv1beta1.MaintenanceAutoUpdate{
@@ -215,7 +221,7 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 		},
 	}
 
-	return g.client.GardenV1beta1().Shoots(*project.Spec.Namespace).Create(shoot)
+	return g.gclient.GardenV1beta1().Shoots(*project.Spec.Namespace).Create(shoot)
 	// 	apiVersion: garden.sapcloud.io/v1beta1
 	// kind: Shoot
 	// metadata:
@@ -304,7 +310,7 @@ func (g *Gardener) mergePatch(oldShoot, newShoot *gardenv1beta1.Shoot) error {
 		return fmt.Errorf("failed to patch bytes")
 	}
 
-	_, err = g.client.GardenV1beta1().Shoots(oldShoot.GetNamespace()).Patch(oldShoot.Name, types.StrategicMergePatchType, patchBytes)
+	_, err = g.gclient.GardenV1beta1().Shoots(oldShoot.GetNamespace()).Patch(oldShoot.Name, types.StrategicMergePatchType, patchBytes)
 	return err
 }
 

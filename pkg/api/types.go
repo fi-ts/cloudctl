@@ -1,7 +1,7 @@
 package api
 
 var (
-	DefaultMachineImage = MachineImage{Name: "metal", Version: "ubuntu-19.04"}
+	DefaultMachineImage = MachineImage{Name: "ubuntu", Version: "19.04"}
 )
 
 const (
@@ -24,6 +24,8 @@ type (
 		// CreatedBy is a subject representing a user name, an email address, or any other identifier of a user
 		// who created the project.
 		CreatedBy string
+		// ProjectID is the metal projec in which the shoot will be placed
+		ProjectID string
 		// Owner is a subject representing a user name, an email address, or any other identifier of a user owning
 		// the project.
 		Owner string
@@ -43,8 +45,10 @@ type (
 		FirewallImage string
 		// FirewallSize is the size of the firewall machine
 		FirewallSize string
-		// Networks holds information about the Kubernetes and infrastructure networks.
-		Networks []string
+		// NodeNetwork is the network cidr where all machines/nodes will have their private network
+		NodeNetwork string
+		// AdditionalNetworks holds information about the Kubernetes and infrastructure networks except Nodenetwork.
+		AdditionalNetworks []string
 		// Workers is a list of worker groups.
 		Workers []Worker
 		// Zones is a list of availability zones to deploy the Shoot cluster to.
