@@ -41,7 +41,7 @@ func (s ShootTablePrinter) Print(data []v1beta1.Shoot) {
 		}
 
 		created := shoot.ObjectMeta.CreationTimestamp.Time
-		age := helper.HumanizeDuration(time.Now().Sub(created))
+		age := helper.HumanizeDuration(time.Since(created))
 		operation := ""
 		progress := "0%"
 		if shoot.Status.LastOperation != nil {
