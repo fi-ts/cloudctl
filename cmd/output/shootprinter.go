@@ -46,7 +46,7 @@ func (s ShootTablePrinter) Print(data []v1beta1.Shoot) {
 		progress := "0%"
 		if shoot.Status.LastOperation != nil {
 			operation = string(shoot.Status.LastOperation.State)
-			progress = fmt.Sprintf("%d%%", shoot.Status.LastOperation.Progress)
+			progress = fmt.Sprintf("%d%% [%s]", shoot.Status.LastOperation.Progress, shoot.Status.LastOperation.Type)
 		}
 		seed := ""
 		if shoot.Spec.Cloud.Seed != nil {

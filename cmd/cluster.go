@@ -6,6 +6,7 @@ import (
 
 	"git.f-i-ts.de/cloud-native/cloudctl/cmd/helper"
 	output "git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
+	"git.f-i-ts.de/cloud-native/cloudctl/pkg"
 	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
 	g "git.f-i-ts.de/cloud-native/cloudctl/pkg/gardener"
 	metalgo "github.com/metal-pod/metal-go"
@@ -129,7 +130,7 @@ func clusterCreate() error {
 	nodeNetwork := nw.Network
 
 	if len(nodeNetwork.Prefixes) != 1 {
-		return fmt.Errorf("node network creation failed, no or more than one entry for prefixes was/were acquired.")
+		return fmt.Errorf("node network creation failed, no or more than one entry for prefixes was/were acquired")
 	}
 
 	scr := &api.ShootCreateRequest{
@@ -143,11 +144,11 @@ func clusterCreate() error {
 		LoadBalancerProvider: api.DefaultLoadBalancerProvider,
 		MachineImage:         api.DefaultMachineImage,
 		FirewallImage:        api.DefaultFirewallImage,
-		FirewallSize:         api.DefaultFirewallSize,
+		FirewallSize:         pkg.DefaultMachineTypesOfPartition[partition]["firewall"],
 		Workers: []api.Worker{
 			{
 				Name:           "default-worker",
-				MachineType:    api.DefaultMachineType,
+				MachineType:    pkg.DefaultMachineTypesOfPartition[partition]["worker"],
 				AutoScalerMin:  viper.GetInt("minsize"),
 				AutoScalerMax:  viper.GetInt("maxsize"),
 				MaxSurge:       viper.GetInt("maxsurge"),
@@ -190,7 +191,11 @@ func clusterList() error {
 	return printer.Print(shoots)
 }
 func clusterCredentials(args []string) error {
-	credentials, err := gardener.ShootCredentials(args[0])
+	ci, err := clusterID("credentials", args)
+	if err != nil {
+		return err
+	}
+	credentials, err := gardener.ShootCredentials(ci)
 	if err != nil {
 		return err
 	}
@@ -199,7 +204,11 @@ func clusterCredentials(args []string) error {
 }
 
 func clusterDelete(args []string) error {
-	shoot, err := gardener.GetShoot(args[0])
+	ci, err := clusterID("delete", args)
+	if err != nil {
+		return err
+	}
+	shoot, err := gardener.GetShoot(ci)
 	if err != nil {
 		return err
 	}
@@ -212,9 +221,23 @@ func clusterDelete(args []string) error {
 	return printer.Print(shoot)
 }
 func clusterDescribe(args []string) error {
-	shoot, err := gardener.GetShoot(args[0])
+	ci, err := clusterID("describe", args)
+	if err != nil {
+		return err
+	}
+	shoot, err := gardener.GetShoot(ci)
 	if err != nil {
 		return err
 	}
 	return output.YAMLPrinter{}.Print(shoot)
+}
+
+func clusterID(verb string, args []string) (string, error) {
+	if len(args) == 0 {
+		return "", fmt.Errorf("cluster %s requires clusterID as argument", verb)
+	}
+	if len(args) == 1 {
+		return args[0], nil
+	}
+	return "", fmt.Errorf("cluster %s requires exactly one clusterID as argument", verb)
 }

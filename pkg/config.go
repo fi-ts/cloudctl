@@ -15,4 +15,15 @@ var (
 			"internet": "internet-nbg-w8101",
 		},
 	}
+
+	DefaultMachineTypesOfPartition = map[string]map[string]string{
+		"fra-equ01": {
+			"firewall": "c1-xlarge-x86",
+			"worker":   "c1-large-x86",
+		},
+		"nbg-w8101": {
+			"firewall": "c1-xlarge-x86",
+			"worker":   "c1-xlarge-x86",
+		},
+	}
 )

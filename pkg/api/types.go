@@ -6,8 +6,6 @@ var (
 
 const (
 	DefaultFirewallImage        = "firewall-1"
-	DefaultFirewallSize         = "c1-xlarge-x86"
-	DefaultMachineType          = "c1-xlarge-x86"
 	DefaultLoadBalancerProvider = "metallb"
 	DefaultVolumeType           = "storage_1"
 	DefaultVolumeSize           = "200Gi"
