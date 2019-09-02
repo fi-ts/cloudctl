@@ -2,6 +2,12 @@
 
 Commandline client for "Kubernetes as a Service" and more!
 
+## Download from Blobstore
+
+* [cloudctl-linux-amd64](https://blobstore.fi-ts.io/metal/cloudctl/cloudctl-linux-amd64)
+* [cloudctl-darwin-amd64](https://blobstore.fi-ts.io/metal/cloudctl/cloudctl-darwin-amd64)
+* [cloudctl-windows-amd64](https://blobstore.fi-ts.io/metal/cloudctl/cloudctl-windows-amd64)
+
 ## Usage
 
 ### Login
