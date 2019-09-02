@@ -31,8 +31,9 @@ var (
 	}
 
 	clusterListCmd = &cobra.Command{
-		Use:   "list",
-		Short: "list clusters",
+		Use:     "list",
+		Short:   "list clusters",
+		Aliases: []string{"ls"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			initGardener()
 			return clusterList()
@@ -40,8 +41,9 @@ var (
 		PreRun: bindPFlags,
 	}
 	clusterDeleteCmd = &cobra.Command{
-		Use:   "delete <uid>",
-		Short: "delete a cluster",
+		Use:     "delete <uid>",
+		Short:   "delete a cluster",
+		Aliases: []string{"rm"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			initGardener()
 			return clusterDelete(args)

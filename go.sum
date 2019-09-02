@@ -10,6 +10,7 @@ git.apache.org/thrift.git v0.0.0-20180902110319-2566ecd5d999/go.mod h1:fPE2ZNJGy
 git.apache.org/thrift.git v0.12.0/go.mod h1:fPE2ZNJGynbRyZ4dJvy6G277gSllfV2HJqblrnkyeyg=
 git.f-i-ts.de/cloud-native/metallib v0.0.0-20190701111916-6ee4d6ba0799 h1:7+JGF2kTX2X38H9nysg9CjLyBI9MXQlZivZuMif51Cs=
 git.f-i-ts.de/cloud-native/metallib v0.0.0-20190701111916-6ee4d6ba0799/go.mod h1:+PsWA2DAJZLyyNcQM2K2nZkCPQa1F9NyUneR9ndlcMg=
+git.f-i-ts.de/cloud-native/metallib v0.0.0-20190902112911-ed799ee987fc h1:1hJvH9/JhQr5ln5KqC0e+NROD9zxajlL4oc1wr+JF8Y=
 git.f-i-ts.de/cloud-native/metallib v0.0.0-20190902112911-ed799ee987fc/go.mod h1:+PsWA2DAJZLyyNcQM2K2nZkCPQa1F9NyUneR9ndlcMg=
 github.com/Azure/azure-pipeline-go v0.2.1/go.mod h1:UGSo8XybXnIGZ3epmeBw7Jdz+HiUVpqIlpz/HKHylF4=
 github.com/Azure/azure-pipeline-go v0.2.2/go.mod h1:4rQ/NZncSvGqNkkOsNpOU1tgoNuIlp9AfUH5G1tvCHc=
