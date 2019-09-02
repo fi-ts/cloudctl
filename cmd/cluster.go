@@ -6,6 +6,7 @@ import (
 
 	"git.f-i-ts.de/cloud-native/cloudctl/cmd/helper"
 	output "git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
+	"git.f-i-ts.de/cloud-native/cloudctl/pkg"
 	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
 	g "git.f-i-ts.de/cloud-native/cloudctl/pkg/gardener"
 	metalgo "github.com/metal-pod/metal-go"
@@ -129,7 +130,7 @@ func clusterCreate() error {
 	nodeNetwork := nw.Network
 
 	if len(nodeNetwork.Prefixes) != 1 {
-		return fmt.Errorf("node network creation failed, no or more than one entry for prefixes was/were acquired.")
+		return fmt.Errorf("node network creation failed, no or more than one entry for prefixes was/were acquired")
 	}
 
 	scr := &api.ShootCreateRequest{
@@ -143,11 +144,11 @@ func clusterCreate() error {
 		LoadBalancerProvider: api.DefaultLoadBalancerProvider,
 		MachineImage:         api.DefaultMachineImage,
 		FirewallImage:        api.DefaultFirewallImage,
-		FirewallSize:         api.DefaultFirewallSize,
+		FirewallSize:         pkg.DefaultMachineTypesOfPartition[partition]["firewall"],
 		Workers: []api.Worker{
 			{
 				Name:           "default-worker",
-				MachineType:    api.DefaultMachineType,
+				MachineType:    pkg.DefaultMachineTypesOfPartition[partition]["worker"],
 				AutoScalerMin:  viper.GetInt("minsize"),
 				AutoScalerMax:  viper.GetInt("maxsize"),
 				MaxSurge:       viper.GetInt("maxsurge"),
