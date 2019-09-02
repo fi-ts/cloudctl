@@ -112,7 +112,7 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 	maxUnavailable := intstr.FromInt(scr.Workers[0].MaxUnavailable)
 
 	nodesCIDR := gardencorev1alpha1.CIDR(scr.NodeNetwork)
-	podsCIDR := gardencorev1alpha1.CIDR("10.242.0.0/16")
+	podsCIDR := gardencorev1alpha1.CIDR("10.244.0.0/16") // in this network the pods can peer with free
 	servicesCIDR := gardencorev1alpha1.CIDR("10.243.0.0/16")
 
 	// TODO: This has to be calculated from the node network and not statically set.
