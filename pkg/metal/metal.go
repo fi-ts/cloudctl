@@ -23,3 +23,11 @@ func New(url, apiToken, hmacKey string) (*Metal, error) {
 func (m *Metal) NetworkAcquire(nar *metalgo.NetworkAcquireRequest) (*metalgo.NetworkDetailResponse, error) {
 	return m.mclient.NetworkAcquire(nar)
 }
+
+func (m *Metal) ProjectList() (*metalgo.ProjectListResponse, error) {
+	return m.mclient.ProjectList()
+}
+
+func (m *Metal) ProjectCreate(pcr metalgo.ProjectCreateRequest) (*metalgo.ProjectCreateResponse, error) {
+	return m.mclient.ProjectCreate(pcr)
+}

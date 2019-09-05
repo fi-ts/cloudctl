@@ -1,0 +1,26 @@
+package output
+
+import (
+	"github.com/metal-pod/metal-go/api/models"
+)
+
+type (
+	// ProjectTablePrinter print a Project in a Table
+	ProjectTablePrinter struct {
+		TablePrinter
+	}
+)
+
+// Print a Project as table
+func (p ProjectTablePrinter) Print(data []*models.V1ProjectResponse) {
+	p.wideHeader = []string{"UID", "Name", "Description"}
+	p.shortHeader = p.wideHeader
+
+	for _, pr := range data {
+		wide := []string{*pr.ID, pr.Name, pr.Description}
+
+		p.addWideData(wide, pr)
+		p.addShortData(wide, pr)
+	}
+	p.render()
+}

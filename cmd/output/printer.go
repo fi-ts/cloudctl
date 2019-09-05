@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/gardener/gardener/pkg/apis/garden/v1beta1"
+	"github.com/metal-pod/metal-go/api/models"
 	"github.com/olekukonko/tablewriter"
 	"gopkg.in/yaml.v2"
 )
@@ -167,6 +168,10 @@ func (t TablePrinter) Print(data interface{}) error {
 		ShootTablePrinter{t}.Print([]v1beta1.Shoot{*d})
 	case []v1beta1.Shoot:
 		ShootTablePrinter{t}.Print(d)
+	case *models.V1ProjectResponse:
+		ProjectTablePrinter{t}.Print([]*models.V1ProjectResponse{d})
+	case []*models.V1ProjectResponse:
+		ProjectTablePrinter{t}.Print(d)
 	default:
 		return fmt.Errorf("unknown table printer for type: %T", d)
 	}

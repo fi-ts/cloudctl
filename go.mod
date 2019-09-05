@@ -9,7 +9,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/googleapis/gnostic v0.3.1 // indirect
 	github.com/json-iterator/go v1.1.7
-	github.com/metal-pod/metal-go v0.0.0-20190826111730-79163cab1356
+	github.com/metal-pod/metal-go v0.0.0-20190904133716-d7122fdd20c2
 	github.com/metal-pod/v v0.0.2
 	github.com/olekukonko/tablewriter v0.0.1
 	github.com/pkg/errors v0.8.1

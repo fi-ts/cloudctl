@@ -68,6 +68,7 @@ func init() {
 	rootCmd.AddCommand(updateCmd)
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(whoamiCmd)
+	rootCmd.AddCommand(projectCmd)
 
 	err := viper.BindPFlags(rootCmd.PersistentFlags())
 	if err != nil {
