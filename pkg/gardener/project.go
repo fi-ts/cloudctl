@@ -2,6 +2,7 @@ package gardener
 
 import (
 	"time"
+
 	"git.f-i-ts.de/cloud-native/cloudctl/pkg"
 
 	gardenv1beta1 "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
@@ -42,7 +43,7 @@ func (g *Gardener) CreateProject(owner string) (*gardenv1beta1.Project, error) {
 
 	p := &gardenv1beta1.Project{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "p-",
+			GenerateName: "",
 		},
 		Spec: gardenv1beta1.ProjectSpec{
 			CreatedBy: &c,
