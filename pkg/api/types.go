@@ -118,4 +118,10 @@ type (
 		// If not present, the value will be computed based on the "Begin" value.
 		End string
 	}
+
+	// ShootConstraints are configured in the Seed as constraint for a new Shoot
+	ShootConstraints struct {
+		KubernetesVersions []string
+		Partitions         []string
+	}
 )

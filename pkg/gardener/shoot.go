@@ -1,6 +1,7 @@
 package gardener
 
 import (
+	gojson "encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	gardenv1beta1 "github.com/gardener/gardener/pkg/apis/garden/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	types "k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 )
@@ -138,6 +140,8 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 		}
 		networks = append(networks, network)
 	}
+	// FIXME
+	tokenissuerRawConfig := []byte{}
 
 	shoot := &gardenv1beta1.Shoot{
 		ObjectMeta: metav1.ObjectMeta{
@@ -206,6 +210,15 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 				Version:                   scr.Kubernetes.Version,
 				KubeControllerManager: &gardenv1beta1.KubeControllerManagerConfig{
 					NodeCIDRMaskSize: &nodeCidrMaskSize,
+				},
+			},
+			// FIXME WIP mit Alex
+			Extensions: []gardenv1beta1.Extension{
+				{
+					Type: "tokenissuer",
+					ProviderConfig: &gardencorev1alpha1.ProviderConfig{
+						runtime.RawExtension{Raw: gojson.RawMessage(tokenissuerRawConfig)},
+					},
 				},
 			},
 			Maintenance: &gardenv1beta1.Maintenance{

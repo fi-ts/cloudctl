@@ -68,6 +68,16 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+
+	clusterInputsCmd = &cobra.Command{
+		Use:   "inputs",
+		Short: "get possible cluster inputs like k8s versions, etc.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			initGardener()
+			return clusterInputs()
+		},
+		PreRun: bindPFlags,
+	}
 )
 
 func init() {
@@ -97,6 +107,7 @@ func init() {
 	clusterCmd.AddCommand(clusterCredentialsCmd)
 	clusterCmd.AddCommand(clusterDeleteCmd)
 	clusterCmd.AddCommand(clusterDescribeCmd)
+	clusterCmd.AddCommand(clusterInputsCmd)
 }
 
 func initGardener() {
@@ -232,6 +243,20 @@ func clusterDescribe(args []string) error {
 		return err
 	}
 	return output.YAMLPrinter{}.Print(shoot)
+}
+
+type inputs struct {
+	KubernetesVersions []string
+	Partitions         []string
+}
+
+func clusterInputs() error {
+	sc, err := gardener.ShootConstraints()
+	if err != nil {
+		return err
+	}
+
+	return output.YAMLPrinter{}.Print(sc)
 }
 
 func clusterID(verb string, args []string) (string, error) {
