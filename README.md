@@ -42,3 +42,36 @@ This prepares your context "contextname" in a way, that your user credentials of
 You can assign your user to multiple clusters.
 
 This process has to be done only once. The next time you execute "cloudctl login", the token can be used for all contexts the user has been assigned to.
+
+
+## HowTo
+
+Current Scenario
+* metal-Controlplane & Garden at GKE
+* Seed-Partition fra-equ01
+* cloudclt connects directly to metal-api and garden-controlplane
+
+Currently you have to specify
+~~~~
+export CLOUDCTL_URL=https://api.metal-pod.dev/metal
+export CLOUDCTL_HMAC=ytjd...
+~~~~
+
+You must always use the kubeconfig, pointing you to the garden-controlplane.
+* Hint: you can fetch it with metal-deployment/control-plane/Makefile#fetch-kubeconfig-from-gcp
+* Hint2: be sure to first 'docker pull registry.fi-ts.io/metal/metal-deployment-base:latest' 
+
+List Clusters
+~~~~
+bin/cloudctl --kubeconfig gke-kube-config.yaml cluster list
+~~~~
+
+Create Project
+~~~~
+bin/cloudctl project create --kubeconfig gke-kube-config.yaml --name=banking
+~~~~
+
+Create Cluster
+~~~~
+bin/cloudctl cluster create --kubeconfig gke-kube-config.yaml --name=banking --owner=hans --partition=fra-equ01 --project=f4ea5de9-18fa-4df9-ad4c-61e21c57d03e --description="banking cluster for project banking next generation"
+~~~~

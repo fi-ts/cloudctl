@@ -43,7 +43,7 @@ func (g *Gardener) CreateProject(owner string) (*gardenv1beta1.Project, error) {
 
 	p := &gardenv1beta1.Project{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "",
+			GenerateName: "p",
 		},
 		Spec: gardenv1beta1.ProjectSpec{
 			CreatedBy: &c,

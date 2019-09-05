@@ -140,8 +140,16 @@ func (g *Gardener) CreateShoot(scr *api.ShootCreateRequest) (*gardenv1beta1.Shoo
 		}
 		networks = append(networks, network)
 	}
-	// FIXME
-	tokenissuerRawConfig := []byte{}
+
+	ti := &TokenIssuer{
+		IssuerUrl: "https://dex.test.fi-ts.io/dex",
+		ClientId:  "auth-go-cli",
+	}
+
+	tokenissuerRawConfig, err := json.Marshal(ti)
+	if err != nil {
+		return nil, err
+	}
 
 	shoot := &gardenv1beta1.Shoot{
 		ObjectMeta: metav1.ObjectMeta{
@@ -352,4 +360,10 @@ func createTwoWayMergePatch(obj1 metav1.Object, obj2 metav1.Object) ([]byte, err
 	dataStruct := reflect.New(dataStructType).Elem().Interface()
 
 	return strategicpatch.CreateTwoWayMergePatch(obj1Data, obj2Data, dataStruct)
+}
+
+// Data for configuration of AuthNWebhook
+type TokenIssuer struct {
+	IssuerUrl string `json:"issuerUrl" optional:"false"`
+	ClientId  string `json:"clientId" optional:"false"`
 }
