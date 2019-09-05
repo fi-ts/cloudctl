@@ -4,12 +4,12 @@ go 1.12
 
 require (
 	git.f-i-ts.de/cloud-native/metallib v0.0.0-20190902112911-ed799ee987fc
-	github.com/cheggaaa/pb/v3 v3.0.1
 	github.com/gardener/gardener v0.0.0-20190816140908-ed26a3fdf2d6
 	github.com/google/uuid v1.1.1
 	github.com/googleapis/gnostic v0.3.1 // indirect
 	github.com/json-iterator/go v1.1.7
 	github.com/metal-pod/metal-go v0.0.0-20190904133716-d7122fdd20c2
+	github.com/metal-pod/updater v0.0.0-20190905093442-85b34b88c17c
 	github.com/metal-pod/v v0.0.2
 	github.com/olekukonko/tablewriter v0.0.1
 	github.com/pkg/errors v0.8.1
