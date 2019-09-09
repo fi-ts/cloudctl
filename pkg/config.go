@@ -4,7 +4,7 @@ package pkg
 var (
 	SecretReferenceOfPartition = map[string]string{
 		"fra-equ01": "fra-equ01-seed",
-		"nbg-w8101": "seed-nbg-gardener-test-01",
+		"nbg-w8101": "nbg-w8101-seed",
 	}
 
 	NetworksOfPartition = map[string]map[string]string{
