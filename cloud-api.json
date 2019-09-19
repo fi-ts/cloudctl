@@ -16,6 +16,35 @@
   },
   "basePath": "/",
   "paths": {
+    "/healthv1/health": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "health"
+        ],
+        "summary": "perform a healtcheck",
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/rest.status"
+            }
+          },
+          "500": {
+            "description": "Unhealthy",
+            "schema": {
+              "$ref": "#/definitions/rest.status"
+            }
+          }
+        }
+      }
+    },
     "/v1/cluster": {
       "get": {
         "consumes": [
@@ -317,6 +346,44 @@
         }
       }
     },
+    "/v1/cluster/{id}/reconcile": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "summary": "trigger cluster reconcilation ",
+        "operationId": "reconcileCluster",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "identifier of the cluster",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/v1beta1.Shoot"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
     "/v1/project": {
       "get": {
         "consumes": [
@@ -594,6 +661,16 @@
           "type": "string"
         },
         "tenant": {
+          "type": "string"
+        }
+      }
+    },
+    "rest.status": {
+      "required": [
+        "message"
+      ],
+      "properties": {
+        "message": {
           "type": "string"
         }
       }
@@ -1380,9 +1457,9 @@
     },
     "v1beta1.AWSWorker": {
       "required": [
-        "name",
-        "machineType",
         "autoScalerMin",
+        "machineType",
+        "name",
         "autoScalerMax",
         "volumeType",
         "volumeSize"
@@ -1556,10 +1633,10 @@
     },
     "v1beta1.AlicloudWorker": {
       "required": [
-        "machineType",
+        "autoScalerMin",
         "autoScalerMax",
         "name",
-        "autoScalerMin",
+        "machineType",
         "volumeType",
         "volumeSize"
       ],
@@ -1699,8 +1776,8 @@
     "v1beta1.AzureWorker": {
       "required": [
         "machineType",
-        "autoScalerMin",
         "name",
+        "autoScalerMin",
         "autoScalerMax",
         "volumeType",
         "volumeSize"
@@ -1944,9 +2021,9 @@
     },
     "v1beta1.GCPWorker": {
       "required": [
-        "name",
         "autoScalerMin",
         "autoScalerMax",
+        "name",
         "machineType",
         "volumeType",
         "volumeSize"
@@ -2493,10 +2570,10 @@
     },
     "v1beta1.MetalWorker": {
       "required": [
-        "autoScalerMin",
-        "machineType",
         "autoScalerMax",
         "name",
+        "machineType",
+        "autoScalerMin",
         "volumeType",
         "volumeSize"
       ],
@@ -2735,10 +2812,10 @@
     },
     "v1beta1.OpenStackWorker": {
       "required": [
+        "name",
         "machineType",
         "autoScalerMin",
-        "autoScalerMax",
-        "name"
+        "autoScalerMax"
       ],
       "properties": {
         "annotations": {

@@ -63,6 +63,15 @@ var (
 		PreRun: bindPFlags,
 	}
 
+	clusterReconcileCmd = &cobra.Command{
+		Use:   "reconcile <uid>",
+		Short: "trigger cluster reconciliation",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return reconcileCluster(args)
+		},
+		PreRun: bindPFlags,
+	}
+
 	clusterInputsCmd = &cobra.Command{
 		Use:   "inputs",
 		Short: "get possible cluster inputs like k8s versions, etc.",
@@ -104,6 +113,7 @@ func init() {
 	clusterCmd.AddCommand(clusterDeleteCmd)
 	clusterCmd.AddCommand(clusterDescribeCmd)
 	clusterCmd.AddCommand(clusterInputsCmd)
+	clusterCmd.AddCommand(clusterReconcileCmd)
 }
 
 func clusterCreate() error {
@@ -246,6 +256,25 @@ func clusterCredentials(args []string) error {
 	}
 	fmt.Println(*credentials.Payload.Kubeconfig)
 	return nil
+}
+
+func reconcileCluster(args []string) error {
+	ci, err := clusterID("reconcile", args)
+	if err != nil {
+		return err
+	}
+	request := cluster.NewReconcileClusterParams()
+	request.SetID(ci)
+	shoot, err := cloud.Cluster.ReconcileCluster(request, cloud.Auth)
+	if err != nil {
+		switch e := err.(type) {
+		case *cluster.ReconcileClusterDefault:
+			return output.HTTPError(e.Payload)
+		default:
+			return output.UnconventionalError(err)
+		}
+	}
+	return printer.Print(shoot.Payload)
 }
 
 func clusterDelete(args []string) error {
