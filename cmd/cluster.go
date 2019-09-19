@@ -62,7 +62,14 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-
+	clusterSSHKeyPairCmd = &cobra.Command{
+		Use:   "sshkeypair <uid>",
+		Short: "get cluster sshkeypair",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterSSHKeyPair(args)
+		},
+		PreRun: bindPFlags,
+	}
 	clusterReconcileCmd = &cobra.Command{
 		Use:   "reconcile <uid>",
 		Short: "trigger cluster reconciliation",
@@ -114,6 +121,7 @@ func init() {
 	clusterCmd.AddCommand(clusterDescribeCmd)
 	clusterCmd.AddCommand(clusterInputsCmd)
 	clusterCmd.AddCommand(clusterReconcileCmd)
+	clusterCmd.AddCommand(clusterSSHKeyPairCmd)
 }
 
 func clusterCreate() error {
@@ -255,6 +263,27 @@ func clusterCredentials(args []string) error {
 		}
 	}
 	fmt.Println(*credentials.Payload.Kubeconfig)
+	return nil
+}
+
+func clusterSSHKeyPair(args []string) error {
+	ci, err := clusterID("credentials", args)
+	if err != nil {
+		return err
+	}
+	request := cluster.NewGetSSHKeyPairParams()
+	request.SetID(ci)
+	credentials, err := cloud.Cluster.GetSSHKeyPair(request, cloud.Auth)
+	if err != nil {
+		switch e := err.(type) {
+		case *cluster.GetSSHKeyPairDefault:
+			return output.HTTPError(e.Payload)
+		default:
+			return output.UnconventionalError(err)
+		}
+	}
+	fmt.Printf("private key:%s\n", *credentials.Payload.SSHKeyPair.PrivateKey)
+	fmt.Printf("public  key:%s\n", *credentials.Payload.SSHKeyPair.PublicKey)
 	return nil
 }
 
