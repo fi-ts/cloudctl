@@ -45,7 +45,7 @@ func HumanizeDuration(duration time.Duration) string {
 	return strings.Join(parts, " ")
 }
 func Prompt(msg string) {
-	fmt.Printf(msg)
+	fmt.Print(msg)
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		break

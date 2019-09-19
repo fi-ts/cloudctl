@@ -2,8 +2,10 @@ package output
 
 import (
 	"fmt"
+	"os"
 	"time"
 
+	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
 	"git.f-i-ts.de/cloud-native/cloudctl/cmd/helper"
 	"github.com/gardener/gardener/pkg/apis/garden/v1beta1"
 )
@@ -16,7 +18,7 @@ type (
 )
 
 // Print a Shoot as table
-func (s ShootTablePrinter) Print(data []v1beta1.Shoot) {
+func (s ShootTablePrinter) Print(data []*models.V1beta1Shoot) {
 	s.wideHeader = []string{"UID", "Name", "Version", "Seed", "Domain", "Operation", "Progress", "Apiserver", "Control", "Nodes", "System", "Age"}
 	s.shortHeader = s.wideHeader
 	for _, shoot := range data {
@@ -26,38 +28,46 @@ func (s ShootTablePrinter) Print(data []v1beta1.Shoot) {
 		nodes := ""
 		system := ""
 		for _, condition := range shoot.Status.Conditions {
-			status := string(condition.Status)
-			switch condition.Type {
-			case v1beta1.ShootControlPlaneHealthy:
+			status := *condition.Status
+			switch *condition.Type {
+			case string(v1beta1.ShootControlPlaneHealthy):
 				controlplane = status
-			case v1beta1.ShootEveryNodeReady:
+			case string(v1beta1.ShootEveryNodeReady):
 				nodes = status
-			case v1beta1.ShootSystemComponentsHealthy:
+			case string(v1beta1.ShootSystemComponentsHealthy):
 				system = status
-			case v1beta1.ShootAlertsInactive:
-			case v1beta1.ShootAPIServerAvailable:
+			case string(v1beta1.ShootAlertsInactive):
+			case string(v1beta1.ShootAPIServerAvailable):
 				apiserver = status
 			}
 		}
 
-		created := shoot.ObjectMeta.CreationTimestamp.Time
+		created, err := time.Parse(time.RFC3339, shoot.Metadata.CreationTimestamp)
+		if err != nil {
+			fmt.Printf("unable to parse creationtime: %v", err)
+			os.Exit(1)
+		}
 		age := helper.HumanizeDuration(time.Since(created))
 		operation := ""
 		progress := "0%"
 		if shoot.Status.LastOperation != nil {
-			operation = string(shoot.Status.LastOperation.State)
-			progress = fmt.Sprintf("%d%% [%s]", shoot.Status.LastOperation.Progress, shoot.Status.LastOperation.Type)
+			operation = *shoot.Status.LastOperation.State
+			progress = fmt.Sprintf("%d%% [%s]", *shoot.Status.LastOperation.Progress, *shoot.Status.LastOperation.Type)
 		}
 		seed := ""
-		if shoot.Spec.Cloud.Seed != nil {
-			seed = *shoot.Spec.Cloud.Seed
+		if shoot.Spec.Cloud.Seed != "" {
+			seed = shoot.Spec.Cloud.Seed
 		}
 		dnsdomain := ""
-		if shoot.Spec.DNS.Domain != nil {
-			dnsdomain = *shoot.Spec.DNS.Domain
+		if shoot.Spec.DNS.Domain != "" {
+			dnsdomain = shoot.Spec.DNS.Domain
 		}
-		wide := []string{string(shoot.UID), shoot.Name,
-			shoot.Spec.Kubernetes.Version, seed, dnsdomain,
+		version := ""
+		if shoot.Spec.Kubernetes.Version != nil {
+			version = *shoot.Spec.Kubernetes.Version
+		}
+		wide := []string{shoot.Metadata.UID, shoot.Metadata.Name,
+			version, seed, dnsdomain,
 			operation,
 			progress,
 			apiserver, controlplane, nodes, system,

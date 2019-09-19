@@ -7,8 +7,7 @@ import (
 	"strings"
 
 	output "git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
-	g "git.f-i-ts.de/cloud-native/cloudctl/pkg/gardener"
-	m "git.f-i-ts.de/cloud-native/cloudctl/pkg/metal"
+	c "git.f-i-ts.de/cloud-native/cloudctl/pkg/cloud"
 	"git.f-i-ts.de/cloud-native/metallib/auth"
 	"github.com/metal-pod/v"
 	"github.com/pkg/errors"
@@ -23,14 +22,17 @@ const (
 
 var (
 	kubeconfig string
-	gardener   *g.Gardener
-	metal      *m.Metal
+	cloud      *c.Cloud
 	printer    output.Printer
 	// will bind all viper flags to subcommands and
 	// prevent overwrite of identical flag names from other commands
 	// see https://github.com/spf13/viper/issues/233#issuecomment-386791444
 	bindPFlags = func(cmd *cobra.Command, args []string) {
-		viper.BindPFlags(cmd.Flags())
+		err := viper.BindPFlags(cmd.Flags())
+		if err != nil {
+			fmt.Printf("error during setup:%v", err)
+			os.Exit(1)
+		}
 	}
 
 	rootCmd = &cobra.Command{
@@ -46,7 +48,7 @@ var (
 	}
 )
 
-// Execute is the entrypoint of the metal-go application
+// Execute is the entrypoint of the cloudctl application
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
@@ -106,7 +108,6 @@ func initConfig() {
 
 	driverURL := viper.GetString("url")
 	apiToken := viper.GetString("apitoken")
-	hmacKey := viper.GetString("hmac")
 
 	// if there is no api token explicitly specified we try to pull it out of
 	// the kubeconfig context
@@ -121,7 +122,7 @@ func initConfig() {
 	}
 
 	var err error
-	metal, err = m.New(driverURL, apiToken, hmacKey)
+	cloud, err = c.NewCloud(driverURL, apiToken)
 	if err != nil {
 		log.Fatalf("error setup root cmd:%v", err)
 	}

@@ -7,10 +7,10 @@ import (
 	"os"
 	"text/template"
 
-	"github.com/gardener/gardener/pkg/apis/garden/v1beta1"
-	"github.com/metal-pod/metal-go/api/models"
+	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
+
 	"github.com/olekukonko/tablewriter"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 type (
@@ -105,7 +105,11 @@ func genericObject(input interface{}) map[string]interface{} {
 		os.Exit(1)
 	}
 	var result interface{}
-	json.Unmarshal(b, &result)
+	err = json.Unmarshal(b, &result)
+	if err != nil {
+		fmt.Printf("unable to unmarshal input:%v", err)
+		os.Exit(1)
+	}
 	return result.(map[string]interface{})
 
 }
@@ -164,13 +168,13 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 // Print a model in a human readable table
 func (t TablePrinter) Print(data interface{}) error {
 	switch d := data.(type) {
-	case *v1beta1.Shoot:
-		ShootTablePrinter{t}.Print([]v1beta1.Shoot{*d})
-	case []v1beta1.Shoot:
+	case *models.V1beta1Shoot:
+		ShootTablePrinter{t}.Print([]*models.V1beta1Shoot{d})
+	case []*models.V1beta1Shoot:
 		ShootTablePrinter{t}.Print(d)
-	case *models.V1ProjectResponse:
-		ProjectTablePrinter{t}.Print([]*models.V1ProjectResponse{d})
-	case []*models.V1ProjectResponse:
+	case *models.ModelsV1ProjectResponse:
+		ProjectTablePrinter{t}.Print([]*models.ModelsV1ProjectResponse{d})
+	case []*models.ModelsV1ProjectResponse:
 		ProjectTablePrinter{t}.Print(d)
 	default:
 		return fmt.Errorf("unknown table printer for type: %T", d)

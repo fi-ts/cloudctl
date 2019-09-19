@@ -5,5 +5,10 @@ SWAGGER_VERSION := $(or ${SWAGGER_VERSION},v0.19.0)
 
 include $(COMMONDIR)/Makefile.inc
 
-release:: all
+release:: generate-client all
 
+.PHONY: generate-client
+generate-client:
+	rm -rf api
+	mkdir -p api
+	GO111MODULE=off swagger generate client -f cloud-api.json -t api --skip-validation
