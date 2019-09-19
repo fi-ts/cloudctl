@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	downloadURLPrefix = "https://blobstore.fi-ts.io/cloud/" + programName + "/"
+	downloadURLPrefix = "https://blobstore.fi-ts.io/cloud-native/" + programName + "/"
 )
 
 var (
