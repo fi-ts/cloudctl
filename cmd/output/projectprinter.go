@@ -1,7 +1,7 @@
 package output
 
 import (
-	"github.com/metal-pod/metal-go/api/models"
+	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
 )
 
 type (
@@ -12,7 +12,7 @@ type (
 )
 
 // Print a Project as table
-func (p ProjectTablePrinter) Print(data []*models.V1ProjectResponse) {
+func (p ProjectTablePrinter) Print(data []*models.ModelsV1ProjectResponse) {
 	p.wideHeader = []string{"UID", "Name", "Description"}
 	p.shortHeader = p.wideHeader
 
