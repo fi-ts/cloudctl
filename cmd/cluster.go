@@ -171,11 +171,11 @@ func clusterCreate() error {
 	if err != nil {
 		switch e := err.(type) {
 		case *cluster.CreateClusterConflict:
-			output.PrintHTTPError(e.Payload)
+			return output.HTTPError(e.Payload)
 		case *cluster.CreateClusterDefault:
-			output.PrintHTTPError(e.Payload)
+			return output.HTTPError(e.Payload)
 		default:
-			output.PrintUnconventionalError(err)
+			return output.UnconventionalError(err)
 		}
 	}
 	return printer.Print(shoot.Payload)
@@ -208,9 +208,9 @@ func clusterList() error {
 		if err != nil {
 			switch e := err.(type) {
 			case *cluster.ListClustersDefault:
-				output.PrintHTTPError(e.Payload)
+				return output.HTTPError(e.Payload)
 			default:
-				output.PrintUnconventionalError(err)
+				return output.UnconventionalError(err)
 			}
 		}
 		return printer.Print(response.Payload)
@@ -221,9 +221,9 @@ func clusterList() error {
 	if err != nil {
 		switch e := err.(type) {
 		case *cluster.ListClustersDefault:
-			output.PrintHTTPError(e.Payload)
+			return output.HTTPError(e.Payload)
 		default:
-			output.PrintUnconventionalError(err)
+			return output.UnconventionalError(err)
 		}
 	}
 	return printer.Print(shoots.Payload)
@@ -239,9 +239,9 @@ func clusterCredentials(args []string) error {
 	if err != nil {
 		switch e := err.(type) {
 		case *cluster.GetClusterCredentialsDefault:
-			output.PrintHTTPError(e.Payload)
+			return output.HTTPError(e.Payload)
 		default:
-			output.PrintUnconventionalError(err)
+			return output.UnconventionalError(err)
 		}
 	}
 	fmt.Println(*credentials.Payload.Kubeconfig)
@@ -259,9 +259,9 @@ func clusterDelete(args []string) error {
 	if err != nil {
 		switch e := err.(type) {
 		case *cluster.FindClusterDefault:
-			output.PrintHTTPError(e.Payload)
+			return output.HTTPError(e.Payload)
 		default:
-			output.PrintUnconventionalError(err)
+			return output.UnconventionalError(err)
 		}
 	}
 	printer.Print(shoot)
@@ -285,9 +285,9 @@ func clusterDescribe(args []string) error {
 	if err != nil {
 		switch e := err.(type) {
 		case *cluster.FindClusterDefault:
-			output.PrintHTTPError(e.Payload)
+			return output.HTTPError(e.Payload)
 		default:
-			output.PrintUnconventionalError(err)
+			return output.UnconventionalError(err)
 		}
 	}
 	return output.YAMLPrinter{}.Print(shoot.Payload)
@@ -299,9 +299,9 @@ func clusterInputs() error {
 	if err != nil {
 		switch e := err.(type) {
 		case *cluster.ListConstraintsDefault:
-			output.PrintHTTPError(e.Payload)
+			return output.HTTPError(e.Payload)
 		default:
-			output.PrintUnconventionalError(err)
+			return output.UnconventionalError(err)
 		}
 	}
 

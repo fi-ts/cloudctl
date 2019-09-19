@@ -62,11 +62,11 @@ func projectCreate() error {
 	if err != nil {
 		switch e := err.(type) {
 		case *project.CreateProjectConflict:
-			output.PrintHTTPError(e.Payload)
+			return output.HTTPError(e.Payload)
 		case *project.CreateProjectDefault:
-			output.PrintHTTPError(e.Payload)
+			return output.HTTPError(e.Payload)
 		default:
-			output.PrintUnconventionalError(err)
+			return output.UnconventionalError(err)
 		}
 	}
 
@@ -93,9 +93,9 @@ func projectList() error {
 		if err != nil {
 			switch e := err.(type) {
 			case *project.ListProjectsDefault:
-				output.PrintHTTPError(e.Payload)
+				return output.HTTPError(e.Payload)
 			default:
-				output.PrintUnconventionalError(err)
+				return output.UnconventionalError(err)
 			}
 		}
 		return printer.Print(response.Payload)
@@ -106,9 +106,9 @@ func projectList() error {
 	if err != nil {
 		switch e := err.(type) {
 		case *project.ListProjectsDefault:
-			output.PrintHTTPError(e.Payload)
+			return output.HTTPError(e.Payload)
 		default:
-			output.PrintUnconventionalError(err)
+			return output.UnconventionalError(err)
 		}
 	}
 	return printer.Print(response.Payload)
