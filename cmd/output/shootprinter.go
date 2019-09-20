@@ -19,7 +19,7 @@ type (
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1beta1Shoot) {
-	s.wideHeader = []string{"UID", "Name", "Version", "Seed", "Domain", "Operation", "Progress", "Apiserver", "Control", "Nodes", "System", "Age"}
+	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Apiserver", "Control", "Nodes", "System", "Size", "Age"}
 	s.shortHeader = s.wideHeader
 	for _, shoot := range data {
 
@@ -54,10 +54,7 @@ func (s ShootTablePrinter) Print(data []*models.V1beta1Shoot) {
 			operation = *shoot.Status.LastOperation.State
 			progress = fmt.Sprintf("%d%% [%s]", *shoot.Status.LastOperation.Progress, *shoot.Status.LastOperation.Type)
 		}
-		seed := ""
-		if shoot.Spec.Cloud.Seed != "" {
-			seed = shoot.Spec.Cloud.Seed
-		}
+		partition := shoot.Spec.Cloud.Metal.Zones[0]
 		dnsdomain := ""
 		if shoot.Spec.DNS.Domain != "" {
 			dnsdomain = shoot.Spec.DNS.Domain
@@ -66,11 +63,21 @@ func (s ShootTablePrinter) Print(data []*models.V1beta1Shoot) {
 		if shoot.Spec.Kubernetes.Version != nil {
 			version = *shoot.Spec.Kubernetes.Version
 		}
+
+		autoScaleMin := int32(0)
+		autoScaleMax := int32(0)
+		if shoot.Spec.Cloud.Metal.Workers != nil && len(shoot.Spec.Cloud.Metal.Workers) > 0 {
+			autoScaleMin = *shoot.Spec.Cloud.Metal.Workers[0].AutoScalerMin
+			autoScaleMax = *shoot.Spec.Cloud.Metal.Workers[0].AutoScalerMax
+		}
+		size := fmt.Sprintf("%d/%d", autoScaleMin, autoScaleMax)
+
 		wide := []string{shoot.Metadata.UID, shoot.Metadata.Name,
-			version, seed, dnsdomain,
+			version, partition, dnsdomain,
 			operation,
 			progress,
 			apiserver, controlplane, nodes, system,
+			size,
 			age,
 		}
 
