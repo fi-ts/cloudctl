@@ -106,7 +106,6 @@ func init() {
 	clusterCreateCmd.Flags().BoolP("defaultingress", "", true, "deploy a default ingress controller")
 
 	clusterCreateCmd.MarkFlagRequired("name")
-	clusterCreateCmd.MarkFlagRequired("partition")
 	clusterCreateCmd.MarkFlagRequired("project")
 
 	clusterListCmd.Flags().String("project", "", "show clusters of given project")
