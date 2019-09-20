@@ -33,6 +33,22 @@ curl -LO https://blobstore.fi-ts.io/cloud-native/cloudctl/cloudctl-windows-amd64
 copy cloudctl-windows-amd64 cloudctl.exe
 ```
 
+### cloudctl update
+
+In order to keep your local `cloudctl` installation up to date, you can update the binary like this:
+
+```bash
+cloudctl update check
+latest version:2019-09-20T08:48:07Z
+local  version:2019-09-21T18:52:07Z
+cloudctl is not up to date
+
+cloudctl update do
+# a download with progress bar starts and replaces the binary. If the binary has root permissions please execute
+sudo cloudctl update do
+# instead
+```
+
 ## Usage
 
 ### Login
