@@ -59,7 +59,13 @@ Login, issue token for cloud and cluster access
 cloudctl login
 ```
 
+A Browser window will open and you are prompted to select your authentification backend.
+Choose "Log in with OpenLDAP Demo (TEST)"
+Push green button: "Grant Access"
+
 Token will be written to default kubectl-config, e.g. ~/.kube/config
+
+Then you can close the browser window.
 
 ### Get currently logged in user
 
@@ -87,13 +93,15 @@ UID                                   NAME     DESCRIPTION
 25195ae3-8e02-4b56-ba36-d4b1f94bc17e  banking  Banking Cluster
 ```
 
+Remember project UID for cluster creation.
+
 ### Create Cluster
 
 ```bash
 cloudctl cluster create \
   --name banking \
-  --project 25195ae3-8e02-4b56-ba36-d4b1f94bc17e \ # use project UID from the cloudctl project ls|create call
-  --description "banking cluster for project banking next generation"
+  --project <project UID> \
+  --description "banking cluster for project banking next generation" \
   --minsize 2 \
   --maxsize 2
 
@@ -102,10 +110,12 @@ UID                                   NAME     VERSION  PARTITION  DOMAIN       
 
 after ~7min:
 
+cloudctl cluster ls
 UID                                   NAME     VERSION  PARTITION  DOMAIN                               OPERATION  PROGRESS          APISERVER  CONTROL  NODES  SYSTEM  SIZE   AGE
 1d8636d7-dadb-11e9-9e70-8ebea97dd3a9  banking  1.14.3   nbg-w8101  banking.pd25ml.cluster.metal-pod.io  Succeeded  100% [Reconcile]  True       True     True   True    2/2  9m
-
 ```
+
+Remember the cluster UID for further references.
 
 ### Download Kubeconfig
 
@@ -113,7 +123,7 @@ In order to be able to download the kubeconfig the cluster must have reached the
 This can be checked with subsequent `cloudctl cluster ls` calls, or even more convenient `watch cloudctl cluster ls`.
 
 ```bash
-cloudctl cluster credentials 1d8636d7-dadb-11e9-9e70-8ebea97dd3a9 > banking.kubeconfig
+cloudctl cluster credentials <cluster UID> > banking.kubeconfig
 
 kubectl --kubeconfig ./banking.kubeconfig get nodes
 
@@ -121,7 +131,15 @@ kubectl --kubeconfig ./banking.kubeconfig get nodes
 
 ### Use your cluster
 
-Now you are ready to use your Cluster.
+Now you are ready to use your Cluster with kubectl.
+
+### Delete your cluster
+
+When you do not need your cluster anymore you can delete your cluster:
+
+```bash
+cloudctl cluster rm <cluster UID>
+```
 
 ## Advanced Usage
 
