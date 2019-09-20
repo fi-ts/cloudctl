@@ -67,8 +67,8 @@ cloudctl cluster ls
 cloudctl project create --name banking --description "Banking Cluster"
 
 cloudctl project ls
-  UID                                   NAME     DESCRIPTION
-  25195ae3-8e02-4b56-ba36-d4b1f94bc17e  banking  Banking Cluster
+UID                                   NAME     DESCRIPTION
+25195ae3-8e02-4b56-ba36-d4b1f94bc17e  banking  Banking Cluster
 ```
 
 ### Create Cluster
@@ -76,7 +76,7 @@ cloudctl project ls
 ```bash
 cloudctl cluster create \
   --name banking \
-  --project 25195ae3-8e02-4b56-ba36-d4b1f94bc17e \
+  --project 25195ae3-8e02-4b56-ba36-d4b1f94bc17e \ # use project UID from the cloudctl project ls|create call
   --description "banking cluster for project banking next generation"
   --minsize 2 \
   --maxsize 2
