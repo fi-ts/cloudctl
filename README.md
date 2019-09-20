@@ -59,9 +59,10 @@ Login, issue token for cloud and cluster access
 cloudctl login
 ```
 
-A Browser window will open and you are prompted to select your authentification backend.
-Choose "Log in with OpenLDAP Demo (TEST)"
-Push green button: "Grant Access"
+A Browser window will open and you are prompted to select your backend.
+
+* Choose "Log in with OpenLDAP Demo (TEST)"
+* Push green button: "Grant Access"
 
 Token will be written to default kubectl-config, e.g. ~/.kube/config
 
