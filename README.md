@@ -75,7 +75,7 @@ This process has to be done only once. The next time you execute "cloudctl login
 ### List Clusters
 
 ```bash
-cloudctl cluster list
+cloudctl cluster ls
 ```
 
 ### Create Project
@@ -100,6 +100,12 @@ cloudctl cluster create \
 
 UID                                   NAME     VERSION  PARTITION  DOMAIN                               OPERATION  PROGRESS          APISERVER  CONTROL  NODES  SYSTEM  SIZE   AGE
 1d8636d7-dadb-11e9-9e70-8ebea97dd3a9  banking  1.14.3   nbg-w8101  banking.pd25ml.cluster.metal-pod.io  Succeeded  0% [Create]                                          2/2    1m
+
+after ~7min:
+
+UID                                   NAME     VERSION  PARTITION  DOMAIN                               OPERATION  PROGRESS          APISERVER  CONTROL  NODES  SYSTEM  SIZE   AGE
+1d8636d7-dadb-11e9-9e70-8ebea97dd3a9  banking  1.14.3   nbg-w8101  banking.pd25ml.cluster.metal-pod.io  Succeeded  100% [Reconcile]  True       True     True   True    2/2  9m
+
 ```
 
 ### Download Kubeconfig
