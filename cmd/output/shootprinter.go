@@ -67,8 +67,9 @@ func (s ShootTablePrinter) Print(data []*models.V1beta1Shoot) {
 		autoScaleMin := int32(0)
 		autoScaleMax := int32(0)
 		if shoot.Spec.Cloud.Metal.Workers != nil && len(shoot.Spec.Cloud.Metal.Workers) > 0 {
-			autoScaleMin = *shoot.Spec.Cloud.Metal.Workers[0].AutoScalerMin
-			autoScaleMax = *shoot.Spec.Cloud.Metal.Workers[0].AutoScalerMax
+			workers := shoot.Spec.Cloud.Metal.Workers[0]
+			autoScaleMin = *workers.AutoScalerMin
+			autoScaleMax = *workers.AutoScalerMax
 		}
 		size := fmt.Sprintf("%d/%d", autoScaleMin, autoScaleMax)
 
