@@ -224,7 +224,7 @@ func clusterList() error {
 		response, err := cloud.Cluster.FindClusters(fcp, cloud.Auth)
 		if err != nil {
 			switch e := err.(type) {
-			case *cluster.ListClustersDefault:
+			case *cluster.FindClustersDefault:
 				return output.HTTPError(e.Payload)
 			default:
 				return output.UnconventionalError(err)
