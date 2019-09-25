@@ -19,8 +19,8 @@ type (
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1beta1Shoot) {
-	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Apiserver", "Control", "Nodes", "System", "Size", "Age"}
-	s.shortHeader = s.wideHeader
+	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age"}
+	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age"}
 	for _, shoot := range data {
 
 		apiserver := ""
@@ -72,6 +72,8 @@ func (s ShootTablePrinter) Print(data []*models.V1beta1Shoot) {
 			autoScaleMax = *workers.AutoScalerMax
 		}
 		size := fmt.Sprintf("%d/%d", autoScaleMin, autoScaleMax)
+		tenant := shoot.Metadata.Annotations["cluster.metal-pod.io/tenant"]
+		project := shoot.Metadata.Annotations["cluster.metal-pod.io/project"]
 
 		wide := []string{shoot.Metadata.UID, shoot.Metadata.Name,
 			version, partition, dnsdomain,
@@ -81,9 +83,20 @@ func (s ShootTablePrinter) Print(data []*models.V1beta1Shoot) {
 			size,
 			age,
 		}
+		short := []string{shoot.Metadata.UID,
+			tenant,
+			project,
+			shoot.Metadata.Name,
+			version, partition,
+			operation,
+			progress,
+			apiserver, controlplane, nodes, system,
+			size,
+			age,
+		}
 
 		s.addWideData(wide, shoot)
-		s.addShortData(wide, shoot)
+		s.addShortData(short, shoot)
 	}
 	s.render()
 }

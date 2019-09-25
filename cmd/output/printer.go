@@ -122,7 +122,7 @@ func NewPrinter(format, order, tpl string, noHeaders bool) (Printer, error) {
 		printer = &YAMLPrinter{}
 	case "json":
 		printer = &JSONPrinter{}
-	case "table":
+	case "table", "wide":
 		printer = newTablePrinter(format, order, noHeaders, nil)
 	case "template":
 		tmpl, err := template.New("").Parse(tpl)
