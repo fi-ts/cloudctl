@@ -3,8 +3,10 @@ package cmd
 import (
 	"fmt"
 	"git.f-i-ts.de/cloud-native/metallib/auth"
+	"git.f-i-ts.de/cloud-native/metallib/jwt/sec"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"time"
 )
 
 var whoamiCmd = &cobra.Command{
@@ -23,7 +25,19 @@ var whoamiCmd = &cobra.Command{
 			return fmt.Errorf("active user %s has no oidc authProvider, check config", authContext.User)
 		}
 
-		fmt.Println(authContext.User)
+		user, parsedClaims, err := sec.ParseTokenUnvalidated(authContext.IDToken)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("UserId: %s\n", user.Name)
+		fmt.Printf("Tenant: %s\n", user.Tenant)
+		fmt.Printf("Groups:\n")
+		for _, g := range user.Groups {
+			fmt.Printf(" %s\n", g)
+		}
+		fmt.Printf("Expires at %s\n", time.Unix(parsedClaims.ExpiresAt, 0).Format("Mon Jan 2 15:04:05 MST 2006"))
+
 		return nil
 	},
 	PreRun: bindPFlags,
