@@ -3,7 +3,7 @@ module git.f-i-ts.de/cloud-native/cloudctl
 go 1.12
 
 require (
-	git.f-i-ts.de/cloud-native/metallib v0.0.0-20190925150549-f52fe598e3dd
+	git.f-i-ts.de/cloud-native/metallib v0.0.0-20190926080834-2d8284ff2703
 	github.com/gardener/gardener v0.0.0-20190816140908-ed26a3fdf2d6
 	github.com/go-openapi/errors v0.19.2
 	github.com/go-openapi/runtime v0.19.6
