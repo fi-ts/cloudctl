@@ -120,8 +120,8 @@ func init() {
 	clusterListCmd.Flags().String("tenant", "", "show clusters of given tenant")
 	clusterListCmd.Flags().Bool("all", false, "show all clusters")
 
-	clusterUpdateCmd.Flags().Int32("minsize", 1, "minimal workers of the cluster.")
-	clusterUpdateCmd.Flags().Int32("maxsize", 1, "maximal workers of the cluster.")
+	clusterUpdateCmd.Flags().Int32("minsize", 0, "minimal workers of the cluster.")
+	clusterUpdateCmd.Flags().Int32("maxsize", 0, "maximal workers of the cluster.")
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
 
 	clusterCmd.AddCommand(clusterCreateCmd)
