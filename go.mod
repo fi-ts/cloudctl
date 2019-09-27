@@ -10,7 +10,10 @@ require (
 	github.com/go-openapi/strfmt v0.19.3
 	github.com/go-openapi/swag v0.19.5
 	github.com/go-openapi/validate v0.19.3
+	github.com/go-playground/locales v0.12.1 // indirect
+	github.com/go-playground/universal-translator v0.16.0 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
+	github.com/leodido/go-urn v1.1.0 // indirect
 	github.com/metal-pod/security v0.0.0-20190920091500-ed81ae92725b
 	github.com/metal-pod/updater v0.0.0-20190905093442-85b34b88c17c
 	github.com/metal-pod/v v0.0.2
@@ -18,8 +21,11 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
+	golang.org/x/net v0.0.0-20190918130420-a8b05e9114ab
+	gopkg.in/go-playground/validator.v9 v9.29.1
 	gopkg.in/square/go-jose.v2 v2.3.1
 	gopkg.in/yaml.v3 v3.0.0-20190905181640-827449938966
+	k8s.io/apimachinery v0.0.0-20190404173353-6a84e37a896d
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 	k8s.io/klog v0.4.0 // indirect
 	k8s.io/utils v0.0.0-20190809000727-6c36bc71fc4a // indirect
