@@ -1,13 +1,16 @@
 ---
 image: registry.cloud.fits/fits/buildtools:1
 
-binary:
-  script:
+before_script:
     - curl -sSL https://github.com/go-swagger/go-swagger/releases/download/v0.19.0/swagger_linux_amd64 >/usr/bin/swagger
     - chmod +x /usr/bin/swagger
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@git.f-i-ts.de/cloud-native/common
     - export COMMONDIR=$PWD/common
-    - make generate-client platforms
+    - make generate-client
+
+binary:
+  script:
+    - make platforms
     - bin/cloudctl-linux-amd64 update dump bin/cloudctl-linux-amd64 > version-linux-amd64.json
     - bin/cloudctl-linux-amd64 update dump bin/cloudctl-windows-amd64 > version-windows-amd64.json
     - bin/cloudctl-linux-amd64 update dump bin/cloudctl-darwin-amd64 > version-darwin-amd64.json
@@ -19,11 +22,8 @@ binary:
   only:
     - master
 
-branchortag:
+mergerequest:
   script:
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@git.f-i-ts.de/cloud-native/common
-    - export COMMONDIR=$PWD/common
     - make all
-  except:
-    - master
-
+  only: 
+    - merge_requests

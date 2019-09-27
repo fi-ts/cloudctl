@@ -176,6 +176,8 @@ func (t TablePrinter) Print(data interface{}) error {
 		ProjectTablePrinter{t}.Print([]*models.ModelsV1ProjectResponse{d})
 	case []*models.ModelsV1ProjectResponse:
 		ProjectTablePrinter{t}.Print(d)
+	case *models.V1ContainerUsageResponse:
+		BillingTablePrinter{t}.Print(d)
 	default:
 		return fmt.Errorf("unknown table printer for type: %T", d)
 	}

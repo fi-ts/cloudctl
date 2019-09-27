@@ -7,6 +7,8 @@ import (
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/metal-pod/security"
 
+	"git.f-i-ts.de/cloud-native/cloudctl/api/client"
+	"git.f-i-ts.de/cloud-native/cloudctl/api/client/billing"
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/cluster"
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/project"
 	"github.com/go-openapi/runtime"
@@ -17,6 +19,7 @@ import (
 type Cloud struct {
 	Cluster *cluster.Client
 	Project *project.Client
+	Billing *billing.Client
 	Auth    runtime.ClientAuthInfoWriter
 }
 
@@ -41,13 +44,13 @@ func NewCloud(apiurl, apiToken string) (*Cloud, error) {
 	transport := httptransport.New(parsedurl.Host, parsedurl.Path, []string{parsedurl.Scheme})
 	transport.DefaultAuthentication = auther
 
-	cluster := cluster.New(transport, strfmt.Default)
-	project := project.New(transport, strfmt.Default)
+	cloud := client.New(transport, strfmt.Default)
 
 	c := &Cloud{
 		Auth:    auther,
-		Cluster: cluster,
-		Project: project,
+		Cluster: cloud.Cluster,
+		Project: cloud.Project,
+		Billing: cloud.Billing,
 	}
 	return c, nil
 }
