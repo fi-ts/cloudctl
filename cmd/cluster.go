@@ -78,7 +78,14 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-
+	clusterUpdateCmd = &cobra.Command{
+		Use:   "update <uid>",
+		Short: "update a cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return updateCluster(args)
+		},
+		PreRun: bindPFlags,
+	}
 	clusterInputsCmd = &cobra.Command{
 		Use:   "inputs",
 		Short: "get possible cluster inputs like k8s versions, etc.",
@@ -96,10 +103,10 @@ func init() {
 	clusterCreateCmd.Flags().String("project", "", "project where this cluster should belong to. [required]")
 	clusterCreateCmd.Flags().String("partition", "nbg-w8101", "partition of the cluster. [required]")
 	clusterCreateCmd.Flags().String("version", "1.14.3", "kubernetes version of the cluster. [required]")
-	clusterCreateCmd.Flags().Int("minsize", 1, "minimal workers of the cluster.")
-	clusterCreateCmd.Flags().Int("maxsize", 1, "maximal workers of the cluster.")
-	clusterCreateCmd.Flags().Int("maxsurge", 1, "max number of workers created during a update of the cluster.")
-	clusterCreateCmd.Flags().Int("maxunavailable", 1, "max number of workers that can be unavailable during a update of the cluster.")
+	clusterCreateCmd.Flags().Int32("minsize", 1, "minimal workers of the cluster.")
+	clusterCreateCmd.Flags().Int32("maxsize", 1, "maximal workers of the cluster.")
+	clusterCreateCmd.Flags().String("maxsurge", "1", "max number (e.g. 1) or percentage (e.g. 10%) of workers created during a update of the cluster.")
+	clusterCreateCmd.Flags().String("maxunavailable", "1", "max number (e.g. 1) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
 	clusterCreateCmd.Flags().StringSlice("labels", []string{}, "labels of the cluster")
 	clusterCreateCmd.Flags().StringSlice("external-networks", []string{"internet"}, "external networks of the cluster, can be internet,mpls")
 	clusterCreateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster.")
@@ -113,6 +120,10 @@ func init() {
 	clusterListCmd.Flags().String("tenant", "", "show clusters of given tenant")
 	clusterListCmd.Flags().Bool("all", false, "show all clusters")
 
+	clusterUpdateCmd.Flags().Int32("minsize", 1, "minimal workers of the cluster.")
+	clusterUpdateCmd.Flags().Int32("maxsize", 1, "maximal workers of the cluster.")
+	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
+
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
 	clusterCmd.AddCommand(clusterCredentialsCmd)
@@ -121,6 +132,7 @@ func init() {
 	clusterCmd.AddCommand(clusterInputsCmd)
 	clusterCmd.AddCommand(clusterReconcileCmd)
 	clusterCmd.AddCommand(clusterSSHKeyPairCmd)
+	clusterCmd.AddCommand(clusterUpdateCmd)
 }
 
 func clusterCreate() error {
@@ -132,8 +144,8 @@ func clusterCreate() error {
 
 	minsize := viper.GetInt32("minsize")
 	maxsize := viper.GetInt32("maxsize")
-	maxsurge := viper.GetInt32("maxsurge")
-	maxunavailable := viper.GetInt32("maxunavailable")
+	maxsurge := viper.GetString("maxsurge")
+	maxunavailable := viper.GetString("maxunavailable")
 
 	allowprivileged := viper.GetBool("allowprivileged")
 	version := viper.GetString("version")
@@ -297,6 +309,47 @@ func reconcileCluster(args []string) error {
 	if err != nil {
 		switch e := err.(type) {
 		case *cluster.ReconcileClusterDefault:
+			return output.HTTPError(e.Payload)
+		default:
+			return output.UnconventionalError(err)
+		}
+	}
+	return printer.Print(shoot.Payload)
+}
+
+func updateCluster(args []string) error {
+	ci, err := clusterID("update", args)
+	if err != nil {
+		return err
+	}
+	minsize := viper.GetInt32("minsize")
+	maxsize := viper.GetInt32("maxsize")
+	version := viper.GetString("version")
+
+	request := cluster.NewUpdateClusterParams()
+	cur := &models.V1ClusterUpdateRequest{
+		ID: &ci,
+	}
+	worker := &models.V1Worker{}
+	cur.Workers = append(cur.Workers, worker)
+	if minsize != 0 || maxsize != 0 {
+		if minsize != 0 {
+			cur.Workers[0].AutoScalerMin = &minsize
+		}
+		if maxsize != 0 {
+			cur.Workers[0].AutoScalerMax = &maxsize
+		}
+	}
+	if version != "" {
+		cur.Kubernetes = &models.V1Kubernetes{
+			Version: &version,
+		}
+	}
+	request.SetBody(cur)
+	shoot, err := cloud.Cluster.UpdateCluster(request, cloud.Auth)
+	if err != nil {
+		switch e := err.(type) {
+		case *cluster.UpdateClusterDefault:
 			return output.HTTPError(e.Payload)
 		default:
 			return output.UnconventionalError(err)

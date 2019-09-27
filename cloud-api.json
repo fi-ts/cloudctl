@@ -137,7 +137,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1beta1.Shoot"
+              "$ref": "#/definitions/v1.ClusterUpdateRequest"
             }
           }
         ],
@@ -876,6 +876,31 @@
         }
       }
     },
+    "v1.ClusterUpdateRequest": {
+      "required": [
+        "ID",
+        "Workers",
+        "Maintenance",
+        "Kubernetes"
+      ],
+      "properties": {
+        "ID": {
+          "type": "string"
+        },
+        "Kubernetes": {
+          "$ref": "#/definitions/v1.Kubernetes"
+        },
+        "Maintenance": {
+          "$ref": "#/definitions/v1.Maintenance"
+        },
+        "Workers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1.Worker"
+          }
+        }
+      }
+    },
     "v1.Initializer": {
       "description": "Initializer is information about an initializer that has not yet completed.",
       "required": [
@@ -1338,12 +1363,10 @@
           "type": "string"
         },
         "MaxSurge": {
-          "type": "integer",
-          "format": "int32"
+          "type": "string"
         },
         "MaxUnavailable": {
-          "type": "integer",
-          "format": "int32"
+          "type": "string"
         },
         "Name": {
           "type": "string"
@@ -1513,10 +1536,10 @@
     },
     "v1beta1.AWSWorker": {
       "required": [
-        "machineType",
         "name",
-        "autoScalerMax",
         "autoScalerMin",
+        "autoScalerMax",
+        "machineType",
         "volumeType",
         "volumeSize"
       ],
@@ -1689,10 +1712,10 @@
     },
     "v1beta1.AlicloudWorker": {
       "required": [
-        "machineType",
-        "autoScalerMax",
         "name",
         "autoScalerMin",
+        "autoScalerMax",
+        "machineType",
         "volumeType",
         "volumeSize"
       ],
@@ -1832,9 +1855,9 @@
     "v1beta1.AzureWorker": {
       "required": [
         "name",
-        "autoScalerMax",
         "machineType",
         "autoScalerMin",
+        "autoScalerMax",
         "volumeType",
         "volumeSize"
       ],
@@ -2077,9 +2100,9 @@
     },
     "v1beta1.GCPWorker": {
       "required": [
+        "name",
         "machineType",
         "autoScalerMin",
-        "name",
         "autoScalerMax",
         "volumeType",
         "volumeSize"
@@ -2626,10 +2649,10 @@
     },
     "v1beta1.MetalWorker": {
       "required": [
+        "autoScalerMin",
         "autoScalerMax",
         "name",
         "machineType",
-        "autoScalerMin",
         "volumeType",
         "volumeSize"
       ],
@@ -2868,10 +2891,10 @@
     },
     "v1beta1.OpenStackWorker": {
       "required": [
-        "autoScalerMin",
-        "autoScalerMax",
         "name",
-        "machineType"
+        "machineType",
+        "autoScalerMin",
+        "autoScalerMax"
       ],
       "properties": {
         "annotations": {
@@ -2962,10 +2985,10 @@
     },
     "v1beta1.PacketWorker": {
       "required": [
-        "autoScalerMin",
         "autoScalerMax",
         "name",
         "machineType",
+        "autoScalerMin",
         "volumeType",
         "volumeSize"
       ],
