@@ -1,6 +1,8 @@
 package output
 
 import (
+	"math/big"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,7 +19,7 @@ type (
 // Print a Shoot as table
 func (s BillingTablePrinter) Print(data *models.V1ContainerUsageResponse) {
 	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Namespace", "PodUUID", "PodName", "PodStartDate", "PodEndDate", "ContainerName", "Lifetime", "CPUSeconds", "MemorySeconds", "Warnings"}
-	s.shortHeader = []string{"Tenant", "ProjectName", "Partition", "ClusterName", "Namespace", "PodName", "ContainerName", "Lifetime", "CPUSeconds", "MemorySeconds"}
+	s.shortHeader = []string{"Tenant", "ProjectName", "Partition", "ClusterName", "Namespace", "PodName", "ContainerName", "Lifetime", "CPU (1 * s)", "Memory (Gi * h)"}
 	for _, u := range data.Usage {
 		var from string
 		if data.From != nil {
@@ -79,19 +81,21 @@ func (s BillingTablePrinter) Print(data *models.V1ContainerUsageResponse) {
 		if u.Lifetime != nil {
 			lifetime = time.Duration(*u.Lifetime)
 		}
-		var cpuSeconds string
+		var cpuUsage string
 		if u.Cpuseconds != nil {
-			cpuSeconds = *u.Cpuseconds
-			// i := new(big.Int)
-			// i.SetString(*u.CPUSeconds, 10)
-			// cpuSeconds = new(big.Int).Quo(i, big.NewInt(3600)).String() + "s*h"
+			duration, err := strconv.ParseInt(*u.Cpuseconds, 10, 64)
+			if err == nil {
+				cpuUsage = humanizeDuration(time.Duration(duration) * time.Second)
+			}
 		}
-		var memorySeconds string
+		var memoryUsage string
 		if u.Memoryseconds != nil {
-			memorySeconds = *u.Memoryseconds
-			// i := new(big.Int)
-			// i.SetString(*u.MemorySeconds, 10)
-			// memorySeconds = new(big.Int).Quo(new(big.Int).Quo(i, big.NewInt(3600)), big.NewInt(1024*1024*1024)).String() + "Gi*h"
+			// TODO: Implement humanizeMemory func
+			i := new(big.Float)
+			i.SetString(*u.Memoryseconds)
+			memorySeconds := new(big.Float).Quo(i, big.NewFloat(1<<30))
+			memoryHours := new(big.Float).Quo(memorySeconds, big.NewFloat(3600))
+			memoryUsage = memoryHours.String()
 		}
 		var warnings string
 		if u.Warnings != nil {
@@ -113,8 +117,8 @@ func (s BillingTablePrinter) Print(data *models.V1ContainerUsageResponse) {
 			podEnd,
 			containerName,
 			humanizeDuration(lifetime),
-			cpuSeconds,
-			memorySeconds,
+			cpuUsage,
+			memoryUsage,
 			warnings,
 		}
 		short := []string{
@@ -126,8 +130,8 @@ func (s BillingTablePrinter) Print(data *models.V1ContainerUsageResponse) {
 			podName,
 			containerName,
 			humanizeDuration(lifetime),
-			cpuSeconds,
-			memorySeconds,
+			cpuUsage,
+			memoryUsage,
 		}
 
 		s.addWideData(wide, data)
