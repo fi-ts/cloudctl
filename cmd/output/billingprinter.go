@@ -3,6 +3,7 @@ package output
 import (
 	"fmt"
 	"math/big"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -134,8 +135,8 @@ func (s BillingTablePrinter) Print(data *models.V1ContainerUsageResponse) {
 
 	footer := []string{"Total",
 		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)),
-		humanizeCPU(*data.Accumulatedusage.Cpuseconds),
-		humanizeMemory(*data.Accumulatedusage.Memoryseconds),
+		humanizeCPU(*data.Accumulatedusage.Cpuseconds) + cpuCosts(*data.Accumulatedusage.Cpuseconds),
+		humanizeMemory(*data.Accumulatedusage.Memoryseconds) + memoryCosts(*data.Accumulatedusage.Memoryseconds),
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
 	wideFooter := make([]string, len(s.wideHeader)-len(footer))
@@ -160,4 +161,29 @@ func humanizeCPU(cpuSeconds string) string {
 		return humanizeDuration(time.Duration(duration) * time.Second)
 	}
 	return ""
+}
+
+func cpuCosts(cpuSeconds string) string {
+	if os.Getenv("CLOUDCTL_SHOW_COSTS") == "" {
+		return ""
+	}
+	cpuPerCoreAndHour := 0.055
+	duration, err := strconv.ParseInt(cpuSeconds, 10, 64)
+	if err == nil {
+		return fmt.Sprintf(" (%.2f €)", float64(duration/3600)*cpuPerCoreAndHour)
+	}
+	return ""
+}
+
+func memoryCosts(memorySeconds string) string {
+	if os.Getenv("CLOUDCTL_SHOW_COSTS") == "" {
+		return ""
+	}
+	memoryPerGiAndHour := 0.014
+	i := new(big.Float)
+	i.SetString(memorySeconds)
+	ms := new(big.Float).Quo(i, big.NewFloat(1<<30))
+	memoryHours := new(big.Float).Quo(ms, big.NewFloat(3600))
+	memoryCosts := new(big.Float).Mul(memoryHours, big.NewFloat(memoryPerGiAndHour))
+	return fmt.Sprintf(" (%.2f €)", memoryCosts)
 }
