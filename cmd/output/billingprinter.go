@@ -85,19 +85,11 @@ func (s BillingTablePrinter) Print(data *models.V1ContainerUsageResponse) {
 		}
 		var cpuUsage string
 		if u.Cpuseconds != nil {
-			duration, err := strconv.ParseInt(*u.Cpuseconds, 10, 64)
-			if err == nil {
-				cpuUsage = humanizeDuration(time.Duration(duration) * time.Second)
-			}
+			cpuUsage = humanizeCPU(*u.Cpuseconds)
 		}
 		var memoryUsage string
 		if u.Memoryseconds != nil {
-			// TODO: Implement humanizeMemory func
-			i := new(big.Float)
-			i.SetString(*u.Memoryseconds)
-			memorySeconds := new(big.Float).Quo(i, big.NewFloat(1<<30))
-			memoryHours := new(big.Float).Quo(memorySeconds, big.NewFloat(3600))
-			memoryUsage = fmt.Sprintf("%.2f", memoryHours)
+			memoryUsage = humanizeMemory(*u.Memoryseconds)
 		}
 		var warnings string
 		if u.Warnings != nil {
@@ -139,5 +131,33 @@ func (s BillingTablePrinter) Print(data *models.V1ContainerUsageResponse) {
 		s.addWideData(wide, data)
 		s.addShortData(short, data)
 	}
+
+	footer := []string{"Total",
+		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)),
+		humanizeCPU(*data.Accumulatedusage.Cpuseconds),
+		humanizeMemory(*data.Accumulatedusage.Memoryseconds),
+	}
+	shortFooter := make([]string, len(s.shortHeader)-len(footer))
+	wideFooter := make([]string, len(s.wideHeader)-len(footer))
+	s.addWideData(append(wideFooter, footer...), data)
+
+	s.addShortData(append(shortFooter, footer...), data)
 	s.render()
+
+}
+
+func humanizeMemory(memorySeconds string) string {
+	i := new(big.Float)
+	i.SetString(memorySeconds)
+	ms := new(big.Float).Quo(i, big.NewFloat(1<<30))
+	memoryHours := new(big.Float).Quo(ms, big.NewFloat(3600))
+	return fmt.Sprintf("%.2f", memoryHours)
+}
+
+func humanizeCPU(cpuSeconds string) string {
+	duration, err := strconv.ParseInt(cpuSeconds, 10, 64)
+	if err == nil {
+		return humanizeDuration(time.Duration(duration) * time.Second)
+	}
+	return ""
 }
