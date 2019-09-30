@@ -177,6 +177,9 @@ func (t TablePrinter) Print(data interface{}) error {
 	case []*models.ModelsV1ProjectResponse:
 		ProjectTablePrinter{t}.Print(d)
 	case *models.V1ContainerUsageResponse:
+		if t.order == "" {
+			t.order = "tenant,project,partition,cluster,namespace,pod,container"
+		}
 		BillingTablePrinter{t}.Print(d)
 	default:
 		return fmt.Errorf("unknown table printer for type: %T", d)

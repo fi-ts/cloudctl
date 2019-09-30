@@ -65,6 +65,7 @@ func init() {
 	rootCmd.PersistentFlags().StringP("url", "u", "https://api.metal-pod.io/cloud", "api server address. Can be specified with CLOUDCTL_URL environment variable.")
 	rootCmd.PersistentFlags().String("apitoken", "", "api token to authenticate. Can be specified with CLOUDCTL_APITOKEN environment variable.")
 	rootCmd.PersistentFlags().String("kubeconfig", "", "Path to the kube-config to use for authentication and authorization. Is updated by login.")
+	rootCmd.PersistentFlags().StringP("order", "", "", "order by (comma separated) column(s)")
 	rootCmd.PersistentFlags().StringP("output-format", "o", "table", "output format (table|wide|markdown|json|yaml|template), wide is a table with more columns.")
 	rootCmd.AddCommand(clusterCmd)
 	rootCmd.AddCommand(updateCmd)
