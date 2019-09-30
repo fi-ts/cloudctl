@@ -2,6 +2,7 @@ package output
 
 import (
 	"sort"
+	"strconv"
 	"strings"
 
 	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
@@ -106,6 +107,48 @@ func (s *BillingTablePrinter) Order(data []*models.V1ContainerUsage) {
 						return true
 					}
 					if *A.Containername != *B.Containername {
+						return false
+					}
+				case "cpu":
+					if A.Cpuseconds == nil {
+						return true
+					}
+					if B.Cpuseconds == nil {
+						return false
+					}
+					aseconds, err := strconv.ParseInt(*A.Cpuseconds, 10, 64)
+					if err != nil {
+						return true
+					}
+					bseconds, err := strconv.ParseInt(*B.Cpuseconds, 10, 64)
+					if err != nil {
+						return false
+					}
+					if aseconds < bseconds {
+						return true
+					}
+					if aseconds != bseconds {
+						return false
+					}
+				case "memory":
+					if A.Memoryseconds == nil {
+						return true
+					}
+					if B.Memoryseconds == nil {
+						return false
+					}
+					aseconds, err := strconv.ParseInt(*A.Memoryseconds, 10, 64)
+					if err != nil {
+						return true
+					}
+					bseconds, err := strconv.ParseInt(*B.Memoryseconds, 10, 64)
+					if err != nil {
+						return false
+					}
+					if aseconds < bseconds {
+						return true
+					}
+					if aseconds != bseconds {
 						return false
 					}
 				}
