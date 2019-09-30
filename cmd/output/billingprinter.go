@@ -1,6 +1,7 @@
 package output
 
 import (
+	"fmt"
 	"math/big"
 	"strconv"
 	"strings"
@@ -95,7 +96,7 @@ func (s BillingTablePrinter) Print(data *models.V1ContainerUsageResponse) {
 			i.SetString(*u.Memoryseconds)
 			memorySeconds := new(big.Float).Quo(i, big.NewFloat(1<<30))
 			memoryHours := new(big.Float).Quo(memorySeconds, big.NewFloat(3600))
-			memoryUsage = memoryHours.String()
+			memoryUsage = fmt.Sprintf("%.2f", memoryHours)
 		}
 		var warnings string
 		if u.Warnings != nil {
