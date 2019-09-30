@@ -3,12 +3,12 @@ package output
 import (
 	"fmt"
 	"math/big"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
+	"github.com/spf13/viper"
 )
 
 type (
@@ -163,11 +163,12 @@ func humanizeCPU(cpuSeconds string) string {
 	return ""
 }
 
+// CLOUDCTL_COSTS_CPU_HOUR=0.055 CLOUDCTL_COSTS_MEMORY_GI_HOUR=0.014 cloudctl billing --from 2019-01-01
 func cpuCosts(cpuSeconds string) string {
-	if os.Getenv("CLOUDCTL_SHOW_COSTS") == "" {
+	cpuPerCoreAndHour := viper.GetFloat64("costs-cpu-hour")
+	if cpuPerCoreAndHour <= 0 {
 		return ""
 	}
-	cpuPerCoreAndHour := 0.055
 	duration, err := strconv.ParseInt(cpuSeconds, 10, 64)
 	if err == nil {
 		return fmt.Sprintf(" (%.2f €)", float64(duration/3600)*cpuPerCoreAndHour)
@@ -176,10 +177,10 @@ func cpuCosts(cpuSeconds string) string {
 }
 
 func memoryCosts(memorySeconds string) string {
-	if os.Getenv("CLOUDCTL_SHOW_COSTS") == "" {
+	memoryPerGiAndHour := viper.GetFloat64("costs-memory-gi-hour")
+	if memoryPerGiAndHour <= 0 {
 		return ""
 	}
-	memoryPerGiAndHour := 0.014
 	i := new(big.Float)
 	i.SetString(memorySeconds)
 	ms := new(big.Float).Quo(i, big.NewFloat(1<<30))
