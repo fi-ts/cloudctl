@@ -31,6 +31,13 @@ var (
 	billingCmd  = &cobra.Command{
 		Use:   "billing",
 		Short: "look at the bills",
+		Example: `If you want to get the costs in Euro, then set two environment variables with the prices from your contract:
+
+		export CLOUDCTL_COSTS_CPU_HOUR=0.01        # Costs in Euro per CPU Hour
+		export CLOUDCTL_COSTS_MEMORY_GI_HOUR=0.01  # Costs in Euro per Gi Memory Hour
+
+		cloudctl billing --from 2019-01-01
+		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := initBillingOpts()
 			if err != nil {

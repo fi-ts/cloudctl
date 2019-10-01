@@ -163,7 +163,6 @@ func humanizeCPU(cpuSeconds string) string {
 	return ""
 }
 
-// CLOUDCTL_COSTS_CPU_HOUR=0.055 CLOUDCTL_COSTS_MEMORY_GI_HOUR=0.014 cloudctl billing --from 2019-01-01
 func cpuCosts(cpuSeconds string) string {
 	cpuPerCoreAndHour := viper.GetFloat64("costs-cpu-hour")
 	if cpuPerCoreAndHour <= 0 {
