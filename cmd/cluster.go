@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/base64"
 	"fmt"
 
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/cluster"
@@ -293,8 +294,10 @@ func clusterSSHKeyPair(args []string) error {
 			return output.UnconventionalError(err)
 		}
 	}
-	fmt.Printf("private key:%s\n", *credentials.Payload.SSHKeyPair.PrivateKey)
-	fmt.Printf("public  key:%s\n", *credentials.Payload.SSHKeyPair.PublicKey)
+	privateKey, err := base64.StdEncoding.DecodeString(*credentials.Payload.SSHKeyPair.PrivateKey)
+	publicKey, err := base64.StdEncoding.DecodeString(*credentials.Payload.SSHKeyPair.PublicKey)
+	fmt.Printf("private key:\n%s\n", privateKey)
+	fmt.Printf("public  key:\n%s\n", publicKey)
 	return nil
 }
 
