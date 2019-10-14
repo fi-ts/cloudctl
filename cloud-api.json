@@ -45,6 +45,85 @@
         }
       }
     },
+    "/v1/billing/cluster-usage": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "billing"
+        ],
+        "summary": "get cluster usage for given billing query",
+        "operationId": "clusterUsage",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1.ClusterUsageRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/v1.ClusterUsageResponse"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/v1/billing/cluster-usage-csv": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json",
+          "text/plain"
+        ],
+        "tags": [
+          "billing"
+        ],
+        "summary": "get cluster usage for given billing query",
+        "operationId": "clusterUsageCSV",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1.ClusterUsageRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
     "/v1/billing/container-usage": {
       "get": {
         "consumes": [
@@ -980,6 +1059,143 @@
         }
       }
     },
+    "v1.ClusterUsage": {
+      "required": [
+        "tenant",
+        "projectid",
+        "projectname",
+        "partition",
+        "clusterid",
+        "clustername",
+        "clusterstart",
+        "clusterend",
+        "lifetime",
+        "warnings"
+      ],
+      "properties": {
+        "clusterend": {
+          "description": "the end time of this cluster",
+          "type": "string",
+          "format": "date-time"
+        },
+        "clusterid": {
+          "description": "the cluster id of this cluster",
+          "type": "string"
+        },
+        "clustername": {
+          "description": "the cluster name of this cluster",
+          "type": "string"
+        },
+        "clusterstart": {
+          "description": "the start time of this cluster",
+          "type": "string",
+          "format": "date-time"
+        },
+        "lifetime": {
+          "description": "the duration that this cluster is running",
+          "type": "integer",
+          "format": "integer"
+        },
+        "partition": {
+          "description": "the partition of this cluster",
+          "type": "string"
+        },
+        "projectid": {
+          "description": "the project id of this cluster",
+          "type": "string"
+        },
+        "projectname": {
+          "description": "the project name of this cluster",
+          "type": "string"
+        },
+        "tenant": {
+          "description": "the tenant of this cluster",
+          "type": "string"
+        },
+        "warnings": {
+          "description": "warnings that occurred when calculating the usage of this cluster",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "v1.ClusterUsageAccumuluated": {
+      "required": [
+        "lifetime"
+      ],
+      "properties": {
+        "lifetime": {
+          "description": "the duration that this cluster is running",
+          "type": "integer",
+          "format": "integer"
+        }
+      }
+    },
+    "v1.ClusterUsageRequest": {
+      "required": [
+        "from"
+      ],
+      "properties": {
+        "clusterid": {
+          "description": "the cluster id to account for",
+          "type": "string"
+        },
+        "forecast": {
+          "description": "estimates costs if time window ends in the future (defaults to false)",
+          "type": "boolean"
+        },
+        "from": {
+          "description": "the start time in the accounting window to look at",
+          "type": "string",
+          "format": "date-time"
+        },
+        "projectid": {
+          "description": "the project id to account for",
+          "type": "string"
+        },
+        "tenant": {
+          "description": "the tenant to get the container usage for (defaults to all tenants)",
+          "type": "string"
+        },
+        "to": {
+          "description": "the end time in the accounting window to look at (defaults to current system time)",
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1.ClusterUsageResponse": {
+      "required": [
+        "from",
+        "usage",
+        "accumulatedusage"
+      ],
+      "properties": {
+        "accumulatedusage": {
+          "description": "just the usage data of the individual clusters summed up",
+          "$ref": "#/definitions/v1.ClusterUsageAccumuluated"
+        },
+        "from": {
+          "description": "the start time in the accounting window to look at",
+          "type": "string",
+          "format": "date-time"
+        },
+        "to": {
+          "description": "the end time in the accounting window to look at (defaults to current system time)",
+          "type": "string",
+          "format": "date-time"
+        },
+        "usage": {
+          "description": "the usage data of the individual clusters",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1.ClusterUsage"
+          }
+        }
+      }
+    },
     "v1.ContainerUsage": {
       "required": [
         "tenant",
@@ -1102,6 +1318,10 @@
         "clusterid": {
           "description": "the cluster id to account for",
           "type": "string"
+        },
+        "forecast": {
+          "description": "estimates costs if time window ends in the future (defaults to false)",
+          "type": "boolean"
         },
         "from": {
           "description": "the start time in the accounting window to look at",
@@ -1792,9 +2012,9 @@
     },
     "v1beta1.AWSWorker": {
       "required": [
-        "machineType",
-        "autoScalerMax",
         "name",
+        "autoScalerMax",
+        "machineType",
         "autoScalerMin",
         "volumeType",
         "volumeSize"
@@ -1969,9 +2189,9 @@
     "v1beta1.AlicloudWorker": {
       "required": [
         "name",
-        "machineType",
         "autoScalerMin",
         "autoScalerMax",
+        "machineType",
         "volumeType",
         "volumeSize"
       ],
@@ -2111,9 +2331,9 @@
     "v1beta1.AzureWorker": {
       "required": [
         "machineType",
-        "autoScalerMin",
-        "name",
         "autoScalerMax",
+        "name",
+        "autoScalerMin",
         "volumeType",
         "volumeSize"
       ],
@@ -2356,10 +2576,10 @@
     },
     "v1beta1.GCPWorker": {
       "required": [
-        "autoScalerMin",
-        "autoScalerMax",
         "name",
+        "autoScalerMin",
         "machineType",
+        "autoScalerMax",
         "volumeType",
         "volumeSize"
       ],
@@ -2905,10 +3125,10 @@
     },
     "v1beta1.MetalWorker": {
       "required": [
-        "machineType",
         "autoScalerMin",
         "autoScalerMax",
         "name",
+        "machineType",
         "volumeType",
         "volumeSize"
       ],
@@ -3241,10 +3461,10 @@
     },
     "v1beta1.PacketWorker": {
       "required": [
+        "machineType",
         "autoScalerMin",
         "autoScalerMax",
         "name",
-        "machineType",
         "volumeType",
         "volumeSize"
       ],

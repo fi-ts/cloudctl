@@ -12,14 +12,111 @@ import (
 )
 
 type (
-	// BillingTablePrinter print bills in a Table
-	BillingTablePrinter struct {
+	// ClusterBillingTablePrinter print bills in a Table
+	ClusterBillingTablePrinter struct {
+		TablePrinter
+	}
+	// ContainerBillingTablePrinter print bills in a Table
+	ContainerBillingTablePrinter struct {
 		TablePrinter
 	}
 )
 
-// Print a Shoot as table
-func (s BillingTablePrinter) Print(data *models.V1ContainerUsageResponse) {
+// Print a cluster usage as table
+func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "ClusterStart", "ClusterEnd", "Lifetime", "Warnings"}
+	s.shortHeader = []string{"Tenant", "ProjectName", "Partition", "ClusterName", "ClusterStart", "ClusterEnd", "Lifetime"}
+	s.Order(data.Usage)
+	for _, u := range data.Usage {
+		var from string
+		if data.From != nil {
+			from = data.From.String()
+		}
+		var to string
+		if !time.Time(data.To).IsZero() {
+			to = data.To.String()
+		}
+		var tenant string
+		if u.Tenant != nil {
+			tenant = *u.Tenant
+		}
+		var projectID string
+		if u.Projectid != nil {
+			projectID = *u.Projectid
+		}
+		var projectName string
+		if u.Projectname != nil {
+			projectName = *u.Projectname
+		}
+		var partition string
+		if u.Partition != nil {
+			partition = *u.Partition
+		}
+		var clusterID string
+		if u.Clusterid != nil {
+			clusterID = *u.Clusterid
+		}
+		var clusterName string
+		if u.Clustername != nil {
+			clusterName = *u.Clustername
+		}
+		var clusterStart string
+		if u.Clusterstart != nil {
+			clusterStart = u.Clusterstart.String()
+		}
+		var clusterEnd string
+		if u.Clusterend != nil {
+			clusterEnd = u.Clusterend.String()
+		}
+		var lifetime time.Duration
+		if u.Lifetime != nil {
+			lifetime = time.Duration(*u.Lifetime)
+		}
+		var warnings string
+		if u.Warnings != nil {
+			warnings = strings.Join(u.Warnings, ", ")
+		}
+		wide := []string{
+			tenant,
+			from,
+			to,
+			projectID,
+			projectName,
+			partition,
+			clusterID,
+			clusterName,
+			clusterStart,
+			clusterEnd,
+			humanizeDuration(lifetime),
+			warnings,
+		}
+		short := []string{
+			tenant,
+			projectName,
+			partition,
+			clusterName,
+			clusterStart,
+			clusterEnd,
+			humanizeDuration(lifetime),
+		}
+
+		s.addWideData(wide, data)
+		s.addShortData(short, data)
+	}
+
+	footer := []string{"Total",
+		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)),
+	}
+	shortFooter := make([]string, len(s.shortHeader)-len(footer))
+	wideFooter := make([]string, len(s.wideHeader)-len(footer))
+	s.addWideData(append(wideFooter, footer...), data)
+
+	s.addShortData(append(shortFooter, footer...), data)
+	s.render()
+}
+
+// Print a container usage as table
+func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageResponse) {
 	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Namespace", "PodUUID", "PodName", "PodStartDate", "PodEndDate", "ContainerName", "Lifetime", "CPUSeconds", "MemorySeconds", "Warnings"}
 	s.shortHeader = []string{"Tenant", "ProjectName", "Partition", "ClusterName", "Namespace", "PodName", "ContainerName", "Lifetime", "CPU (1 * s)", "Memory (Gi * h)"}
 	s.Order(data.Usage)
@@ -144,7 +241,6 @@ func (s BillingTablePrinter) Print(data *models.V1ContainerUsageResponse) {
 
 	s.addShortData(append(shortFooter, footer...), data)
 	s.render()
-
 }
 
 func humanizeMemory(memorySeconds string) string {
