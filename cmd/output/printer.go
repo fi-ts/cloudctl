@@ -180,7 +180,9 @@ func (t TablePrinter) Print(data interface{}) error {
 		if t.order == "" {
 			t.order = "tenant,project,partition,cluster,namespace,pod,container"
 		}
-		BillingTablePrinter{t}.Print(d)
+		ContainerBillingTablePrinter{t}.Print(d)
+	case *models.V1ClusterUsageResponse:
+		ClusterBillingTablePrinter{t}.Print(d)
 	default:
 		return fmt.Errorf("unknown table printer for type: %T", d)
 	}
