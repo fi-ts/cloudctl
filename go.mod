@@ -3,7 +3,7 @@ module git.f-i-ts.de/cloud-native/cloudctl
 go 1.12
 
 require (
-	git.f-i-ts.de/cloud-native/metallib v0.0.0-20190926080834-2d8284ff2703
+	git.f-i-ts.de/cloud-native/metallib v0.0.0-20191024075058-77224da05846
 	github.com/gardener/gardener v0.0.0-20190816140908-ed26a3fdf2d6
 	github.com/go-openapi/errors v0.19.2
 	github.com/go-openapi/runtime v0.19.6
@@ -21,7 +21,7 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
-	golang.org/x/net v0.0.0-20190918130420-a8b05e9114ab
+	golang.org/x/net v0.0.0-20190923162816-aa69164e4478
 	gopkg.in/go-playground/validator.v9 v9.29.1
 	gopkg.in/square/go-jose.v2 v2.3.1
 	gopkg.in/yaml.v3 v3.0.0-20190905181640-827449938966
