@@ -392,7 +392,12 @@ func clusterDelete(args []string) error {
 	request.SetID(ci)
 	c, err := cloud.Cluster.DeleteCluster(request, cloud.Auth)
 	if err != nil {
-		return err
+		switch e := err.(type) {
+		case *cluster.DeleteClusterDefault:
+			return output.HTTPError(e.Payload)
+		default:
+			return output.UnconventionalError(err)
+		}
 	}
 	return printer.Print(c.Payload)
 }
