@@ -126,7 +126,6 @@ func init() {
 	clusterListCmd.Flags().String("project", "", "show clusters of given project")
 	clusterListCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterListCmd.Flags().String("tenant", "", "show clusters of given tenant")
-	clusterListCmd.Flags().Bool("all", false, "show all clusters")
 
 	clusterUpdateCmd.Flags().Int32("minsize", 0, "minimal workers of the cluster.")
 	clusterUpdateCmd.Flags().Int32("maxsize", 0, "maximal workers of the cluster.")
@@ -222,12 +221,9 @@ func clusterList() error {
 	tenant := viper.GetString("tenant")
 	partition := viper.GetString("partition")
 	project := viper.GetString("project")
-	all := viper.GetBool("all")
 	var cfr *models.V1ClusterFindRequest
-	if tenant != "" || all || partition != "" || project != "" {
-		cfr = &models.V1ClusterFindRequest{
-			All: &all,
-		}
+	if tenant != "" || partition != "" || project != "" {
+		cfr = &models.V1ClusterFindRequest{}
 		if tenant != "" {
 			cfr.Tenant = &tenant
 		}
