@@ -72,6 +72,24 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+	volumeBillingCmd = &cobra.Command{
+		Use:   "volume",
+		Short: "look at volume bills",
+		Example: `If you want to get the costs in Euro, then set two environment variables with the prices from your contract:
+
+		export CLOUDCTL_COSTS_CAPACITY_HOUR=0.01        # Costs in Euro per capacity Hour
+
+		cloudctl billing volume --from 2019-01-01
+		`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			err := initBillingOpts()
+			if err != nil {
+				return err
+			}
+			return volumeUsage()
+		},
+		PreRun: bindPFlags,
+	}
 )
 
 func init() {
@@ -79,6 +97,7 @@ func init() {
 
 	billingCmd.AddCommand(containerBillingCmd)
 	billingCmd.AddCommand(clusterBillingCmd)
+	billingCmd.AddCommand(volumeBillingCmd)
 
 	billingOpts = &BillingOpts{}
 
@@ -111,6 +130,18 @@ func init() {
 		log.Fatal(err.Error())
 	}
 
+	volumeBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
+	volumeBillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
+	volumeBillingCmd.Flags().StringVarP(&billingOpts.FromString, "from", "", "", "the start time in the accounting window to look at")
+	volumeBillingCmd.Flags().StringVarP(&billingOpts.ToString, "to", "", "", "the end time in the accounting window to look at (optional, defaults to current system time)")
+	volumeBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project", "p", "", "the project to account")
+	volumeBillingCmd.Flags().StringVarP(&billingOpts.ClusterID, "cluster", "c", "", "the cluster to account")
+	volumeBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
+	volumeBillingCmd.Flags().BoolVarP(&billingOpts.Forecast, "forecast", "", false, "calculates resource usage until end of time window as if accountable data would not change any more (defaults to false)")
+
+	volumeBillingCmd.MarkFlagRequired("from")
+
+	viper.BindPFlags(containerBillingCmd.Flags())
 	err = viper.BindPFlags(containerBillingCmd.Flags())
 	if err != nil {
 		log.Fatal(err.Error())
@@ -258,6 +289,67 @@ func containerUsageCSV(cur *models.V1ContainerUsageRequest) error {
 	if err != nil {
 		switch e := err.(type) {
 		case *billing.ContainerUsageCSVDefault:
+			return output.HTTPError(e.Payload)
+		default:
+			return output.UnconventionalError(err)
+		}
+	}
+
+	fmt.Println(response.Payload)
+	return nil
+}
+
+func volumeUsage() error {
+	from := strfmt.DateTime(billingOpts.From)
+	vur := models.V1VolumeUsageRequest{
+		From: &from,
+		To:   strfmt.DateTime(billingOpts.To),
+	}
+	if billingOpts.Tenant != "" {
+		vur.Tenant = billingOpts.Tenant
+	}
+	if billingOpts.ProjectID != "" {
+		vur.Projectid = billingOpts.ProjectID
+	}
+	if billingOpts.ClusterID != "" {
+		vur.Clusterid = billingOpts.ClusterID
+	}
+	if billingOpts.Forecast {
+		vur.Forecast = billingOpts.Forecast
+	}
+
+	if billingOpts.CSV {
+		return volumeUsageCSV(&vur)
+	} else {
+		return volumeUsageJSON(&vur)
+	}
+}
+
+func volumeUsageJSON(vur *models.V1VolumeUsageRequest) error {
+	request := billing.NewVolumeUsageParams()
+	request.SetBody(vur)
+
+	response, err := cloud.Billing.VolumeUsage(request, cloud.Auth)
+	if err != nil {
+		switch e := err.(type) {
+		case *billing.VolumeUsageDefault:
+			return output.HTTPError(e.Payload)
+		default:
+			return output.UnconventionalError(err)
+		}
+	}
+
+	return printer.Print(response.Payload)
+}
+
+func volumeUsageCSV(vur *models.V1VolumeUsageRequest) error {
+	request := billing.NewVolumeUsageCSVParams()
+	request.SetBody(vur)
+
+	response, err := cloud.Billing.VolumeUsageCSV(request, cloud.Auth)
+	if err != nil {
+		switch e := err.(type) {
+		case *billing.VolumeUsageCSVDefault:
 			return output.HTTPError(e.Payload)
 		default:
 			return output.UnconventionalError(err)

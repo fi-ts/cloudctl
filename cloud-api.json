@@ -1283,13 +1283,9 @@
       "required": [
         "Tenant",
         "ProjectID",
-        "PartitionID",
-        "All"
+        "PartitionID"
       ],
       "properties": {
-        "All": {
-          "type": "boolean"
-        },
         "PartitionID": {
           "type": "string"
         },
@@ -1646,19 +1642,15 @@
     },
     "v1.IPFindRequest": {
       "required": [
-        "MachineID",
-        "ClusterID",
         "Type",
         "Tags",
         "IPAddress",
         "ProjectID",
         "ParentPrefixCidr",
-        "NetworkID"
+        "NetworkID",
+        "MachineID"
       ],
       "properties": {
-        "ClusterID": {
-          "type": "string"
-        },
         "IPAddress": {
           "type": "string"
         },
@@ -2493,10 +2485,10 @@
     },
     "v1beta1.AWSWorker": {
       "required": [
-        "name",
         "machineType",
         "autoScalerMin",
         "autoScalerMax",
+        "name",
         "volumeType",
         "volumeSize"
       ],
@@ -2811,10 +2803,10 @@
     },
     "v1beta1.AzureWorker": {
       "required": [
-        "name",
         "machineType",
-        "autoScalerMax",
+        "name",
         "autoScalerMin",
+        "autoScalerMax",
         "volumeType",
         "volumeSize"
       ],
@@ -3058,9 +3050,9 @@
     "v1beta1.GCPWorker": {
       "required": [
         "autoScalerMin",
-        "autoScalerMax",
         "name",
         "machineType",
+        "autoScalerMax",
         "volumeType",
         "volumeSize"
       ],
@@ -3606,10 +3598,10 @@
     },
     "v1beta1.MetalWorker": {
       "required": [
-        "name",
-        "machineType",
         "autoScalerMax",
+        "name",
         "autoScalerMin",
+        "machineType",
         "volumeType",
         "volumeSize"
       ],
@@ -3848,9 +3840,9 @@
     },
     "v1beta1.OpenStackWorker": {
       "required": [
-        "autoScalerMin",
-        "name",
         "machineType",
+        "name",
+        "autoScalerMin",
         "autoScalerMax"
       ],
       "properties": {
@@ -3942,10 +3934,10 @@
     },
     "v1beta1.PacketWorker": {
       "required": [
+        "autoScalerMin",
         "autoScalerMax",
         "name",
         "machineType",
-        "autoScalerMin",
         "volumeType",
         "volumeSize"
       ],

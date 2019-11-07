@@ -20,6 +20,10 @@ type (
 	ContainerBillingTablePrinter struct {
 		TablePrinter
 	}
+	// VolumeBillingTablePrinter print bills in a Table
+	VolumeBillingTablePrinter struct {
+		TablePrinter
+	}
 )
 
 // Print a cluster usage as table
@@ -97,6 +101,121 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 			clusterName,
 			clusterStart,
 			clusterEnd,
+			humanizeDuration(lifetime),
+		}
+
+		s.addWideData(wide, data)
+		s.addShortData(short, data)
+	}
+
+	footer := []string{"Total",
+		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)),
+	}
+	shortFooter := make([]string, len(s.shortHeader)-len(footer))
+	wideFooter := make([]string, len(s.wideHeader)-len(footer))
+	s.addWideData(append(wideFooter, footer...), data)
+
+	s.addShortData(append(shortFooter, footer...), data)
+	s.render()
+}
+
+// Print a volume usage as table
+func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Start", "End", "Class", "Name", "Type", "CapacitySeconds (Gi * h)", "Lifetime", "Warnings"}
+	s.shortHeader = []string{"Tenant", "ProjectName", "Partition", "ClusterName", "Class", "Name", "Type", "CapacitySeconds (Gi * h)", "Lifetime"}
+	s.Order(data.Usage)
+	for _, u := range data.Usage {
+		var from string
+		if data.From != nil {
+			from = data.From.String()
+		}
+		var to string
+		if !time.Time(data.To).IsZero() {
+			to = data.To.String()
+		}
+		var tenant string
+		if u.Tenant != nil {
+			tenant = *u.Tenant
+		}
+		var projectID string
+		if u.Projectid != nil {
+			projectID = *u.Projectid
+		}
+		var projectName string
+		if u.Projectname != nil {
+			projectName = *u.Projectname
+		}
+		var partition string
+		if u.Partition != nil {
+			partition = *u.Partition
+		}
+		var clusterID string
+		if u.Clusterid != nil {
+			clusterID = *u.Clusterid
+		}
+		var clusterName string
+		if u.Clustername != nil {
+			clusterName = *u.Clustername
+		}
+		var start string
+		if u.Start != nil {
+			start = u.Start.String()
+		}
+		var end string
+		if u.End != nil {
+			end = u.End.String()
+		}
+		var class string
+		if u.Class != nil {
+			class = *u.Class
+		}
+		var name string
+		if u.Name != nil {
+			name = *u.Name
+		}
+		var volumeType string
+		if u.Type != nil {
+			volumeType = *u.Type
+		}
+		var capacity string
+		if u.Capacityseconds != nil {
+			capacity = humanizeMemory(*u.Capacityseconds)
+		}
+		var lifetime time.Duration
+		if u.Lifetime != nil {
+			lifetime = time.Duration(*u.Lifetime)
+		}
+		var warnings string
+		if u.Warnings != nil {
+			warnings = strings.Join(u.Warnings, ", ")
+		}
+		wide := []string{
+			tenant,
+			from,
+			to,
+			projectID,
+			projectName,
+			partition,
+			clusterID,
+			clusterName,
+			start,
+			end,
+			class,
+			name,
+			volumeType,
+			capacity,
+			humanizeDuration(lifetime),
+			warnings,
+		}
+		short := []string{
+			tenant,
+			projectName,
+			partition,
+			clusterName,
+			class,
+			name,
+			volumeType,
+			capacity,
 			humanizeDuration(lifetime),
 		}
 

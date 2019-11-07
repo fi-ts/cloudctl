@@ -187,6 +187,8 @@ func (t TablePrinter) Print(data interface{}) error {
 		ContainerBillingTablePrinter{t}.Print(d)
 	case *models.V1ClusterUsageResponse:
 		ClusterBillingTablePrinter{t}.Print(d)
+	case *models.V1VolumeUsageResponse:
+		VolumeBillingTablePrinter{t}.Print(d)
 	default:
 		return fmt.Errorf("unknown table printer for type: %T", d)
 	}
