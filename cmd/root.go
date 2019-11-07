@@ -21,9 +21,8 @@ const (
 )
 
 var (
-	kubeconfig string
-	cloud      *c.Cloud
-	printer    output.Printer
+	cloud   *c.Cloud
+	printer output.Printer
 	// will bind all viper flags to subcommands and
 	// prevent overwrite of identical flag names from other commands
 	// see https://github.com/spf13/viper/issues/233#issuecomment-386791444
@@ -73,6 +72,9 @@ func init() {
 	rootCmd.AddCommand(whoamiCmd)
 	rootCmd.AddCommand(projectCmd)
 
+	rootCmd.AddCommand(completionCmd)
+	rootCmd.AddCommand(zshCompletionCmd)
+
 	err := viper.BindPFlags(rootCmd.PersistentFlags())
 	if err != nil {
 		log.Fatalf("error setup root cmd:%v", err)
@@ -104,8 +106,6 @@ func initConfig() {
 			}
 		}
 	}
-
-	kubeconfig = viper.GetString("kubeconfig")
 
 	driverURL := viper.GetString("url")
 	apiToken := viper.GetString("apitoken")

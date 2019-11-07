@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	"log"
 
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/cluster"
 
@@ -113,8 +114,14 @@ func init() {
 	clusterCreateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster.")
 	clusterCreateCmd.Flags().BoolP("defaultingress", "", true, "deploy a default ingress controller")
 
-	clusterCreateCmd.MarkFlagRequired("name")
-	clusterCreateCmd.MarkFlagRequired("project")
+	err := clusterCreateCmd.MarkFlagRequired("name")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = clusterCreateCmd.MarkFlagRequired("project")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	clusterListCmd.Flags().String("project", "", "show clusters of given project")
 	clusterListCmd.Flags().String("partition", "", "show clusters in partition")
@@ -295,7 +302,13 @@ func clusterSSHKeyPair(args []string) error {
 		}
 	}
 	privateKey, err := base64.StdEncoding.DecodeString(*credentials.Payload.SSHKeyPair.PrivateKey)
+	if err != nil {
+		return err
+	}
 	publicKey, err := base64.StdEncoding.DecodeString(*credentials.Payload.SSHKeyPair.PublicKey)
+	if err != nil {
+		return err
+	}
 	fmt.Printf("private key:\n%s\n", privateKey)
 	fmt.Printf("public  key:\n%s\n", publicKey)
 	return nil

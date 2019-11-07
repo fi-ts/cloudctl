@@ -44,6 +44,7 @@ func HumanizeDuration(duration time.Duration) string {
 	}
 	return strings.Join(parts, " ")
 }
+
 func Prompt(msg string) {
 	fmt.Print(msg)
 	scanner := bufio.NewScanner(os.Stdin)
@@ -54,4 +55,22 @@ func Prompt(msg string) {
 		panic(err)
 	}
 	fmt.Println()
+}
+
+// FIXME write a test
+func Truncate(input, elipsis string, maxlength int) string {
+	il := len(input)
+	el := len(elipsis)
+	if il <= maxlength {
+		return input
+	}
+	if maxlength <= el {
+		return input[:maxlength]
+	}
+	startlength := ((maxlength - el) / 2) - el/2
+
+	output := input[:startlength] + elipsis
+	missing := maxlength - len(output)
+	output = output + input[il-missing:]
+	return output
 }

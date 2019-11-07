@@ -203,6 +203,85 @@
         }
       }
     },
+    "/v1/billing/volume-usage": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "billing"
+        ],
+        "summary": "get volume usage for given billing query",
+        "operationId": "volumeUsage",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1.VolumeUsageRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/v1.VolumeUsageResponse"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/v1/billing/volume-usage-csv": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json",
+          "text/plain"
+        ],
+        "tags": [
+          "billing"
+        ],
+        "summary": "get volume usage for given billing query",
+        "operationId": "volumeUsageCSV",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1.VolumeUsageRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
     "/v1/cluster": {
       "get": {
         "consumes": [
@@ -580,6 +659,193 @@
         }
       }
     },
+    "/v1/ip": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "ip"
+        ],
+        "summary": "get all ips",
+        "operationId": "listIPs",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/models.V1IPResponse"
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "ip"
+        ],
+        "summary": "updates an ip.",
+        "operationId": "updateIP",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1.IPUpdateRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/models.V1IPResponse"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/v1/ip/find": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "ip"
+        ],
+        "summary": "find ips by multiple criteria",
+        "operationId": "findIPs",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1.IPFindRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/models.V1IPResponse"
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/v1/ip/free/{ip}": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "ip"
+        ],
+        "summary": "frees an ip and returns the freed entity",
+        "operationId": "freeIP",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "address of the ip",
+            "name": "ip",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/models.V1IPResponse"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/v1/ip/{ip}": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "ip"
+        ],
+        "summary": "get ip by address",
+        "operationId": "getIP",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "address of the ip",
+            "name": "ip",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/models.V1IPResponse"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
     "/v1/project": {
       "get": {
         "consumes": [
@@ -644,48 +910,6 @@
             "description": "Conflict",
             "schema": {
               "$ref": "#/definitions/httperrors.HTTPErrorResponse"
-            }
-          },
-          "default": {
-            "description": "Error",
-            "schema": {
-              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/v1/project/find": {
-      "post": {
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "project"
-        ],
-        "summary": "find projects by multiple criteria",
-        "operationId": "findProjects",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1.ProjectFindRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/models.V1ProjectResponse"
-              }
             }
           },
           "default": {
@@ -810,6 +1034,49 @@
           "description": "http status code",
           "type": "integer",
           "format": "int32"
+        }
+      }
+    },
+    "models.V1IPResponse": {
+      "required": [
+        "changed",
+        "created",
+        "ipaddress",
+        "networkid",
+        "projectid",
+        "tags",
+        "type"
+      ],
+      "properties": {
+        "changed": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "ipaddress": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "networkid": {
+          "type": "string"
+        },
+        "projectid": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "type": {
+          "type": "string"
         }
       }
     },
@@ -1377,6 +1644,72 @@
         }
       }
     },
+    "v1.IPFindRequest": {
+      "required": [
+        "MachineID",
+        "ClusterID",
+        "Type",
+        "Tags",
+        "IPAddress",
+        "ProjectID",
+        "ParentPrefixCidr",
+        "NetworkID"
+      ],
+      "properties": {
+        "ClusterID": {
+          "type": "string"
+        },
+        "IPAddress": {
+          "type": "string"
+        },
+        "MachineID": {
+          "type": "string"
+        },
+        "NetworkID": {
+          "type": "string"
+        },
+        "ParentPrefixCidr": {
+          "type": "string"
+        },
+        "ProjectID": {
+          "type": "string"
+        },
+        "Tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Type": {
+          "type": "string"
+        }
+      }
+    },
+    "v1.IPUpdateRequest": {
+      "required": [
+        "ipaddress"
+      ],
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "ipaddress": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "type": {
+          "type": "string"
+        }
+      }
+    },
     "v1.Initializer": {
       "description": "Initializer is information about an initializer that has not yet completed.",
       "required": [
@@ -1654,20 +1987,6 @@
         }
       }
     },
-    "v1.ProjectFindRequest": {
-      "required": [
-        "Tenant",
-        "All"
-      ],
-      "properties": {
-        "All": {
-          "type": "boolean"
-        },
-        "Tenant": {
-          "type": "string"
-        }
-      }
-    },
     "v1.SSHKeyPair": {
       "required": [
         "PrivateKey",
@@ -1812,6 +2131,168 @@
         "value": {
           "description": "Required. The taint value corresponding to the taint key.",
           "type": "string"
+        }
+      }
+    },
+    "v1.VolumeUsage": {
+      "required": [
+        "tenant",
+        "projectid",
+        "projectname",
+        "partition",
+        "clusterid",
+        "clustername",
+        "class",
+        "type",
+        "name",
+        "start",
+        "end",
+        "lifetime",
+        "capacityseconds",
+        "warnings"
+      ],
+      "properties": {
+        "capacityseconds": {
+          "description": "the capacity seconds of this volume (byte*s)",
+          "type": "string"
+        },
+        "class": {
+          "description": "the class of this volume",
+          "type": "string"
+        },
+        "clusterid": {
+          "description": "the cluster id of this volume",
+          "type": "string"
+        },
+        "clustername": {
+          "description": "the cluster name of this volume",
+          "type": "string"
+        },
+        "end": {
+          "description": "the end time of this volume",
+          "type": "string",
+          "format": "date-time"
+        },
+        "lifetime": {
+          "description": "the duration that this volume is running",
+          "type": "integer",
+          "format": "integer"
+        },
+        "name": {
+          "description": "the name of this volume",
+          "type": "string"
+        },
+        "partition": {
+          "description": "the partition of this volume",
+          "type": "string"
+        },
+        "projectid": {
+          "description": "the project id of this volume",
+          "type": "string"
+        },
+        "projectname": {
+          "description": "the project name of this volume",
+          "type": "string"
+        },
+        "start": {
+          "description": "the start time of this volume",
+          "type": "string",
+          "format": "date-time"
+        },
+        "tenant": {
+          "description": "the tenant of this volume",
+          "type": "string"
+        },
+        "type": {
+          "description": "the type of this volume",
+          "type": "string"
+        },
+        "warnings": {
+          "description": "warnings that occurred when calculating the usage of this volume",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "v1.VolumeUsageAccumuluated": {
+      "required": [
+        "lifetime",
+        "capacityseconds"
+      ],
+      "properties": {
+        "capacityseconds": {
+          "description": "the accumulated capacity seconds of the volumes in this response (byte*s)",
+          "type": "string"
+        },
+        "lifetime": {
+          "description": "the duration that this volume is running",
+          "type": "integer",
+          "format": "integer"
+        }
+      }
+    },
+    "v1.VolumeUsageRequest": {
+      "required": [
+        "from"
+      ],
+      "properties": {
+        "clusterid": {
+          "description": "the cluster id to account for",
+          "type": "string"
+        },
+        "forecast": {
+          "description": "estimates costs if time window ends in the future (defaults to false)",
+          "type": "boolean"
+        },
+        "from": {
+          "description": "the start time in the accounting window to look at",
+          "type": "string",
+          "format": "date-time"
+        },
+        "projectid": {
+          "description": "the project id to account for",
+          "type": "string"
+        },
+        "tenant": {
+          "description": "the tenant to get the container usage for (defaults to all tenants)",
+          "type": "string"
+        },
+        "to": {
+          "description": "the end time in the accounting window to look at (defaults to current system time)",
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1.VolumeUsageResponse": {
+      "required": [
+        "from",
+        "usage",
+        "accumulatedusage"
+      ],
+      "properties": {
+        "accumulatedusage": {
+          "description": "just the usage data of the individual volumes summed up",
+          "$ref": "#/definitions/v1.VolumeUsageAccumuluated"
+        },
+        "from": {
+          "description": "the start time in the accounting window to look at",
+          "type": "string",
+          "format": "date-time"
+        },
+        "to": {
+          "description": "the end time in the accounting window to look at (defaults to current system time)",
+          "type": "string",
+          "format": "date-time"
+        },
+        "usage": {
+          "description": "the usage data of the individual volumes",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1.VolumeUsage"
+          }
         }
       }
     },
@@ -2013,9 +2494,9 @@
     "v1beta1.AWSWorker": {
       "required": [
         "name",
-        "autoScalerMax",
         "machineType",
         "autoScalerMin",
+        "autoScalerMax",
         "volumeType",
         "volumeSize"
       ],
@@ -2188,10 +2669,10 @@
     },
     "v1beta1.AlicloudWorker": {
       "required": [
-        "name",
+        "machineType",
         "autoScalerMin",
         "autoScalerMax",
-        "machineType",
+        "name",
         "volumeType",
         "volumeSize"
       ],
@@ -2330,9 +2811,9 @@
     },
     "v1beta1.AzureWorker": {
       "required": [
+        "name",
         "machineType",
         "autoScalerMax",
-        "name",
         "autoScalerMin",
         "volumeType",
         "volumeSize"
@@ -2576,10 +3057,10 @@
     },
     "v1beta1.GCPWorker": {
       "required": [
-        "name",
         "autoScalerMin",
-        "machineType",
         "autoScalerMax",
+        "name",
+        "machineType",
         "volumeType",
         "volumeSize"
       ],
@@ -3125,10 +3606,10 @@
     },
     "v1beta1.MetalWorker": {
       "required": [
-        "autoScalerMin",
-        "autoScalerMax",
         "name",
         "machineType",
+        "autoScalerMax",
+        "autoScalerMin",
         "volumeType",
         "volumeSize"
       ],
@@ -3367,9 +3848,9 @@
     },
     "v1beta1.OpenStackWorker": {
       "required": [
+        "autoScalerMin",
         "name",
         "machineType",
-        "autoScalerMin",
         "autoScalerMax"
       ],
       "properties": {
@@ -3461,10 +3942,10 @@
     },
     "v1beta1.PacketWorker": {
       "required": [
-        "machineType",
-        "autoScalerMin",
         "autoScalerMax",
         "name",
+        "machineType",
+        "autoScalerMin",
         "volumeType",
         "volumeSize"
       ],

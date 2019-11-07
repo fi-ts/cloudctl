@@ -176,6 +176,10 @@ func (t TablePrinter) Print(data interface{}) error {
 		ProjectTablePrinter{t}.Print([]*models.ModelsV1ProjectResponse{d})
 	case []*models.ModelsV1ProjectResponse:
 		ProjectTablePrinter{t}.Print(d)
+	case []*models.ModelsV1IPResponse:
+		IPTablePrinter{t}.Print(d)
+	case *models.ModelsV1IPResponse:
+		IPTablePrinter{t}.Print([]*models.ModelsV1IPResponse{d})
 	case *models.V1ContainerUsageResponse:
 		if t.order == "" {
 			t.order = "tenant,project,partition,cluster,namespace,pod,container"
