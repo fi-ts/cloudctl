@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/billing"
@@ -91,7 +92,10 @@ func init() {
 	containerBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 	containerBillingCmd.Flags().BoolVarP(&billingOpts.Forecast, "forecast", "", false, "calculates resource usage until end of time window as if accountable data would not change any more (defaults to false)")
 
-	containerBillingCmd.MarkFlagRequired("from")
+	err := containerBillingCmd.MarkFlagRequired("from")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	clusterBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
 	clusterBillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
@@ -102,9 +106,15 @@ func init() {
 	clusterBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 	clusterBillingCmd.Flags().BoolVarP(&billingOpts.Forecast, "forecast", "", false, "calculates resource usage until end of time window as if accountable data would not change any more (defaults to false)")
 
-	clusterBillingCmd.MarkFlagRequired("from")
+	err = clusterBillingCmd.MarkFlagRequired("from")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
-	viper.BindPFlags(containerBillingCmd.Flags())
+	err = viper.BindPFlags(containerBillingCmd.Flags())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 }
 
 func initBillingOpts() error {

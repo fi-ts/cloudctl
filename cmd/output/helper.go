@@ -1,10 +1,15 @@
 package output
 
 import (
+	"bytes"
 	"fmt"
 	"math"
+	"net"
+	"sort"
 	"strings"
 	"time"
+
+	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
 )
 
 func humanizeDuration(duration time.Duration) string {
@@ -41,4 +46,30 @@ func humanizeDuration(duration time.Duration) string {
 		parts = parts[:2]
 	}
 	return strings.Join(parts, " ")
+}
+
+func sortIPs(v1ips []*models.ModelsV1IPResponse) []*models.ModelsV1IPResponse {
+
+	v1ipmap := make(map[string]*models.ModelsV1IPResponse)
+	var ips []string
+	for _, v1ip := range v1ips {
+		v1ipmap[*v1ip.Ipaddress] = v1ip
+		ips = append(ips, *v1ip.Ipaddress)
+	}
+
+	realIPs := make([]net.IP, 0, len(ips))
+
+	for _, ip := range ips {
+		realIPs = append(realIPs, net.ParseIP(ip))
+	}
+
+	sort.Slice(realIPs, func(i, j int) bool {
+		return bytes.Compare(realIPs[i], realIPs[j]) < 0
+	})
+
+	var result []*models.ModelsV1IPResponse
+	for _, ip := range realIPs {
+		result = append(result, v1ipmap[ip.String()])
+	}
+	return result
 }

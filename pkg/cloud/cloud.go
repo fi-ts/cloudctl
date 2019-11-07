@@ -10,6 +10,7 @@ import (
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client"
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/billing"
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/cluster"
+	"git.f-i-ts.de/cloud-native/cloudctl/api/client/ip"
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/project"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
@@ -19,6 +20,7 @@ import (
 type Cloud struct {
 	Cluster *cluster.Client
 	Project *project.Client
+	IP      *ip.Client
 	Billing *billing.Client
 	Auth    runtime.ClientAuthInfoWriter
 }
@@ -50,6 +52,7 @@ func NewCloud(apiurl, apiToken string) (*Cloud, error) {
 		Auth:    auther,
 		Cluster: cloud.Cluster,
 		Project: cloud.Project,
+		IP:      cloud.IP,
 		Billing: cloud.Billing,
 	}
 	return c, nil

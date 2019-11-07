@@ -416,6 +416,10 @@ github.com/metal-pod/gardener v0.0.0-20190827131320-58dad7be7444 h1:NqEDo/f2g3qg
 github.com/metal-pod/gardener v0.0.0-20190827131320-58dad7be7444/go.mod h1:beyDoR8iW+tLso6A3zGQhEJ/+TlrSKRJKQ/aiGA3aHk=
 github.com/metal-pod/metal-go v0.0.0-20190816063655-41f27ea93449 h1:O3jUF01Ju57RYEBOk2tOVoViOR2OkFES4hT+PE9yAaw=
 github.com/metal-pod/metal-go v0.0.0-20190816063655-41f27ea93449/go.mod h1:QiBt6D6ecJPk6DQ0WasKUVFHo6XdbcrogP0lcEwqA4Y=
+github.com/metal-pod/metal-go v0.0.0-20191104095617-f77f18b100f2 h1:tL0HP3KMgalCAgh/br45VDkorcukajnWAYY7gOkV2GI=
+github.com/metal-pod/metal-go v0.0.0-20191104095617-f77f18b100f2/go.mod h1:t27h77pANpArsVodEuJIo4HqmjqgRjTpIDgesABlE7I=
+github.com/metal-pod/metal-go v0.0.0-20191104125404-3f11e972879a h1:Nu3HVYu0pkVlyKyp3gKsiixPv/nTyAEnOkYJIa04w+8=
+github.com/metal-pod/metal-go v0.0.0-20191104125404-3f11e972879a/go.mod h1:t27h77pANpArsVodEuJIo4HqmjqgRjTpIDgesABlE7I=
 github.com/metal-pod/security v0.0.0-20190605085245-f3d2eb409950/go.mod h1:BUuL3n1TYvrGlxfUl2L6zrErSkw1NPchimPfcWMSU1k=
 github.com/metal-pod/security v0.0.0-20190605103437-319d1b2eca89 h1:RRVjpKhVGMGoDjadvr0IZWQSPoFvYUp4es7s62zhx8k=
 github.com/metal-pod/security v0.0.0-20190605103437-319d1b2eca89/go.mod h1:BUuL3n1TYvrGlxfUl2L6zrErSkw1NPchimPfcWMSU1k=

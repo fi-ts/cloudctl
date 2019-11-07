@@ -12,8 +12,8 @@ require (
 	github.com/go-openapi/validate v0.19.3
 	github.com/go-playground/locales v0.12.1 // indirect
 	github.com/go-playground/universal-translator v0.16.0 // indirect
-	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/leodido/go-urn v1.1.0 // indirect
+	github.com/metal-pod/metal-go v0.0.0-20191104125404-3f11e972879a
 	github.com/metal-pod/security v0.0.0-20190920091500-ed81ae92725b
 	github.com/metal-pod/updater v0.0.0-20190905093442-85b34b88c17c
 	github.com/metal-pod/v v0.0.2
