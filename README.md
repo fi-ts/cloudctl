@@ -141,6 +141,155 @@ When you do not need your cluster anymore you can delete your cluster:
 ```bash
 cloudctl cluster rm <cluster UID>
 ```
+### Managing ip addresses
+
+Ingress ip addresses in Kubernetes are generated automatically from an ip address pool
+when a service of LoadBalancer type is created. The default address pool is the internet address pool,
+so applications can be reached from the internet.
+
+In order to make applications accessible from the "internal" MPLS network, the appropriate address pool
+must be specified. The available pools can be found with:
+
+```bash
+cloudctl cluster describe <cluster UID>
+
+(...)
+spec:
+(...)
+    cloud:
+(...)
+        metal:
+(...)
+            networks:
+                additional:
+                  - internet-nbg-w8101
+                  - mpls-nbg-w8101-fits-dev
+
+```
+
+The pool is added as annotation to the service definition:
+```bash
+apiVersion: v1
+kind: Service
+metadata:
+  name: <service name>
+  labels:
+    name: <service name>
+    app: <application name>
+  annotations:
+    metallb.universe.tf/address-pool: mpls-nbg-w8101-fits-dev-ephemeral
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  type: LoadBalancer
+  selector:
+     name: <pod name>
+     app: <application name>
+```
+(Note the attached -ephemeral at the end of the pool name.)
+
+After applying the service definition, its ip address can be found with kubectl get services:
+```bash
+kubectl --kubeconfig banking.kubeconfig get services
+NAME                  TYPE           CLUSTER-IP      EXTERNAL-IP     PORT(S)        AGE
+db                    ClusterIP      10.244.28.130   <none>          5432/TCP       16s
+kubernetes            ClusterIP      10.244.16.1     <none>          443/TCP        24m
+redis                 ClusterIP      10.244.21.227   <none>          6379/TCP       16s
+result-service        LoadBalancer   10.244.19.185   212.34.89.84    80:31643/TCP   16s
+voting-service        LoadBalancer   10.244.27.21    212.34.89.85    80:31866/TCP   16s
+voting-service-mpls   LoadBalancer   10.244.19.97    100.127.129.3   80:32708/TCP   16s
+```
+
+To list all ip addresses assigned to the current project, use
+```bash
+cloudctl ip list --project <project UID>
+```
+
+The output could look like this:
+```bash
+cloudctl ip list --project 9725892b-a830-4ed9-b16a-75e2409c8316
+  IP             TYPE       NAME                            NETWORK                               PROJECT                               TAGS                                                                                      
+  10.2.0.3       ephemeral  shoot--pqpgh...-firewall-ebba7  underlay-nbg-w8101                    9725892b-a830-4ed9-b16a-75e2409c8316  machine:71d4ec00-7107-11e9-8000-efbeaddeefbe                                              
+  10.3.60.1      ephemeral  shoot--pqpgh...-firewall-ebba7  4ff30487-9496-4770-8b88-38406ecd9bba  9725892b-a830-4ed9-b16a-75e2409c8316  machine:71d4ec00-7107-11e9-8000-efbeaddeefbe                                              
+  10.3.60.2      ephemeral  shoot--pqpgh...8774f56d4-glhsw  4ff30487-9496-4770-8b88-38406ecd9bba  9725892b-a830-4ed9-b16a-75e2409c8316  machine:8c4eaa00-7187-11e9-8000-efbeaddeefbe                                              
+  100.127.129.2  ephemeral  shoot--pqpgh...-firewall-ebba7  mpls-nbg-w8101-fits-dev               9725892b-a830-4ed9-b16a-75e2409c8316  machine:71d4ec00-7107-11e9-8000-efbeaddeefbe                                              
+  100.127.129.3  ephemeral  metallb-4e8d5                   mpls-nbg-w8101-fits-dev               9725892b-a830-4ed9-b16a-75e2409c8316  service:deb74391-0245-11ea-8b7d-e6272ba300ae/default/voting-service-mpls                  
+  212.34.89.53   ephemeral  shoot--pqpgh...-firewall-ebba7  internet-nbg-w8101                    9725892b-a830-4ed9-b16a-75e2409c8316  machine:71d4ec00-7107-11e9-8000-efbeaddeefbe                                              
+  212.34.89.54   ephemeral  metallb-a756a                   internet-nbg-w8101                    9725892b-a830-4ed9-b16a-75e2409c8316  service:deb74391-0245-11ea-8b7d-e6272ba300ae/kube-system/vpn-shoot                        
+  212.34.89.55   ephemeral  metallb-a7a35                   internet-nbg-w8101                    9725892b-a830-4ed9-b16a-75e2409c8316  service:deb74391-0245-11ea-8b7d-e6272ba300ae/kube-system/addons-nginx-ingress-controller  
+  212.34.89.80   ephemeral  metallb-4e72b                   internet-nbg-w8101                    9725892b-a830-4ed9-b16a-75e2409c8316  service:deb74391-0245-11ea-8b7d-e6272ba300ae/default/result-service                       
+  212.34.89.81   ephemeral  metallb-4eb0d                   internet-nbg-w8101                    9725892b-a830-4ed9-b16a-75e2409c8316  service:deb74391-0245-11ea-8b7d-e6272ba300ae/default/voting-service                       
+```
+
+To make an ip address static, use the command cloudctl ip static:
+```bash
+cloudctl ip static <ip address>
+```
+
+Static ip addresses are shown differently in the output of cloudctl ip list:
+
+```bash
+  IP             TYPE    NAME           NETWORK                  PROJECT                               TAGS                                                                      
+(...)
+  100.127.129.3  static     metallb-4e8d5                   mpls-nbg-w8101-fits-dev               9725892b-a830-4ed9-b16a-75e2409c8316  service:deb74391-0245-11ea-8b7d-e6272ba300ae/default/voting-service-mpls                  
+```
+
+To bind a static IP to a service, the address gets added explicitly to the specs of the LoadBalancer service:
+```bash
+apiVersion: v1
+kind: Service
+metadata:
+  name: <service name>
+  labels:
+    name: <service name>
+    app: <application name>
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  type: LoadBalancer
+  selector:
+     name: <pod name>
+     app: <application name>
+  loadBalancerIP: 100.127.129.3
+```
+
+The same static ip address can be bound to services in different clusters by specifying it in the appropriate
+service definitions. The output of cloudctl ip list then shows both services for the same ip address:
+```bash
+cloudctl ip list --project 9725892b-a830-4ed9-b16a-75e2409c8316
+  IP             TYPE       NAME                            NETWORK                               PROJECT                               TAGS                                                                                      
+  10.2.0.3       ephemeral  shoot--pqpgh...-firewall-ebba7  underlay-nbg-w8101                    9725892b-a830-4ed9-b16a-75e2409c8316  machine:71d4ec00-7107-11e9-8000-efbeaddeefbe                                              
+  10.2.0.5       ephemeral  shoot--pqpgh...-firewall-2af68  underlay-nbg-w8101                    9725892b-a830-4ed9-b16a-75e2409c8316  machine:00000000-beef-beef-0006-efbeaddeefbe                                              
+  10.3.60.1      ephemeral  shoot--pqpgh...-firewall-ebba7  4ff30487-9496-4770-8b88-38406ecd9bba  9725892b-a830-4ed9-b16a-75e2409c8316  machine:71d4ec00-7107-11e9-8000-efbeaddeefbe                                              
+  10.3.60.2      ephemeral  shoot--pqpgh...8774f56d4-glhsw  4ff30487-9496-4770-8b88-38406ecd9bba  9725892b-a830-4ed9-b16a-75e2409c8316  machine:8c4eaa00-7187-11e9-8000-efbeaddeefbe                                              
+  10.3.96.1      ephemeral  shoot--pqpgh...-firewall-2af68  0f573b0b-bbe4-4d80-a767-3b522ab0fb08  9725892b-a830-4ed9-b16a-75e2409c8316  machine:00000000-beef-beef-0006-efbeaddeefbe                                              
+  10.3.96.2      ephemeral  shoot--pqpgh...84cd5df9d-q45lz  0f573b0b-bbe4-4d80-a767-3b522ab0fb08  9725892b-a830-4ed9-b16a-75e2409c8316  machine:00000000-beef-beef-0012-efbeaddeefbe                                              
+  100.127.129.2  ephemeral  shoot--pqpgh...-firewall-ebba7  mpls-nbg-w8101-fits-dev               9725892b-a830-4ed9-b16a-75e2409c8316  machine:71d4ec00-7107-11e9-8000-efbeaddeefbe                                              
+  100.127.129.3  static     metallb-4e8d5                   mpls-nbg-w8101-fits-dev               9725892b-a830-4ed9-b16a-75e2409c8316  service:1c1e0e4c-024c-11ea-8b7d-e6272ba300ae/default/voting-service-mpls                  
+                                                                                                                                        service:deb74391-0245-11ea-8b7d-e6272ba300ae/default/voting-service-mpls                  
+  100.127.129.4  ephemeral  shoot--pqpgh...-firewall-2af68  mpls-nbg-w8101-fits-dev               9725892b-a830-4ed9-b16a-75e2409c8316  machine:00000000-beef-beef-0006-efbeaddeefbe                                              
+  212.34.89.53   ephemeral  shoot--pqpgh...-firewall-ebba7  internet-nbg-w8101                    9725892b-a830-4ed9-b16a-75e2409c8316  machine:71d4ec00-7107-11e9-8000-efbeaddeefbe                                              
+  212.34.89.54   ephemeral  metallb-a756a                   internet-nbg-w8101                    9725892b-a830-4ed9-b16a-75e2409c8316  service:deb74391-0245-11ea-8b7d-e6272ba300ae/kube-system/vpn-shoot                        
+  212.34.89.55   ephemeral  metallb-a7a35                   internet-nbg-w8101                    9725892b-a830-4ed9-b16a-75e2409c8316  service:deb74391-0245-11ea-8b7d-e6272ba300ae/kube-system/addons-nginx-ingress-controller  
+  212.34.89.78   ephemeral  shoot--pqpgh...-firewall-2af68  internet-nbg-w8101                    9725892b-a830-4ed9-b16a-75e2409c8316  machine:00000000-beef-beef-0006-efbeaddeefbe                                              
+  212.34.89.79   ephemeral  metallb-fc775                   internet-nbg-w8101                    9725892b-a830-4ed9-b16a-75e2409c8316  service:1c1e0e4c-024c-11ea-8b7d-e6272ba300ae/kube-system/addons-nginx-ingress-controller  
+  212.34.89.80   ephemeral  metallb-4e72b                   internet-nbg-w8101                    9725892b-a830-4ed9-b16a-75e2409c8316  service:deb74391-0245-11ea-8b7d-e6272ba300ae/default/result-service                       
+  212.34.89.81   ephemeral  metallb-4eb0d                   internet-nbg-w8101                    9725892b-a830-4ed9-b16a-75e2409c8316  service:deb74391-0245-11ea-8b7d-e6272ba300ae/default/voting-service                       
+  212.34.89.82   ephemeral  metallb-fd499                   internet-nbg-w8101                    9725892b-a830-4ed9-b16a-75e2409c8316  service:1c1e0e4c-024c-11ea-8b7d-e6272ba300ae/kube-system/vpn-shoot                        
+  212.34.89.84   ephemeral  metallb-ace53                   internet-nbg-w8101                    9725892b-a830-4ed9-b16a-75e2409c8316  service:1c1e0e4c-024c-11ea-8b7d-e6272ba300ae/default/result-service                       
+  212.34.89.85   ephemeral  metallb-ad01d                   internet-nbg-w8101                    9725892b-a830-4ed9-b16a-75e2409c8316  service:1c1e0e4c-024c-11ea-8b7d-e6272ba300ae/default/voting-service                       
+```
+
+Static ip addresses are assigned to the project and survive deletion of individual clusters. To free a static ip address use the command cloudctl ip delete:
+```bash
+cloudctl ip delete 100.127.129.3
+  IP             TYPE    NAME           NETWORK                  PROJECT                               TAGS  
+  100.127.129.3  static  metallb-4e8d5  mpls-nbg-w8101-fits-dev  9725892b-a830-4ed9-b16a-75e2409c8316        
+```
+
+Static ip addresses must freed before their project can be deleted.
 
 ## Advanced Usage
 
