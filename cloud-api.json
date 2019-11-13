@@ -1182,16 +1182,10 @@
       "required": [
         "Name",
         "Description",
-        "CreatedBy",
         "ProjectID",
-        "Owner",
         "Tenant",
-        "Purpose",
-        "LoadBalancerProvider",
-        "MachineImage",
         "FirewallImage",
         "FirewallSize",
-        "NodeNetwork",
         "AdditionalNetworks",
         "Workers",
         "Zones",
@@ -1209,9 +1203,6 @@
         "Addons": {
           "$ref": "#/definitions/v1.Addons"
         },
-        "CreatedBy": {
-          "type": "string"
-        },
         "Description": {
           "type": "string"
         },
@@ -1224,28 +1215,13 @@
         "Kubernetes": {
           "$ref": "#/definitions/v1.Kubernetes"
         },
-        "LoadBalancerProvider": {
-          "type": "string"
-        },
-        "MachineImage": {
-          "$ref": "#/definitions/v1.MachineImage"
-        },
         "Maintenance": {
           "$ref": "#/definitions/v1.Maintenance"
         },
         "Name": {
           "type": "string"
         },
-        "NodeNetwork": {
-          "type": "string"
-        },
-        "Owner": {
-          "type": "string"
-        },
         "ProjectID": {
-          "type": "string"
-        },
-        "Purpose": {
           "type": "string"
         },
         "Tenant": {
@@ -1642,13 +1618,13 @@
     },
     "v1.IPFindRequest": {
       "required": [
+        "MachineID",
         "Type",
         "Tags",
         "IPAddress",
         "ProjectID",
         "ParentPrefixCidr",
-        "NetworkID",
-        "MachineID"
+        "NetworkID"
       ],
       "properties": {
         "IPAddress": {
@@ -1979,6 +1955,20 @@
         }
       }
     },
+    "v1.PartitionContraints": {
+      "required": [
+        "networks"
+      ],
+      "properties": {
+        "networks": {
+          "description": "the list of available networks in this partition",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "v1.SSHKeyPair": {
       "required": [
         "PrivateKey",
@@ -1995,17 +1985,43 @@
     },
     "v1.ShootConstraints": {
       "required": [
-        "KubernetesVersions",
-        "Partitions"
+        "kubernetes_versions",
+        "partitions",
+        "partition_constraints",
+        "machine_images",
+        "machine_types"
       ],
       "properties": {
-        "KubernetesVersions": {
+        "kubernetes_versions": {
+          "description": "the list of available kubernetes versions",
           "type": "array",
           "items": {
             "type": "string"
           }
         },
-        "Partitions": {
+        "machine_images": {
+          "description": "the list of available machine images",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1.MachineImage"
+          }
+        },
+        "machine_types": {
+          "description": "the list of available machine types",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "partition_constraints": {
+          "description": "a list of partition specific shoot contraints",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v1.PartitionContraints"
+          }
+        },
+        "partitions": {
+          "description": "the list of available partitions",
           "type": "array",
           "items": {
             "type": "string"
@@ -2295,9 +2311,7 @@
         "AutoScalerMin",
         "AutoScalerMax",
         "MaxSurge",
-        "MaxUnavailable",
-        "VolumeType",
-        "VolumeSize"
+        "MaxUnavailable"
       ],
       "properties": {
         "AutoScalerMax": {
@@ -2318,12 +2332,6 @@
           "type": "string"
         },
         "Name": {
-          "type": "string"
-        },
-        "VolumeSize": {
-          "type": "string"
-        },
-        "VolumeType": {
           "type": "string"
         }
       }
@@ -2485,10 +2493,10 @@
     },
     "v1beta1.AWSWorker": {
       "required": [
+        "name",
         "machineType",
         "autoScalerMin",
         "autoScalerMax",
-        "name",
         "volumeType",
         "volumeSize"
       ],
@@ -2803,10 +2811,10 @@
     },
     "v1beta1.AzureWorker": {
       "required": [
-        "machineType",
-        "name",
         "autoScalerMin",
         "autoScalerMax",
+        "name",
+        "machineType",
         "volumeType",
         "volumeSize"
       ],
@@ -3049,10 +3057,10 @@
     },
     "v1beta1.GCPWorker": {
       "required": [
-        "autoScalerMin",
         "name",
-        "machineType",
         "autoScalerMax",
+        "machineType",
+        "autoScalerMin",
         "volumeType",
         "volumeSize"
       ],
@@ -3598,10 +3606,10 @@
     },
     "v1beta1.MetalWorker": {
       "required": [
-        "autoScalerMax",
         "name",
-        "autoScalerMin",
         "machineType",
+        "autoScalerMin",
+        "autoScalerMax",
         "volumeType",
         "volumeSize"
       ],
@@ -3841,8 +3849,8 @@
     "v1beta1.OpenStackWorker": {
       "required": [
         "machineType",
-        "name",
         "autoScalerMin",
+        "name",
         "autoScalerMax"
       ],
       "properties": {
@@ -3934,10 +3942,10 @@
     },
     "v1beta1.PacketWorker": {
       "required": [
+        "machineType",
         "autoScalerMin",
         "autoScalerMax",
         "name",
-        "machineType",
         "volumeType",
         "volumeSize"
       ],
