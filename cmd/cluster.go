@@ -101,7 +101,6 @@ var (
 func init() {
 	clusterCreateCmd.Flags().String("name", "", "name of the cluster, max 10 characters. [required]")
 	clusterCreateCmd.Flags().String("description", "", "description of the cluster. [required]")
-	clusterCreateCmd.Flags().String("purpose", "production", "purpose of the cluster, can be one of production|dev|eval.")
 	clusterCreateCmd.Flags().String("project", "", "project where this cluster should belong to. [required]")
 	clusterCreateCmd.Flags().String("partition", "nbg-w8101", "partition of the cluster. [required]")
 	clusterCreateCmd.Flags().String("version", "1.14.3", "kubernetes version of the cluster. [required]")
@@ -145,7 +144,6 @@ func init() {
 func clusterCreate() error {
 	name := viper.GetString("name")
 	desc := viper.GetString("description")
-	purpose := viper.GetString("purpose")
 	partition := viper.GetString("partition")
 	project := viper.GetString("project")
 
@@ -171,7 +169,6 @@ func clusterCreate() error {
 		ProjectID:   &project,
 		Name:        &name,
 		Description: &desc,
-		Purpose:     &purpose,
 		Workers: []*models.V1Worker{
 			{
 				AutoScalerMin:  &minsize,
