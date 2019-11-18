@@ -103,7 +103,9 @@ func init() {
 	clusterCreateCmd.Flags().String("description", "", "description of the cluster. [required]")
 	clusterCreateCmd.Flags().String("project", "", "project where this cluster should belong to. [required]")
 	clusterCreateCmd.Flags().String("partition", "nbg-w8101", "partition of the cluster. [required]")
-	clusterCreateCmd.Flags().String("version", "1.14.3", "kubernetes version of the cluster. [required]")
+	clusterCreateCmd.Flags().String("version", "1.14.3", "kubernetes version of the cluster. [optional]")
+	clusterCreateCmd.Flags().String("machinetype", "", "machine type to use for the nodes. [optional]")
+	clusterCreateCmd.Flags().String("firewalltype", "", "machine type to use for the firewall. [optional]")
 	clusterCreateCmd.Flags().Int32("minsize", 1, "minimal workers of the cluster.")
 	clusterCreateCmd.Flags().Int32("maxsize", 1, "maximal workers of the cluster.")
 	clusterCreateCmd.Flags().String("maxsurge", "1", "max number (e.g. 1) or percentage (e.g. 10%) of workers created during a update of the cluster.")
@@ -146,6 +148,8 @@ func clusterCreate() error {
 	desc := viper.GetString("description")
 	partition := viper.GetString("partition")
 	project := viper.GetString("project")
+	machineType := viper.GetString("machinetype")
+	firewallType := viper.GetString("firewalltype")
 
 	minsize := viper.GetInt32("minsize")
 	maxsize := viper.GetInt32("maxsize")
@@ -175,8 +179,10 @@ func clusterCreate() error {
 				AutoScalerMax:  &maxsize,
 				MaxSurge:       &maxsurge,
 				MaxUnavailable: &maxunavailable,
+				MachineType:    &machineType,
 			},
 		},
+		FirewallSize: &firewallType,
 		Kubernetes: &models.V1Kubernetes{
 			AllowPrivilegedContainers: &allowprivileged,
 			Version:                   &version,
