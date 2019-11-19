@@ -8,7 +8,7 @@ import (
 	"github.com/metal-pod/security"
 
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client"
-	"git.f-i-ts.de/cloud-native/cloudctl/api/client/billing"
+	"git.f-i-ts.de/cloud-native/cloudctl/api/client/accounting"
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/cluster"
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/ip"
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/project"
@@ -18,11 +18,11 @@ import (
 
 // Cloud provides cloud functions
 type Cloud struct {
-	Cluster *cluster.Client
-	Project *project.Client
-	IP      *ip.Client
-	Billing *billing.Client
-	Auth    runtime.ClientAuthInfoWriter
+	Cluster    *cluster.Client
+	Project    *project.Client
+	IP         *ip.Client
+	Accounting *accounting.Client
+	Auth       runtime.ClientAuthInfoWriter
 }
 
 // NewCloud create a new Cloud
@@ -49,11 +49,11 @@ func NewCloud(apiurl, apiToken string) (*Cloud, error) {
 	cloud := client.New(transport, strfmt.Default)
 
 	c := &Cloud{
-		Auth:    auther,
-		Cluster: cloud.Cluster,
-		Project: cloud.Project,
-		IP:      cloud.IP,
-		Billing: cloud.Billing,
+		Auth:       auther,
+		Cluster:    cloud.Cluster,
+		Project:    cloud.Project,
+		IP:         cloud.IP,
+		Accounting: cloud.Accounting,
 	}
 	return c, nil
 }
