@@ -136,11 +136,18 @@ Now you are ready to use your Cluster with kubectl.
 
 ### Delete your cluster
 
-When you do not need your cluster anymore you can delete your cluster:
+When you do not need your cluster anymore you can delete your cluster, to do so you get asked two questions to be sure you delete the correct cluster.
+The first question asks you for the first part of the clusterID. If you clusterID looks like: `b5e24862-3cc2-4145-bfa4-ae4af102f965` the first part is up to the first `-` which is in this case `b5e24862`. The second question is the name of the cluster. If both was correct, your cluster will be deleted, if not the deletion is not triggered.
 
 ```bash
 cloudctl cluster rm <cluster UID>
+  UID                                   TENANT  PROJECT                               NAME        VERSION  PARTITION  OPERATION   PROGRESS      API   CONTROL  NODES  SYSTEM  SIZE  AGE
+  9b86273a-0ab1-11ea-8057-9ad8c07d0e04  fits    b5e24862-3cc2-4145-bfa4-ae4af102f965  s3-cluster  1.14.3   fra-equ01  Processing  63% [Delete]  True  False    True   False   1/1   17m 22s
+Please answer some security questions to delete this cluster
+first part of clusterID:9b86273a
+Clustername:s3-cluster
 ```
+
 ### Managing ip addresses
 
 Ingress ip addresses in Kubernetes are generated automatically from an ip address pool
