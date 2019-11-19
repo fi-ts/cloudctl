@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"git.f-i-ts.de/cloud-native/cloudctl/api/client/billing"
+	"git.f-i-ts.de/cloud-native/cloudctl/api/client/accounting"
 	output "git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
 	"github.com/go-openapi/strfmt"
 
@@ -201,13 +201,13 @@ func clusterUsage() error {
 }
 
 func clusterUsageJSON(cur *models.V1ClusterUsageRequest) error {
-	request := billing.NewClusterUsageParams()
+	request := accounting.NewClusterUsageParams()
 	request.SetBody(cur)
 
-	response, err := cloud.Billing.ClusterUsage(request, cloud.Auth)
+	response, err := cloud.Accounting.ClusterUsage(request, cloud.Auth)
 	if err != nil {
 		switch e := err.(type) {
-		case *billing.ClusterUsageDefault:
+		case *accounting.ClusterUsageDefault:
 			return output.HTTPError(e.Payload)
 		default:
 			return output.UnconventionalError(err)
@@ -218,13 +218,13 @@ func clusterUsageJSON(cur *models.V1ClusterUsageRequest) error {
 }
 
 func clusterUsageCSV(cur *models.V1ClusterUsageRequest) error {
-	request := billing.NewClusterUsageCSVParams()
+	request := accounting.NewClusterUsageCSVParams()
 	request.SetBody(cur)
 
-	response, err := cloud.Billing.ClusterUsageCSV(request, cloud.Auth)
+	response, err := cloud.Accounting.ClusterUsageCSV(request, cloud.Auth)
 	if err != nil {
 		switch e := err.(type) {
-		case *billing.ClusterUsageCSVDefault:
+		case *accounting.ClusterUsageCSVDefault:
 			return output.HTTPError(e.Payload)
 		default:
 			return output.UnconventionalError(err)
@@ -265,13 +265,13 @@ func containerUsage() error {
 }
 
 func containerUsageJSON(cur *models.V1ContainerUsageRequest) error {
-	request := billing.NewContainerUsageParams()
+	request := accounting.NewContainerUsageParams()
 	request.SetBody(cur)
 
-	response, err := cloud.Billing.ContainerUsage(request, cloud.Auth)
+	response, err := cloud.Accounting.ContainerUsage(request, cloud.Auth)
 	if err != nil {
 		switch e := err.(type) {
-		case *billing.ContainerUsageDefault:
+		case *accounting.ContainerUsageDefault:
 			return output.HTTPError(e.Payload)
 		default:
 			return output.UnconventionalError(err)
@@ -282,13 +282,13 @@ func containerUsageJSON(cur *models.V1ContainerUsageRequest) error {
 }
 
 func containerUsageCSV(cur *models.V1ContainerUsageRequest) error {
-	request := billing.NewContainerUsageCSVParams()
+	request := accounting.NewContainerUsageCSVParams()
 	request.SetBody(cur)
 
-	response, err := cloud.Billing.ContainerUsageCSV(request, cloud.Auth)
+	response, err := cloud.Accounting.ContainerUsageCSV(request, cloud.Auth)
 	if err != nil {
 		switch e := err.(type) {
-		case *billing.ContainerUsageCSVDefault:
+		case *accounting.ContainerUsageCSVDefault:
 			return output.HTTPError(e.Payload)
 		default:
 			return output.UnconventionalError(err)
@@ -326,13 +326,13 @@ func volumeUsage() error {
 }
 
 func volumeUsageJSON(vur *models.V1VolumeUsageRequest) error {
-	request := billing.NewVolumeUsageParams()
+	request := accounting.NewVolumeUsageParams()
 	request.SetBody(vur)
 
-	response, err := cloud.Billing.VolumeUsage(request, cloud.Auth)
+	response, err := cloud.Accounting.VolumeUsage(request, cloud.Auth)
 	if err != nil {
 		switch e := err.(type) {
-		case *billing.VolumeUsageDefault:
+		case *accounting.VolumeUsageDefault:
 			return output.HTTPError(e.Payload)
 		default:
 			return output.UnconventionalError(err)
@@ -343,13 +343,13 @@ func volumeUsageJSON(vur *models.V1VolumeUsageRequest) error {
 }
 
 func volumeUsageCSV(vur *models.V1VolumeUsageRequest) error {
-	request := billing.NewVolumeUsageCSVParams()
+	request := accounting.NewVolumeUsageCSVParams()
 	request.SetBody(vur)
 
-	response, err := cloud.Billing.VolumeUsageCSV(request, cloud.Auth)
+	response, err := cloud.Accounting.VolumeUsageCSV(request, cloud.Auth)
 	if err != nil {
 		switch e := err.(type) {
-		case *billing.VolumeUsageCSVDefault:
+		case *accounting.VolumeUsageCSVDefault:
 			return output.HTTPError(e.Payload)
 		default:
 			return output.UnconventionalError(err)

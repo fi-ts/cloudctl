@@ -45,7 +45,7 @@
         }
       }
     },
-    "/v1/billing/cluster-usage": {
+    "/v1/accounting/cluster-usage": {
       "get": {
         "consumes": [
           "application/json"
@@ -54,9 +54,9 @@
           "application/json"
         ],
         "tags": [
-          "billing"
+          "accounting"
         ],
-        "summary": "get cluster usage for given billing query",
+        "summary": "get cluster usage for given accounting query",
         "operationId": "clusterUsage",
         "parameters": [
           {
@@ -84,7 +84,7 @@
         }
       }
     },
-    "/v1/billing/cluster-usage-csv": {
+    "/v1/accounting/cluster-usage-csv": {
       "get": {
         "consumes": [
           "application/json"
@@ -94,9 +94,9 @@
           "text/plain"
         ],
         "tags": [
-          "billing"
+          "accounting"
         ],
-        "summary": "get cluster usage for given billing query",
+        "summary": "get cluster usage for given accounting query",
         "operationId": "clusterUsageCSV",
         "parameters": [
           {
@@ -124,7 +124,7 @@
         }
       }
     },
-    "/v1/billing/container-usage": {
+    "/v1/accounting/container-usage": {
       "get": {
         "consumes": [
           "application/json"
@@ -133,9 +133,9 @@
           "application/json"
         ],
         "tags": [
-          "billing"
+          "accounting"
         ],
-        "summary": "get container usage for given billing query",
+        "summary": "get container usage for given accounting query",
         "operationId": "containerUsage",
         "parameters": [
           {
@@ -163,7 +163,7 @@
         }
       }
     },
-    "/v1/billing/container-usage-csv": {
+    "/v1/accounting/container-usage-csv": {
       "get": {
         "consumes": [
           "application/json"
@@ -173,9 +173,9 @@
           "text/plain"
         ],
         "tags": [
-          "billing"
+          "accounting"
         ],
-        "summary": "get container usage for given billing query",
+        "summary": "get container usage for given accounting query",
         "operationId": "containerUsageCSV",
         "parameters": [
           {
@@ -203,7 +203,7 @@
         }
       }
     },
-    "/v1/billing/volume-usage": {
+    "/v1/accounting/volume-usage": {
       "get": {
         "consumes": [
           "application/json"
@@ -212,9 +212,9 @@
           "application/json"
         ],
         "tags": [
-          "billing"
+          "accounting"
         ],
-        "summary": "get volume usage for given billing query",
+        "summary": "get volume usage for given accounting query",
         "operationId": "volumeUsage",
         "parameters": [
           {
@@ -242,7 +242,7 @@
         }
       }
     },
-    "/v1/billing/volume-usage-csv": {
+    "/v1/accounting/volume-usage-csv": {
       "get": {
         "consumes": [
           "application/json"
@@ -252,9 +252,9 @@
           "text/plain"
         ],
         "tags": [
-          "billing"
+          "accounting"
         ],
-        "summary": "get volume usage for given billing query",
+        "summary": "get volume usage for given accounting query",
         "operationId": "volumeUsageCSV",
         "parameters": [
           {
@@ -1618,13 +1618,13 @@
     },
     "v1.IPFindRequest": {
       "required": [
-        "MachineID",
-        "Type",
-        "Tags",
         "IPAddress",
         "ProjectID",
         "ParentPrefixCidr",
-        "NetworkID"
+        "NetworkID",
+        "MachineID",
+        "Type",
+        "Tags"
       ],
       "properties": {
         "IPAddress": {
@@ -2494,8 +2494,8 @@
     "v1beta1.AWSWorker": {
       "required": [
         "name",
-        "machineType",
         "autoScalerMin",
+        "machineType",
         "autoScalerMax",
         "volumeType",
         "volumeSize"
@@ -2670,9 +2670,9 @@
     "v1beta1.AlicloudWorker": {
       "required": [
         "machineType",
+        "name",
         "autoScalerMin",
         "autoScalerMax",
-        "name",
         "volumeType",
         "volumeSize"
       ],
@@ -2811,9 +2811,9 @@
     },
     "v1beta1.AzureWorker": {
       "required": [
-        "autoScalerMin",
-        "autoScalerMax",
         "name",
+        "autoScalerMax",
+        "autoScalerMin",
         "machineType",
         "volumeType",
         "volumeSize"
@@ -3057,10 +3057,10 @@
     },
     "v1beta1.GCPWorker": {
       "required": [
-        "name",
-        "autoScalerMax",
         "machineType",
         "autoScalerMin",
+        "name",
+        "autoScalerMax",
         "volumeType",
         "volumeSize"
       ],
@@ -3606,8 +3606,8 @@
     },
     "v1beta1.MetalWorker": {
       "required": [
-        "name",
         "machineType",
+        "name",
         "autoScalerMin",
         "autoScalerMax",
         "volumeType",
@@ -3850,8 +3850,8 @@
       "required": [
         "machineType",
         "autoScalerMin",
-        "name",
-        "autoScalerMax"
+        "autoScalerMax",
+        "name"
       ],
       "properties": {
         "annotations": {
@@ -4160,7 +4160,7 @@
     },
     {
       "description": "Managing accounting entities",
-      "name": "billing"
+      "name": "accounting"
     }
   ]
 }
