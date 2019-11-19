@@ -389,7 +389,7 @@ func clusterDelete(args []string) error {
 			return output.UnconventionalError(err)
 		}
 	}
-	printer.Print(shoot)
+	printer.Print(shoot.Payload)
 	helper.Prompt("Press Enter to delete above cluster.")
 	request := cluster.NewDeleteClusterParams()
 	request.SetID(ci)
