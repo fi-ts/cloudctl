@@ -45,16 +45,18 @@ func HumanizeDuration(duration time.Duration) string {
 	return strings.Join(parts, " ")
 }
 
-func Prompt(msg string) {
+func Prompt(msg, compare string) error {
 	fmt.Print(msg)
 	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		break
-	}
+	scanner.Scan()
 	if err := scanner.Err(); err != nil {
 		panic(err)
 	}
-	fmt.Println()
+	text := scanner.Text()
+	if text != compare {
+		return fmt.Errorf("wrong part (%s) of the clusterid given, please try again", text)
+	}
+	return nil
 }
 
 // FIXME write a test

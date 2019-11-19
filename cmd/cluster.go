@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
+	"strings"
 
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/cluster"
 
@@ -390,7 +391,16 @@ func clusterDelete(args []string) error {
 		}
 	}
 	printer.Print(shoot.Payload)
-	helper.Prompt("Press Enter to delete above cluster.")
+	firstPartOfClusterID := strings.Split(shoot.Payload.Metadata.UID, "-")[0]
+	fmt.Println("Please answer some security questions to delete this cluster")
+	err = helper.Prompt("first part of clusterID:", firstPartOfClusterID)
+	if err != nil {
+		return err
+	}
+	err = helper.Prompt("Clustername:", shoot.Payload.Metadata.Name)
+	if err != nil {
+		return err
+	}
 	request := cluster.NewDeleteClusterParams()
 	request.SetID(ci)
 	c, err := cloud.Cluster.DeleteCluster(request, cloud.Auth)
