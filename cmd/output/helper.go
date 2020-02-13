@@ -73,3 +73,29 @@ func sortIPs(v1ips []*models.ModelsV1IPResponse) []*models.ModelsV1IPResponse {
 	}
 	return result
 }
+
+// strValue returns the value of a string pointer of not nil, otherwise empty string
+func strValue(strPtr *string) string {
+	if strPtr != nil {
+		return *strPtr
+	}
+	return ""
+}
+
+// FIXME write a test
+func truncate(input, elipsis string, maxlength int) string {
+	il := len(input)
+	el := len(elipsis)
+	if il <= maxlength {
+		return input
+	}
+	if maxlength <= el {
+		return input[:maxlength]
+	}
+	startlength := ((maxlength - el) / 2) - el/2
+
+	output := input[:startlength] + elipsis
+	missing := maxlength - len(output)
+	output = output + input[il-missing:]
+	return output
+}

@@ -18,27 +18,31 @@ type (
 )
 
 // Print a Shoot as table
-func (s ShootTablePrinter) Print(data []*models.V1beta1Shoot) {
+func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age"}
 	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age"}
-	for _, shoot := range data {
+	for _, cluster := range data {
+		shoot := cluster.Shoot
+		infrastructure := cluster.Infrastructure
 
 		apiserver := ""
 		controlplane := ""
 		nodes := ""
 		system := ""
-		for _, condition := range shoot.Status.Conditions {
-			status := *condition.Status
-			switch *condition.Type {
-			case string(v1beta1.ShootControlPlaneHealthy):
-				controlplane = status
-			case string(v1beta1.ShootEveryNodeReady):
-				nodes = status
-			case string(v1beta1.ShootSystemComponentsHealthy):
-				system = status
-			case string(v1beta1.ShootAlertsInactive):
-			case string(v1beta1.ShootAPIServerAvailable):
-				apiserver = status
+		if shoot.Status != nil {
+			for _, condition := range shoot.Status.Conditions {
+				status := *condition.Status
+				switch *condition.Type {
+				case string(v1beta1.ShootControlPlaneHealthy):
+					controlplane = status
+				case string(v1beta1.ShootEveryNodeReady):
+					nodes = status
+				case string(v1beta1.ShootSystemComponentsHealthy):
+					system = status
+				case string(v1beta1.ShootAlertsInactive):
+				case string(v1beta1.ShootAPIServerAvailable):
+					apiserver = status
+				}
 			}
 		}
 
@@ -54,9 +58,12 @@ func (s ShootTablePrinter) Print(data []*models.V1beta1Shoot) {
 			operation = *shoot.Status.LastOperation.State
 			progress = fmt.Sprintf("%d%% [%s]", *shoot.Status.LastOperation.Progress, *shoot.Status.LastOperation.Type)
 		}
-		partition := shoot.Spec.Cloud.Metal.Zones[0]
+		partition := ""
+		if infrastructure != nil && infrastructure.PartitionID != nil {
+			partition = *infrastructure.PartitionID
+		}
 		dnsdomain := ""
-		if shoot.Spec.DNS.Domain != "" {
+		if shoot.Spec.DNS != nil && shoot.Spec.DNS.Domain != "" {
 			dnsdomain = shoot.Spec.DNS.Domain
 		}
 		version := ""
@@ -66,10 +73,10 @@ func (s ShootTablePrinter) Print(data []*models.V1beta1Shoot) {
 
 		autoScaleMin := int32(0)
 		autoScaleMax := int32(0)
-		if shoot.Spec.Cloud.Metal.Workers != nil && len(shoot.Spec.Cloud.Metal.Workers) > 0 {
-			workers := shoot.Spec.Cloud.Metal.Workers[0]
-			autoScaleMin = *workers.AutoScalerMin
-			autoScaleMax = *workers.AutoScalerMax
+		if shoot.Spec.Provider.Workers != nil && len(shoot.Spec.Provider.Workers) > 0 {
+			workers := shoot.Spec.Provider.Workers[0]
+			autoScaleMin = *workers.Minimum
+			autoScaleMax = *workers.Maximum
 		}
 		size := fmt.Sprintf("%d/%d", autoScaleMin, autoScaleMax)
 		tenant := shoot.Metadata.Annotations["cluster.metal-pod.io/tenant"]
@@ -94,7 +101,6 @@ func (s ShootTablePrinter) Print(data []*models.V1beta1Shoot) {
 			size,
 			age,
 		}
-
 		s.addWideData(wide, shoot)
 		s.addShortData(short, shoot)
 	}

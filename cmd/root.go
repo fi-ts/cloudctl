@@ -122,8 +122,10 @@ func initConfig() {
 		}
 	}
 
+	hmac := viper.GetString("hmac")
+
 	var err error
-	cloud, err = c.NewCloud(driverURL, apiToken)
+	cloud, err = c.NewCloud(driverURL, apiToken, hmac)
 	if err != nil {
 		log.Fatalf("error setup root cmd:%v", err)
 	}
