@@ -195,9 +195,8 @@ func clusterUsage() error {
 
 	if billingOpts.CSV {
 		return clusterUsageCSV(&cur)
-	} else {
-		return clusterUsageJSON(&cur)
 	}
+	return clusterUsageJSON(&cur)
 }
 
 func clusterUsageJSON(cur *models.V1ClusterUsageRequest) error {
@@ -259,9 +258,8 @@ func containerUsage() error {
 
 	if billingOpts.CSV {
 		return containerUsageCSV(&cur)
-	} else {
-		return containerUsageJSON(&cur)
 	}
+	return containerUsageJSON(&cur)
 }
 
 func containerUsageJSON(cur *models.V1ContainerUsageRequest) error {
@@ -320,9 +318,8 @@ func volumeUsage() error {
 
 	if billingOpts.CSV {
 		return volumeUsageCSV(&vur)
-	} else {
-		return volumeUsageJSON(&vur)
 	}
+	return volumeUsageJSON(&vur)
 }
 
 func volumeUsageJSON(vur *models.V1VolumeUsageRequest) error {

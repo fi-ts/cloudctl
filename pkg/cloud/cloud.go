@@ -3,6 +3,7 @@ package cloud
 import (
 	"fmt"
 	"net/url"
+	"time"
 
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/metal-pod/security"
@@ -25,8 +26,9 @@ type Cloud struct {
 	Auth       runtime.ClientAuthInfoWriter
 }
 
-// NewCloud create a new Cloud
-func NewCloud(apiurl, apiToken string) (*Cloud, error) {
+// NewCloud create a new Cloud-Client.
+// If specified, hmac takes precedence over apiToken.
+func NewCloud(apiurl, apiToken string, hmac string) (*Cloud, error) {
 
 	parsedurl, err := url.Parse(apiurl)
 	if err != nil {
@@ -37,9 +39,16 @@ func NewCloud(apiurl, apiToken string) (*Cloud, error) {
 	}
 
 	auther := runtime.ClientAuthInfoWriterFunc(func(rq runtime.ClientRequest, rg strfmt.Registry) error {
+		if hmac != "" {
+			auth := security.NewHMACAuth("Metal-View-All", []byte(hmac))
+			auth.AddAuthToClientRequest(rq, time.Now())
+			return nil
+		}
 		if apiToken != "" {
 			security.AddUserTokenToClientRequest(rq, apiToken)
+			return nil
 		}
+
 		return nil
 	})
 

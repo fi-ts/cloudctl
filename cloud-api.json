@@ -16,35 +16,6 @@
   },
   "basePath": "/",
   "paths": {
-    "/healthv1/health": {
-      "get": {
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "health"
-        ],
-        "summary": "perform a healtcheck",
-        "operationId": "health",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/rest.status"
-            }
-          },
-          "500": {
-            "description": "Unhealthy",
-            "schema": {
-              "$ref": "#/definitions/rest.status"
-            }
-          }
-        }
-      }
-    },
     "/v1/accounting/cluster-usage": {
       "get": {
         "consumes": [
@@ -301,7 +272,7 @@
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/v1beta1.Shoot"
+                "$ref": "#/definitions/v1.ClusterResponse"
               }
             }
           },
@@ -339,7 +310,7 @@
           "201": {
             "description": "Created",
             "schema": {
-              "$ref": "#/definitions/v1beta1.Shoot"
+              "$ref": "#/definitions/v1.ClusterResponse"
             }
           },
           "409": {
@@ -382,7 +353,7 @@
           "200": {
             "description": "OK",
             "schema": {
-              "$ref": "#/definitions/v1beta1.Shoot"
+              "$ref": "#/definitions/v1.ClusterResponse"
             }
           },
           "409": {
@@ -458,7 +429,7 @@
             "schema": {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/v1beta1.Shoot"
+                "$ref": "#/definitions/v1.ClusterResponse"
               }
             }
           },
@@ -497,7 +468,7 @@
           "200": {
             "description": "OK",
             "schema": {
-              "$ref": "#/definitions/v1beta1.Shoot"
+              "$ref": "#/definitions/v1.ClusterResponse"
             }
           },
           "default": {
@@ -533,7 +504,7 @@
           "200": {
             "description": "OK",
             "schema": {
-              "$ref": "#/definitions/v1beta1.Shoot"
+              "$ref": "#/definitions/v1.ClusterResponse"
             }
           },
           "default": {
@@ -583,6 +554,44 @@
         }
       }
     },
+    "/v1/cluster/{id}/kubeconfigtpl": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "cluster"
+        ],
+        "summary": "gets the kubeconfig-template just with cluster-infos for the cluster",
+        "operationId": "getClusterKubeconfigTpl",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "identifier of the cluster",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/v1.ClusterKubeconfigResponse"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
     "/v1/cluster/{id}/reconcile": {
       "post": {
         "consumes": [
@@ -609,7 +618,7 @@
           "200": {
             "description": "OK",
             "schema": {
-              "$ref": "#/definitions/v1beta1.Shoot"
+              "$ref": "#/definitions/v1.ClusterResponse"
             }
           },
           "default": {
@@ -654,6 +663,35 @@
             "description": "Error",
             "schema": {
               "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/v1/health": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "health"
+        ],
+        "summary": "perform a healthcheck",
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/rest.status"
+            }
+          },
+          "500": {
+            "description": "Unhealthy",
+            "schema": {
+              "$ref": "#/definitions/rest.status"
             }
           }
         }
@@ -863,10 +901,7 @@
           "200": {
             "description": "OK",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/models.V1ProjectResponse"
-              }
+              "$ref": "#/definitions/v1.ProjectListResponse"
             }
           },
           "default": {
@@ -895,7 +930,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/models.V1ProjectCreateRequest"
+              "$ref": "#/definitions/v1.ProjectCreateRequest"
             }
           }
         ],
@@ -903,7 +938,7 @@
           "201": {
             "description": "Created",
             "schema": {
-              "$ref": "#/definitions/models.V1ProjectResponse"
+              "$ref": "#/definitions/v1.ProjectResponse"
             }
           },
           "409": {
@@ -947,7 +982,7 @@
           "200": {
             "description": "OK",
             "schema": {
-              "$ref": "#/definitions/models.V1ProjectResponse"
+              "$ref": "#/definitions/v1.ProjectResponse"
             }
           },
           "default": {
@@ -983,7 +1018,7 @@
           "200": {
             "description": "OK",
             "schema": {
-              "$ref": "#/definitions/models.V1ProjectResponse"
+              "$ref": "#/definitions/v1.ProjectResponse"
             }
           },
           "default": {
@@ -1037,6 +1072,20 @@
         }
       }
     },
+    "models.V1ChassisIdentifyLEDState": {
+      "required": [
+        "description",
+        "value"
+      ],
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
     "models.V1IPResponse": {
       "required": [
         "changed",
@@ -1080,14 +1129,28 @@
         }
       }
     },
-    "models.V1ProjectCreateRequest": {
+    "models.V1ImageResponse": {
       "required": [
-        "id",
-        "tenant"
+        "changed",
+        "created",
+        "features",
+        "id"
       ],
       "properties": {
+        "changed": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string"
+        },
         "description": {
           "type": "string"
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "id": {
           "type": "string"
@@ -1095,19 +1158,339 @@
         "name": {
           "type": "string"
         },
-        "tenant": {
+        "url": {
           "type": "string"
         }
       }
     },
-    "models.V1ProjectResponse": {
+    "models.V1MachineAllocation": {
       "required": [
-        "changed",
         "created",
-        "id",
-        "tenant"
+        "hostname",
+        "name",
+        "networks",
+        "project",
+        "ssh_pub_keys",
+        "succeeded"
       ],
       "properties": {
+        "console_password": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "hostname": {
+          "type": "string"
+        },
+        "image": {
+          "$ref": "#/definitions/models.V1ImageResponse"
+        },
+        "name": {
+          "type": "string"
+        },
+        "networks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/models.V1MachineNetwork"
+          }
+        },
+        "project": {
+          "type": "string"
+        },
+        "ssh_pub_keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "succeeded": {
+          "type": "boolean"
+        },
+        "user_data": {
+          "type": "string"
+        }
+      }
+    },
+    "models.V1MachineBIOS": {
+      "required": [
+        "date",
+        "vendor",
+        "version"
+      ],
+      "properties": {
+        "date": {
+          "type": "string"
+        },
+        "vendor": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "models.V1MachineBlockDevice": {
+      "required": [
+        "name",
+        "size"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "size": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "models.V1MachineHardware": {
+      "required": [
+        "cpu_cores",
+        "disks",
+        "memory",
+        "nics"
+      ],
+      "properties": {
+        "cpu_cores": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "disks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/models.V1MachineBlockDevice"
+          }
+        },
+        "memory": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "nics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/models.V1MachineNic"
+          }
+        }
+      }
+    },
+    "models.V1MachineNetwork": {
+      "required": [
+        "asn",
+        "destinationprefixes",
+        "ips",
+        "nat",
+        "networkid",
+        "prefixes",
+        "private",
+        "underlay",
+        "vrf"
+      ],
+      "properties": {
+        "asn": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "destinationprefixes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ips": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "nat": {
+          "type": "boolean"
+        },
+        "networkid": {
+          "type": "string"
+        },
+        "prefixes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "private": {
+          "type": "boolean"
+        },
+        "underlay": {
+          "type": "boolean"
+        },
+        "vrf": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "models.V1MachineNic": {
+      "required": [
+        "mac",
+        "name"
+      ],
+      "properties": {
+        "mac": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "models.V1MachineProvisioningEvent": {
+      "required": [
+        "event"
+      ],
+      "properties": {
+        "event": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "time": {
+          "type": "string"
+        }
+      }
+    },
+    "models.V1MachineRecentProvisioningEvents": {
+      "required": [
+        "incomplete_provisioning_cycles",
+        "last_event_time",
+        "log"
+      ],
+      "properties": {
+        "incomplete_provisioning_cycles": {
+          "type": "string"
+        },
+        "last_event_time": {
+          "type": "string"
+        },
+        "log": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/models.V1MachineProvisioningEvent"
+          }
+        }
+      }
+    },
+    "models.V1MachineResponse": {
+      "required": [
+        "allocation",
+        "bios",
+        "changed",
+        "created",
+        "events",
+        "hardware",
+        "id",
+        "ledstate",
+        "liveliness",
+        "partition",
+        "rackid",
+        "size",
+        "state",
+        "tags"
+      ],
+      "properties": {
+        "allocation": {
+          "$ref": "#/definitions/models.V1MachineAllocation"
+        },
+        "bios": {
+          "$ref": "#/definitions/models.V1MachineBIOS"
+        },
+        "changed": {
+          "type": "string"
+        },
+        "created": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "events": {
+          "$ref": "#/definitions/models.V1MachineRecentProvisioningEvents"
+        },
+        "hardware": {
+          "$ref": "#/definitions/models.V1MachineHardware"
+        },
+        "id": {
+          "type": "string"
+        },
+        "ledstate": {
+          "$ref": "#/definitions/models.V1ChassisIdentifyLEDState"
+        },
+        "liveliness": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "partition": {
+          "$ref": "#/definitions/models.V1PartitionResponse"
+        },
+        "rackid": {
+          "type": "string"
+        },
+        "size": {
+          "$ref": "#/definitions/models.V1SizeResponse"
+        },
+        "state": {
+          "$ref": "#/definitions/models.V1MachineState"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "models.V1MachineState": {
+      "required": [
+        "description",
+        "value"
+      ],
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "models.V1PartitionBootConfiguration": {
+      "properties": {
+        "commandline": {
+          "type": "string"
+        },
+        "imageurl": {
+          "type": "string"
+        },
+        "kernelurl": {
+          "type": "string"
+        }
+      }
+    },
+    "models.V1PartitionResponse": {
+      "required": [
+        "bootconfig",
+        "changed",
+        "created",
+        "id"
+      ],
+      "properties": {
+        "bootconfig": {
+          "$ref": "#/definitions/models.V1PartitionBootConfiguration"
+        },
         "changed": {
           "type": "string"
         },
@@ -1120,20 +1503,79 @@
         "id": {
           "type": "string"
         },
+        "mgmtserviceaddress": {
+          "type": "string"
+        },
         "name": {
           "type": "string"
         },
-        "tenant": {
+        "privatenetworkprefixlength": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "models.V1SizeConstraint": {
+      "required": [
+        "max",
+        "min",
+        "type"
+      ],
+      "properties": {
+        "max": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "min": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "type": {
+          "type": "string"
+        }
+      }
+    },
+    "models.V1SizeResponse": {
+      "required": [
+        "changed",
+        "constraints",
+        "created",
+        "id"
+      ],
+      "properties": {
+        "changed": {
+          "type": "string"
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/models.V1SizeConstraint"
+          }
+        },
+        "created": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
           "type": "string"
         }
       }
     },
     "rest.status": {
       "required": [
+        "status",
         "message"
       ],
       "properties": {
         "message": {
+          "type": "string"
+        },
+        "status": {
           "type": "string"
         }
       }
@@ -1187,8 +1629,9 @@
         "FirewallImage",
         "FirewallSize",
         "AdditionalNetworks",
+        "MaxPods",
         "Workers",
-        "Zones",
+        "PartitionID",
         "Maintenance",
         "Kubernetes",
         "Addons"
@@ -1218,7 +1661,14 @@
         "Maintenance": {
           "$ref": "#/definitions/v1.Maintenance"
         },
+        "MaxPods": {
+          "type": "integer",
+          "format": "int32"
+        },
         "Name": {
+          "type": "string"
+        },
+        "PartitionID": {
           "type": "string"
         },
         "ProjectID": {
@@ -1231,12 +1681,6 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/v1.Worker"
-          }
-        },
-        "Zones": {
-          "type": "array",
-          "items": {
-            "type": "string"
           }
         }
       }
@@ -1257,11 +1701,15 @@
     },
     "v1.ClusterFindRequest": {
       "required": [
+        "Name",
         "Tenant",
         "ProjectID",
         "PartitionID"
       ],
       "properties": {
+        "Name": {
+          "type": "string"
+        },
         "PartitionID": {
           "type": "string"
         },
@@ -1270,6 +1718,50 @@
         },
         "Tenant": {
           "type": "string"
+        }
+      }
+    },
+    "v1.ClusterKubeconfigResponse": {
+      "required": [
+        "Kubeconfig"
+      ],
+      "properties": {
+        "Kubeconfig": {
+          "type": "string"
+        }
+      }
+    },
+    "v1.ClusterResponse": {
+      "required": [
+        "shoot",
+        "infrastructure",
+        "controlplane",
+        "network",
+        "machines"
+      ],
+      "properties": {
+        "controlplane": {
+          "description": "the gardener shoot control plane raw extension",
+          "$ref": "#/definitions/v1alpha1.ControlPlaneConfig"
+        },
+        "infrastructure": {
+          "description": "the gardener shoot infrastructure raw extension",
+          "$ref": "#/definitions/v1alpha1.InfrastructureConfig"
+        },
+        "machines": {
+          "description": "the machines which belong to this cluster",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/models.V1MachineResponse"
+          }
+        },
+        "network": {
+          "description": "the gardener shoot network raw extension",
+          "$ref": "#/definitions/v1alpha1.NetworkConfig"
+        },
+        "shoot": {
+          "description": "the gardener shoot resource but with the raw extensions separated out",
+          "$ref": "#/definitions/v1beta1.Shoot"
         }
       }
     },
@@ -1618,13 +2110,13 @@
     },
     "v1.IPFindRequest": {
       "required": [
-        "IPAddress",
         "ProjectID",
         "ParentPrefixCidr",
         "NetworkID",
         "MachineID",
         "Type",
-        "Tags"
+        "Tags",
+        "IPAddress"
       ],
       "properties": {
         "IPAddress": {
@@ -1678,37 +2170,6 @@
         }
       }
     },
-    "v1.Initializer": {
-      "description": "Initializer is information about an initializer that has not yet completed.",
-      "required": [
-        "name"
-      ],
-      "properties": {
-        "name": {
-          "description": "name of the process that is responsible for initializing this object.",
-          "type": "string"
-        }
-      }
-    },
-    "v1.Initializers": {
-      "description": "Initializers tracks the progress of initialization.",
-      "required": [
-        "pending"
-      ],
-      "properties": {
-        "pending": {
-          "description": "Pending is a list of initializers that must execute in order before this object is visible. When the last pending initializer is removed, and no failing result is set, the initializers struct will be set to nil and the object is considered as initialized and visible to all clients.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1.Initializer"
-          }
-        },
-        "result": {
-          "description": "If result is set with the Failure field, the object will be persisted to storage and then deleted, ensuring that other clients can observe the deletion.",
-          "$ref": "#/definitions/v1.Status"
-        }
-      }
-    },
     "v1.Kubernetes": {
       "required": [
         "AllowPrivilegedContainers",
@@ -1719,23 +2180,6 @@
           "type": "boolean"
         },
         "Version": {
-          "type": "string"
-        }
-      }
-    },
-    "v1.ListMeta": {
-      "description": "ListMeta describes metadata that synthetic resources must have, including lists and various status objects. A resource may have only one of {ObjectMeta, ListMeta}.",
-      "properties": {
-        "continue": {
-          "description": "continue may be set if the user set a limit on the number of items returned, and indicates that the server has more data available. The value is opaque and may be used to issue another request to the endpoint that served this list to retrieve the next set of available objects. Continuing a consistent list may not be possible if the server configuration has changed or more than a few minutes have passed. The resourceVersion field returned when using this continue value will be identical to the value in the first response, unless you have received this token from an error message.",
-          "type": "string"
-        },
-        "resourceVersion": {
-          "description": "String that identifies the server's internal version of this object that can be used by clients to determine when objects have changed. Value must be treated as opaque by clients and passed unmodified back to the server. Populated by the system. Read-only. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency",
-          "type": "string"
-        },
-        "selfLink": {
-          "description": "selfLink is a URL representing this object. Populated by the system. Read-only.",
           "type": "string"
         }
       }
@@ -1812,8 +2256,12 @@
           "description": "APIVersion defines the version of this resource that this field set applies to. The format is \"group/version\" just like the top-level APIVersion field. It is necessary to track the version of a field set because it cannot be automatically converted.",
           "type": "string"
         },
-        "fields": {
-          "description": "Fields identifies a set of fields.",
+        "fieldsType": {
+          "description": "FieldsType is the discriminator for the different fields format and version. There is currently only one possible value: \"FieldsV1\"",
+          "type": "string"
+        },
+        "fieldsV1": {
+          "description": "FieldsV1 holds the first JSON version format as described in the \"FieldsV1\" type.",
           "type": "string"
         },
         "manager": {
@@ -1827,6 +2275,31 @@
         "time": {
           "description": "Time is timestamp of when these fields were set. It should always be empty if Operation is 'Apply'",
           "type": "string"
+        }
+      }
+    },
+    "v1.Meta": {
+      "properties": {
+        "apiversion": {
+          "type": "string"
+        },
+        "created_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "updated_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "version": {
+          "type": "integer",
+          "format": "int64"
         }
       }
     },
@@ -1845,7 +2318,7 @@
           "type": "string"
         },
         "creationTimestamp": {
-          "description": "CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.\n\nPopulated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+          "description": "CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.\n\nPopulated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata",
           "type": "string"
         },
         "deletionGracePeriodSeconds": {
@@ -1854,7 +2327,7 @@
           "format": "int64"
         },
         "deletionTimestamp": {
-          "description": "DeletionTimestamp is RFC 3339 date and time at which this resource will be deleted. This field is set by the server when a graceful deletion is requested by the user, and is not directly settable by a client. The resource is expected to be deleted (no longer visible from resource lists, and not reachable by name) after the time in this field, once the finalizers list is empty. As long as the finalizers list contains items, deletion is blocked. Once the deletionTimestamp is set, this value may not be unset or be set further into the future, although it may be shortened or the resource may be deleted prior to this time. For example, a user may request that a pod is deleted in 30 seconds. The Kubelet will react by sending a graceful termination signal to the containers in the pod. After that 30 seconds, the Kubelet will send a hard termination signal (SIGKILL) to the container and after cleanup, remove the pod from the API. In the presence of network partitions, this object may still exist after this timestamp, until an administrator or automated process can determine the resource is fully terminated. If not set, graceful deletion of the object has not been requested.\n\nPopulated by the system when a graceful deletion is requested. Read-only. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+          "description": "DeletionTimestamp is RFC 3339 date and time at which this resource will be deleted. This field is set by the server when a graceful deletion is requested by the user, and is not directly settable by a client. The resource is expected to be deleted (no longer visible from resource lists, and not reachable by name) after the time in this field, once the finalizers list is empty. As long as the finalizers list contains items, deletion is blocked. Once the deletionTimestamp is set, this value may not be unset or be set further into the future, although it may be shortened or the resource may be deleted prior to this time. For example, a user may request that a pod is deleted in 30 seconds. The Kubelet will react by sending a graceful termination signal to the containers in the pod. After that 30 seconds, the Kubelet will send a hard termination signal (SIGKILL) to the container and after cleanup, remove the pod from the API. In the presence of network partitions, this object may still exist after this timestamp, until an administrator or automated process can determine the resource is fully terminated. If not set, graceful deletion of the object has not been requested.\n\nPopulated by the system when a graceful deletion is requested. Read-only. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata",
           "type": "string"
         },
         "finalizers": {
@@ -1865,17 +2338,13 @@
           }
         },
         "generateName": {
-          "description": "GenerateName is an optional prefix, used by the server, to generate a unique name ONLY IF the Name field has not been provided. If this field is used, the name returned to the client will be different than the name passed. This value will also be combined with a unique suffix. The provided value has the same validation rules as the Name field, and may be truncated by the length of the suffix required to make the value unique on the server.\n\nIf this field is specified and the generated name exists, the server will NOT return a 409 - instead, it will either return 201 Created or 500 with Reason ServerTimeout indicating a unique name could not be found in the time allotted, and the client should retry (optionally after the time indicated in the Retry-After header).\n\nApplied only if Name is not specified. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#idempotency",
+          "description": "GenerateName is an optional prefix, used by the server, to generate a unique name ONLY IF the Name field has not been provided. If this field is used, the name returned to the client will be different than the name passed. This value will also be combined with a unique suffix. The provided value has the same validation rules as the Name field, and may be truncated by the length of the suffix required to make the value unique on the server.\n\nIf this field is specified and the generated name exists, the server will NOT return a 409 - instead, it will either return 201 Created or 500 with Reason ServerTimeout indicating a unique name could not be found in the time allotted, and the client should retry (optionally after the time indicated in the Retry-After header).\n\nApplied only if Name is not specified. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#idempotency",
           "type": "string"
         },
         "generation": {
           "description": "A sequence number representing a specific generation of the desired state. Populated by the system. Read-only.",
           "type": "integer",
           "format": "int64"
-        },
-        "initializers": {
-          "description": "An initializer is a controller which enforces some system invariant at object creation time. This field is a list of initializers that have not yet acted on this object. If nil or empty, this object has been completely initialized. Otherwise, the object is considered uninitialized and is hidden (in list/watch and get calls) from clients that haven't explicitly asked to observe uninitialized objects.\n\nWhen an object is created, the system will populate this list with the current set of initializers. Only privileged users may set or modify this list. Once it is empty, it may not be modified further by any user.\n\nDEPRECATED - initializers are an alpha field and will be removed in v1.15.",
-          "$ref": "#/definitions/v1.Initializers"
         },
         "labels": {
           "description": "Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels",
@@ -1885,7 +2354,7 @@
           }
         },
         "managedFields": {
-          "description": "ManagedFields maps workflow-id and version to the set of fields that are managed by that workflow. This is mostly for internal housekeeping, and users typically shouldn't need to set or understand this field. A workflow can be the user's name, a controller's name, or the name of a specific apply path like \"ci-cd\". The set of fields is always in the version that the workflow used when modifying the object.\n\nThis field is alpha and can be changed or removed without notice.",
+          "description": "ManagedFields maps workflow-id and version to the set of fields that are managed by that workflow. This is mostly for internal housekeeping, and users typically shouldn't need to set or understand this field. A workflow can be the user's name, a controller's name, or the name of a specific apply path like \"ci-cd\". The set of fields is always in the version that the workflow used when modifying the object.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/v1.ManagedFieldsEntry"
@@ -1907,15 +2376,48 @@
           }
         },
         "resourceVersion": {
-          "description": "An opaque value that represents the internal version of this object that can be used by clients to determine when objects have changed. May be used for optimistic concurrency, change detection, and the watch operation on a resource or set of resources. Clients must treat these values as opaque and passed unmodified back to the server. They may only be valid for a particular resource or set of resources.\n\nPopulated by the system. Read-only. Value must be treated as opaque by clients and . More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency",
+          "description": "An opaque value that represents the internal version of this object that can be used by clients to determine when objects have changed. May be used for optimistic concurrency, change detection, and the watch operation on a resource or set of resources. Clients must treat these values as opaque and passed unmodified back to the server. They may only be valid for a particular resource or set of resources.\n\nPopulated by the system. Read-only. Value must be treated as opaque by clients and . More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency",
           "type": "string"
         },
         "selfLink": {
-          "description": "SelfLink is a URL representing this object. Populated by the system. Read-only.",
+          "description": "SelfLink is a URL representing this object. Populated by the system. Read-only.\n\nDEPRECATED Kubernetes will stop propagating this field in 1.20 release and the field is planned to be removed in 1.21 release.",
           "type": "string"
         },
         "uid": {
           "description": "UID is the unique in time and space value for this object. It is typically generated by the server on successful creation of a resource and is not allowed to change on PUT operations.\n\nPopulated by the system. Read-only. More info: http://kubernetes.io/docs/user-guide/identifiers#uids",
+          "type": "string"
+        }
+      }
+    },
+    "v1.ObjectReference": {
+      "description": "ObjectReference contains enough information to let you inspect or modify the referred object.",
+      "properties": {
+        "apiVersion": {
+          "description": "API version of the referent.",
+          "type": "string"
+        },
+        "fieldPath": {
+          "description": "If referring to a piece of an object instead of an entire object, this string should contain a valid JSON/Go field access statement, such as desiredState.manifest.containers[2]. For example, if the object reference is to a container within a pod, this would take on a value like: \"spec.containers{name}\" (where \"name\" refers to the name of the container that triggered the event) or if no container name is specified \"spec.containers[2]\" (container with index 2 in this pod). This syntax is chosen only to have some well-defined way of referencing a part of an object.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "name": {
+          "description": "Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names",
+          "type": "string"
+        },
+        "namespace": {
+          "description": "Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/",
+          "type": "string"
+        },
+        "resourceVersion": {
+          "description": "Specific resourceVersion to which this reference is made, if any. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency",
+          "type": "string"
+        },
+        "uid": {
+          "description": "UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids",
           "type": "string"
         }
       }
@@ -1942,7 +2444,7 @@
           "type": "boolean"
         },
         "kind": {
-          "description": "Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+          "description": "Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
           "type": "string"
         },
         "name": {
@@ -1969,6 +2471,70 @@
         }
       }
     },
+    "v1.Project": {
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "meta": {
+          "$ref": "#/definitions/v1.Meta"
+        },
+        "name": {
+          "type": "string"
+        },
+        "quotas": {
+          "$ref": "#/definitions/v1.QuotaSet"
+        },
+        "tenant_id": {
+          "type": "string"
+        }
+      }
+    },
+    "v1.ProjectCreateRequest": {
+      "properties": {
+        "project": {
+          "$ref": "#/definitions/v1.Project"
+        }
+      }
+    },
+    "v1.ProjectListResponse": {
+      "properties": {
+        "projects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1.Project"
+          }
+        }
+      }
+    },
+    "v1.ProjectResponse": {
+      "properties": {
+        "project": {
+          "$ref": "#/definitions/v1.Project"
+        }
+      }
+    },
+    "v1.Quota": {
+      "properties": {
+        "quota": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1.QuotaSet": {
+      "properties": {
+        "cluster": {
+          "$ref": "#/definitions/v1.Quota"
+        },
+        "ip": {
+          "$ref": "#/definitions/v1.Quota"
+        },
+        "machine": {
+          "$ref": "#/definitions/v1.Quota"
+        }
+      }
+    },
     "v1.SSHKeyPair": {
       "required": [
         "PrivateKey",
@@ -1983,6 +2549,7 @@
         }
       }
     },
+    "v1.ServiceExternalTrafficPolicyType": {},
     "v1.ShootConstraints": {
       "required": [
         "kubernetes_versions",
@@ -2026,94 +2593,6 @@
           "items": {
             "type": "string"
           }
-        }
-      }
-    },
-    "v1.Status": {
-      "description": "Status is a return value for calls that don't return other objects.",
-      "properties": {
-        "apiVersion": {
-          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
-          "type": "string"
-        },
-        "code": {
-          "description": "Suggested HTTP return code for this status, 0 if not set.",
-          "type": "integer",
-          "format": "int32"
-        },
-        "details": {
-          "description": "Extended data associated with the reason.  Each reason may define its own extended details. This field is optional and the data returned is not guaranteed to conform to any schema except that defined by the reason type.",
-          "$ref": "#/definitions/v1.StatusDetails"
-        },
-        "kind": {
-          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
-          "type": "string"
-        },
-        "message": {
-          "description": "A human-readable description of the status of this operation.",
-          "type": "string"
-        },
-        "metadata": {
-          "description": "Standard list metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
-          "$ref": "#/definitions/v1.ListMeta"
-        },
-        "reason": {
-          "description": "A machine-readable description of why this operation is in the \"Failure\" status. If this value is empty there is no information available. A Reason clarifies an HTTP status code but does not override it.",
-          "type": "string"
-        },
-        "status": {
-          "description": "Status of the operation. One of: \"Success\" or \"Failure\". More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status",
-          "type": "string"
-        }
-      }
-    },
-    "v1.StatusCause": {
-      "description": "StatusCause provides more information about an api.Status failure, including cases when multiple errors are encountered.",
-      "properties": {
-        "field": {
-          "description": "The field of the resource that has caused this error, as named by its JSON serialization. May include dot and postfix notation for nested attributes. Arrays are zero-indexed.  Fields may appear more than once in an array of causes due to fields having multiple errors. Optional.\n\nExamples:\n  \"name\" - the field \"name\" on the current resource\n  \"items[0].name\" - the field \"name\" on the first array entry in \"items\"",
-          "type": "string"
-        },
-        "message": {
-          "description": "A human-readable description of the cause of the error.  This field may be presented as-is to a reader.",
-          "type": "string"
-        },
-        "reason": {
-          "description": "A machine-readable description of the cause of the error. If this value is empty there is no information available.",
-          "type": "string"
-        }
-      }
-    },
-    "v1.StatusDetails": {
-      "description": "StatusDetails is a set of additional properties that MAY be set by the server to provide additional information about a response. The Reason field of a Status object defines what attributes will be set. Clients must ignore fields that do not match the defined type of each attribute, and should assume that any attribute may be empty, invalid, or under defined.",
-      "properties": {
-        "causes": {
-          "description": "The Causes array includes more details associated with the StatusReason failure. Not all StatusReasons may provide detailed causes.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1.StatusCause"
-          }
-        },
-        "group": {
-          "description": "The group attribute of the resource associated with the status StatusReason.",
-          "type": "string"
-        },
-        "kind": {
-          "description": "The kind attribute of the resource associated with the status StatusReason. On some operations may differ from the requested resource Kind. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
-          "type": "string"
-        },
-        "name": {
-          "description": "The name attribute of the resource associated with the status StatusReason (when there is a single name which can be described).",
-          "type": "string"
-        },
-        "retryAfterSeconds": {
-          "description": "If specified, the time in seconds before the operation should be retried. Some errors may indicate the client must take an alternate action - for those errors this field may indicate how long to wait before taking the alternate action.",
-          "type": "integer",
-          "format": "int32"
-        },
-        "uid": {
-          "description": "UID of the resource. (when there is a single resource which can be described). More info: http://kubernetes.io/docs/user-guide/identifiers#uids",
-          "type": "string"
         }
       }
     },
@@ -2308,19 +2787,15 @@
       "required": [
         "Name",
         "MachineType",
-        "AutoScalerMin",
-        "AutoScalerMax",
+        "MachineImage",
+        "Minimum",
+        "Maximum",
         "MaxSurge",
         "MaxUnavailable"
       ],
       "properties": {
-        "AutoScalerMax": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "AutoScalerMin": {
-          "type": "integer",
-          "format": "int32"
+        "MachineImage": {
+          "$ref": "#/definitions/v1.MachineImage"
         },
         "MachineType": {
           "type": "string"
@@ -2331,13 +2806,349 @@
         "MaxUnavailable": {
           "type": "string"
         },
+        "Maximum": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "Minimum": {
+          "type": "integer",
+          "format": "int32"
+        },
         "Name": {
           "type": "string"
         }
       }
     },
+    "v1alpha1.Backend": {},
     "v1alpha1.CIDR": {},
-    "v1alpha1.Condition": {
+    "v1alpha1.CloudControllerManagerConfig": {
+      "properties": {
+        "featureGates": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "v1alpha1.ConnectorConfig": {
+      "properties": {
+        "idmAccessCode": {
+          "type": "string"
+        },
+        "idmApiPassword": {
+          "type": "string"
+        },
+        "idmApiUrl": {
+          "type": "string"
+        },
+        "idmApiUser": {
+          "type": "string"
+        },
+        "idmCustomerId": {
+          "type": "string"
+        },
+        "idmDomainName": {
+          "type": "string"
+        },
+        "idmGroupOU": {
+          "type": "string"
+        },
+        "idmGroupnameTemplate": {
+          "type": "string"
+        },
+        "idmJobInfo": {
+          "type": "string"
+        },
+        "idmReqEMail": {
+          "type": "string"
+        },
+        "idmReqSystem": {
+          "type": "string"
+        },
+        "idmReqUser": {
+          "type": "string"
+        },
+        "idmSubmitter": {
+          "type": "string"
+        },
+        "idmSystemId": {
+          "type": "string"
+        },
+        "idmTenantPrefix": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1.ControlPlaneConfig": {
+      "description": "TypeMeta describes an individual object in an API response or request with strings representing the type of the object and its API schema version. Structures that are versioned or persisted should inline TypeMeta.",
+      "required": [
+        "iamconfig"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "cloudControllerManager": {
+          "$ref": "#/definitions/v1alpha1.CloudControllerManagerConfig"
+        },
+        "iamconfig": {
+          "$ref": "#/definitions/v1alpha1.IAMConfig"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1.Firewall": {
+      "required": [
+        "size",
+        "image",
+        "networks"
+      ],
+      "properties": {
+        "image": {
+          "type": "string"
+        },
+        "networks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "size": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1.IAMConfig": {
+      "properties": {
+        "groupConfig": {
+          "$ref": "#/definitions/v1alpha1.NamespaceGroupConfig"
+        },
+        "idmConfig": {
+          "$ref": "#/definitions/v1alpha1.IDMConfig"
+        },
+        "issuerConfig": {
+          "$ref": "#/definitions/v1alpha1.IssuerConfig"
+        }
+      }
+    },
+    "v1alpha1.IDMConfig": {
+      "properties": {
+        "connectorConfig": {
+          "$ref": "#/definitions/v1alpha1.ConnectorConfig"
+        },
+        "idmtype": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1.IPAM": {
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "cidr": {
+          "$ref": "#/definitions/v1alpha1.CIDR"
+        },
+        "type": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1.IPv4": {
+      "properties": {
+        "autoDetectionMethod": {
+          "type": "string"
+        },
+        "mode": {
+          "$ref": "#/definitions/v1alpha1.IPv4PoolMode"
+        },
+        "pool": {
+          "$ref": "#/definitions/v1alpha1.IPv4Pool"
+        }
+      }
+    },
+    "v1alpha1.IPv4Pool": {},
+    "v1alpha1.IPv4PoolMode": {},
+    "v1alpha1.InfrastructureConfig": {
+      "description": "TypeMeta describes an individual object in an API response or request with strings representing the type of the object and its API schema version. Structures that are versioned or persisted should inline TypeMeta.",
+      "required": [
+        "firewall",
+        "partitionID",
+        "projectID"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "firewall": {
+          "$ref": "#/definitions/v1alpha1.Firewall"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "partitionID": {
+          "type": "string"
+        },
+        "projectID": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1.IssuerConfig": {
+      "properties": {
+        "clientId": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1.NamespaceGroupConfig": {
+      "properties": {
+        "clusterGroupnameTemplate": {
+          "type": "string"
+        },
+        "excludedNamespaces": {
+          "type": "string"
+        },
+        "expectedGroupsList": {
+          "type": "string"
+        },
+        "namespaceMaxLength": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "roleBindingNameTemplate": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1.NetworkConfig": {
+      "description": "TypeMeta describes an individual object in an API response or request with strings representing the type of the object and its API schema version. Structures that are versioned or persisted should inline TypeMeta.",
+      "required": [
+        "backend"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "backend": {
+          "$ref": "#/definitions/v1alpha1.Backend"
+        },
+        "ipAutodetectionMethod": {
+          "type": "string"
+        },
+        "ipam": {
+          "$ref": "#/definitions/v1alpha1.IPAM"
+        },
+        "ipip": {
+          "$ref": "#/definitions/v1alpha1.IPv4PoolMode"
+        },
+        "ipv4": {
+          "$ref": "#/definitions/v1alpha1.IPv4"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "typha": {
+          "$ref": "#/definitions/v1alpha1.Typha"
+        },
+        "vethMTU": {
+          "type": "string"
+        }
+      }
+    },
+    "v1alpha1.Typha": {
+      "required": [
+        "enabled"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1beta1.Addons": {
+      "properties": {
+        "kubernetesDashboard": {
+          "$ref": "#/definitions/v1beta1.KubernetesDashboard"
+        },
+        "nginxIngress": {
+          "$ref": "#/definitions/v1beta1.NginxIngress"
+        }
+      }
+    },
+    "v1beta1.AdmissionPlugin": {
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "config": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "v1beta1.Alerting": {
+      "properties": {
+        "emailReceivers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "v1beta1.AuditConfig": {
+      "properties": {
+        "auditPolicy": {
+          "$ref": "#/definitions/v1beta1.AuditPolicy"
+        }
+      }
+    },
+    "v1beta1.AuditPolicy": {
+      "properties": {
+        "configMapRef": {
+          "$ref": "#/definitions/v1.ObjectReference"
+        }
+      }
+    },
+    "v1beta1.ClusterAutoscaler": {
+      "properties": {
+        "scaleDownDelayAfterAdd": {
+          "type": "string"
+        },
+        "scaleDownDelayAfterDelete": {
+          "type": "string"
+        },
+        "scaleDownDelayAfterFailure": {
+          "type": "string"
+        },
+        "scaleDownUnneededTime": {
+          "type": "string"
+        },
+        "scaleDownUtilizationThreshold": {
+          "type": "number",
+          "format": "double"
+        },
+        "scanInterval": {
+          "type": "string"
+        }
+      }
+    },
+    "v1beta1.Condition": {
       "required": [
         "type",
         "status",
@@ -2367,616 +3178,52 @@
         }
       }
     },
-    "v1alpha1.ErrorCode": {},
-    "v1alpha1.LastError": {
-      "required": [
-        "description"
-      ],
-      "properties": {
-        "codes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1.ErrorCode"
-          }
-        },
-        "description": {
-          "type": "string"
-        },
-        "lastUpdateTime": {
-          "type": "string"
-        }
-      }
-    },
-    "v1alpha1.LastOperation": {
-      "required": [
-        "description",
-        "lastUpdateTime",
-        "progress",
-        "state",
-        "type"
-      ],
-      "properties": {
-        "description": {
-          "type": "string"
-        },
-        "lastUpdateTime": {
-          "type": "string"
-        },
-        "progress": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "state": {
-          "type": "string"
-        },
-        "type": {
-          "type": "string"
-        }
-      }
-    },
-    "v1beta1.AWSCloud": {
-      "required": [
-        "networks",
-        "workers",
-        "zones"
-      ],
-      "properties": {
-        "machineImage": {
-          "$ref": "#/definitions/v1beta1.ShootMachineImage"
-        },
-        "networks": {
-          "$ref": "#/definitions/v1beta1.AWSNetworks"
-        },
-        "workers": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1beta1.AWSWorker"
-          }
-        },
-        "zones": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "v1beta1.AWSNetworks": {
-      "required": [
-        "vpc",
-        "internal",
-        "public",
-        "workers"
-      ],
-      "properties": {
-        "internal": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1.CIDR"
-          }
-        },
-        "nodes": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        },
-        "pods": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        },
-        "public": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1.CIDR"
-          }
-        },
-        "services": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        },
-        "vpc": {
-          "$ref": "#/definitions/v1beta1.AWSVPC"
-        },
-        "workers": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1.CIDR"
-          }
-        }
-      }
-    },
-    "v1beta1.AWSVPC": {
-      "properties": {
-        "cidr": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        },
-        "id": {
-          "type": "string"
-        }
-      }
-    },
-    "v1beta1.AWSWorker": {
-      "required": [
-        "name",
-        "autoScalerMin",
-        "machineType",
-        "autoScalerMax",
-        "volumeType",
-        "volumeSize"
-      ],
-      "properties": {
-        "annotations": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "autoScalerMax": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "autoScalerMin": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "kubelet": {
-          "$ref": "#/definitions/v1beta1.KubeletConfig"
-        },
-        "labels": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "machineImage": {
-          "$ref": "#/definitions/v1beta1.ShootMachineImage"
-        },
-        "machineType": {
-          "type": "string"
-        },
-        "maxSurge": {
-          "type": "string"
-        },
-        "maxUnavailable": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "taints": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1.Taint"
-          }
-        },
-        "volumeSize": {
-          "type": "string"
-        },
-        "volumeType": {
-          "type": "string"
-        }
-      }
-    },
-    "v1beta1.AddonClusterAutoscaler": {
-      "required": [
-        "enabled"
-      ],
-      "properties": {
-        "enabled": {
-          "type": "boolean"
-        }
-      }
-    },
-    "v1beta1.Addons": {
-      "properties": {
-        "cluster-autoscaler": {
-          "$ref": "#/definitions/v1beta1.AddonClusterAutoscaler"
-        },
-        "heapster": {
-          "$ref": "#/definitions/v1beta1.Heapster"
-        },
-        "kube-lego": {
-          "$ref": "#/definitions/v1beta1.KubeLego"
-        },
-        "kube2iam": {
-          "$ref": "#/definitions/v1beta1.Kube2IAM"
-        },
-        "kubernetes-dashboard": {
-          "$ref": "#/definitions/v1beta1.KubernetesDashboard"
-        },
-        "metallb": {
-          "$ref": "#/definitions/v1beta1.MetalLB"
-        },
-        "monocular": {
-          "$ref": "#/definitions/v1beta1.Monocular"
-        },
-        "nginx-ingress": {
-          "$ref": "#/definitions/v1beta1.NginxIngress"
-        }
-      }
-    },
-    "v1beta1.AdmissionPlugin": {
-      "required": [
-        "name"
-      ],
-      "properties": {
-        "config": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        }
-      }
-    },
-    "v1beta1.Alicloud": {
-      "required": [
-        "networks",
-        "workers",
-        "zones"
-      ],
-      "properties": {
-        "machineImage": {
-          "$ref": "#/definitions/v1beta1.ShootMachineImage"
-        },
-        "networks": {
-          "$ref": "#/definitions/v1beta1.AlicloudNetworks"
-        },
-        "workers": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1beta1.AlicloudWorker"
-          }
-        },
-        "zones": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "v1beta1.AlicloudNetworks": {
-      "required": [
-        "vpc",
-        "workers"
-      ],
-      "properties": {
-        "nodes": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        },
-        "pods": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        },
-        "services": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        },
-        "vpc": {
-          "$ref": "#/definitions/v1beta1.AlicloudVPC"
-        },
-        "workers": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1.CIDR"
-          }
-        }
-      }
-    },
-    "v1beta1.AlicloudVPC": {
-      "properties": {
-        "cidr": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        },
-        "id": {
-          "type": "string"
-        }
-      }
-    },
-    "v1beta1.AlicloudWorker": {
-      "required": [
-        "machineType",
-        "name",
-        "autoScalerMin",
-        "autoScalerMax",
-        "volumeType",
-        "volumeSize"
-      ],
-      "properties": {
-        "annotations": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "autoScalerMax": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "autoScalerMin": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "kubelet": {
-          "$ref": "#/definitions/v1beta1.KubeletConfig"
-        },
-        "labels": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "machineImage": {
-          "$ref": "#/definitions/v1beta1.ShootMachineImage"
-        },
-        "machineType": {
-          "type": "string"
-        },
-        "maxSurge": {
-          "type": "string"
-        },
-        "maxUnavailable": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "taints": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1.Taint"
-          }
-        },
-        "volumeSize": {
-          "type": "string"
-        },
-        "volumeType": {
-          "type": "string"
-        }
-      }
-    },
-    "v1beta1.AuditConfig": {
-      "properties": {
-        "auditPolicy": {
-          "$ref": "#/definitions/v1beta1.AuditPolicy"
-        }
-      }
-    },
-    "v1beta1.AuditPolicy": {
-      "properties": {
-        "configMapRef": {
-          "$ref": "#/definitions/v1.LocalObjectReference"
-        }
-      }
-    },
-    "v1beta1.AzureCloud": {
-      "required": [
-        "networks",
-        "workers"
-      ],
-      "properties": {
-        "machineImage": {
-          "$ref": "#/definitions/v1beta1.ShootMachineImage"
-        },
-        "networks": {
-          "$ref": "#/definitions/v1beta1.AzureNetworks"
-        },
-        "resourceGroup": {
-          "$ref": "#/definitions/v1beta1.AzureResourceGroup"
-        },
-        "workers": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1beta1.AzureWorker"
-          }
-        }
-      }
-    },
-    "v1beta1.AzureNetworks": {
-      "required": [
-        "vnet",
-        "workers"
-      ],
-      "properties": {
-        "nodes": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        },
-        "pods": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        },
-        "services": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        },
-        "vnet": {
-          "$ref": "#/definitions/v1beta1.AzureVNet"
-        },
-        "workers": {
-          "type": "string"
-        }
-      }
-    },
-    "v1beta1.AzureResourceGroup": {
-      "required": [
-        "name"
-      ],
-      "properties": {
-        "name": {
-          "type": "string"
-        }
-      }
-    },
-    "v1beta1.AzureVNet": {
-      "properties": {
-        "cidr": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        },
-        "name": {
-          "type": "string"
-        }
-      }
-    },
-    "v1beta1.AzureWorker": {
-      "required": [
-        "name",
-        "autoScalerMax",
-        "autoScalerMin",
-        "machineType",
-        "volumeType",
-        "volumeSize"
-      ],
-      "properties": {
-        "annotations": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "autoScalerMax": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "autoScalerMin": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "kubelet": {
-          "$ref": "#/definitions/v1beta1.KubeletConfig"
-        },
-        "labels": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "machineImage": {
-          "$ref": "#/definitions/v1beta1.ShootMachineImage"
-        },
-        "machineType": {
-          "type": "string"
-        },
-        "maxSurge": {
-          "type": "string"
-        },
-        "maxUnavailable": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "taints": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1.Taint"
-          }
-        },
-        "volumeSize": {
-          "type": "string"
-        },
-        "volumeType": {
-          "type": "string"
-        }
-      }
-    },
-    "v1beta1.Backup": {
-      "required": [
-        "schedule",
-        "maximum"
-      ],
-      "properties": {
-        "maximum": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "schedule": {
-          "type": "string"
-        }
-      }
-    },
-    "v1beta1.Cloud": {
-      "required": [
-        "profile",
-        "region",
-        "secretBindingRef"
-      ],
-      "properties": {
-        "alicloud": {
-          "$ref": "#/definitions/v1beta1.Alicloud"
-        },
-        "aws": {
-          "$ref": "#/definitions/v1beta1.AWSCloud"
-        },
-        "azure": {
-          "$ref": "#/definitions/v1beta1.AzureCloud"
-        },
-        "gcp": {
-          "$ref": "#/definitions/v1beta1.GCPCloud"
-        },
-        "metal": {
-          "$ref": "#/definitions/v1beta1.MetalCloud"
-        },
-        "openstack": {
-          "$ref": "#/definitions/v1beta1.OpenStackCloud"
-        },
-        "packet": {
-          "$ref": "#/definitions/v1beta1.PacketCloud"
-        },
-        "profile": {
-          "type": "string"
-        },
-        "region": {
-          "type": "string"
-        },
-        "secretBindingRef": {
-          "$ref": "#/definitions/v1.LocalObjectReference"
-        },
-        "seed": {
-          "type": "string"
-        }
-      }
-    },
-    "v1beta1.CloudControllerManagerConfig": {
-      "properties": {
-        "featureGates": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "boolean"
-          }
-        }
-      }
-    },
-    "v1beta1.ClusterAutoscaler": {
-      "properties": {
-        "scaleDownDelayAfterAdd": {
-          "type": "string"
-        },
-        "scaleDownDelayAfterDelete": {
-          "type": "string"
-        },
-        "scaleDownDelayAfterFailure": {
-          "type": "string"
-        },
-        "scaleDownUnneededTime": {
-          "type": "string"
-        },
-        "scaleDownUtilizationThreshold": {
-          "type": "number",
-          "format": "double"
-        },
-        "scanInterval": {
-          "type": "string"
-        }
-      }
-    },
     "v1beta1.DNS": {
       "properties": {
         "domain": {
           "type": "string"
         },
-        "hostedZoneID": {
-          "type": "string"
-        },
-        "provider": {
-          "type": "string"
-        },
-        "secretName": {
-          "type": "string"
+        "providers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1beta1.DNSProvider"
+          }
         }
       }
     },
+    "v1beta1.DNSIncludeExclude": {
+      "properties": {
+        "exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "include": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "v1beta1.DNSProvider": {
+      "properties": {
+        "domains": {
+          "$ref": "#/definitions/v1beta1.DNSIncludeExclude"
+        },
+        "secretName": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "zones": {
+          "$ref": "#/definitions/v1beta1.DNSIncludeExclude"
+        }
+      }
+    },
+    "v1beta1.ErrorCode": {},
     "v1beta1.Extension": {
       "required": [
         "type"
@@ -2986,133 +3233,6 @@
           "type": "string"
         },
         "type": {
-          "type": "string"
-        }
-      }
-    },
-    "v1beta1.GCPCloud": {
-      "required": [
-        "networks",
-        "workers",
-        "zones"
-      ],
-      "properties": {
-        "machineImage": {
-          "$ref": "#/definitions/v1beta1.ShootMachineImage"
-        },
-        "networks": {
-          "$ref": "#/definitions/v1beta1.GCPNetworks"
-        },
-        "workers": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1beta1.GCPWorker"
-          }
-        },
-        "zones": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "v1beta1.GCPNetworks": {
-      "required": [
-        "workers"
-      ],
-      "properties": {
-        "internal": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        },
-        "nodes": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        },
-        "pods": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        },
-        "services": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        },
-        "vpc": {
-          "$ref": "#/definitions/v1beta1.GCPVPC"
-        },
-        "workers": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1alpha1.CIDR"
-          }
-        }
-      }
-    },
-    "v1beta1.GCPVPC": {
-      "required": [
-        "name"
-      ],
-      "properties": {
-        "name": {
-          "type": "string"
-        }
-      }
-    },
-    "v1beta1.GCPWorker": {
-      "required": [
-        "machineType",
-        "autoScalerMin",
-        "name",
-        "autoScalerMax",
-        "volumeType",
-        "volumeSize"
-      ],
-      "properties": {
-        "annotations": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "autoScalerMax": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "autoScalerMin": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "kubelet": {
-          "$ref": "#/definitions/v1beta1.KubeletConfig"
-        },
-        "labels": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "machineImage": {
-          "$ref": "#/definitions/v1beta1.ShootMachineImage"
-        },
-        "machineType": {
-          "type": "string"
-        },
-        "maxSurge": {
-          "type": "string"
-        },
-        "maxUnavailable": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "taints": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1.Taint"
-          }
-        },
-        "volumeSize": {
-          "type": "string"
-        },
-        "volumeType": {
           "type": "string"
         }
       }
@@ -3132,16 +3252,6 @@
         },
         "version": {
           "type": "string"
-        }
-      }
-    },
-    "v1beta1.Heapster": {
-      "required": [
-        "enabled"
-      ],
-      "properties": {
-        "enabled": {
-          "type": "boolean"
         }
       }
     },
@@ -3193,40 +3303,6 @@
           "format": "double"
         },
         "upscaleDelay": {
-          "type": "string"
-        }
-      }
-    },
-    "v1beta1.Kube2IAM": {
-      "required": [
-        "enabled"
-      ],
-      "properties": {
-        "enabled": {
-          "type": "boolean"
-        },
-        "roles": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1beta1.Kube2IAMRole"
-          }
-        }
-      }
-    },
-    "v1beta1.Kube2IAMRole": {
-      "required": [
-        "name",
-        "description",
-        "policy"
-      ],
-      "properties": {
-        "description": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "policy": {
           "type": "string"
         }
       }
@@ -3285,19 +3361,6 @@
         "nodeCIDRMaskSize": {
           "type": "integer",
           "format": "int32"
-        }
-      }
-    },
-    "v1beta1.KubeLego": {
-      "required": [
-        "enabled"
-      ],
-      "properties": {
-        "email": {
-          "type": "string"
-        },
-        "enabled": {
-          "type": "boolean"
         }
       }
     },
@@ -3432,9 +3495,6 @@
         "allowPrivilegedContainers": {
           "type": "boolean"
         },
-        "cloudControllerManager": {
-          "$ref": "#/definitions/v1beta1.CloudControllerManagerConfig"
-        },
         "clusterAutoscaler": {
           "$ref": "#/definitions/v1beta1.ClusterAutoscaler"
         },
@@ -3471,6 +3531,68 @@
         }
       }
     },
+    "v1beta1.LastError": {
+      "required": [
+        "description"
+      ],
+      "properties": {
+        "codes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1beta1.ErrorCode"
+          }
+        },
+        "description": {
+          "type": "string"
+        },
+        "lastUpdateTime": {
+          "type": "string"
+        },
+        "taskID": {
+          "type": "string"
+        }
+      }
+    },
+    "v1beta1.LastOperation": {
+      "required": [
+        "description",
+        "lastUpdateTime",
+        "progress",
+        "state",
+        "type"
+      ],
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "lastUpdateTime": {
+          "type": "string"
+        },
+        "progress": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "state": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      }
+    },
+    "v1beta1.Machine": {
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "image": {
+          "$ref": "#/definitions/v1beta1.ShootMachineImage"
+        },
+        "type": {
+          "type": "string"
+        }
+      }
+    },
     "v1beta1.Maintenance": {
       "properties": {
         "autoUpdate": {
@@ -3483,7 +3605,8 @@
     },
     "v1beta1.MaintenanceAutoUpdate": {
       "required": [
-        "kubernetesVersion"
+        "kubernetesVersion",
+        "machineImageVersion"
       ],
       "properties": {
         "kubernetesVersion": {
@@ -3508,171 +3631,10 @@
         }
       }
     },
-    "v1beta1.MetalCloud": {
-      "required": [
-        "loadBalancerProvider",
-        "projectID",
-        "firewallImage",
-        "firewallSize",
-        "networks",
-        "workers",
-        "zones"
-      ],
+    "v1beta1.Monitoring": {
       "properties": {
-        "firewallImage": {
-          "type": "string"
-        },
-        "firewallSize": {
-          "type": "string"
-        },
-        "loadBalancerProvider": {
-          "type": "string"
-        },
-        "machineImage": {
-          "$ref": "#/definitions/v1beta1.ShootMachineImage"
-        },
-        "networks": {
-          "$ref": "#/definitions/v1beta1.MetalNetworks"
-        },
-        "projectID": {
-          "type": "string"
-        },
-        "workers": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1beta1.MetalWorker"
-          }
-        },
-        "zones": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "v1beta1.MetalLB": {
-      "required": [
-        "enabled"
-      ],
-      "properties": {
-        "enabled": {
-          "type": "boolean"
-        },
-        "networks": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1beta1.MetalLBNetwork"
-          }
-        }
-      }
-    },
-    "v1beta1.MetalLBNetwork": {
-      "required": [
-        "name",
-        "count"
-      ],
-      "properties": {
-        "count": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "name": {
-          "type": "string"
-        }
-      }
-    },
-    "v1beta1.MetalNetworks": {
-      "required": [
-        "additional"
-      ],
-      "properties": {
-        "additional": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "nodes": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        },
-        "pods": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        },
-        "services": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        }
-      }
-    },
-    "v1beta1.MetalWorker": {
-      "required": [
-        "machineType",
-        "name",
-        "autoScalerMin",
-        "autoScalerMax",
-        "volumeType",
-        "volumeSize"
-      ],
-      "properties": {
-        "annotations": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "autoScalerMax": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "autoScalerMin": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "kubelet": {
-          "$ref": "#/definitions/v1beta1.KubeletConfig"
-        },
-        "labels": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "machineImage": {
-          "$ref": "#/definitions/v1beta1.ShootMachineImage"
-        },
-        "machineType": {
-          "type": "string"
-        },
-        "maxSurge": {
-          "type": "string"
-        },
-        "maxUnavailable": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "taints": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1.Taint"
-          }
-        },
-        "volumeSize": {
-          "type": "string"
-        },
-        "volumeType": {
-          "type": "string"
-        }
-      }
-    },
-    "v1beta1.Monocular": {
-      "required": [
-        "enabled"
-      ],
-      "properties": {
-        "enabled": {
-          "type": "boolean"
+        "alerting": {
+          "$ref": "#/definitions/v1beta1.Alerting"
         }
       }
     },
@@ -3682,16 +3644,16 @@
       ],
       "properties": {
         "nodes": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
+          "type": "string"
         },
         "pods": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
+          "type": "string"
         },
         "providerConfig": {
           "type": "string"
         },
         "services": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
+          "type": "string"
         },
         "type": {
           "type": "string"
@@ -3703,8 +3665,17 @@
         "enabled"
       ],
       "properties": {
+        "config": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
         "enabled": {
           "type": "boolean"
+        },
+        "externalTrafficPolicy": {
+          "$ref": "#/definitions/v1.ServiceExternalTrafficPolicyType"
         },
         "loadBalancerSourceRanges": {
           "type": "array",
@@ -3718,6 +3689,9 @@
       "properties": {
         "caBundle": {
           "type": "string"
+        },
+        "clientAuthentication": {
+          "$ref": "#/definitions/v1beta1.OpenIDConnectClientAuthentication"
         },
         "clientID": {
           "type": "string"
@@ -3751,254 +3725,39 @@
         }
       }
     },
-    "v1beta1.OpenStackCloud": {
-      "required": [
-        "floatingPoolName",
-        "loadBalancerProvider",
-        "networks",
-        "workers",
-        "zones"
-      ],
+    "v1beta1.OpenIDConnectClientAuthentication": {
       "properties": {
-        "floatingPoolName": {
-          "type": "string"
-        },
-        "loadBalancerClasses": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1beta1.OpenStackLoadBalancerClass"
-          }
-        },
-        "loadBalancerProvider": {
-          "type": "string"
-        },
-        "machineImage": {
-          "$ref": "#/definitions/v1beta1.ShootMachineImage"
-        },
-        "networks": {
-          "$ref": "#/definitions/v1beta1.OpenStackNetworks"
-        },
-        "workers": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1beta1.OpenStackWorker"
-          }
-        },
-        "zones": {
-          "type": "array",
-          "items": {
+        "extraConfig": {
+          "type": "object",
+          "additionalProperties": {
             "type": "string"
           }
-        }
-      }
-    },
-    "v1beta1.OpenStackLoadBalancerClass": {
-      "required": [
-        "name"
-      ],
-      "properties": {
-        "floatingNetworkID": {
-          "type": "string"
         },
-        "floatingSubnetID": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "subnetID": {
+        "secret": {
           "type": "string"
         }
       }
     },
-    "v1beta1.OpenStackNetworks": {
+    "v1beta1.Provider": {
       "required": [
+        "type",
         "workers"
       ],
       "properties": {
-        "nodes": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
+        "controlPlaneConfig": {
+          "type": "string"
         },
-        "pods": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
+        "infrastructureConfig": {
+          "type": "string"
         },
-        "router": {
-          "$ref": "#/definitions/v1beta1.OpenStackRouter"
-        },
-        "services": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
+        "type": {
+          "type": "string"
         },
         "workers": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1.CIDR"
+            "$ref": "#/definitions/v1beta1.Worker"
           }
-        }
-      }
-    },
-    "v1beta1.OpenStackRouter": {
-      "required": [
-        "id"
-      ],
-      "properties": {
-        "id": {
-          "type": "string"
-        }
-      }
-    },
-    "v1beta1.OpenStackWorker": {
-      "required": [
-        "machineType",
-        "autoScalerMin",
-        "autoScalerMax",
-        "name"
-      ],
-      "properties": {
-        "annotations": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "autoScalerMax": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "autoScalerMin": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "kubelet": {
-          "$ref": "#/definitions/v1beta1.KubeletConfig"
-        },
-        "labels": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "machineImage": {
-          "$ref": "#/definitions/v1beta1.ShootMachineImage"
-        },
-        "machineType": {
-          "type": "string"
-        },
-        "maxSurge": {
-          "type": "string"
-        },
-        "maxUnavailable": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "taints": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1.Taint"
-          }
-        }
-      }
-    },
-    "v1beta1.PacketCloud": {
-      "required": [
-        "networks",
-        "workers",
-        "zones"
-      ],
-      "properties": {
-        "machineImage": {
-          "$ref": "#/definitions/v1beta1.ShootMachineImage"
-        },
-        "networks": {
-          "$ref": "#/definitions/v1beta1.PacketNetworks"
-        },
-        "workers": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1beta1.PacketWorker"
-          }
-        },
-        "zones": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "v1beta1.PacketNetworks": {
-      "properties": {
-        "nodes": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        },
-        "pods": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        },
-        "services": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
-        }
-      }
-    },
-    "v1beta1.PacketWorker": {
-      "required": [
-        "machineType",
-        "autoScalerMin",
-        "autoScalerMax",
-        "name",
-        "volumeType",
-        "volumeSize"
-      ],
-      "properties": {
-        "annotations": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "autoScalerMax": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "autoScalerMin": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "kubelet": {
-          "$ref": "#/definitions/v1beta1.KubeletConfig"
-        },
-        "labels": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "machineImage": {
-          "$ref": "#/definitions/v1beta1.ShootMachineImage"
-        },
-        "machineType": {
-          "type": "string"
-        },
-        "maxSurge": {
-          "type": "string"
-        },
-        "maxUnavailable": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "taints": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v1.Taint"
-          }
-        },
-        "volumeSize": {
-          "type": "string"
-        },
-        "volumeType": {
-          "type": "string"
         }
       }
     },
@@ -4016,11 +3775,11 @@
     "v1beta1.Shoot": {
       "properties": {
         "apiVersion": {
-          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
           "type": "string"
         },
         "kind": {
-          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
           "type": "string"
         },
         "metadata": {
@@ -4053,19 +3812,19 @@
     },
     "v1beta1.ShootSpec": {
       "required": [
-        "cloud",
-        "dns",
-        "kubernetes"
+        "cloudProfileName",
+        "kubernetes",
+        "networking",
+        "provider",
+        "region",
+        "secretBindingName"
       ],
       "properties": {
         "addons": {
           "$ref": "#/definitions/v1beta1.Addons"
         },
-        "backup": {
-          "$ref": "#/definitions/v1beta1.Backup"
-        },
-        "cloud": {
-          "$ref": "#/definitions/v1beta1.Cloud"
+        "cloudProfileName": {
+          "type": "string"
         },
         "dns": {
           "$ref": "#/definitions/v1beta1.DNS"
@@ -4085,14 +3844,30 @@
         "maintenance": {
           "$ref": "#/definitions/v1beta1.Maintenance"
         },
+        "monitoring": {
+          "$ref": "#/definitions/v1beta1.Monitoring"
+        },
         "networking": {
           "$ref": "#/definitions/v1beta1.Networking"
+        },
+        "provider": {
+          "$ref": "#/definitions/v1beta1.Provider"
+        },
+        "region": {
+          "type": "string"
+        },
+        "secretBindingName": {
+          "type": "string"
+        },
+        "seedName": {
+          "type": "string"
         }
       }
     },
     "v1beta1.ShootStatus": {
       "required": [
         "gardener",
+        "hibernated",
         "technicalID",
         "uid"
       ],
@@ -4100,7 +3875,13 @@
         "conditions": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1alpha1.Condition"
+            "$ref": "#/definitions/v1beta1.Condition"
+          }
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1beta1.Condition"
           }
         },
         "gardener": {
@@ -4109,11 +3890,14 @@
         "hibernated": {
           "type": "boolean"
         },
-        "lastError": {
-          "$ref": "#/definitions/v1alpha1.LastError"
+        "lastErrors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1beta1.LastError"
+          }
         },
         "lastOperation": {
-          "$ref": "#/definitions/v1alpha1.LastOperation"
+          "$ref": "#/definitions/v1beta1.LastOperation"
         },
         "observedGeneration": {
           "type": "integer",
@@ -4122,7 +3906,7 @@
         "retryCycleStartTime": {
           "type": "string"
         },
-        "seed": {
+        "seedName": {
           "type": "string"
         },
         "technicalID": {
@@ -4130,6 +3914,92 @@
         },
         "uid": {
           "type": "string"
+        }
+      }
+    },
+    "v1beta1.Volume": {
+      "required": [
+        "size"
+      ],
+      "properties": {
+        "size": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      }
+    },
+    "v1beta1.Worker": {
+      "required": [
+        "name",
+        "machine",
+        "maximum",
+        "minimum"
+      ],
+      "properties": {
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "caBundle": {
+          "type": "string"
+        },
+        "kubernetes": {
+          "$ref": "#/definitions/v1beta1.WorkerKubernetes"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "machine": {
+          "$ref": "#/definitions/v1beta1.Machine"
+        },
+        "maxSurge": {
+          "type": "string"
+        },
+        "maxUnavailable": {
+          "type": "string"
+        },
+        "maximum": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "minimum": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "name": {
+          "type": "string"
+        },
+        "providerConfig": {
+          "type": "string"
+        },
+        "taints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1.Taint"
+          }
+        },
+        "volume": {
+          "$ref": "#/definitions/v1beta1.Volume"
+        },
+        "zones": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "v1beta1.WorkerKubernetes": {
+      "properties": {
+        "kubelet": {
+          "$ref": "#/definitions/v1beta1.KubeletConfig"
         }
       }
     }

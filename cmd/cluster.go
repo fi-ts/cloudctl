@@ -3,15 +3,19 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	"git.f-i-ts.de/cloud-native/metallib/auth"
+	"gopkg.in/yaml.v3"
 	"log"
+	"sort"
 	"strings"
 
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/cluster"
 
 	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
 	"git.f-i-ts.de/cloud-native/cloudctl/cmd/helper"
-	output "git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
+	"git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
 
+	"github.com/Masterminds/semver"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -57,11 +61,11 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	clusterCredentialsCmd = &cobra.Command{
-		Use:   "credentials <uid>",
-		Short: "get cluster credentials",
+	clusterKubeconfigCmd = &cobra.Command{
+		Use:   "kubeconfig <uid>",
+		Short: "get cluster kubeconfig",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterCredentials(args)
+			return clusterKubeconfig(args)
 		},
 		PreRun: bindPFlags,
 	}
@@ -97,16 +101,26 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+	clusterMachinesCmd = &cobra.Command{
+		Use:   "machines",
+		Short: "get machines in the cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterMachines(args)
+		},
+		PreRun: bindPFlags,
+	}
 )
 
 func init() {
 	clusterCreateCmd.Flags().String("name", "", "name of the cluster, max 10 characters. [required]")
-	clusterCreateCmd.Flags().String("description", "", "description of the cluster. [required]")
+	clusterCreateCmd.Flags().String("description", "", "description of the cluster. [optional]")
 	clusterCreateCmd.Flags().String("project", "", "project where this cluster should belong to. [required]")
-	clusterCreateCmd.Flags().String("partition", "nbg-w8101", "partition of the cluster. [required]")
-	clusterCreateCmd.Flags().String("version", "1.14.3", "kubernetes version of the cluster. [optional]")
+	clusterCreateCmd.Flags().String("partition", "", "partition of the cluster. [required]")
+	clusterCreateCmd.Flags().String("version", "", "kubernetes version of the cluster. defaults to latest available, check cluster inputs for possible values. [optional]")
 	clusterCreateCmd.Flags().String("machinetype", "", "machine type to use for the nodes. [optional]")
+	clusterCreateCmd.Flags().String("machineimage", "", "machine image to use for the nodes, must be in the form of <name>-<version> [optional]")
 	clusterCreateCmd.Flags().String("firewalltype", "", "machine type to use for the firewall. [optional]")
+	clusterCreateCmd.Flags().String("firewallimage", "", "machine image to use for the firewall. [optional]")
 	clusterCreateCmd.Flags().Int32("minsize", 1, "minimal workers of the cluster.")
 	clusterCreateCmd.Flags().Int32("maxsize", 1, "maximal workers of the cluster.")
 	clusterCreateCmd.Flags().String("maxsurge", "1", "max number (e.g. 1) or percentage (e.g. 10%) of workers created during a update of the cluster.")
@@ -114,13 +128,17 @@ func init() {
 	clusterCreateCmd.Flags().StringSlice("labels", []string{}, "labels of the cluster")
 	clusterCreateCmd.Flags().StringSlice("external-networks", []string{"internet"}, "external networks of the cluster, can be internet,mpls")
 	clusterCreateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster.")
-	clusterCreateCmd.Flags().BoolP("defaultingress", "", true, "deploy a default ingress controller")
+	clusterCreateCmd.Flags().BoolP("defaultingress", "", false, "deploy a default ingress controller")
 
 	err := clusterCreateCmd.MarkFlagRequired("name")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 	err = clusterCreateCmd.MarkFlagRequired("project")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = clusterCreateCmd.MarkFlagRequired("partition")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -135,13 +153,14 @@ func init() {
 
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
-	clusterCmd.AddCommand(clusterCredentialsCmd)
+	clusterCmd.AddCommand(clusterKubeconfigCmd)
 	clusterCmd.AddCommand(clusterDeleteCmd)
 	clusterCmd.AddCommand(clusterDescribeCmd)
 	clusterCmd.AddCommand(clusterInputsCmd)
 	clusterCmd.AddCommand(clusterReconcileCmd)
 	clusterCmd.AddCommand(clusterSSHKeyPairCmd)
 	clusterCmd.AddCommand(clusterUpdateCmd)
+	clusterCmd.AddCommand(clusterMachinesCmd)
 }
 
 func clusterCreate() error {
@@ -150,7 +169,9 @@ func clusterCreate() error {
 	partition := viper.GetString("partition")
 	project := viper.GetString("project")
 	machineType := viper.GetString("machinetype")
+	machineImageAndVersion := viper.GetString("machineimage")
 	firewallType := viper.GetString("firewalltype")
+	firewallImage := viper.GetString("firewallimage")
 
 	minsize := viper.GetInt32("minsize")
 	maxsize := viper.GetInt32("maxsize")
@@ -158,7 +179,6 @@ func clusterCreate() error {
 	maxunavailable := viper.GetString("maxunavailable")
 
 	allowprivileged := viper.GetBool("allowprivileged")
-	version := viper.GetString("version")
 	defaultingress := viper.GetBool("defaultingress")
 
 	// FIXME helper and validation
@@ -170,20 +190,68 @@ func clusterCreate() error {
 
 	kubernetesEnabled := false
 
+	version := viper.GetString("version")
+	if version == "" {
+		request := cluster.NewListConstraintsParams()
+		constraints, err := cloud.Cluster.ListConstraints(request, cloud.Auth)
+		if err != nil {
+			switch e := err.(type) {
+			case *cluster.ListConstraintsDefault:
+				return output.HTTPError(e.Payload)
+			default:
+				return output.UnconventionalError(err)
+			}
+		}
+
+		availableVersions := constraints.Payload.KubernetesVersions
+		if len(availableVersions) == 0 {
+			log.Fatalf("no kubernetes versions available to deploy")
+		}
+
+		sortedVersions := make([]*semver.Version, len(availableVersions))
+		for i, r := range availableVersions {
+			v, err := semver.NewVersion(r)
+			if err != nil {
+				log.Fatalf("Error parsing version: %s", err)
+			}
+
+			sortedVersions[i] = v
+		}
+
+		sort.Sort(semver.Collection(sortedVersions))
+
+		version = sortedVersions[len(sortedVersions)-1].String()
+	}
+
+	machineImage := models.V1MachineImage{}
+	if machineImageAndVersion != "" {
+		machineImageParts := strings.Split(machineImageAndVersion, "-")
+		if len(machineImageParts) == 2 {
+			machineImage = models.V1MachineImage{
+				Name:    &machineImageParts[0],
+				Version: &machineImageParts[1],
+			}
+		} else {
+			log.Fatalf("given machineimage:%s is invalid must be in the form <name>-<version>", machineImageAndVersion)
+		}
+	}
+
 	scr := &models.V1ClusterCreateRequest{
 		ProjectID:   &project,
 		Name:        &name,
 		Description: &desc,
 		Workers: []*models.V1Worker{
 			{
-				AutoScalerMin:  &minsize,
-				AutoScalerMax:  &maxsize,
+				Minimum:        &minsize,
+				Maximum:        &maxsize,
 				MaxSurge:       &maxsurge,
 				MaxUnavailable: &maxunavailable,
 				MachineType:    &machineType,
+				MachineImage:   &machineImage,
 			},
 		},
-		FirewallSize: &firewallType,
+		FirewallSize:  &firewallType,
+		FirewallImage: &firewallImage,
 		Kubernetes: &models.V1Kubernetes{
 			AllowPrivilegedContainers: &allowprivileged,
 			Version:                   &version,
@@ -199,7 +267,7 @@ func clusterCreate() error {
 			},
 		},
 		AdditionalNetworks: networks,
-		Zones:              []string{partition},
+		PartitionID:        &partition,
 		Addons: &models.V1Addons{
 			KubernetesDashboard: &kubernetesEnabled,
 			NginxIngress:        &defaultingress,
@@ -265,23 +333,70 @@ func clusterList() error {
 	}
 	return printer.Print(shoots.Payload)
 }
-func clusterCredentials(args []string) error {
+
+func clusterKubeconfig(args []string) error {
 	ci, err := clusterID("credentials", args)
 	if err != nil {
 		return err
 	}
-	request := cluster.NewGetClusterCredentialsParams()
+	request := cluster.NewGetClusterKubeconfigTplParams()
 	request.SetID(ci)
-	credentials, err := cloud.Cluster.GetClusterCredentials(request, cloud.Auth)
+	credentials, err := cloud.Cluster.GetClusterKubeconfigTpl(request, cloud.Auth)
 	if err != nil {
 		switch e := err.(type) {
-		case *cluster.GetClusterCredentialsDefault:
+		case *cluster.GetClusterKubeconfigTplDefault:
 			return output.HTTPError(e.Payload)
 		default:
 			return output.UnconventionalError(err)
 		}
 	}
-	fmt.Println(*credentials.Payload.Kubeconfig)
+
+	// kubeconfig with cluster
+	kubeconfigContent := *credentials.Payload.Kubeconfig
+
+	kubeconfigFile := viper.GetString("kubeConfig")
+	authContext, err := auth.CurrentAuthContext(kubeconfigFile)
+	if err != nil {
+		return err
+	}
+	if !authContext.AuthProviderOidc {
+		return fmt.Errorf("active user %s has no oidc authProvider, check config", authContext.User)
+	}
+
+	cfg := make(map[interface{}]interface{})
+	err = yaml.Unmarshal([]byte(kubeconfigContent), cfg)
+
+	// identify clustername
+	clusterNames, err := auth.GetClusterNames(cfg)
+	if err != nil {
+		return err
+	}
+	if len(clusterNames) != 1 {
+		return fmt.Errorf("expected one cluster in config, got %d", len(clusterNames))
+	}
+
+	userName := authContext.User
+	clusterName := clusterNames[0]
+	contextName := fmt.Sprintf("%s@%s", userName, clusterName)
+
+	// merge with current user credentials
+	err = auth.AddUser(cfg, authContext)
+	if err != nil {
+		return err
+	}
+	err = auth.AddContext(cfg, contextName, clusterName, userName)
+	if err != nil {
+		return err
+	}
+	auth.SetCurrentContext(cfg, contextName)
+
+	mergedKubeconfig, err := yaml.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+
+	// print kubeconfig
+	fmt.Println(string(mergedKubeconfig))
 	return nil
 }
 
@@ -350,10 +465,10 @@ func updateCluster(args []string) error {
 	cur.Workers = append(cur.Workers, worker)
 	if minsize != 0 || maxsize != 0 {
 		if minsize != 0 {
-			cur.Workers[0].AutoScalerMin = &minsize
+			cur.Workers[0].Minimum = &minsize
 		}
 		if maxsize != 0 {
-			cur.Workers[0].AutoScalerMax = &maxsize
+			cur.Workers[0].Maximum = &maxsize
 		}
 	}
 	if version != "" {
@@ -381,7 +496,7 @@ func clusterDelete(args []string) error {
 	}
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	resp, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
 	if err != nil {
 		switch e := err.(type) {
 		case *cluster.FindClusterDefault:
@@ -390,14 +505,14 @@ func clusterDelete(args []string) error {
 			return output.UnconventionalError(err)
 		}
 	}
-	printer.Print(shoot.Payload)
-	firstPartOfClusterID := strings.Split(shoot.Payload.Metadata.UID, "-")[0]
+	printer.Print(resp.Payload)
+	firstPartOfClusterID := strings.Split(resp.Payload.Shoot.Metadata.UID, "-")[0]
 	fmt.Println("Please answer some security questions to delete this cluster")
 	err = helper.Prompt("first part of clusterID:", firstPartOfClusterID)
 	if err != nil {
 		return err
 	}
-	err = helper.Prompt("Clustername:", shoot.Payload.Metadata.Name)
+	err = helper.Prompt("Clustername:", resp.Payload.Shoot.Metadata.Name)
 	if err != nil {
 		return err
 	}
@@ -414,6 +529,7 @@ func clusterDelete(args []string) error {
 	}
 	return printer.Print(c.Payload)
 }
+
 func clusterDescribe(args []string) error {
 	ci, err := clusterID("describe", args)
 	if err != nil {
@@ -431,6 +547,39 @@ func clusterDescribe(args []string) error {
 		}
 	}
 	return output.YAMLPrinter{}.Print(shoot.Payload)
+}
+
+func clusterMachines(args []string) error {
+	ci, err := clusterID("machines", args)
+	if err != nil {
+		return err
+	}
+	findRequest := cluster.NewFindClusterParams()
+	findRequest.SetID(ci)
+	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	if err != nil {
+		switch e := err.(type) {
+		case *cluster.FindClusterDefault:
+			return output.HTTPError(e.Payload)
+		default:
+			return output.UnconventionalError(err)
+		}
+	}
+	fmt.Println("Cluster:")
+	printer.Print(shoot.Payload)
+
+	// FIXME this is a ugly hack to reset the printer and have a new header.
+	printer, err = output.NewPrinter(
+		viper.GetString("output-format"),
+		viper.GetString("order"),
+		viper.GetString("template"),
+		viper.GetBool("no-headers"),
+	)
+	if err != nil {
+		log.Fatalf("unable to initialize printer:%v", err)
+	}
+	fmt.Println("\nMachines:")
+	return printer.Print(shoot.Payload.Machines)
 }
 
 func clusterInputs() error {

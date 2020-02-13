@@ -80,18 +80,17 @@ func ipList() error {
 			}
 		}
 		return printer.Print(resp.Payload)
-	} else {
-		resp, err := cloud.IP.ListIps(nil, cloud.Auth)
-		if err != nil {
-			switch e := err.(type) {
-			case *ip.ListIpsDefault:
-				return output.HTTPError(e.Payload)
-			default:
-				return output.UnconventionalError(err)
-			}
-		}
-		return printer.Print(resp.Payload)
 	}
+	resp, err := cloud.IP.ListIps(nil, cloud.Auth)
+	if err != nil {
+		switch e := err.(type) {
+		case *ip.ListIpsDefault:
+			return output.HTTPError(e.Payload)
+		default:
+			return output.UnconventionalError(err)
+		}
+	}
+	return printer.Print(resp.Payload)
 }
 
 func ipStatic(args []string) error {
@@ -135,7 +134,7 @@ func ipDelete(args []string) error {
 			return output.UnconventionalError(err)
 		}
 	}
-	
+
 	return printer.Print(resp.Payload)
 }
 

@@ -67,6 +67,7 @@ func (t *TablePrinter) render() {
 		t.shortData = [][]string{}
 		t.wideData = [][]string{}
 	}
+	t.table.ClearRows()
 }
 func (t *TablePrinter) addShortData(row []string, data interface{}) {
 	if t.wide {
@@ -155,6 +156,8 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 		table.SetColumnSeparator("")
 		table.SetRowSeparator("")
 		table.SetRowLine(false)
+		table.SetTablePadding("\t") // pad with tabs
+		table.SetNoWhiteSpace(true) // no whitespace in front of every line
 	}
 	return TablePrinter{
 		table:     table,
@@ -168,13 +171,13 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 // Print a model in a human readable table
 func (t TablePrinter) Print(data interface{}) error {
 	switch d := data.(type) {
-	case *models.V1beta1Shoot:
-		ShootTablePrinter{t}.Print([]*models.V1beta1Shoot{d})
-	case []*models.V1beta1Shoot:
+	case *models.V1ClusterResponse:
+		ShootTablePrinter{t}.Print([]*models.V1ClusterResponse{d})
+	case []*models.V1ClusterResponse:
 		ShootTablePrinter{t}.Print(d)
-	case *models.ModelsV1ProjectResponse:
-		ProjectTablePrinter{t}.Print([]*models.ModelsV1ProjectResponse{d})
-	case []*models.ModelsV1ProjectResponse:
+	case *models.V1ProjectResponse:
+		ProjectTablePrinter{t}.Print(&models.V1ProjectListResponse{Projects: []*models.V1Project{d.Project}})
+	case *models.V1ProjectListResponse:
 		ProjectTablePrinter{t}.Print(d)
 	case []*models.ModelsV1IPResponse:
 		IPTablePrinter{t}.Print(d)
@@ -189,6 +192,8 @@ func (t TablePrinter) Print(data interface{}) error {
 		ClusterBillingTablePrinter{t}.Print(d)
 	case *models.V1VolumeUsageResponse:
 		VolumeBillingTablePrinter{t}.Print(d)
+	case []*models.ModelsV1MachineResponse:
+		MachineTablePrinter{t}.Print(d)
 	default:
 		return fmt.Errorf("unknown table printer for type: %T", d)
 	}

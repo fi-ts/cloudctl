@@ -1,12 +1,13 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 
-	"git.f-i-ts.de/cloud-native/cloudctl/api/client/project"
-	output "git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
-
 	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
+
+	"git.f-i-ts.de/cloud-native/cloudctl/api/client/project"
+	"git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -62,10 +63,14 @@ func projectCreate() error {
 	name := viper.GetString("name")
 	desc := viper.GetString("description")
 
-	pcr := models.ModelsV1ProjectCreateRequest{
+	p := &models.V1Project{
 		Name:        name,
 		Description: desc,
 	}
+	pcr := models.V1ProjectCreateRequest{
+		Project: p,
+	}
+
 	request := project.NewCreateProjectParams()
 	request.SetBody(&pcr)
 
@@ -85,7 +90,10 @@ func projectCreate() error {
 }
 
 func projectDelete(args []string) error {
-	id := args[0]
+	id, err := projectID("delete", args)
+	if err != nil {
+		return err
+	}
 
 	request := project.NewDeleteProjectParams().WithID(id)
 
@@ -114,4 +122,14 @@ func projectList() error {
 		}
 	}
 	return printer.Print(response.Payload)
+}
+
+func projectID(verb string, args []string) (string, error) {
+	if len(args) == 0 {
+		return "", fmt.Errorf("project %s requires projectID as argument", verb)
+	}
+	if len(args) == 1 {
+		return args[0], nil
+	}
+	return "", fmt.Errorf("project %s requires exactly one projectID as argument", verb)
 }
