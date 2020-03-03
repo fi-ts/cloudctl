@@ -5,7 +5,7 @@ import (
 
 	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
 	"git.f-i-ts.de/cloud-native/cloudctl/cmd/helper"
-	metalgo "github.com/metal-pod/metal-go"
+	metalgo "github.com/metal-stack/metal-go"
 )
 
 type (

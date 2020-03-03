@@ -6,7 +6,7 @@ import (
 	"time"
 
 	httptransport "github.com/go-openapi/runtime/client"
-	"github.com/metal-pod/security"
+	"github.com/metal-stack/security"
 
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client"
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/accounting"

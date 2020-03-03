@@ -8,8 +8,8 @@ import (
 
 	output "git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
 	c "git.f-i-ts.de/cloud-native/cloudctl/pkg/cloud"
-	"git.f-i-ts.de/cloud-native/metallib/auth"
-	"github.com/metal-pod/v"
+	"github.com/metal-stack/metal-lib/auth"
+	"github.com/metal-stack/v"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

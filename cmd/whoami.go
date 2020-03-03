@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"git.f-i-ts.de/cloud-native/metallib/auth"
-	"git.f-i-ts.de/cloud-native/metallib/jwt/sec"
+	"github.com/metal-stack/metal-lib/auth"
+	"github.com/metal-stack/metal-lib/jwt/sec"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"time"
@@ -25,7 +25,7 @@ var whoamiCmd = &cobra.Command{
 			return fmt.Errorf("active user %s has no oidc authProvider, check config", authContext.User)
 		}
 
-		user, parsedClaims, err := sec.ParseTokenUnvalidated(authContext.IDToken)
+		user, parsedClaims, err := sec.ParseTokenUnvalidatedUnfiltered(authContext.IDToken)
 		if err != nil {
 			return err
 		}

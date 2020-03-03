@@ -1,35 +1,36 @@
 module git.f-i-ts.de/cloud-native/cloudctl
 
-go 1.12
+go 1.13
 
 require (
-	git.f-i-ts.de/cloud-native/masterdata-api v0.0.0-20191206140543-452cd01b49fb
-	git.f-i-ts.de/cloud-native/metallib v0.2.5
-	github.com/Masterminds/semver v1.4.2
-	github.com/gardener/gardener v0.0.0-20190816140908-ed26a3fdf2d6
-	github.com/go-openapi/errors v0.19.2
-	github.com/go-openapi/runtime v0.19.6
-	github.com/go-openapi/strfmt v0.19.3
-	github.com/go-openapi/swag v0.19.5
-	github.com/go-openapi/validate v0.19.3
-	github.com/go-playground/locales v0.12.1 // indirect
-	github.com/go-playground/universal-translator v0.16.0 // indirect
-	github.com/leodido/go-urn v1.1.0 // indirect
-	github.com/metal-pod/metal-go v0.0.0-20191104125404-3f11e972879a
-	github.com/metal-pod/security v0.0.0-20191127130239-3547755283e3
-	github.com/metal-pod/updater v1.0.0
-	github.com/metal-pod/v v1.0.0
-	github.com/miekg/dns v1.1.22 // indirect
+	github.com/Masterminds/semver v1.5.0
+	github.com/gardener/gardener v1.0.4
+	github.com/go-openapi/errors v0.19.3
+	github.com/go-openapi/loads v0.19.5 // indirect
+	github.com/go-openapi/runtime v0.19.11
+	github.com/go-openapi/strfmt v0.19.4
+	github.com/go-openapi/swag v0.19.7
+	github.com/go-openapi/validate v0.19.6
+	github.com/go-playground/universal-translator v0.17.0 // indirect
+	github.com/leodido/go-urn v1.2.0 // indirect
+	github.com/metal-stack/metal-go v0.3.1
+	github.com/metal-stack/metal-lib v0.3.2
+	github.com/metal-stack/security v0.3.0
+	github.com/metal-stack/updater v1.0.1
+	github.com/metal-stack/v v1.0.1
 	github.com/olekukonko/tablewriter v0.0.4
-	github.com/pkg/errors v0.9.0
-	github.com/spf13/cobra v0.0.5
-	github.com/spf13/viper v1.5.0
+	github.com/pelletier/go-toml v1.6.0 // indirect
+	github.com/pkg/errors v0.9.1
+	github.com/spf13/cast v1.3.1 // indirect
+	github.com/spf13/cobra v0.0.6
+	github.com/spf13/jwalterweatherman v1.1.0 // indirect
+	github.com/spf13/viper v1.6.2
+	golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
-	gopkg.in/go-playground/validator.v9 v9.29.1
-	gopkg.in/yaml.v3 v3.0.0-20191026110619-0b21df46bc1d
+	gopkg.in/go-playground/validator.v9 v9.31.0
+	gopkg.in/ini.v1 v1.52.0 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20200121175148-a6ecf24a6d71
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
-	k8s.io/klog v0.4.0 // indirect
-	k8s.io/utils v0.0.0-20190809000727-6c36bc71fc4a // indirect
 )
 
-replace github.com/gardener/gardener => github.com/metal-pod/gardener v0.0.0-20190827131320-58dad7be7444
+replace k8s.io/client-go => k8s.io/client-go v0.17.0

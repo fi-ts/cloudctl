@@ -7,7 +7,7 @@ import (
 
 	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
 	"git.f-i-ts.de/cloud-native/cloudctl/cmd/helper"
-	"github.com/gardener/gardener/pkg/apis/garden/v1beta1"
+	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 )
 
 type (
@@ -39,7 +39,6 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 					nodes = status
 				case string(v1beta1.ShootSystemComponentsHealthy):
 					system = status
-				case string(v1beta1.ShootAlertsInactive):
 				case string(v1beta1.ShootAPIServerAvailable):
 					apiserver = status
 				}
