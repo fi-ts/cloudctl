@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"git.f-i-ts.de/cloud-native/metallib/auth"
+	"github.com/metal-stack/metal-lib/auth"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io"

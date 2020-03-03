@@ -516,44 +516,6 @@
         }
       }
     },
-    "/v1/cluster/{id}/credentials": {
-      "get": {
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "cluster"
-        ],
-        "summary": "get all the kubeconfig for the cluster",
-        "operationId": "getClusterCredentials",
-        "parameters": [
-          {
-            "type": "string",
-            "description": "identifier of the cluster",
-            "name": "id",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/v1.ClusterCredentialsResponse"
-            }
-          },
-          "default": {
-            "description": "Error",
-            "schema": {
-              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
-            }
-          }
-        }
-      }
-    },
     "/v1/cluster/{id}/kubeconfigtpl": {
       "get": {
         "consumes": [
@@ -2110,13 +2072,13 @@
     },
     "v1.IPFindRequest": {
       "required": [
+        "IPAddress",
         "ProjectID",
         "ParentPrefixCidr",
         "NetworkID",
         "MachineID",
         "Type",
-        "Tags",
-        "IPAddress"
+        "Tags"
       ],
       "properties": {
         "IPAddress": {
@@ -2549,7 +2511,6 @@
         }
       }
     },
-    "v1.ServiceExternalTrafficPolicyType": {},
     "v1.ShootConstraints": {
       "required": [
         "kubernetes_versions",
@@ -2819,8 +2780,6 @@
         }
       }
     },
-    "v1alpha1.Backend": {},
-    "v1alpha1.CIDR": {},
     "v1alpha1.CloudControllerManagerConfig": {
       "properties": {
         "featureGates": {
@@ -2952,7 +2911,7 @@
       ],
       "properties": {
         "cidr": {
-          "$ref": "#/definitions/v1alpha1.CIDR"
+          "type": "string"
         },
         "type": {
           "type": "string"
@@ -2965,15 +2924,13 @@
           "type": "string"
         },
         "mode": {
-          "$ref": "#/definitions/v1alpha1.IPv4PoolMode"
+          "type": "string"
         },
         "pool": {
-          "$ref": "#/definitions/v1alpha1.IPv4Pool"
+          "type": "string"
         }
       }
     },
-    "v1alpha1.IPv4Pool": {},
-    "v1alpha1.IPv4PoolMode": {},
     "v1alpha1.InfrastructureConfig": {
       "description": "TypeMeta describes an individual object in an API response or request with strings representing the type of the object and its API schema version. Structures that are versioned or persisted should inline TypeMeta.",
       "required": [
@@ -3042,7 +2999,7 @@
           "type": "string"
         },
         "backend": {
-          "$ref": "#/definitions/v1alpha1.Backend"
+          "type": "string"
         },
         "ipAutodetectionMethod": {
           "type": "string"
@@ -3051,7 +3008,7 @@
           "$ref": "#/definitions/v1alpha1.IPAM"
         },
         "ipip": {
-          "$ref": "#/definitions/v1alpha1.IPv4PoolMode"
+          "type": "string"
         },
         "ipv4": {
           "$ref": "#/definitions/v1alpha1.IPv4"
@@ -3223,7 +3180,6 @@
         }
       }
     },
-    "v1beta1.ErrorCode": {},
     "v1beta1.Extension": {
       "required": [
         "type"
@@ -3373,7 +3329,7 @@
           }
         },
         "mode": {
-          "$ref": "#/definitions/v1beta1.ProxyMode"
+          "type": "string"
         }
       }
     },
@@ -3539,7 +3495,7 @@
         "codes": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1beta1.ErrorCode"
+            "type": "string"
           }
         },
         "description": {
@@ -3675,7 +3631,7 @@
           "type": "boolean"
         },
         "externalTrafficPolicy": {
-          "$ref": "#/definitions/v1.ServiceExternalTrafficPolicyType"
+          "type": "string"
         },
         "loadBalancerSourceRanges": {
           "type": "array",
@@ -3761,7 +3717,6 @@
         }
       }
     },
-    "v1beta1.ProxyMode": {},
     "v1beta1.ServiceAccountConfig": {
       "properties": {
         "issuer": {
@@ -3852,6 +3807,9 @@
         },
         "provider": {
           "$ref": "#/definitions/v1beta1.Provider"
+        },
+        "purpose": {
+          "type": "string"
         },
         "region": {
           "type": "string"

@@ -3,7 +3,7 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
-	"git.f-i-ts.de/cloud-native/metallib/auth"
+	"github.com/metal-stack/metal-lib/auth"
 	"gopkg.in/yaml.v3"
 	"log"
 	"sort"
