@@ -4,7 +4,7 @@ image: registry.cloud.fits/fits/buildtools:1
 before_script:
     - curl -sSL https://github.com/go-swagger/go-swagger/releases/download/v0.19.0/swagger_linux_amd64 >/usr/bin/swagger
     - chmod +x /usr/bin/swagger
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@git.f-i-ts.de/cloud-native/common
+    - git clone https://github.com/metal-stack/builder.git
     - export COMMONDIR=$PWD/common
     - make generate-client
 
