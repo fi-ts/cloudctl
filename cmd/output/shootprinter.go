@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"time"
+	"github.com/metal-stack/metal-lib/pkg/tag"
 
 	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
 	"git.f-i-ts.de/cloud-native/cloudctl/cmd/helper"
@@ -78,8 +79,8 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 			autoScaleMax = *workers.Maximum
 		}
 		size := fmt.Sprintf("%d/%d", autoScaleMin, autoScaleMax)
-		tenant := shoot.Metadata.Annotations["cluster.metal-pod.io/tenant"]
-		project := shoot.Metadata.Annotations["cluster.metal-pod.io/project"]
+		tenant := shoot.Metadata.Annotations[tag.ClusterTenant]
+		project := shoot.Metadata.Annotations[tag.ClusterProject]
 
 		wide := []string{shoot.Metadata.UID, shoot.Metadata.Name,
 			version, partition, dnsdomain,
