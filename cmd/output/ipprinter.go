@@ -5,7 +5,7 @@ import (
 
 	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
 	"git.f-i-ts.de/cloud-native/cloudctl/cmd/helper"
-	metalgo "github.com/metal-stack/metal-go"
+	"github.com/metal-stack/metal-lib/pkg/tag"
 )
 
 type (
@@ -36,9 +36,9 @@ func (p IPTablePrinter) Print(data []*models.ModelsV1IPResponse) {
 		var shortTags []string
 		for _, t := range ip.Tags {
 			parts := strings.Split(t, "=")
-			if strings.HasPrefix(t, metalgo.TagMachinePrefix+"=") {
+			if strings.HasPrefix(t, tag.MachineID+"=") {
 				shortTags = append(shortTags, "machine:"+parts[1])
-			} else if strings.HasPrefix(t, metalgo.TagServicePrefix+"=") {
+			} else if strings.HasPrefix(t, tag.ClusterServiceFQN+"=") {
 				shortTags = append(shortTags, "service:"+parts[1])
 			} else {
 				shortTags = append(shortTags, t)

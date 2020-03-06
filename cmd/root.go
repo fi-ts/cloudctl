@@ -36,7 +36,6 @@ var (
 
 	rootCmd = &cobra.Command{
 		Use:     programName,
-		Aliases: []string{"m"},
 		Short:   "a cli to manage cloud entities.",
 		Long:    "with cloudctl you can manage kubernetes cluster, view networks et.al.",
 		Version: v.V.String(),
