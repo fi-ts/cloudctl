@@ -53,7 +53,29 @@ sudo cloudctl update do
 
 ### Login
 
-Login, issue token for cloud and cluster access
+Login, issue token for cloud and cluster access.
+
+First you need to create a file in your home directory:
+
+`~/.cloudctl/config.yaml`
+
+```yaml
+---
+current: prod
+contexts:
+  prod:
+    url: https://api.fits.cloud/cloud
+    issuer_url: https://dex.fi-ts.io/dex
+    client_id: r0waAqvzP01DcmoxnyLZqwHU1babjv4h
+    client_secret: l4kw3UmkuSXtfO3saZvJZXHPf89k9cBs
+  dev:
+    url: https://api.metal-pod.dev/cloud
+    issuer_url: https://dex.test.fi-ts.io/dex
+    client_id: auth-go-cli
+    client_secret: AuGx99dsxS1hcHAtc9VfcmV1
+```
+
+Then you can login:
 
 ```bash
 cloudctl login
