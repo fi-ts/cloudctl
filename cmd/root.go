@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	output "git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
+	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
 	c "git.f-i-ts.de/cloud-native/cloudctl/pkg/cloud"
 	"github.com/metal-stack/metal-lib/auth"
 	"github.com/metal-stack/v"
@@ -21,6 +22,7 @@ const (
 )
 
 var (
+	ctx     api.Context
 	cloud   *c.Cloud
 	printer output.Printer
 	// will bind all viper flags to subcommands and
@@ -70,6 +72,7 @@ func init() {
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(whoamiCmd)
 	rootCmd.AddCommand(projectCmd)
+	rootCmd.AddCommand(contextCmd)
 
 	rootCmd.AddCommand(completionCmd)
 	rootCmd.AddCommand(zshCompletionCmd)
@@ -106,7 +109,15 @@ func initConfig() {
 		}
 	}
 
+	ctx = mustDefaultContext()
 	driverURL := viper.GetString("url")
+	if ctx.ApiURL != "" {
+		driverURL = ctx.ApiURL
+	}
+	hmac := viper.GetString("hmac")
+	if ctx.HMAC != nil {
+		hmac = *ctx.HMAC
+	}
 	apiToken := viper.GetString("apitoken")
 
 	// if there is no api token explicitly specified we try to pull it out of
@@ -120,8 +131,6 @@ func initConfig() {
 			apiToken = authContext.IDToken
 		}
 	}
-
-	hmac := viper.GetString("hmac")
 
 	var err error
 	cloud, err = c.NewCloud(driverURL, apiToken, hmac)

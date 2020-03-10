@@ -1,3 +1,4 @@
-api
+api/client
+api/models
 bin
 .idea

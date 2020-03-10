@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"os"
+
 	"github.com/metal-stack/metal-lib/auth"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io"
-	"os"
 )
 
 var loginCmd = &cobra.Command{
@@ -26,9 +27,9 @@ var loginCmd = &cobra.Command{
 		}
 
 		config := auth.Config{
-			ClientID:     viper.GetString("clientId"),
-			ClientSecret: viper.GetString("clientSecret"),
-			IssuerURL:    viper.GetString("issuerUrl"),
+			ClientID:     ctx.ClientID,
+			ClientSecret: ctx.ClientSecret,
+			IssuerURL:    ctx.IssuerURL,
 			TokenHandler: handler,
 			Console:      console,
 			Debug:        viper.GetBool("debug"),
@@ -48,9 +49,5 @@ func printTokenHandler(tokenInfo auth.TokenInfo) error {
 }
 
 func init() {
-
-	loginCmd.Flags().String("clientId", "auth-go-cli", "The clientId for the registered app at the OIDC-Provider")
-	loginCmd.Flags().String("clientSecret", "AuGx99dsxS1hcHAtc9VfcmV1", "The clientSecret for the registered app at the OIDC-Provider")
-	loginCmd.Flags().String("issuerUrl", "https://dex.test.fi-ts.io/dex", "URL of the issuer for the token")
 	loginCmd.Flags().Bool("printOnly", false, "If true, the token is printed to stdout")
 }

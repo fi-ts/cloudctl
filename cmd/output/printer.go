@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
+	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
 
 	"github.com/olekukonko/tablewriter"
 	"gopkg.in/yaml.v3"
@@ -194,6 +195,8 @@ func (t TablePrinter) Print(data interface{}) error {
 		VolumeBillingTablePrinter{t}.Print(d)
 	case []*models.ModelsV1MachineResponse:
 		MachineTablePrinter{t}.Print(d)
+	case *api.Contexts:
+		ContextPrinter{t}.Print(d)
 	default:
 		return fmt.Errorf("unknown table printer for type: %T", d)
 	}
