@@ -49,6 +49,7 @@ var (
 func init() {
 	projectCreateCmd.Flags().String("name", "", "name of the cluster, max 10 characters. [required]")
 	projectCreateCmd.Flags().String("description", "", "description of the cluster. [required]")
+	projectCreateCmd.Flags().String("tenant", "", "create project for given tenant")
 	err := projectCreateCmd.MarkFlagRequired("name")
 	if err != nil {
 		log.Fatal(err.Error())
@@ -60,12 +61,14 @@ func init() {
 }
 
 func projectCreate() error {
+	tenant := viper.GetString("tenant")
 	name := viper.GetString("name")
 	desc := viper.GetString("description")
 
 	p := &models.V1Project{
 		Name:        name,
 		Description: desc,
+		TenantID:    tenant,
 	}
 	pcr := models.V1ProjectCreateRequest{
 		Project: p,
