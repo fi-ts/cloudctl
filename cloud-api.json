@@ -1732,9 +1732,17 @@
         "ID",
         "Workers",
         "Maintenance",
-        "Kubernetes"
+        "Kubernetes",
+        "FirewallImage",
+        "FirewallSize"
       ],
       "properties": {
+        "FirewallImage": {
+          "type": "string"
+        },
+        "FirewallSize": {
+          "type": "string"
+        },
         "ID": {
           "type": "string"
         },
@@ -2242,6 +2250,12 @@
     },
     "v1.Meta": {
       "properties": {
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
         "apiversion": {
           "type": "string"
         },
@@ -2254,6 +2268,12 @@
         },
         "kind": {
           "type": "string"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "updated_time": {
           "type": "string",
