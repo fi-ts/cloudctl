@@ -3,11 +3,12 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/metal-stack/metal-lib/auth"
-	"gopkg.in/yaml.v3"
 	"log"
 	"sort"
 	"strings"
+
+	"github.com/metal-stack/metal-lib/auth"
+	"gopkg.in/yaml.v3"
 
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/cluster"
 
@@ -150,6 +151,8 @@ func init() {
 	clusterUpdateCmd.Flags().Int32("minsize", 0, "minimal workers of the cluster.")
 	clusterUpdateCmd.Flags().Int32("maxsize", 0, "maximal workers of the cluster.")
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
+	clusterUpdateCmd.Flags().String("firewalltype", "", "machine type to use for the firewall.")
+	clusterUpdateCmd.Flags().String("firewallimage", "", "machine image to use for the firewall.")
 
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
@@ -456,6 +459,8 @@ func updateCluster(args []string) error {
 	minsize := viper.GetInt32("minsize")
 	maxsize := viper.GetInt32("maxsize")
 	version := viper.GetString("version")
+	firewallType := viper.GetString("firewalltype")
+	firewallImage := viper.GetString("firewallimage")
 
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
@@ -476,6 +481,13 @@ func updateCluster(args []string) error {
 			Version: &version,
 		}
 	}
+	if firewallImage != "" {
+		cur.FirewallImage = &firewallImage
+	}
+	if firewallType != "" {
+		cur.FirewallSize = &firewallType
+	}
+
 	request.SetBody(cur)
 	shoot, err := cloud.Cluster.UpdateCluster(request, cloud.Auth)
 	if err != nil {
