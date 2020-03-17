@@ -62,7 +62,7 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringP("url", "u", "https://api.metal-pod.io/cloud", "api server address. Can be specified with CLOUDCTL_URL environment variable.")
+	rootCmd.PersistentFlags().StringP("url", "u", "", "api server address. Can be specified with CLOUDCTL_URL environment variable.")
 	rootCmd.PersistentFlags().String("apitoken", "", "api token to authenticate. Can be specified with CLOUDCTL_APITOKEN environment variable.")
 	rootCmd.PersistentFlags().String("kubeconfig", "", "Path to the kube-config to use for authentication and authorization. Is updated by login.")
 	rootCmd.PersistentFlags().StringP("order", "", "", "order by (comma separated) column(s)")
@@ -111,11 +111,11 @@ func initConfig() {
 
 	ctx = mustDefaultContext()
 	driverURL := viper.GetString("url")
-	if ctx.ApiURL != "" {
+	if driverURL == "" && ctx.ApiURL != "" {
 		driverURL = ctx.ApiURL
 	}
 	hmac := viper.GetString("hmac")
-	if ctx.HMAC != nil {
+	if hmac == "" && ctx.HMAC != nil {
 		hmac = *ctx.HMAC
 	}
 	apiToken := viper.GetString("apitoken")
