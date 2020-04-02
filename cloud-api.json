@@ -846,6 +846,51 @@
         }
       }
     },
+    "/v1/masterdata": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "masterdata"
+        ],
+        "summary": "gets Masterdata for given lookup criteria.",
+        "operationId": "getMasterdata",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1.MasterdataLookupRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ok",
+            "schema": {
+              "$ref": "#/definitions/v1.ProjectResponse"
+            }
+          },
+          "404": {
+            "description": "NotFound",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
     "/v1/project": {
       "get": {
         "consumes": [
@@ -1588,10 +1633,10 @@
         "Description",
         "ProjectID",
         "Tenant",
+        "Purpose",
         "FirewallImage",
         "FirewallSize",
         "AdditionalNetworks",
-        "MaxPods",
         "Workers",
         "PartitionID",
         "Maintenance",
@@ -1623,10 +1668,6 @@
         "Maintenance": {
           "$ref": "#/definitions/v1.Maintenance"
         },
-        "MaxPods": {
-          "type": "integer",
-          "format": "int32"
-        },
         "Name": {
           "type": "string"
         },
@@ -1634,6 +1675,9 @@
           "type": "string"
         },
         "ProjectID": {
+          "type": "string"
+        },
+        "Purpose": {
           "type": "string"
         },
         "Tenant": {
@@ -1693,6 +1737,20 @@
         }
       }
     },
+    "v1.ClusterNameProject": {
+      "required": [
+        "ClusterName",
+        "Project"
+      ],
+      "properties": {
+        "ClusterName": {
+          "type": "string"
+        },
+        "Project": {
+          "type": "string"
+        }
+      }
+    },
     "v1.ClusterResponse": {
       "required": [
         "shoot",
@@ -1730,6 +1788,7 @@
     "v1.ClusterUpdateRequest": {
       "required": [
         "ID",
+        "Purpose",
         "Workers",
         "Maintenance",
         "Kubernetes",
@@ -1751,6 +1810,9 @@
         },
         "Maintenance": {
           "$ref": "#/definitions/v1.Maintenance"
+        },
+        "Purpose": {
+          "type": "string"
         },
         "Workers": {
           "type": "array",
@@ -2080,13 +2142,13 @@
     },
     "v1.IPFindRequest": {
       "required": [
-        "MachineID",
         "Type",
         "Tags",
         "IPAddress",
         "ProjectID",
         "ParentPrefixCidr",
-        "NetworkID"
+        "NetworkID",
+        "MachineID"
       ],
       "properties": {
         "IPAddress": {
@@ -2245,6 +2307,20 @@
         "time": {
           "description": "Time is timestamp of when these fields were set. It should always be empty if Operation is 'Apply'",
           "type": "string"
+        }
+      }
+    },
+    "v1.MasterdataLookupRequest": {
+      "required": [
+        "ClusterNameProject",
+        "ClusterID"
+      ],
+      "properties": {
+        "ClusterID": {
+          "type": "string"
+        },
+        "ClusterNameProject": {
+          "$ref": "#/definitions/v1.ClusterNameProject"
         }
       }
     },
