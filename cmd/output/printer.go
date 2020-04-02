@@ -195,6 +195,10 @@ func (t TablePrinter) Print(data interface{}) error {
 		VolumeBillingTablePrinter{t}.Print(d)
 	case []*models.ModelsV1MachineResponse:
 		MachineTablePrinter{t}.Print(d)
+	case []*models.V1S3Response:
+		S3TablePrinter{t}.Print(d)
+	case []*models.V1S3PartitionResponse:
+		S3PartitionTablePrinter{t}.Print(d)
 	case *api.Contexts:
 		ContextPrinter{t}.Print(d)
 	default:
