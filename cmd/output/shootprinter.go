@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"time"
+
 	"github.com/metal-stack/metal-lib/pkg/tag"
 
 	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
@@ -20,8 +21,8 @@ type (
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age"}
-	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age"}
+	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
+	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 	for _, cluster := range data {
 		shoot := cluster.Shoot
 		infrastructure := cluster.Infrastructure
@@ -70,6 +71,10 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 		if shoot.Spec.Kubernetes.Version != nil {
 			version = *shoot.Spec.Kubernetes.Version
 		}
+		purpose := ""
+		if len(shoot.Spec.Purpose) > 0 {
+			purpose = shoot.Spec.Purpose[:4]
+		}
 
 		autoScaleMin := int32(0)
 		autoScaleMax := int32(0)
@@ -89,6 +94,7 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 			apiserver, controlplane, nodes, system,
 			size,
 			age,
+			purpose,
 		}
 		short := []string{shoot.Metadata.UID,
 			tenant,
@@ -100,6 +106,7 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 			apiserver, controlplane, nodes, system,
 			size,
 			age,
+			purpose,
 		}
 		s.addWideData(wide, shoot)
 		s.addShortData(short, shoot)

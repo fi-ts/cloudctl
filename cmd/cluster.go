@@ -117,6 +117,7 @@ func init() {
 	clusterCreateCmd.Flags().String("description", "", "description of the cluster. [optional]")
 	clusterCreateCmd.Flags().String("project", "", "project where this cluster should belong to. [required]")
 	clusterCreateCmd.Flags().String("partition", "", "partition of the cluster. [required]")
+	clusterCreateCmd.Flags().String("purpose", "evaluation", "purpose of the cluster, can be one of production|testing|development|evaluation. SLA is only given on production clusters. [optional]")
 	clusterCreateCmd.Flags().String("version", "", "kubernetes version of the cluster. defaults to latest available, check cluster inputs for possible values. [optional]")
 	clusterCreateCmd.Flags().String("machinetype", "", "machine type to use for the nodes. [optional]")
 	clusterCreateCmd.Flags().String("machineimage", "", "machine image to use for the nodes, must be in the form of <name>-<version> [optional]")
@@ -153,6 +154,7 @@ func init() {
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
 	clusterUpdateCmd.Flags().String("firewalltype", "", "machine type to use for the firewall.")
 	clusterUpdateCmd.Flags().String("firewallimage", "", "machine image to use for the firewall.")
+	clusterUpdateCmd.Flags().String("purpose", "", "purpose of the cluster, can be one of production|testing|development|evaluation. SLA is only given on production clusters.")
 
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
@@ -171,6 +173,7 @@ func clusterCreate() error {
 	desc := viper.GetString("description")
 	partition := viper.GetString("partition")
 	project := viper.GetString("project")
+	purpose := viper.GetString("purpose")
 	machineType := viper.GetString("machinetype")
 	machineImageAndVersion := viper.GetString("machineimage")
 	firewallType := viper.GetString("firewalltype")
@@ -243,6 +246,7 @@ func clusterCreate() error {
 		ProjectID:   &project,
 		Name:        &name,
 		Description: &desc,
+		Purpose:     &purpose,
 		Workers: []*models.V1Worker{
 			{
 				Minimum:        &minsize,
@@ -461,6 +465,7 @@ func updateCluster(args []string) error {
 	version := viper.GetString("version")
 	firewallType := viper.GetString("firewalltype")
 	firewallImage := viper.GetString("firewallimage")
+	purpose := viper.GetString("purpose")
 
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
@@ -486,6 +491,9 @@ func updateCluster(args []string) error {
 	}
 	if firewallType != "" {
 		cur.FirewallSize = &firewallType
+	}
+	if purpose != "" {
+		cur.Purpose = &purpose
 	}
 
 	request.SetBody(cur)
