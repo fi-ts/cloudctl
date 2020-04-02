@@ -73,6 +73,7 @@ func init() {
 	rootCmd.AddCommand(whoamiCmd)
 	rootCmd.AddCommand(projectCmd)
 	rootCmd.AddCommand(contextCmd)
+	rootCmd.AddCommand(s3Cmd)
 
 	rootCmd.AddCommand(completionCmd)
 	rootCmd.AddCommand(zshCompletionCmd)

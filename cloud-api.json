@@ -961,6 +961,49 @@
             }
           }
         }
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "update a project. optimistic lock error can occur.",
+        "operationId": "updateProject",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1.ProjectUpdateRequest"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Updated",
+            "schema": {
+              "$ref": "#/definitions/v1.ProjectResponse"
+            }
+          },
+          "412": {
+            "description": "OptimisticLock",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
       }
     },
     "/v1/project/{id}": {
@@ -1037,6 +1080,276 @@
         }
       }
     },
+    "/v1/s3": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "s3"
+        ],
+        "summary": "list s3 users",
+        "operationId": "lists3",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1.S3ListRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/v1.S3Response"
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      },
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "s3"
+        ],
+        "summary": "create an s3 user. if the given name for this tenant already exists a conflict is returned",
+        "operationId": "creates3",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1.S3CreateRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/v1.S3CredentialsResponse"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/v1/s3/partitions": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "s3"
+        ],
+        "summary": "list s3 partitions",
+        "operationId": "lists3partitions",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/v1.S3PartitionResponse"
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/v1/s3/{id}": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "s3"
+        ],
+        "summary": "get s3 user",
+        "operationId": "gets3",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1.S3GetRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/v1.S3CredentialsResponse"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "s3"
+        ],
+        "summary": "deletes an s3 user",
+        "operationId": "deletes3",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1.S3DeleteRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/v1.S3Response"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/v1/tenant": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "tenant"
+        ],
+        "summary": "update a tenant. optimistic lock error can occur.",
+        "operationId": "updateTenant",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1.TenantUpdateRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "schema": {
+              "$ref": "#/definitions/v1.TenantResponse"
+            }
+          },
+          "412": {
+            "description": "OptimisticLock",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/v1/tenant/{id}": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "tenant"
+        ],
+        "summary": "get tenant by id",
+        "operationId": "getTenant",
+        "parameters": [
+          {
+            "type": "string",
+            "description": "identifier of the tenant",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/v1.TenantResponse"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
     "/v1/version": {
       "get": {
         "consumes": [
@@ -1076,6 +1389,40 @@
           "description": "http status code",
           "type": "integer",
           "format": "int32"
+        }
+      }
+    },
+    "models.V1BootInfo": {
+      "required": [
+        "bootloaderid",
+        "cmdline",
+        "image_id",
+        "initrd",
+        "kernel",
+        "os_partition",
+        "primary_disk"
+      ],
+      "properties": {
+        "bootloaderid": {
+          "type": "string"
+        },
+        "cmdline": {
+          "type": "string"
+        },
+        "image_id": {
+          "type": "string"
+        },
+        "initrd": {
+          "type": "string"
+        },
+        "kernel": {
+          "type": "string"
+        },
+        "os_partition": {
+          "type": "string"
+        },
+        "primary_disk": {
+          "type": "string"
         }
       }
     },
@@ -1177,10 +1524,14 @@
         "name",
         "networks",
         "project",
+        "reinstall",
         "ssh_pub_keys",
         "succeeded"
       ],
       "properties": {
+        "boot_info": {
+          "$ref": "#/definitions/models.V1BootInfo"
+        },
         "console_password": {
           "type": "string"
         },
@@ -1207,6 +1558,9 @@
         },
         "project": {
           "type": "string"
+        },
+        "reinstall": {
+          "type": "boolean"
         },
         "ssh_pub_keys": {
           "type": "array",
@@ -1243,11 +1597,76 @@
     "models.V1MachineBlockDevice": {
       "required": [
         "name",
+        "partitions",
+        "primary",
         "size"
       ],
       "properties": {
         "name": {
           "type": "string"
+        },
+        "partitions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/models.V1MachineDiskPartition"
+          }
+        },
+        "primary": {
+          "type": "boolean"
+        },
+        "size": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "models.V1MachineDiskPartition": {
+      "required": [
+        "device",
+        "filesystem",
+        "gptguid",
+        "gpttyoe",
+        "label",
+        "mountoptions",
+        "mountpoint",
+        "number",
+        "properties",
+        "size"
+      ],
+      "properties": {
+        "device": {
+          "type": "string"
+        },
+        "filesystem": {
+          "type": "string"
+        },
+        "gptguid": {
+          "type": "string"
+        },
+        "gpttyoe": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "mountoptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mountpoint": {
+          "type": "string"
+        },
+        "number": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         },
         "size": {
           "type": "integer",
@@ -2142,13 +2561,13 @@
     },
     "v1.IPFindRequest": {
       "required": [
+        "MachineID",
         "Type",
         "Tags",
         "IPAddress",
         "ProjectID",
         "ParentPrefixCidr",
-        "NetworkID",
-        "MachineID"
+        "NetworkID"
       ],
       "properties": {
         "IPAddress": {
@@ -2572,6 +2991,13 @@
         }
       }
     },
+    "v1.ProjectUpdateRequest": {
+      "properties": {
+        "project": {
+          "$ref": "#/definitions/v1.Project"
+        }
+      }
+    },
     "v1.Quota": {
       "properties": {
         "quota": {
@@ -2594,6 +3020,136 @@
         },
         "machine": {
           "$ref": "#/definitions/v1.Quota"
+        }
+      }
+    },
+    "v1.S3CreateRequest": {
+      "required": [
+        "name",
+        "tenant",
+        "partition"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "partition": {
+          "type": "string"
+        },
+        "tenant": {
+          "type": "string"
+        }
+      }
+    },
+    "v1.S3CredentialsResponse": {
+      "required": [
+        "name",
+        "tenant",
+        "partition",
+        "endpoint",
+        "access_key",
+        "secret_key"
+      ],
+      "properties": {
+        "access_key": {
+          "type": "string"
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "partition": {
+          "type": "string"
+        },
+        "secret_key": {
+          "type": "string"
+        },
+        "tenant": {
+          "type": "string"
+        }
+      }
+    },
+    "v1.S3DeleteRequest": {
+      "required": [
+        "name",
+        "tenant",
+        "partition"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "partition": {
+          "type": "string"
+        },
+        "tenant": {
+          "type": "string"
+        }
+      }
+    },
+    "v1.S3GetRequest": {
+      "required": [
+        "name",
+        "tenant",
+        "partition"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "partition": {
+          "type": "string"
+        },
+        "tenant": {
+          "type": "string"
+        }
+      }
+    },
+    "v1.S3ListRequest": {
+      "required": [
+        "partition"
+      ],
+      "properties": {
+        "partition": {
+          "type": "string"
+        }
+      }
+    },
+    "v1.S3PartitionResponse": {
+      "required": [
+        "name",
+        "endpoint"
+      ],
+      "properties": {
+        "endpoint": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "v1.S3Response": {
+      "required": [
+        "name",
+        "tenant",
+        "partition",
+        "endpoint"
+      ],
+      "properties": {
+        "endpoint": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "partition": {
+          "type": "string"
+        },
+        "tenant": {
+          "type": "string"
         }
       }
     },
@@ -2679,6 +3235,39 @@
         "value": {
           "description": "Required. The taint value corresponding to the taint key.",
           "type": "string"
+        }
+      }
+    },
+    "v1.Tenant": {
+      "properties": {
+        "default_quotas": {
+          "$ref": "#/definitions/v1.QuotaSet"
+        },
+        "description": {
+          "type": "string"
+        },
+        "meta": {
+          "$ref": "#/definitions/v1.Meta"
+        },
+        "name": {
+          "type": "string"
+        },
+        "quotas": {
+          "$ref": "#/definitions/v1.QuotaSet"
+        }
+      }
+    },
+    "v1.TenantResponse": {
+      "properties": {
+        "tenant": {
+          "$ref": "#/definitions/v1.Tenant"
+        }
+      }
+    },
+    "v1.TenantUpdateRequest": {
+      "properties": {
+        "tenant": {
+          "$ref": "#/definitions/v1.Tenant"
         }
       }
     },
