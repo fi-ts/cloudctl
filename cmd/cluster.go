@@ -372,7 +372,9 @@ func clusterKubeconfig(args []string) error {
 
 	cfg := make(map[interface{}]interface{})
 	err = yaml.Unmarshal([]byte(kubeconfigContent), cfg)
-
+	if err != nil {
+		return err
+	}
 	// identify clustername
 	clusterNames, err := auth.GetClusterNames(cfg)
 	if err != nil {
