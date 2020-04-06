@@ -985,7 +985,7 @@
           }
         ],
         "responses": {
-          "201": {
+          "200": {
             "description": "Updated",
             "schema": {
               "$ref": "#/definitions/v1.ProjectResponse"
@@ -2561,13 +2561,13 @@
     },
     "v1.IPFindRequest": {
       "required": [
-        "MachineID",
-        "Type",
         "Tags",
         "IPAddress",
         "ProjectID",
         "ParentPrefixCidr",
-        "NetworkID"
+        "NetworkID",
+        "MachineID",
+        "Type"
       ],
       "properties": {
         "IPAddress": {

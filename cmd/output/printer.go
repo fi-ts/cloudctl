@@ -176,10 +176,14 @@ func (t TablePrinter) Print(data interface{}) error {
 		ShootTablePrinter{t}.Print([]*models.V1ClusterResponse{d})
 	case []*models.V1ClusterResponse:
 		ShootTablePrinter{t}.Print(d)
-	case *models.V1ProjectResponse:
-		ProjectTablePrinter{t}.Print(&models.V1ProjectListResponse{Projects: []*models.V1Project{d.Project}})
-	case *models.V1ProjectListResponse:
+	case *models.V1Project:
+		ProjectTablePrinter{t}.Print([]*models.V1Project{d})
+	case []*models.V1Project:
 		ProjectTablePrinter{t}.Print(d)
+	case []*models.V1Tenant:
+		TenantTablePrinter{t}.Print(d)
+	case *models.V1Tenant:
+		TenantTablePrinter{t}.Print([]*models.V1Tenant{d})
 	case []*models.ModelsV1IPResponse:
 		IPTablePrinter{t}.Print(d)
 	case *models.ModelsV1IPResponse:

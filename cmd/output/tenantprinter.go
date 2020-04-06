@@ -9,23 +9,23 @@ import (
 )
 
 type (
-	// ProjectTablePrinter print a Project in a Table
-	ProjectTablePrinter struct {
+	// TenantTablePrinter print a Project in a Table
+	TenantTablePrinter struct {
 		TablePrinter
 	}
 )
 
 // Print a Project as table
-func (p ProjectTablePrinter) Print(data []*models.V1Project) {
-	p.wideHeader = []string{"UID", "Tenant", "Name", "Description", "Clusters", "Machines", "IPs", "Labels", "Annotations"}
+func (p TenantTablePrinter) Print(tenants []*models.V1Tenant) {
+	p.wideHeader = []string{"Name", "Description", "Clusters", "Machines", "IPs", "Labels", "Annotations"}
 	p.shortHeader = p.wideHeader
-
-	for _, pr := range data {
+	for _, tenant := range tenants {
 		clusterQuota := ""
 		machineQuota := ""
 		ipQuota := ""
-		if pr.Quotas != nil {
-			qs := pr.Quotas
+		// FIXME add actual quotas ?
+		if tenant.DefaultQuotas != nil {
+			qs := tenant.DefaultQuotas
 			if qs.Cluster != nil {
 				cq := "∞"
 				if qs.Cluster.Quota != 0 {
@@ -48,16 +48,16 @@ func (p ProjectTablePrinter) Print(data []*models.V1Project) {
 				ipQuota = fmt.Sprintf("%d/%s", qs.IP.Used, iq)
 			}
 		}
-		labels := strings.Join(pr.Meta.Labels, "\n")
+		labels := strings.Join(tenant.Meta.Labels, "\n")
 		as := []string{}
-		for k, v := range pr.Meta.Annotations {
+		for k, v := range tenant.Meta.Annotations {
 			as = append(as, k+"="+v)
 		}
 		annotations := strings.Join(as, "\n")
 
-		wide := []string{pr.Meta.ID, pr.TenantID, pr.Name, pr.Description, clusterQuota, machineQuota, ipQuota, labels, annotations}
-		p.addWideData(wide, pr)
-		p.addShortData(wide, pr)
+		wide := []string{tenant.Name, tenant.Description, clusterQuota, machineQuota, ipQuota, labels, annotations}
+		p.addWideData(wide, tenant)
+		p.addShortData(wide, tenant)
 	}
 	p.render()
 }

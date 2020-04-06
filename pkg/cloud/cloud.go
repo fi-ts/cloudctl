@@ -14,6 +14,7 @@ import (
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/ip"
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/project"
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/s3"
+	"git.f-i-ts.de/cloud-native/cloudctl/api/client/tenant"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 )
@@ -22,6 +23,7 @@ import (
 type Cloud struct {
 	Cluster    *cluster.Client
 	Project    *project.Client
+	Tenant     *tenant.Client
 	IP         *ip.Client
 	Accounting *accounting.Client
 	S3         *s3.Client
@@ -63,6 +65,7 @@ func NewCloud(apiurl, apiToken string, hmac string) (*Cloud, error) {
 		Auth:       auther,
 		Cluster:    cloud.Cluster,
 		Project:    cloud.Project,
+		Tenant:     cloud.Tenant,
 		IP:         cloud.IP,
 		Accounting: cloud.Accounting,
 		S3:         cloud.S3,

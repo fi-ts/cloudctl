@@ -72,6 +72,7 @@ func init() {
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(whoamiCmd)
 	rootCmd.AddCommand(projectCmd)
+	rootCmd.AddCommand(tenantCmd)
 	rootCmd.AddCommand(contextCmd)
 	rootCmd.AddCommand(s3Cmd)
 
