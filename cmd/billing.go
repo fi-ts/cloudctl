@@ -139,9 +139,10 @@ func init() {
 	volumeBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 	volumeBillingCmd.Flags().BoolVarP(&billingOpts.Forecast, "forecast", "", false, "calculates resource usage until end of time window as if accountable data would not change any more (defaults to false)")
 
-	volumeBillingCmd.MarkFlagRequired("from")
-
-	viper.BindPFlags(containerBillingCmd.Flags())
+	err = volumeBillingCmd.MarkFlagRequired("from")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	err = viper.BindPFlags(containerBillingCmd.Flags())
 	if err != nil {
 		log.Fatal(err.Error())

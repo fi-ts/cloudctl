@@ -17,13 +17,9 @@ type (
 )
 
 const (
-	nbr         = "\U00002007"
-	skull       = "\U0001F480"
-	lock        = "\U0001F512"
-	bark        = "\U0001F6A7"
-	question    = "\U00002753"
-	circle      = "\U000021BB"
-	blueDiamond = "\U0001F539"
+	nbr      = "\U00002007"
+	skull    = "\U0001F480"
+	question = "\U00002753"
 )
 
 // Print a list of Machines in a table
