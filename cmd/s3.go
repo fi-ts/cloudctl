@@ -75,11 +75,7 @@ func init() {
 		log.Fatal(err.Error())
 	}
 
-	s3ListCmd.Flags().StringP("partition", "p", "", "name of s3 partition. [required]")
-	err = s3ListCmd.MarkFlagRequired("partition")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	s3ListCmd.Flags().StringP("partition", "p", "", "name of s3 partition.")
 
 	s3DescribeCmd.Flags().StringP("name", "n", "", "name of s3 user. [required]")
 	s3DescribeCmd.Flags().StringP("partition", "p", "", "name of s3 partition. [required]")
