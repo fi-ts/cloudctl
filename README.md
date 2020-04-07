@@ -2,6 +2,32 @@
 
 Commandline client for "Kubernetes as a Service" and more!
 
+<!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
+
+- [Installation](#installation)
+	- [Installation on Linux](#installation-on-linux)
+	- [Installation on MacOS](#installation-on-macos)
+	- [Installation on Windows](#installation-on-windows)
+	- [cloudctl update](#cloudctl-update)
+- [Usage](#usage)
+	- [Login](#login)
+	- [Get currently logged in user](#get-currently-logged-in-user)
+- [HowTo](#howto)
+	- [List Clusters](#list-clusters)
+	- [Create Project](#create-project)
+	- [Create Cluster](#create-cluster)
+	- [Download Kubeconfig](#download-kubeconfig)
+	- [Delete your cluster](#delete-your-cluster)
+	- [Managing ip addresses](#managing-ip-addresses)
+- [Billing](#billing)
+- [S3](#s3)
+	- [Configuring the minio mc client](#configuring-the-minio-mc-client)
+	- [Configuring s3cmd](#configuring-s3cmd)
+- [Advanced Usage](#advanced-usage)
+	- [Use token for existing Cluster](#use-token-for-existing-cluster)
+
+<!-- /TOC -->
+
 ## Installation
 
 Download locations:
@@ -344,13 +370,78 @@ results
   `1800s * 100ms + 1800s * 200ms = 540000ms*s = 540s*s (=> 30min with cpu:100m and 30min with cpu:200m)`
 * for the sake of readability, the output of cloudctl is made in hours: `540s*s/3600s => 0,15s*h`
 
-### cluster
+## S3
 
-### container
+You can manage S3 storage using `cloudctl` when S3 is configured in your metal stack control plane.
 
-### volumes
+To list the available S3 partitions in your control plane, issue the following command:
 
+```
+$ cloudctl s3 partitions
+NAME      	ENDPOINT                            
+fel-wps101	https://s3.fel-wps101.metal-pod.dev
+```
 
+In this case, the partition `fel-wps101` offers S3 storage. You can now create an S3 user to get storage access:
+
+```
+$ cloudctl s3 create --name test --partition fel-wps101
+accesskey: JXI0SPBVR165VHXVP40C
+endpoint: https://s3.fel-wps101.metal-pod.dev
+name: test
+partition: fel-wps101
+secretkey: psWjZFvPCfNZBmW4ko2Oxv2ND2n7HlPsz9yMGab3
+tenant: fits
+```
+
+After that, you can configure an S3 client to access the storage with this user.
+
+If you need to look up the user at a later point in time again, you can use the describe command:
+
+```
+$ cloudctl s3 describe --name test --partition fel-wps101
+accesskey: JXI0SPBVR165VHXVP40C
+endpoint: https://s3.fel-wps101.metal-pod.dev
+name: test
+partition: fel-wps101
+secretkey: psWjZFvPCfNZBmW4ko2Oxv2ND2n7HlPsz9yMGab3
+tenant: fits
+```
+
+Or if you want to delete the user again, run the delete command:
+
+```
+$ cloudctl s3 delete --name test --partition fel-wps101
+endpoint: https://s3.fel-wps101.metal-pod.dev
+name: test
+partition: fel-wps101
+tenant: fits
+```
+
+### Configuring the minio mc client
+
+```
+$ mc config host add test https://s3.fel-wps101.metal-pod.dev <your access key> <your secret key>
+
+$ mc mb test/testbucket
+Bucket created successfully `test/testbucket`.
+
+$ mc cp ./README.md test/testbucket
+./README.md:                       4.05 KiB / 4.05 KiB ┃▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓┃ 100.00% 2.23 KiB/s 1s
+
+$ mc ls test/testbucket
+[2020-04-07 09:34:48 CEST]  4.0KiB README.md
+```
+
+### Configuring s3cmd
+
+```bash
+export AWS_ACCESS_KEY_ID= <your access key>
+export AWS_SECRET_ACCESS_KEY=<your secret key>
+
+$ s3cmd la --host=https://s3.fel-wps101.metal-pod.dev --host-bucket=https://s3.fel-wps101.metal-pod.dev
+2020-04-07 07:34      4147   s3://test/README.md
+```
 
 ## Advanced Usage
 
