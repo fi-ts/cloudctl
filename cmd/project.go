@@ -79,6 +79,9 @@ func init() {
 	projectCreateCmd.Flags().String("tenant", "", "create project for given tenant")
 	projectCreateCmd.Flags().StringSlice("label", nil, "add initial label")
 	projectCreateCmd.Flags().StringSlice("annotation", nil, "add initial annotation, must be in the form of key=value")
+	projectCreateCmd.Flags().Int32("cluster-quota", 0, "cluster quota")
+	projectCreateCmd.Flags().Int32("machine-quota", 0, "machine quota")
+	projectCreateCmd.Flags().Int32("ip-quota", 0, "ip quota")
 	err := projectCreateCmd.MarkFlagRequired("name")
 	if err != nil {
 		log.Fatal(err.Error())
@@ -109,6 +112,18 @@ func projectCreate() error {
 	desc := viper.GetString("description")
 	labels := viper.GetStringSlice("label")
 	as := viper.GetStringSlice("annotation")
+	var (
+		clusterQuota, machineQuota, ipQuota *models.V1Quota
+	)
+	if viper.IsSet("cluster-quota") {
+		clusterQuota = &models.V1Quota{Quota: viper.GetInt32("cluster-quota")}
+	}
+	if viper.IsSet("machine-quota") {
+		machineQuota = &models.V1Quota{Quota: viper.GetInt32("machine-quota")}
+	}
+	if viper.IsSet("ip-quota") {
+		ipQuota = &models.V1Quota{Quota: viper.GetInt32("ip-quota")}
+	}
 
 	annotations, err := annotationsAsMap(as)
 	if err != nil {
@@ -120,9 +135,9 @@ func projectCreate() error {
 		Description: desc,
 		TenantID:    tenant,
 		Quotas: &models.V1QuotaSet{
-			Cluster: &models.V1Quota{},
-			Machine: &models.V1Quota{},
-			IP:      &models.V1Quota{},
+			Cluster: clusterQuota,
+			Machine: machineQuota,
+			IP:      ipQuota,
 		},
 		Meta: &models.V1Meta{
 			Kind:        "Project",
