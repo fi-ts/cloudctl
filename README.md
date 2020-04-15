@@ -4,27 +4,28 @@ Commandline client for "Kubernetes as a Service" and more!
 
 <!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-- [Installation](#installation)
-	- [Installation on Linux](#installation-on-linux)
-	- [Installation on MacOS](#installation-on-macos)
-	- [Installation on Windows](#installation-on-windows)
-	- [cloudctl update](#cloudctl-update)
-- [Usage](#usage)
-	- [Login](#login)
-	- [Get currently logged in user](#get-currently-logged-in-user)
-- [HowTo](#howto)
-	- [List Clusters](#list-clusters)
-	- [Create Project](#create-project)
-	- [Create Cluster](#create-cluster)
-	- [Download Kubeconfig](#download-kubeconfig)
-	- [Delete your cluster](#delete-your-cluster)
-	- [Managing ip addresses](#managing-ip-addresses)
-- [Billing](#billing)
-- [S3](#s3)
-	- [Configuring the minio mc client](#configuring-the-minio-mc-client)
-	- [Configuring s3cmd](#configuring-s3cmd)
-- [Advanced Usage](#advanced-usage)
-	- [Use token for existing Cluster](#use-token-for-existing-cluster)
+- [cloudctl](#cloudctl)
+  - [Installation](#installation)
+    - [Installation on Linux](#installation-on-linux)
+    - [Installation on MacOS](#installation-on-macos)
+    - [Installation on Windows](#installation-on-windows)
+    - [cloudctl update](#cloudctl-update)
+  - [Usage](#usage)
+    - [Login](#login)
+    - [Get currently logged in user](#get-currently-logged-in-user)
+  - [HowTo](#howto)
+    - [List Clusters](#list-clusters)
+    - [Create Project](#create-project)
+    - [Create Cluster](#create-cluster)
+    - [Download Kubeconfig](#download-kubeconfig)
+    - [Delete your cluster](#delete-your-cluster)
+    - [Managing ip addresses](#managing-ip-addresses)
+  - [Billing](#billing)
+  - [S3](#s3)
+    - [Configuring the minio mc client](#configuring-the-minio-mc-client)
+    - [Configuring s3cmd](#configuring-s3cmd)
+  - [Advanced Usage](#advanced-usage)
+    - [Use token for existing Cluster](#use-token-for-existing-cluster)
 
 <!-- /TOC -->
 
@@ -379,18 +380,22 @@ To list the available S3 partitions in your control plane, issue the following c
 ```
 $ cloudctl s3 partitions
 NAME      	ENDPOINT                            
-fel-wps101	https://s3.fel-wps101.metal-pod.dev
+fel-wps101	https://s3.test-01-fel-wps101.metal-pod.dev
 ```
 
 In this case, the partition `fel-wps101` offers S3 storage. You can now create an S3 user to get storage access:
 
 ```
-$ cloudctl s3 create --name test --partition fel-wps101
-accesskey: JXI0SPBVR165VHXVP40C
-endpoint: https://s3.fel-wps101.metal-pod.dev
-name: test
+$ cloudctl s3 create --id my-user --project dc565451-3864-4355-bef5-080a9d0e4068 --partition fel-wps101 -n "My User"
+accesskey: 3ZA4D7NFT1K6UB1N2ON1
+name: My User
+email: null
+endpoint: https://s3.test-01-fel-wps101.metal-pod.dev
+maxbuckets: 1000
+id: my-user
 partition: fel-wps101
-secretkey: psWjZFvPCfNZBmW4ko2Oxv2ND2n7HlPsz9yMGab3
+project: dc565451-3864-4355-bef5-080a9d0e4068
+secretkey: kEZ8fV1odMa9SzgrRlW9HtwB4yAqYITd4hM4NJTT
 tenant: fits
 ```
 
@@ -400,11 +405,15 @@ If you need to look up the user at a later point in time again, you can use the 
 
 ```
 $ cloudctl s3 describe --name test --partition fel-wps101
-accesskey: JXI0SPBVR165VHXVP40C
-endpoint: https://s3.fel-wps101.metal-pod.dev
-name: test
+accesskey: 3ZA4D7NFT1K6UB1N2ON1
+name: My User
+email: null
+endpoint: https://s3.test-01-fel-wps101.metal-pod.dev
+maxbuckets: 1000
+id: my-user
 partition: fel-wps101
-secretkey: psWjZFvPCfNZBmW4ko2Oxv2ND2n7HlPsz9yMGab3
+project: dc565451-3864-4355-bef5-080a9d0e4068
+secretkey: kEZ8fV1odMa9SzgrRlW9HtwB4yAqYITd4hM4NJTT
 tenant: fits
 ```
 
@@ -412,16 +421,17 @@ Or if you want to delete the user again, run the delete command:
 
 ```
 $ cloudctl s3 delete --name test --partition fel-wps101
-endpoint: https://s3.fel-wps101.metal-pod.dev
-name: test
+endpoint: https://s3.test-01-fel-wps101.metal-pod.dev
+id: my-user
 partition: fel-wps101
+project: dc565451-3864-4355-bef5-080a9d0e4068
 tenant: fits
 ```
 
 ### Configuring the minio mc client
 
 ```
-$ mc config host add test https://s3.fel-wps101.metal-pod.dev <your access key> <your secret key>
+$ mc config host add test https://s3.test-01-fel-wps101.metal-pod.dev <your access key> <your secret key>
 
 $ mc mb test/testbucket
 Bucket created successfully `test/testbucket`.
@@ -439,7 +449,7 @@ $ mc ls test/testbucket
 export AWS_ACCESS_KEY_ID= <your access key>
 export AWS_SECRET_ACCESS_KEY=<your secret key>
 
-$ s3cmd la --host=https://s3.fel-wps101.metal-pod.dev --host-bucket=https://s3.fel-wps101.metal-pod.dev
+$ s3cmd la --host=https://s3.test-01-fel-wps101.metal-pod.dev --host-bucket=https://s3.test-01-fel-wps101.metal-pod.dev
 2020-04-07 07:34      4147   s3://test/README.md
 ```
 

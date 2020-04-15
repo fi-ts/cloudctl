@@ -2,6 +2,7 @@ package output
 
 import (
 	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
+	"github.com/fatih/color"
 )
 
 type (
@@ -17,13 +18,13 @@ type (
 
 // Print a S3 storage as table
 func (p S3TablePrinter) Print(data []*models.V1S3Response) {
-	p.wideHeader = []string{"Name", "Tenant", "Partition"}
+	p.wideHeader = []string{"ID", "Tenant", "Project", "Partition", "Endpoint"}
 	p.shortHeader = p.wideHeader
 
 	for _, user := range data {
 		name := ""
-		if user.Name != nil {
-			name = *user.Name
+		if user.ID != nil {
+			name = *user.ID
 		}
 
 		tenant := ""
@@ -31,12 +32,22 @@ func (p S3TablePrinter) Print(data []*models.V1S3Response) {
 			tenant = *user.Tenant
 		}
 
+		project := ""
+		if user.Project != nil {
+			project = *user.Project
+		}
+
 		partition := ""
 		if user.Partition != nil {
 			partition = *user.Partition
 		}
 
-		wide := []string{name, tenant, partition}
+		endpoint := ""
+		if user.Endpoint != nil {
+			endpoint = *user.Endpoint
+		}
+
+		wide := []string{name, tenant, project, partition, endpoint}
 		p.addWideData(wide, user)
 		p.addShortData(wide, user)
 	}
@@ -45,13 +56,13 @@ func (p S3TablePrinter) Print(data []*models.V1S3Response) {
 
 // Print a S3 partitions as table
 func (p S3PartitionTablePrinter) Print(data []*models.V1S3PartitionResponse) {
-	p.wideHeader = []string{"Name", "Endpoint"}
+	p.wideHeader = []string{"Name", "Endpoint", "Ready"}
 	p.shortHeader = p.wideHeader
 
 	for _, partition := range data {
 		name := ""
-		if partition.Name != nil {
-			name = *partition.Name
+		if partition.ID != nil {
+			name = *partition.ID
 		}
 
 		endpoint := ""
@@ -59,7 +70,16 @@ func (p S3PartitionTablePrinter) Print(data []*models.V1S3PartitionResponse) {
 			endpoint = *partition.Endpoint
 		}
 
-		wide := []string{name, endpoint}
+		ready := false
+		if partition.Ready != nil {
+			ready = *partition.Ready
+		}
+
+		readyStatus := color.RedString(circle)
+		if ready {
+			readyStatus = color.GreenString(circle)
+		}
+		wide := []string{name, endpoint, readyStatus}
 		p.addWideData(wide, partition)
 		p.addShortData(wide, partition)
 	}

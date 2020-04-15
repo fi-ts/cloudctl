@@ -873,7 +873,7 @@
           "200": {
             "description": "Ok",
             "schema": {
-              "$ref": "#/definitions/v1.ProjectResponse"
+              "$ref": "#/definitions/v1.MasterdataLookupResponse"
             }
           },
           "404": {
@@ -1091,15 +1091,15 @@
         "tags": [
           "s3"
         ],
-        "summary": "list s3 users",
-        "operationId": "lists3",
+        "summary": "get s3 user",
+        "operationId": "gets3",
         "parameters": [
           {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1.S3ListRequest"
+              "$ref": "#/definitions/v1.S3GetRequest"
             }
           }
         ],
@@ -1107,10 +1107,7 @@
           "200": {
             "description": "OK",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/v1.S3Response"
-              }
+              "$ref": "#/definitions/v1.S3CredentialsResponse"
             }
           },
           "default": {
@@ -1157,77 +1154,6 @@
             }
           }
         }
-      }
-    },
-    "/v1/s3/partitions": {
-      "get": {
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "s3"
-        ],
-        "summary": "list s3 partitions",
-        "operationId": "lists3partitions",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/v1.S3PartitionResponse"
-              }
-            }
-          },
-          "default": {
-            "description": "Error",
-            "schema": {
-              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/v1/s3/{id}": {
-      "get": {
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "s3"
-        ],
-        "summary": "get s3 user",
-        "operationId": "gets3",
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1.S3GetRequest"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "schema": {
-              "$ref": "#/definitions/v1.S3CredentialsResponse"
-            }
-          },
-          "default": {
-            "description": "Error",
-            "schema": {
-              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
-            }
-          }
-        }
       },
       "delete": {
         "consumes": [
@@ -1256,6 +1182,80 @@
             "description": "OK",
             "schema": {
               "$ref": "#/definitions/v1.S3Response"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/v1/s3/list": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "s3"
+        ],
+        "summary": "list s3 users",
+        "operationId": "lists3",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1.S3ListRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/v1.S3Response"
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/v1/s3/partitions": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "s3"
+        ],
+        "summary": "list s3 partitions",
+        "operationId": "lists3partitions",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/v1.S3PartitionResponse"
+              }
             }
           },
           "default": {
@@ -2561,13 +2561,13 @@
     },
     "v1.IPFindRequest": {
       "required": [
-        "Tags",
-        "IPAddress",
         "ProjectID",
         "ParentPrefixCidr",
         "NetworkID",
         "MachineID",
-        "Type"
+        "Type",
+        "Tags",
+        "IPAddress"
       ],
       "properties": {
         "IPAddress": {
@@ -2740,6 +2740,20 @@
         },
         "ClusterNameProject": {
           "$ref": "#/definitions/v1.ClusterNameProject"
+        }
+      }
+    },
+    "v1.MasterdataLookupResponse": {
+      "required": [
+        "Tenant",
+        "Project"
+      ],
+      "properties": {
+        "Project": {
+          "$ref": "#/definitions/v1.Project"
+        },
+        "Tenant": {
+          "$ref": "#/definitions/v1.Tenant"
         }
       }
     },
@@ -3025,15 +3039,28 @@
     },
     "v1.S3CreateRequest": {
       "required": [
-        "name",
+        "id",
         "tenant",
-        "partition"
+        "project",
+        "partition",
+        "name",
+        "max_buckets"
       ],
       "properties": {
+        "id": {
+          "type": "string"
+        },
+        "max_buckets": {
+          "type": "integer",
+          "format": "int64"
+        },
         "name": {
           "type": "string"
         },
         "partition": {
+          "type": "string"
+        },
+        "project": {
           "type": "string"
         },
         "tenant": {
@@ -3043,8 +3070,11 @@
     },
     "v1.S3CredentialsResponse": {
       "required": [
-        "name",
+        "id",
         "tenant",
+        "project",
+        "name",
+        "max_buckets",
         "partition",
         "endpoint",
         "access_key",
@@ -3057,10 +3087,20 @@
         "endpoint": {
           "type": "string"
         },
+        "id": {
+          "type": "string"
+        },
+        "max_buckets": {
+          "type": "integer",
+          "format": "int64"
+        },
         "name": {
           "type": "string"
         },
         "partition": {
+          "type": "string"
+        },
+        "project": {
           "type": "string"
         },
         "secret_key": {
@@ -3073,15 +3113,23 @@
     },
     "v1.S3DeleteRequest": {
       "required": [
-        "name",
+        "id",
         "tenant",
-        "partition"
+        "project",
+        "partition",
+        "force"
       ],
       "properties": {
-        "name": {
+        "force": {
+          "type": "boolean"
+        },
+        "id": {
           "type": "string"
         },
         "partition": {
+          "type": "string"
+        },
+        "project": {
           "type": "string"
         },
         "tenant": {
@@ -3091,15 +3139,19 @@
     },
     "v1.S3GetRequest": {
       "required": [
-        "name",
+        "id",
         "tenant",
+        "project",
         "partition"
       ],
       "properties": {
-        "name": {
+        "id": {
           "type": "string"
         },
         "partition": {
+          "type": "string"
+        },
+        "project": {
           "type": "string"
         },
         "tenant": {
@@ -3119,22 +3171,27 @@
     },
     "v1.S3PartitionResponse": {
       "required": [
-        "name",
-        "endpoint"
+        "id",
+        "endpoint",
+        "ready"
       ],
       "properties": {
         "endpoint": {
           "type": "string"
         },
-        "name": {
+        "id": {
           "type": "string"
+        },
+        "ready": {
+          "type": "boolean"
         }
       }
     },
     "v1.S3Response": {
       "required": [
-        "name",
+        "id",
         "tenant",
+        "project",
         "partition",
         "endpoint"
       ],
@@ -3142,10 +3199,13 @@
         "endpoint": {
           "type": "string"
         },
-        "name": {
+        "id": {
           "type": "string"
         },
         "partition": {
+          "type": "string"
+        },
+        "project": {
           "type": "string"
         },
         "tenant": {
@@ -3858,6 +3918,9 @@
         "domains": {
           "$ref": "#/definitions/v1beta1.DNSIncludeExclude"
         },
+        "primary": {
+          "type": "boolean"
+        },
         "secretName": {
           "type": "string"
         },
@@ -4569,6 +4632,12 @@
         "size"
       ],
       "properties": {
+        "encrypted": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        },
         "size": {
           "type": "string"
         },
@@ -4592,6 +4661,15 @@
           }
         },
         "caBundle": {
+          "type": "string"
+        },
+        "dataVolumes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1beta1.Volume"
+          }
+        },
+        "kubeletDataVolumeName": {
           "type": "string"
         },
         "kubernetes": {

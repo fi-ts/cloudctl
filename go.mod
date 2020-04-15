@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/Masterminds/semver v1.5.0
+	github.com/fatih/color v1.9.0
 	github.com/gardener/gardener v1.1.6
 	github.com/go-openapi/errors v0.19.4
 	github.com/go-openapi/loads v0.19.5 // indirect

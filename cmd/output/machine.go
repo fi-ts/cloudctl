@@ -20,6 +20,7 @@ const (
 	nbr      = "\U00002007"
 	skull    = "\U0001F480"
 	question = "\U00002753"
+	circle   = "●"
 )
 
 // Print a list of Machines in a table

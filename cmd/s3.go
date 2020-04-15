@@ -63,10 +63,13 @@ var (
 )
 
 func init() {
-	s3CreateCmd.Flags().StringP("name", "n", "", "name of s3 user. [required]")
-	s3CreateCmd.Flags().StringP("partition", "p", "", "name of s3 partition. [required]")
-	s3CreateCmd.Flags().StringP("tenant", "t", "", "create s3 for given tenant")
-	err := s3CreateCmd.MarkFlagRequired("name")
+	s3CreateCmd.Flags().StringP("id", "i", "", "id of the s3 user [required]")
+	s3CreateCmd.Flags().StringP("partition", "p", "", "name of s3 partition to create the s3 user in [required]")
+	s3CreateCmd.Flags().String("project", "", "id of the project that the s3 user belongs to [required]")
+	s3CreateCmd.Flags().StringP("tenant", "t", "", "create s3 for given tenant, defaults to logged in tenant")
+	s3CreateCmd.Flags().StringP("name", "n", "", "name of s3 user, only for display")
+	s3CreateCmd.Flags().Int64("max-buckets", 0, "maximum number of buckets for the s3 user")
+	err := s3CreateCmd.MarkFlagRequired("id")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -74,13 +77,18 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	err = s3CreateCmd.MarkFlagRequired("project")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	s3ListCmd.Flags().StringP("partition", "p", "", "name of s3 partition.")
 
-	s3DescribeCmd.Flags().StringP("name", "n", "", "name of s3 user. [required]")
-	s3DescribeCmd.Flags().StringP("partition", "p", "", "name of s3 partition. [required]")
-	s3DescribeCmd.Flags().StringP("tenant", "t", "", "create s3 for given tenant")
-	err = s3DescribeCmd.MarkFlagRequired("name")
+	s3DescribeCmd.Flags().StringP("id", "i", "", "id of the s3 user [required]")
+	s3DescribeCmd.Flags().StringP("partition", "p", "", "name of s3 partition where this user is in [required]")
+	s3DescribeCmd.Flags().String("project", "", "id of the project that the s3 user belongs to [required]")
+	s3DescribeCmd.Flags().StringP("tenant", "t", "", "tenant of the s3 user, defaults to logged in tenant")
+	err = s3DescribeCmd.MarkFlagRequired("id")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -88,15 +96,25 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	err = s3DescribeCmd.MarkFlagRequired("project")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
-	s3DeleteCmd.Flags().StringP("name", "n", "", "name of s3 user. [required]")
-	s3DeleteCmd.Flags().StringP("partition", "p", "", "name of s3 partition. [required]")
-	s3DeleteCmd.Flags().StringP("tenant", "t", "", "create s3 for given tenant")
-	err = s3DeleteCmd.MarkFlagRequired("name")
+	s3DeleteCmd.Flags().StringP("id", "i", "", "id of the s3 user [required]")
+	s3DeleteCmd.Flags().StringP("partition", "p", "", "name of s3 partition where this user is in [required]")
+	s3DeleteCmd.Flags().String("project", "", "id of the project that the s3 user belongs to [required]")
+	s3DeleteCmd.Flags().StringP("tenant", "t", "", "tenant of the s3 user, defaults to logged in tenant")
+	s3DeleteCmd.Flags().Bool("force", false, "forces s3 user deletion if if buckets and bucket objects exist (dangerous!)")
+	err = s3DeleteCmd.MarkFlagRequired("id")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 	err = s3DeleteCmd.MarkFlagRequired("partition")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = s3DeleteCmd.MarkFlagRequired("project")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -110,13 +128,15 @@ func init() {
 
 func s3Describe() error {
 	tenant := viper.GetString("tenant")
-	name := viper.GetString("name")
+	id := viper.GetString("id")
 	partition := viper.GetString("partition")
+	project := viper.GetString("project")
 
 	p := &models.V1S3GetRequest{
-		Name:      &name,
+		ID:        &id,
 		Partition: &partition,
 		Tenant:    &tenant,
+		Project:   &project,
 	}
 
 	request := s3.NewGets3Params()
@@ -137,13 +157,19 @@ func s3Describe() error {
 
 func s3Create() error {
 	tenant := viper.GetString("tenant")
-	name := viper.GetString("name")
+	id := viper.GetString("id")
 	partition := viper.GetString("partition")
+	project := viper.GetString("project")
+	name := viper.GetString("name")
+	maxBuckets := viper.GetInt64("max-buckets")
 
 	p := &models.V1S3CreateRequest{
-		Name:      &name,
-		Partition: &partition,
-		Tenant:    &tenant,
+		ID:         &id,
+		Partition:  &partition,
+		Tenant:     &tenant,
+		Project:    &project,
+		Name:       &name,
+		MaxBuckets: &maxBuckets,
 	}
 
 	request := s3.NewCreates3Params()
@@ -164,13 +190,17 @@ func s3Create() error {
 
 func s3Delete(args []string) error {
 	tenant := viper.GetString("tenant")
-	name := viper.GetString("name")
+	id := viper.GetString("id")
 	partition := viper.GetString("partition")
+	project := viper.GetString("project")
+	force := viper.GetBool("force")
 
 	p := &models.V1S3DeleteRequest{
-		Name:      &name,
+		ID:        &id,
 		Partition: &partition,
 		Tenant:    &tenant,
+		Project:   &project,
+		Force:     &force,
 	}
 
 	request := s3.NewDeletes3Params()
