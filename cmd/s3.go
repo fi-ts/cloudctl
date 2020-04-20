@@ -81,6 +81,12 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	s3CreateCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return s3ListPartitionsCompletion()
+	})
+	s3CreateCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return projectListCompletion()
+	})
 
 	s3ListCmd.Flags().StringP("partition", "p", "", "name of s3 partition.")
 

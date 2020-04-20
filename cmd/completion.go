@@ -6,6 +6,7 @@ import (
 
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/cluster"
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/project"
+	"git.f-i-ts.de/cloud-native/cloudctl/api/client/s3"
 	"github.com/spf13/cobra"
 )
 
@@ -135,6 +136,19 @@ func machineImageListCompletion() ([]string, cobra.ShellCompDirective) {
 	for _, t := range sc.Payload.MachineImages {
 		name := *t.Name + "-" + *t.Version
 		names = append(names, name)
+	}
+	return names, cobra.ShellCompDirectiveDefault
+}
+
+func s3ListPartitionsCompletion() ([]string, cobra.ShellCompDirective) {
+	request := s3.NewLists3partitionsParams()
+	response, err := cloud.S3.Lists3partitions(request, cloud.Auth)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for _, p := range response.Payload {
+		names = append(names, *p.ID)
 	}
 	return names, cobra.ShellCompDirectiveDefault
 }
