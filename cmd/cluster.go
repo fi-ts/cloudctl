@@ -163,10 +163,10 @@ func init() {
 		return machineImageListCompletion()
 	})
 	clusterCreateCmd.RegisterFlagCompletionFunc("firewalltype", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return machineTypeListCompletion()
+		return firewallTypeListCompletion()
 	})
 	clusterCreateCmd.RegisterFlagCompletionFunc("firewallimage", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return machineImageListCompletion()
+		return firewallImageListCompletion()
 	})
 	clusterCreateCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"production", "testing", "development", "evaluation"}, cobra.ShellCompDirectiveDefault

@@ -2561,13 +2561,13 @@
     },
     "v1.IPFindRequest": {
       "required": [
+        "Tags",
+        "IPAddress",
         "ProjectID",
         "ParentPrefixCidr",
         "NetworkID",
         "MachineID",
-        "Type",
-        "Tags",
-        "IPAddress"
+        "Type"
       ],
       "properties": {
         "IPAddress": {
@@ -3233,9 +3233,25 @@
         "partitions",
         "partition_constraints",
         "machine_images",
-        "machine_types"
+        "machine_types",
+        "firewall_images",
+        "firewall_types"
       ],
       "properties": {
+        "firewall_images": {
+          "description": "the list of available firewall images",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "firewall_types": {
+          "description": "the list of available firewall types",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "kubernetes_versions": {
           "description": "the list of available kubernetes versions",
           "type": "array",
