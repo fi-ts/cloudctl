@@ -106,11 +106,7 @@ func versionListCompletion() ([]string, cobra.ShellCompDirective) {
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
-	var names []string
-	for _, v := range sc.Payload.KubernetesVersions {
-		names = append(names, v)
-	}
-	return names, cobra.ShellCompDirectiveDefault
+	return sc.Payload.KubernetesVersions, cobra.ShellCompDirectiveDefault
 }
 
 func machineTypeListCompletion() ([]string, cobra.ShellCompDirective) {
@@ -119,11 +115,7 @@ func machineTypeListCompletion() ([]string, cobra.ShellCompDirective) {
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
-	var names []string
-	for _, t := range sc.Payload.MachineTypes {
-		names = append(names, t)
-	}
-	return names, cobra.ShellCompDirectiveDefault
+	return sc.Payload.MachineTypes, cobra.ShellCompDirectiveDefault
 }
 
 func machineImageListCompletion() ([]string, cobra.ShellCompDirective) {

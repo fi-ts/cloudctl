@@ -23,6 +23,7 @@ type (
 func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
+	s.Order(data)
 	for _, cluster := range data {
 		shoot := cluster.Shoot
 		infrastructure := cluster.Infrastructure

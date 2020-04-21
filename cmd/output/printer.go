@@ -175,10 +175,16 @@ func (t TablePrinter) Print(data interface{}) error {
 	case *models.V1ClusterResponse:
 		ShootTablePrinter{t}.Print([]*models.V1ClusterResponse{d})
 	case []*models.V1ClusterResponse:
+		if t.order == "" {
+			t.order = "tenant,project,name"
+		}
 		ShootTablePrinter{t}.Print(d)
 	case *models.V1Project:
 		ProjectTablePrinter{t}.Print([]*models.V1Project{d})
 	case []*models.V1Project:
+		if t.order == "" {
+			t.order = "tenant,project"
+		}
 		ProjectTablePrinter{t}.Print(d)
 	case []*models.V1Tenant:
 		TenantTablePrinter{t}.Print(d)

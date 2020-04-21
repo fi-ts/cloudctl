@@ -19,7 +19,7 @@ type (
 func (p ProjectTablePrinter) Print(data []*models.V1Project) {
 	p.wideHeader = []string{"UID", "Tenant", "Name", "Description", "Clusters", "Machines", "IPs", "Labels", "Annotations"}
 	p.shortHeader = p.wideHeader
-
+	p.Order(data)
 	for _, pr := range data {
 		clusterQuota := ""
 		machineQuota := ""
