@@ -6,7 +6,114 @@ import (
 	"strings"
 
 	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
+	"github.com/metal-stack/metal-lib/pkg/tag"
 )
+
+// Order cluster
+func (s ShootTablePrinter) Order(data []*models.V1ClusterResponse) {
+	cols := strings.Split(s.order, ",")
+	if len(cols) > 0 {
+		sort.SliceStable(data, func(i, j int) bool {
+			A := data[i]
+			B := data[j]
+			tenantA := A.Shoot.Metadata.Annotations[tag.ClusterTenant]
+			tenantB := B.Shoot.Metadata.Annotations[tag.ClusterTenant]
+			projectA := A.Shoot.Metadata.Annotations[tag.ClusterProject]
+			projectB := B.Shoot.Metadata.Annotations[tag.ClusterProject]
+			nameA := A.Shoot.Metadata.Name
+			nameB := B.Shoot.Metadata.Name
+			for _, order := range cols {
+				order = strings.ToLower(order)
+				switch order {
+				case "tenant":
+					if tenantA == "" {
+						return true
+					}
+					if tenantB == "" {
+						return false
+					}
+					if tenantA < tenantB {
+						return true
+					}
+					if tenantA != tenantB {
+						return false
+					}
+				case "project":
+					if projectA == "" {
+						return true
+					}
+					if projectB == "" {
+						return false
+					}
+					if projectA < projectB {
+						return true
+					}
+					if projectA != projectB {
+						return false
+					}
+				case "name":
+					if nameA == "" {
+						return true
+					}
+					if nameB == "" {
+						return false
+					}
+					if nameA < nameB {
+						return true
+					}
+					if nameA != nameB {
+						return false
+					}
+				}
+			}
+			return false
+		})
+	}
+}
+
+// Order Project
+func (s ProjectTablePrinter) Order(data []*models.V1Project) {
+	cols := strings.Split(s.order, ",")
+	if len(cols) > 0 {
+		sort.SliceStable(data, func(i, j int) bool {
+			A := data[i]
+			B := data[j]
+			for _, order := range cols {
+				order = strings.ToLower(order)
+				switch order {
+				case "tenant":
+					if A.TenantID == "" {
+						return true
+					}
+					if B.TenantID == "" {
+						return false
+					}
+					if A.TenantID < B.TenantID {
+						return true
+					}
+					if A.TenantID != B.TenantID {
+						return false
+					}
+				case "project":
+					if A.Name == "" {
+						return true
+					}
+					if B.Name == "" {
+						return false
+					}
+					if A.Name < B.Name {
+						return true
+					}
+					if A.Name != B.Name {
+						return false
+					}
+				}
+			}
+
+			return false
+		})
+	}
+}
 
 // Order clusterUsage
 func (s *ClusterBillingTablePrinter) Order(data []*models.V1ClusterUsage) {
