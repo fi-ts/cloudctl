@@ -52,6 +52,12 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterDelete(args)
 		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return clusterListCompletion()
+		},
 		PreRun: bindPFlags,
 	}
 	clusterDescribeCmd = &cobra.Command{
@@ -59,6 +65,12 @@ var (
 		Short: "describe a cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterDescribe(args)
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return clusterListCompletion()
 		},
 		PreRun: bindPFlags,
 	}
@@ -68,6 +80,12 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterKubeconfig(args)
 		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return clusterListCompletion()
+		},
 		PreRun: bindPFlags,
 	}
 	clusterSSHKeyPairCmd = &cobra.Command{
@@ -75,6 +93,12 @@ var (
 		Short: "get cluster sshkeypair",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterSSHKeyPair(args)
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return clusterListCompletion()
 		},
 		PreRun: bindPFlags,
 	}
@@ -84,6 +108,12 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return reconcileCluster(args)
 		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return clusterListCompletion()
+		},
 		PreRun: bindPFlags,
 	}
 	clusterUpdateCmd = &cobra.Command{
@@ -91,6 +121,12 @@ var (
 		Short: "update a cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return updateCluster(args)
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return clusterListCompletion()
 		},
 		PreRun: bindPFlags,
 	}
@@ -107,6 +143,12 @@ var (
 		Short: "get machines in the cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterMachines(args)
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return clusterListCompletion()
 		},
 		PreRun: bindPFlags,
 	}
@@ -172,16 +214,36 @@ func init() {
 		return []string{"production", "testing", "development", "evaluation"}, cobra.ShellCompDirectiveDefault
 	})
 
+	// Cluster list --------------------------------------------------------------------
 	clusterListCmd.Flags().String("project", "", "show clusters of given project")
 	clusterListCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterListCmd.Flags().String("tenant", "", "show clusters of given tenant")
+	clusterListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return projectListCompletion()
+	})
+	clusterListCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return partitionListCompletion()
+	})
 
+	// Cluster update --------------------------------------------------------------------
 	clusterUpdateCmd.Flags().Int32("minsize", 0, "minimal workers of the cluster.")
 	clusterUpdateCmd.Flags().Int32("maxsize", 0, "maximal workers of the cluster.")
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
 	clusterUpdateCmd.Flags().String("firewalltype", "", "machine type to use for the firewall.")
 	clusterUpdateCmd.Flags().String("firewallimage", "", "machine image to use for the firewall.")
 	clusterUpdateCmd.Flags().String("purpose", "", "purpose of the cluster, can be one of production|testing|development|evaluation. SLA is only given on production clusters.")
+	clusterUpdateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return versionListCompletion()
+	})
+	clusterUpdateCmd.RegisterFlagCompletionFunc("firewalltype", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return firewallTypeListCompletion()
+	})
+	clusterUpdateCmd.RegisterFlagCompletionFunc("firewallimage", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return firewallImageListCompletion()
+	})
+	clusterUpdateCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"production", "testing", "development", "evaluation"}, cobra.ShellCompDirectiveDefault
+	})
 
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)

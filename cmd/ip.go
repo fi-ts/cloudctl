@@ -57,6 +57,10 @@ func init() {
 	ipListCmd.Flags().StringP("prefix", "", "", "prefx to filter [optional]")
 	ipListCmd.Flags().StringP("machineid", "", "", "machineid to filter [optional]")
 	ipListCmd.Flags().StringP("network", "", "", "network to filter [optional]")
+	ipListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return projectListCompletion()
+	})
+
 }
 
 func ipList() error {

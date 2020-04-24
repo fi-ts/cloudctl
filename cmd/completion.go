@@ -62,6 +62,19 @@ func contextListCompletion() ([]string, cobra.ShellCompDirective) {
 	return names, cobra.ShellCompDirectiveDefault
 }
 
+func clusterListCompletion() ([]string, cobra.ShellCompDirective) {
+	request := cluster.NewListClustersParams()
+	response, err := cloud.Cluster.ListClusters(request, cloud.Auth)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for _, c := range response.Payload {
+		names = append(names, c.Shoot.Metadata.UID)
+	}
+	return names, cobra.ShellCompDirectiveDefault
+}
+
 func projectListCompletion() ([]string, cobra.ShellCompDirective) {
 	request := project.NewListProjectsParams()
 	response, err := cloud.Project.ListProjects(request, cloud.Auth)
