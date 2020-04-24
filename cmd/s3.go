@@ -89,6 +89,7 @@ func init() {
 	})
 
 	s3ListCmd.Flags().StringP("partition", "p", "", "name of s3 partition.")
+	s3ListCmd.Flags().String("project", "", "id of the project that the s3 user belongs to")
 
 	s3DescribeCmd.Flags().StringP("id", "i", "", "id of the s3 user [required]")
 	s3DescribeCmd.Flags().StringP("partition", "p", "", "name of s3 partition where this user is in [required]")
@@ -227,6 +228,7 @@ func s3Delete(args []string) error {
 
 func s3List() error {
 	partition := viper.GetString("partition")
+	project := viper.GetString("project")
 
 	p := &models.V1S3ListRequest{
 		Partition: &partition,
@@ -244,7 +246,18 @@ func s3List() error {
 			return output.UnconventionalError(err)
 		}
 	}
-	return printer.Print(response.Payload)
+
+	if project == "" {
+		return printer.Print(response.Payload)
+	}
+
+	var result []*models.V1S3Response
+	for _, s3 := range response.Payload {
+		if *s3.Project == project {
+			result = append(result, s3)
+		}
+	}
+	return printer.Print(result)
 }
 
 func s3ListPartitions() error {
