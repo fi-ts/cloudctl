@@ -20,6 +20,10 @@ type (
 	ContainerBillingTablePrinter struct {
 		TablePrinter
 	}
+	// S3BillingTablePrinter print bills in a Table
+	S3BillingTablePrinter struct {
+		TablePrinter
+	}
 	// VolumeBillingTablePrinter print bills in a Table
 	VolumeBillingTablePrinter struct {
 		TablePrinter
@@ -29,7 +33,7 @@ type (
 // Print a cluster usage as table
 func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "ClusterStart", "ClusterEnd", "Lifetime", "Warnings"}
-	s.shortHeader = []string{"Tenant", "ProjectName", "Partition", "ClusterName", "ClusterStart", "ClusterEnd", "Lifetime"}
+	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "ClusterStart", "ClusterEnd", "Lifetime"}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {
 		var from string
@@ -96,7 +100,7 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 		}
 		short := []string{
 			tenant,
-			projectName,
+			projectID,
 			partition,
 			clusterName,
 			clusterStart,
@@ -122,7 +126,7 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 // Print a volume usage as table
 func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Start", "End", "Class", "Name", "Type", "CapacitySeconds (Gi * h)", "Lifetime", "Warnings"}
-	s.shortHeader = []string{"Tenant", "ProjectName", "Partition", "ClusterName", "Class", "Name", "Type", "CapacitySeconds (Gi * h)", "Lifetime"}
+	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "Class", "Name", "Type", "CapacitySeconds (Gi * h)", "Lifetime"}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {
 		var from string
@@ -209,7 +213,7 @@ func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 		}
 		short := []string{
 			tenant,
-			projectName,
+			projectID,
 			partition,
 			clusterName,
 			class,
@@ -234,10 +238,128 @@ func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 	s.render()
 }
 
+// Print a s3 usage as table
+func (s S3BillingTablePrinter) Print(data *models.V1S3UsageResponse) {
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "User", "Bucket Name", "Start", "End", "Objects", "StorageSeconds (Gi * h)", "Lifetime", "Warnings"}
+	s.shortHeader = []string{"Tenant", "Partition", "ProjectID", "User", "Bucket Name", "Objects", "StorageSeconds (Gi * h)", "Lifetime"}
+	s.Order(data.Usage)
+	for _, u := range data.Usage {
+		var from string
+		if data.From != nil {
+			from = data.From.String()
+		}
+		var to string
+		if !time.Time(data.To).IsZero() {
+			to = data.To.String()
+		}
+		var tenant string
+		if u.Tenant != nil {
+			tenant = *u.Tenant
+		}
+		var projectID string
+		if u.Projectid != nil {
+			projectID = *u.Projectid
+		}
+		var projectName string
+		if u.Projectname != nil {
+			projectName = *u.Projectname
+		}
+		var partition string
+		if u.Partition != nil {
+			partition = *u.Partition
+		}
+		var user string
+		if u.User != nil {
+			user = *u.User
+		}
+		var bucketName string
+		if u.Bucketname != nil {
+			bucketName = *u.Bucketname
+		}
+		var start string
+		if u.Start != nil {
+			start = u.Start.String()
+		}
+		var end string
+		if u.End != nil {
+			end = u.End.String()
+		}
+		var objects string
+		if u.Currentnumberofobjects != nil {
+			objects = *u.Currentnumberofobjects
+		}
+		var storage string
+		if u.Storageseconds != nil {
+			storage = humanizeMemory(*u.Storageseconds)
+		}
+		var lifetime time.Duration
+		if u.Lifetime != nil {
+			lifetime = time.Duration(*u.Lifetime)
+		}
+		var warnings string
+		if u.Warnings != nil {
+			warnings = strings.Join(u.Warnings, ", ")
+		}
+		wide := []string{
+			tenant,
+			from,
+			to,
+			projectID,
+			projectName,
+			partition,
+			user,
+			bucketName,
+			start,
+			end,
+			objects,
+			storage,
+			humanizeDuration(lifetime),
+			warnings,
+		}
+		short := []string{
+			tenant,
+			projectID,
+			partition,
+			user,
+			bucketName,
+			objects,
+			storage,
+			humanizeDuration(lifetime),
+		}
+
+		s.addWideData(wide, data)
+		s.addShortData(short, data)
+	}
+
+	objects := "0"
+	if data.Accumulatedusage.Currentnumberofobjects != nil {
+		objects = *data.Accumulatedusage.Currentnumberofobjects
+	}
+	var storage string
+	if data.Accumulatedusage.Storageseconds != nil {
+		storage = humanizeMemory(*data.Accumulatedusage.Storageseconds) + storageCosts(*data.Accumulatedusage.Storageseconds)
+	}
+	var lifetime string
+	if data.Accumulatedusage.Storageseconds != nil {
+		lifetime = humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime))
+	}
+	footer := []string{"Total",
+		objects,
+		storage,
+		lifetime,
+	}
+	shortFooter := make([]string, len(s.shortHeader)-len(footer))
+	wideFooter := make([]string, len(s.wideHeader)-len(footer))
+	s.addWideData(append(wideFooter, footer...), data)
+
+	s.addShortData(append(shortFooter, footer...), data)
+	s.render()
+}
+
 // Print a container usage as table
 func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageResponse) {
 	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Namespace", "PodUUID", "PodName", "PodStartDate", "PodEndDate", "ContainerName", "Lifetime", "CPUSeconds", "MemorySeconds", "Warnings"}
-	s.shortHeader = []string{"Tenant", "ProjectName", "Partition", "ClusterName", "Namespace", "PodName", "ContainerName", "Lifetime", "CPU (1 * s)", "Memory (Gi * h)"}
+	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "Namespace", "PodName", "ContainerName", "Lifetime", "CPU (1 * s)", "Memory (Gi * h)"}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {
 		var from string
@@ -334,7 +456,7 @@ func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageRespons
 		}
 		short := []string{
 			tenant,
-			projectName,
+			projectID,
 			partition,
 			clusterName,
 			namespace,
@@ -401,4 +523,17 @@ func memoryCosts(memorySeconds string) string {
 	memoryHours := new(big.Float).Quo(ms, big.NewFloat(3600))
 	memoryCosts := new(big.Float).Mul(memoryHours, big.NewFloat(memoryPerGiAndHour))
 	return fmt.Sprintf(" (%.2f €)", memoryCosts)
+}
+
+func storageCosts(storageSeconds string) string {
+	storagePerGiAndHour := viper.GetFloat64("costs-storage-gi-hour")
+	if storagePerGiAndHour <= 0 {
+		return ""
+	}
+	i := new(big.Float)
+	i.SetString(storageSeconds)
+	ss := new(big.Float).Quo(i, big.NewFloat(1<<30))
+	storageHours := new(big.Float).Quo(ss, big.NewFloat(3600))
+	storageCosts := new(big.Float).Mul(storageHours, big.NewFloat(storagePerGiAndHour))
+	return fmt.Sprintf(" (%.2f €)", storageCosts)
 }

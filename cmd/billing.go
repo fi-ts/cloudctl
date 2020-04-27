@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"git.f-i-ts.de/cloud-native/cloudctl/api/client/accounting"
+	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
 	output "git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
 	"github.com/go-openapi/strfmt"
-
-	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
+	"github.com/jinzhu/now"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/go-playground/validator.v9"
@@ -17,7 +17,7 @@ import (
 
 type BillingOpts struct {
 	Tenant     string
-	FromString string `validate:"required"`
+	FromString string
 	ToString   string
 	From       time.Time
 	To         time.Time
@@ -43,7 +43,7 @@ var (
 		export CLOUDCTL_COSTS_CPU_HOUR=0.01        # Costs in Euro per CPU Hour
 		export CLOUDCTL_COSTS_MEMORY_GI_HOUR=0.01  # Costs in Euro per Gi Memory Hour
 
-		cloudctl billing container --from 2019-01-01
+		cloudctl billing container
 		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := initBillingOpts()
@@ -61,7 +61,7 @@ var (
 
 		export CLOUDCTL_COSTS_CLUSTER_HOUR=0.01        # Costs in Euro per cluster hour
 
-		cloudctl billing cluster --from 2019-01-01
+		cloudctl billing cluster
 		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := initBillingOpts()
@@ -72,6 +72,24 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+	s3BillingCmd = &cobra.Command{
+		Use:   "s3",
+		Short: "look at s3 bills",
+		Example: `If you want to get the costs in Euro, then set two environment variables with the prices from your contract:
+
+		export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01        # Costs in Euro per storage Hour
+
+		cloudctl billing s3
+		`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			err := initBillingOpts()
+			if err != nil {
+				return err
+			}
+			return s3Usage()
+		},
+		PreRun: bindPFlags,
+	}
 	volumeBillingCmd = &cobra.Command{
 		Use:   "volume",
 		Short: "look at volume bills",
@@ -79,7 +97,7 @@ var (
 
 		export CLOUDCTL_COSTS_CAPACITY_HOUR=0.01        # Costs in Euro per capacity Hour
 
-		cloudctl billing volume --from 2019-01-01
+		cloudctl billing volume
 		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := initBillingOpts()
@@ -97,13 +115,14 @@ func init() {
 
 	billingCmd.AddCommand(containerBillingCmd)
 	billingCmd.AddCommand(clusterBillingCmd)
+	billingCmd.AddCommand(s3BillingCmd)
 	billingCmd.AddCommand(volumeBillingCmd)
 
 	billingOpts = &BillingOpts{}
 
 	containerBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
 	containerBillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
-	containerBillingCmd.Flags().StringVarP(&billingOpts.FromString, "from", "", "", "the start time in the accounting window to look at")
+	containerBillingCmd.Flags().StringVarP(&billingOpts.FromString, "from", "", "", "the start time in the accounting window to look at (optional, defaults to start of the month")
 	containerBillingCmd.Flags().StringVarP(&billingOpts.ToString, "to", "", "", "the end time in the accounting window to look at (optional, defaults to current system time)")
 	containerBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
 	containerBillingCmd.Flags().StringVarP(&billingOpts.ClusterID, "cluster-id", "c", "", "the cluster to account")
@@ -111,39 +130,49 @@ func init() {
 	containerBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 	containerBillingCmd.Flags().BoolVarP(&billingOpts.Forecast, "forecast", "", false, "calculates resource usage until end of time window as if accountable data would not change any more (defaults to false)")
 
-	err := containerBillingCmd.MarkFlagRequired("from")
+	err := viper.BindPFlags(containerBillingCmd.Flags())
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
 	clusterBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
 	clusterBillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
-	clusterBillingCmd.Flags().StringVarP(&billingOpts.FromString, "from", "", "", "the start time in the accounting window to look at")
+	clusterBillingCmd.Flags().StringVarP(&billingOpts.FromString, "from", "", "", "the start time in the accounting window to look at (optional, defaults to start of the month")
 	clusterBillingCmd.Flags().StringVarP(&billingOpts.ToString, "to", "", "", "the end time in the accounting window to look at (optional, defaults to current system time)")
 	clusterBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
 	clusterBillingCmd.Flags().StringVarP(&billingOpts.ClusterID, "cluster-id", "c", "", "the cluster to account")
 	clusterBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 	clusterBillingCmd.Flags().BoolVarP(&billingOpts.Forecast, "forecast", "", false, "calculates resource usage until end of time window as if accountable data would not change any more (defaults to false)")
 
-	err = clusterBillingCmd.MarkFlagRequired("from")
+	err = viper.BindPFlags(clusterBillingCmd.Flags())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	s3BillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
+	s3BillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
+	s3BillingCmd.Flags().StringVarP(&billingOpts.FromString, "from", "", "", "the start time in the accounting window to look at (optional, defaults to start of the month")
+	s3BillingCmd.Flags().StringVarP(&billingOpts.ToString, "to", "", "", "the end time in the accounting window to look at (optional, defaults to current system time)")
+	s3BillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
+	s3BillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
+	s3BillingCmd.Flags().BoolVarP(&billingOpts.Forecast, "forecast", "", false, "calculates resource usage until end of time window as if accountable data would not change any more (defaults to false)")
+
+	err = viper.BindPFlags(s3BillingCmd.Flags())
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
 	volumeBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
 	volumeBillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
-	volumeBillingCmd.Flags().StringVarP(&billingOpts.FromString, "from", "", "", "the start time in the accounting window to look at")
+	volumeBillingCmd.Flags().StringVarP(&billingOpts.FromString, "from", "", "", "the start time in the accounting window to look at (optional, defaults to start of the month")
 	volumeBillingCmd.Flags().StringVarP(&billingOpts.ToString, "to", "", "", "the end time in the accounting window to look at (optional, defaults to current system time)")
 	volumeBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
+	volumeBillingCmd.Flags().StringVarP(&billingOpts.Namespace, "namespace", "n", "", "the namespace to account")
 	volumeBillingCmd.Flags().StringVarP(&billingOpts.ClusterID, "cluster-id", "c", "", "the cluster to account")
 	volumeBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 	volumeBillingCmd.Flags().BoolVarP(&billingOpts.Forecast, "forecast", "", false, "calculates resource usage until end of time window as if accountable data would not change any more (defaults to false)")
 
-	err = volumeBillingCmd.MarkFlagRequired("from")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = viper.BindPFlags(containerBillingCmd.Flags())
+	err = viper.BindPFlags(volumeBillingCmd.Flags())
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -156,21 +185,23 @@ func initBillingOpts() error {
 		return err
 	}
 
-	from, err := time.Parse(viper.GetString("time-format"), billingOpts.FromString)
-	if err != nil {
-		return err
-	}
-	billingOpts.From = from
-
-	if billingOpts.ToString == "" {
-		billingOpts.To = time.Now()
-	} else {
-		to, err := time.Parse(viper.GetString("time-format"), billingOpts.ToString)
+	from := now.BeginningOfMonth()
+	if billingOpts.FromString != "" {
+		from, err = time.Parse(viper.GetString("time-format"), billingOpts.FromString)
 		if err != nil {
 			return err
 		}
-		billingOpts.To = to
 	}
+	billingOpts.From = from
+
+	to := time.Now()
+	if billingOpts.ToString != "" {
+		to, err = time.Parse(viper.GetString("time-format"), billingOpts.ToString)
+		if err != nil {
+			return err
+		}
+	}
+	billingOpts.To = to
 
 	return nil
 }
@@ -298,6 +329,63 @@ func containerUsageCSV(cur *models.V1ContainerUsageRequest) error {
 	return nil
 }
 
+func s3Usage() error {
+	from := strfmt.DateTime(billingOpts.From)
+	sur := models.V1S3UsageRequest{
+		From: &from,
+		To:   strfmt.DateTime(billingOpts.To),
+	}
+	if billingOpts.Tenant != "" {
+		sur.Tenant = billingOpts.Tenant
+	}
+	if billingOpts.ProjectID != "" {
+		sur.Projectid = billingOpts.ProjectID
+	}
+	if billingOpts.Forecast {
+		sur.Forecast = billingOpts.Forecast
+	}
+
+	if billingOpts.CSV {
+		return s3UsageCSV(&sur)
+	}
+	return s3UsageJSON(&sur)
+}
+
+func s3UsageJSON(sur *models.V1S3UsageRequest) error {
+	request := accounting.NewS3UsageParams()
+	request.SetBody(sur)
+
+	response, err := cloud.Accounting.S3Usage(request, cloud.Auth)
+	if err != nil {
+		switch e := err.(type) {
+		case *accounting.S3UsageDefault:
+			return output.HTTPError(e.Payload)
+		default:
+			return output.UnconventionalError(err)
+		}
+	}
+
+	return printer.Print(response.Payload)
+}
+
+func s3UsageCSV(sur *models.V1S3UsageRequest) error {
+	request := accounting.NewS3UsageCSVParams()
+	request.SetBody(sur)
+
+	response, err := cloud.Accounting.S3UsageCSV(request, cloud.Auth)
+	if err != nil {
+		switch e := err.(type) {
+		case *accounting.S3UsageCSVDefault:
+			return output.HTTPError(e.Payload)
+		default:
+			return output.UnconventionalError(err)
+		}
+	}
+
+	fmt.Println(response.Payload)
+	return nil
+}
+
 func volumeUsage() error {
 	from := strfmt.DateTime(billingOpts.From)
 	vur := models.V1VolumeUsageRequest{
@@ -312,6 +400,9 @@ func volumeUsage() error {
 	}
 	if billingOpts.ClusterID != "" {
 		vur.Clusterid = billingOpts.ClusterID
+	}
+	if billingOpts.Namespace != "" {
+		vur.Clusterid = billingOpts.Namespace
 	}
 	if billingOpts.Forecast {
 		vur.Forecast = billingOpts.Forecast
