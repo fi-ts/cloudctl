@@ -174,6 +174,85 @@
         }
       }
     },
+    "/v1/accounting/s3-usage": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "accounting"
+        ],
+        "summary": "get s3 bucket usage for given accounting query",
+        "operationId": "s3Usage",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1.S3UsageRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/v1.S3UsageResponse"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/v1/accounting/s3-usage-csv": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json",
+          "text/plain"
+        ],
+        "tags": [
+          "accounting"
+        ],
+        "summary": "get s3 bucket usage for given accounting query",
+        "operationId": "s3UsageCSV",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1.S3UsageRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/httperrors.HTTPErrorResponse"
+            }
+          }
+        }
+      }
+    },
     "/v1/accounting/volume-usage": {
       "get": {
         "consumes": [
@@ -2561,13 +2640,13 @@
     },
     "v1.IPFindRequest": {
       "required": [
+        "NetworkID",
+        "MachineID",
+        "Type",
         "Tags",
         "IPAddress",
         "ProjectID",
-        "ParentPrefixCidr",
-        "NetworkID",
-        "MachineID",
-        "Type"
+        "ParentPrefixCidr"
       ],
       "properties": {
         "IPAddress": {
@@ -3213,6 +3292,159 @@
         }
       }
     },
+    "v1.S3Usage": {
+      "required": [
+        "tenant",
+        "projectid",
+        "projectname",
+        "partition",
+        "user",
+        "bucketname",
+        "currentnumberofobjects",
+        "start",
+        "end",
+        "lifetime",
+        "storageseconds",
+        "warnings"
+      ],
+      "properties": {
+        "bucketname": {
+          "description": "the bucket name of this s3 bucket",
+          "type": "string"
+        },
+        "currentnumberofobjects": {
+          "description": "the last reported number of objects of this s3 bucket",
+          "type": "string"
+        },
+        "end": {
+          "description": "the end time of this s3 bucket",
+          "type": "string",
+          "format": "date-time"
+        },
+        "lifetime": {
+          "description": "the duration that this s3 bucket is running",
+          "type": "integer",
+          "format": "integer"
+        },
+        "partition": {
+          "description": "the partition of this s3 bucket",
+          "type": "string"
+        },
+        "projectid": {
+          "description": "the project id of this s3 bucket",
+          "type": "string"
+        },
+        "projectname": {
+          "description": "the project name of this s3 bucket",
+          "type": "string"
+        },
+        "start": {
+          "description": "the start time of this s3 bucket",
+          "type": "string",
+          "format": "date-time"
+        },
+        "storageseconds": {
+          "description": "the storage seconds of this s3 bucket (byte*s)",
+          "type": "string"
+        },
+        "tenant": {
+          "description": "the tenant of this s3 bucket",
+          "type": "string"
+        },
+        "user": {
+          "description": "the user name of this s3 bucket",
+          "type": "string"
+        },
+        "warnings": {
+          "description": "warnings that occurred when calculating the usage of this s3 bucket",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "v1.S3UsageAccumuluated": {
+      "required": [
+        "lifetime",
+        "storageseconds",
+        "currentnumberofobjects"
+      ],
+      "properties": {
+        "currentnumberofobjects": {
+          "description": "the accumulated reported number of objects of the s3 bucketd in this response",
+          "type": "string"
+        },
+        "lifetime": {
+          "description": "the duration that this s3 bucket is running",
+          "type": "integer",
+          "format": "integer"
+        },
+        "storageseconds": {
+          "description": "the accumulated storage seconds of the s3 bucketd in this response (byte*s)",
+          "type": "string"
+        }
+      }
+    },
+    "v1.S3UsageRequest": {
+      "required": [
+        "from"
+      ],
+      "properties": {
+        "forecast": {
+          "description": "estimates costs if time window ends in the future (defaults to false)",
+          "type": "boolean"
+        },
+        "from": {
+          "description": "the start time in the accounting window to look at",
+          "type": "string",
+          "format": "date-time"
+        },
+        "projectid": {
+          "description": "the project id to account for",
+          "type": "string"
+        },
+        "tenant": {
+          "description": "the tenant to get the container usage for (defaults to all tenants)",
+          "type": "string"
+        },
+        "to": {
+          "description": "the end time in the accounting window to look at (defaults to current system time)",
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1.S3UsageResponse": {
+      "required": [
+        "from",
+        "usage",
+        "accumulatedusage"
+      ],
+      "properties": {
+        "accumulatedusage": {
+          "description": "just the usage data of the individual s3 buckets summed up",
+          "$ref": "#/definitions/v1.S3UsageAccumuluated"
+        },
+        "from": {
+          "description": "the start time in the accounting window to look at",
+          "type": "string",
+          "format": "date-time"
+        },
+        "to": {
+          "description": "the end time in the accounting window to look at (defaults to current system time)",
+          "type": "string",
+          "format": "date-time"
+        },
+        "usage": {
+          "description": "the usage data of the individual s3 buckets",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1.S3Usage"
+          }
+        }
+      }
+    },
     "v1.SSHKeyPair": {
       "required": [
         "PrivateKey",
@@ -3463,6 +3695,10 @@
           "description": "the start time in the accounting window to look at",
           "type": "string",
           "format": "date-time"
+        },
+        "namespace": {
+          "description": "the namespace name to account for",
+          "type": "string"
         },
         "projectid": {
           "description": "the project id to account for",
