@@ -2403,10 +2403,6 @@
           "description": "the cluster id to account for",
           "type": "string"
         },
-        "forecast": {
-          "description": "estimates costs if time window ends in the future (defaults to false)",
-          "type": "boolean"
-        },
         "from": {
           "description": "the start time in the accounting window to look at",
           "type": "string",
@@ -2579,10 +2575,6 @@
         "clusterid": {
           "description": "the cluster id to account for",
           "type": "string"
-        },
-        "forecast": {
-          "description": "estimates costs if time window ends in the future (defaults to false)",
-          "type": "boolean"
         },
         "from": {
           "description": "the start time in the accounting window to look at",
@@ -3391,10 +3383,6 @@
         "from"
       ],
       "properties": {
-        "forecast": {
-          "description": "estimates costs if time window ends in the future (defaults to false)",
-          "type": "boolean"
-        },
         "from": {
           "description": "the start time in the accounting window to look at",
           "type": "string",
@@ -3686,10 +3674,6 @@
         "clusterid": {
           "description": "the cluster id to account for",
           "type": "string"
-        },
-        "forecast": {
-          "description": "estimates costs if time window ends in the future (defaults to false)",
-          "type": "boolean"
         },
         "from": {
           "description": "the start time in the accounting window to look at",

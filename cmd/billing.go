@@ -25,7 +25,6 @@ type BillingOpts struct {
 	ClusterID  string
 	Namespace  string
 	CSV        bool
-	Forecast   bool
 }
 
 var (
@@ -128,7 +127,6 @@ func init() {
 	containerBillingCmd.Flags().StringVarP(&billingOpts.ClusterID, "cluster-id", "c", "", "the cluster to account")
 	containerBillingCmd.Flags().StringVarP(&billingOpts.Namespace, "namespace", "n", "", "the namespace to account")
 	containerBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
-	containerBillingCmd.Flags().BoolVarP(&billingOpts.Forecast, "forecast", "", false, "calculates resource usage until end of time window as if accountable data would not change any more (defaults to false)")
 
 	err := viper.BindPFlags(containerBillingCmd.Flags())
 	if err != nil {
@@ -142,7 +140,6 @@ func init() {
 	clusterBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
 	clusterBillingCmd.Flags().StringVarP(&billingOpts.ClusterID, "cluster-id", "c", "", "the cluster to account")
 	clusterBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
-	clusterBillingCmd.Flags().BoolVarP(&billingOpts.Forecast, "forecast", "", false, "calculates resource usage until end of time window as if accountable data would not change any more (defaults to false)")
 
 	err = viper.BindPFlags(clusterBillingCmd.Flags())
 	if err != nil {
@@ -155,7 +152,6 @@ func init() {
 	s3BillingCmd.Flags().StringVarP(&billingOpts.ToString, "to", "", "", "the end time in the accounting window to look at (optional, defaults to current system time)")
 	s3BillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
 	s3BillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
-	s3BillingCmd.Flags().BoolVarP(&billingOpts.Forecast, "forecast", "", false, "calculates resource usage until end of time window as if accountable data would not change any more (defaults to false)")
 
 	err = viper.BindPFlags(s3BillingCmd.Flags())
 	if err != nil {
@@ -170,7 +166,6 @@ func init() {
 	volumeBillingCmd.Flags().StringVarP(&billingOpts.Namespace, "namespace", "n", "", "the namespace to account")
 	volumeBillingCmd.Flags().StringVarP(&billingOpts.ClusterID, "cluster-id", "c", "", "the cluster to account")
 	volumeBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
-	volumeBillingCmd.Flags().BoolVarP(&billingOpts.Forecast, "forecast", "", false, "calculates resource usage until end of time window as if accountable data would not change any more (defaults to false)")
 
 	err = viper.BindPFlags(volumeBillingCmd.Flags())
 	if err != nil {
@@ -220,9 +215,6 @@ func clusterUsage() error {
 	}
 	if billingOpts.ClusterID != "" {
 		cur.Clusterid = billingOpts.ClusterID
-	}
-	if billingOpts.Forecast {
-		cur.Forecast = billingOpts.Forecast
 	}
 
 	if billingOpts.CSV {
@@ -284,9 +276,6 @@ func containerUsage() error {
 	if billingOpts.Namespace != "" {
 		cur.Namespace = billingOpts.Namespace
 	}
-	if billingOpts.Forecast {
-		cur.Forecast = billingOpts.Forecast
-	}
 
 	if billingOpts.CSV {
 		return containerUsageCSV(&cur)
@@ -340,9 +329,6 @@ func s3Usage() error {
 	}
 	if billingOpts.ProjectID != "" {
 		sur.Projectid = billingOpts.ProjectID
-	}
-	if billingOpts.Forecast {
-		sur.Forecast = billingOpts.Forecast
 	}
 
 	if billingOpts.CSV {
@@ -403,9 +389,6 @@ func volumeUsage() error {
 	}
 	if billingOpts.Namespace != "" {
 		vur.Clusterid = billingOpts.Namespace
-	}
-	if billingOpts.Forecast {
-		vur.Forecast = billingOpts.Forecast
 	}
 
 	if billingOpts.CSV {
