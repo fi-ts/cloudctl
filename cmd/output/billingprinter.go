@@ -33,7 +33,7 @@ type (
 // Print a cluster usage as table
 func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "ClusterStart", "ClusterEnd", "Lifetime", "Warnings"}
-	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "ClusterStart", "ClusterEnd", "Lifetime"}
+	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterID", "ClusterName", "ClusterStart", "ClusterEnd", "Lifetime"}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {
 		var from string
@@ -102,6 +102,7 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 			tenant,
 			projectID,
 			partition,
+			clusterID,
 			clusterName,
 			clusterStart,
 			clusterEnd,
