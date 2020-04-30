@@ -533,3 +533,42 @@ func (s *VolumeBillingTablePrinter) Order(data []*models.V1VolumeUsage) {
 		})
 	}
 }
+
+// Order machines
+func (m MachineTablePrinter) Order(data []*models.ModelsV1MachineResponse) {
+	cols := strings.Split(m.order, ",")
+	if len(cols) > 0 {
+		sort.SliceStable(data, func(i, j int) bool {
+			A := data[i]
+			B := data[j]
+			for _, order := range cols {
+				order = strings.ToLower(order)
+				switch order {
+				case "features":
+					a := A.Allocation.Image.Features[0]
+					b := B.Allocation.Image.Features[0]
+					if a < b {
+						return true
+					}
+					if a != b {
+						return false
+					}
+				case "hostname":
+					if A.Allocation.Hostname == nil {
+						return true
+					}
+					if B.Allocation.Hostname == nil {
+						return false
+					}
+					if *A.Allocation.Hostname < *B.Allocation.Hostname {
+						return true
+					}
+					if *A.Allocation.Hostname != *B.Allocation.Hostname {
+						return false
+					}
+				}
+			}
+			return false
+		})
+	}
+}
