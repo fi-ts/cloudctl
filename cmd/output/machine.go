@@ -27,6 +27,8 @@ const (
 func (m MachineTablePrinter) Print(data []*models.ModelsV1MachineResponse) {
 	m.shortHeader = []string{"ID", "", "LAST EVENT", "WHEN", "STARTED", "AGE", "HOSTNAME", "IPs", "SIZE", "IMAGE", "PARTITION"}
 	m.wideHeader = []string{"ID", "", "LAST EVENT", "WHEN", "STARTED", "AGE", "HOSTNAME", "IPs", "SIZE", "IMAGE", "PARTITION"}
+	m.order = "features,hostname"
+	m.Order(data)
 	for _, machine := range data {
 		machineID := *machine.ID
 
