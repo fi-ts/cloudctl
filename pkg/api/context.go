@@ -2,8 +2,9 @@ package api
 
 // Contexts contains all configuration contexts of cloudctl
 type Contexts struct {
-	CurrentContext string `yaml:"current"`
-	Contexts       map[string]Context
+	CurrentContext  string `yaml:"current"`
+	PreviousContext string `yaml:"previous"`
+	Contexts        map[string]Context
 }
 
 // Context configure cloudctl behaviour

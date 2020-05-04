@@ -15,7 +15,7 @@ var (
 		Use:     "context <name>",
 		Aliases: []string{"ctx"},
 		Short:   "manage cloudctl context",
-		Long:    "context defines the backend to which cloudctl talks to.",
+		Long:    "context defines the backend to which cloudctl talks to. You can switch back and forth with \"-\"",
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) != 0 {
 				return nil, cobra.ShellCompDirectiveNoFileComp
@@ -62,6 +62,9 @@ func contextSet(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no context name given")
 	}
+	if args[0] == "-" {
+		return previous()
+	}
 	ctxs, err := getContexts()
 	if err != nil {
 		return err
@@ -72,6 +75,21 @@ func contextSet(args []string) error {
 		return fmt.Errorf("context %s not found", defaultCtxName)
 	}
 	ctxs.CurrentContext = defaultCtxName
+	return writeContexts(ctxs)
+}
+
+func previous() error {
+	ctxs, err := getContexts()
+	if err != nil {
+		return err
+	}
+	prev := ctxs.PreviousContext
+	if prev == "" {
+		prev = ctxs.CurrentContext
+	}
+	curr := ctxs.CurrentContext
+	ctxs.PreviousContext = curr
+	ctxs.CurrentContext = prev
 	return writeContexts(ctxs)
 }
 
