@@ -241,8 +241,8 @@ func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 
 // Print a s3 usage as table
 func (s S3BillingTablePrinter) Print(data *models.V1S3UsageResponse) {
-	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "User", "Bucket Name", "Start", "End", "Objects", "StorageSeconds (Gi * h)", "Lifetime", "Warnings"}
-	s.shortHeader = []string{"Tenant", "Partition", "ProjectID", "User", "Bucket Name", "Objects", "StorageSeconds (Gi * h)", "Lifetime"}
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "User", "Bucket Name", "Bucket ID", "Start", "End", "Objects", "StorageSeconds (Gi * h)", "Lifetime", "Warnings"}
+	s.shortHeader = []string{"Tenant", "Partition", "ProjectID", "User", "Bucket Name", "Bucket ID", "Objects", "StorageSeconds (Gi * h)", "Lifetime"}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {
 		var from string
@@ -277,6 +277,10 @@ func (s S3BillingTablePrinter) Print(data *models.V1S3UsageResponse) {
 		if u.Bucketname != nil {
 			bucketName = *u.Bucketname
 		}
+		var bucketID string
+		if u.Bucketid != nil {
+			bucketID = *u.Bucketid
+		}
 		var start string
 		if u.Start != nil {
 			start = u.Start.String()
@@ -310,6 +314,7 @@ func (s S3BillingTablePrinter) Print(data *models.V1S3UsageResponse) {
 			partition,
 			user,
 			bucketName,
+			bucketID,
 			start,
 			end,
 			objects,
@@ -323,6 +328,7 @@ func (s S3BillingTablePrinter) Print(data *models.V1S3UsageResponse) {
 			partition,
 			user,
 			bucketName,
+			bucketID,
 			objects,
 			storage,
 			humanizeDuration(lifetime),
