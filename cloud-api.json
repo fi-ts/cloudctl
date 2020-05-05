@@ -2461,6 +2461,7 @@
         "partition",
         "clusterid",
         "clustername",
+        "containerimage",
         "namespace",
         "poduuid",
         "podname",
@@ -2479,6 +2480,10 @@
         },
         "clustername": {
           "description": "the cluster name of this container",
+          "type": "string"
+        },
+        "containerimage": {
+          "description": "the container image of this container",
           "type": "string"
         },
         "containername": {
@@ -2632,13 +2637,13 @@
     },
     "v1.IPFindRequest": {
       "required": [
+        "ParentPrefixCidr",
         "NetworkID",
         "MachineID",
         "Type",
         "Tags",
         "IPAddress",
-        "ProjectID",
-        "ParentPrefixCidr"
+        "ProjectID"
       ],
       "properties": {
         "IPAddress": {
