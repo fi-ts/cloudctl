@@ -359,7 +359,7 @@ func (s S3BillingTablePrinter) Print(data *models.V1S3UsageResponse) {
 
 // Print a container usage as table
 func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageResponse) {
-	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Namespace", "PodUUID", "PodName", "PodStartDate", "PodEndDate", "ContainerName", "Lifetime", "CPUSeconds", "MemorySeconds", "Warnings"}
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Namespace", "PodUUID", "PodName", "PodStartDate", "PodEndDate", "ContainerName", "ContainerImage", "Lifetime", "CPUSeconds", "MemorySeconds", "Warnings"}
 	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "Namespace", "PodName", "ContainerName", "Lifetime", "CPU (1 * s)", "Memory (Gi * h)"}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {
@@ -419,6 +419,10 @@ func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageRespons
 		if u.Containername != nil {
 			containerName = *u.Containername
 		}
+		var containerImage string
+		if u.Containerimage != nil {
+			containerImage = *u.Containerimage
+		}
 		var lifetime time.Duration
 		if u.Lifetime != nil {
 			lifetime = time.Duration(*u.Lifetime)
@@ -450,6 +454,7 @@ func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageRespons
 			podStart,
 			podEnd,
 			containerName,
+			containerImage,
 			humanizeDuration(lifetime),
 			cpuUsage,
 			memoryUsage,
