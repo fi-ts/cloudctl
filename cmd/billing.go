@@ -58,8 +58,6 @@ var (
 		Short: "look at cluster bills",
 		Example: `If you want to get the costs in Euro, then set two environment variables with the prices from your contract:
 
-		export CLOUDCTL_COSTS_CLUSTER_HOUR=0.01        # Costs in Euro per cluster hour
-
 		cloudctl billing cluster
 		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -68,6 +66,41 @@ var (
 				return err
 			}
 			return clusterUsage()
+		},
+		PreRun: bindPFlags,
+	}
+	ipBillingCmd = &cobra.Command{
+		Use:   "ip",
+		Short: "look at ip bills",
+		Example: `If you want to get the costs in Euro, then set two environment variables with the prices from your contract:
+
+		cloudctl billing ip
+		`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			err := initBillingOpts()
+			if err != nil {
+				return err
+			}
+			return ipUsage()
+		},
+		PreRun: bindPFlags,
+	}
+	networkTrafficBillingCmd = &cobra.Command{
+		Use:   "network-traffic",
+		Short: "look at network traffic bills",
+		Example: `If you want to get the costs in Euro, then set two environment variables with the prices from your contract:
+
+		export CLOUDCTL_COSTS_INCOMING_NETWORK_TRAFFIC_GI=0.01        # Costs in Euro per storage Hour
+		export CLOUDCTL_COSTS_OUTGOING_NETWORK_TRAFFIC_GI=0.01        # Costs in Euro per storage Hour
+
+		cloudctl billing network-traffic
+		`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			err := initBillingOpts()
+			if err != nil {
+				return err
+			}
+			return networkTrafficUsage()
 		},
 		PreRun: bindPFlags,
 	}
@@ -114,6 +147,8 @@ func init() {
 
 	billingCmd.AddCommand(containerBillingCmd)
 	billingCmd.AddCommand(clusterBillingCmd)
+	billingCmd.AddCommand(ipBillingCmd)
+	billingCmd.AddCommand(networkTrafficBillingCmd)
 	billingCmd.AddCommand(s3BillingCmd)
 	billingCmd.AddCommand(volumeBillingCmd)
 
@@ -142,6 +177,31 @@ func init() {
 	clusterBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 
 	err = viper.BindPFlags(clusterBillingCmd.Flags())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	ipBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
+	ipBillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
+	ipBillingCmd.Flags().StringVarP(&billingOpts.FromString, "from", "", "", "the start time in the accounting window to look at (optional, defaults to start of the month")
+	ipBillingCmd.Flags().StringVarP(&billingOpts.ToString, "to", "", "", "the end time in the accounting window to look at (optional, defaults to current system time)")
+	ipBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
+	ipBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
+
+	err = viper.BindPFlags(ipBillingCmd.Flags())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	networkTrafficBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
+	networkTrafficBillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
+	networkTrafficBillingCmd.Flags().StringVarP(&billingOpts.FromString, "from", "", "", "the start time in the accounting window to look at (optional, defaults to start of the month")
+	networkTrafficBillingCmd.Flags().StringVarP(&billingOpts.ToString, "to", "", "", "the end time in the accounting window to look at (optional, defaults to current system time)")
+	networkTrafficBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
+	networkTrafficBillingCmd.Flags().StringVarP(&billingOpts.ClusterID, "cluster-id", "c", "", "the cluster to account")
+	networkTrafficBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
+
+	err = viper.BindPFlags(networkTrafficBillingCmd.Flags())
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -308,6 +368,117 @@ func containerUsageCSV(cur *models.V1ContainerUsageRequest) error {
 	if err != nil {
 		switch e := err.(type) {
 		case *accounting.ContainerUsageCSVDefault:
+			return output.HTTPError(e.Payload)
+		default:
+			return output.UnconventionalError(err)
+		}
+	}
+
+	fmt.Println(response.Payload)
+	return nil
+}
+
+func ipUsage() error {
+	from := strfmt.DateTime(billingOpts.From)
+	iur := models.V1IPUsageRequest{
+		From: &from,
+		To:   strfmt.DateTime(billingOpts.To),
+	}
+	if billingOpts.Tenant != "" {
+		iur.Tenant = billingOpts.Tenant
+	}
+	if billingOpts.ProjectID != "" {
+		iur.Projectid = billingOpts.ProjectID
+	}
+
+	if billingOpts.CSV {
+		return ipUsageCSV(&iur)
+	}
+	return ipUsageJSON(&iur)
+}
+
+func ipUsageJSON(iur *models.V1IPUsageRequest) error {
+	request := accounting.NewIPUsageParams()
+	request.SetBody(iur)
+
+	response, err := cloud.Accounting.IPUsage(request, cloud.Auth)
+	if err != nil {
+		switch e := err.(type) {
+		case *accounting.IPUsageDefault:
+			return output.HTTPError(e.Payload)
+		default:
+			return output.UnconventionalError(err)
+		}
+	}
+
+	return printer.Print(response.Payload)
+}
+
+func ipUsageCSV(iur *models.V1IPUsageRequest) error {
+	request := accounting.NewIPUsageCSVParams()
+	request.SetBody(iur)
+
+	response, err := cloud.Accounting.IPUsageCSV(request, cloud.Auth)
+	if err != nil {
+		switch e := err.(type) {
+		case *accounting.IPUsageDefault:
+			return output.HTTPError(e.Payload)
+		default:
+			return output.UnconventionalError(err)
+		}
+	}
+
+	fmt.Println(response.Payload)
+	return nil
+}
+
+func networkTrafficUsage() error {
+	from := strfmt.DateTime(billingOpts.From)
+	cur := models.V1NetworkUsageRequest{
+		From: &from,
+		To:   strfmt.DateTime(billingOpts.To),
+	}
+	if billingOpts.Tenant != "" {
+		cur.Tenant = billingOpts.Tenant
+	}
+	if billingOpts.ProjectID != "" {
+		cur.Projectid = billingOpts.ProjectID
+	}
+	if billingOpts.ClusterID != "" {
+		cur.Clusterid = billingOpts.ClusterID
+	}
+
+	if billingOpts.CSV {
+		return networkTrafficUsageCSV(&cur)
+	}
+	return networkTrafficUsageJSON(&cur)
+}
+
+func networkTrafficUsageJSON(cur *models.V1NetworkUsageRequest) error {
+	request := accounting.NewNetworkUsageParams()
+	request.SetBody(cur)
+
+	response, err := cloud.Accounting.NetworkUsage(request, cloud.Auth)
+	if err != nil {
+		switch e := err.(type) {
+		case *accounting.NetworkUsageDefault:
+			return output.HTTPError(e.Payload)
+		default:
+			return output.UnconventionalError(err)
+		}
+	}
+
+	return printer.Print(response.Payload)
+}
+
+func networkTrafficUsageCSV(cur *models.V1NetworkUsageRequest) error {
+	request := accounting.NewNetworkUsageCSVParams()
+	request.SetBody(cur)
+
+	response, err := cloud.Accounting.NetworkUsageCSV(request, cloud.Auth)
+	if err != nil {
+		switch e := err.(type) {
+		case *accounting.NetworkUsageCSVDefault:
 			return output.HTTPError(e.Payload)
 		default:
 			return output.UnconventionalError(err)
