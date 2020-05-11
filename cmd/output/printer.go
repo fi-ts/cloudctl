@@ -201,6 +201,10 @@ func (t TablePrinter) Print(data interface{}) error {
 		ContainerBillingTablePrinter{t}.Print(d)
 	case *models.V1ClusterUsageResponse:
 		ClusterBillingTablePrinter{t}.Print(d)
+	case *models.V1IPUsageResponse:
+		IPBillingTablePrinter{t}.Print(d)
+	case *models.V1NetworkUsageResponse:
+		NetworkTrafficBillingTablePrinter{t}.Print(d)
 	case *models.V1S3UsageResponse:
 		S3BillingTablePrinter{t}.Print(d)
 	case *models.V1VolumeUsageResponse:

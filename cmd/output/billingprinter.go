@@ -20,6 +20,14 @@ type (
 	ContainerBillingTablePrinter struct {
 		TablePrinter
 	}
+	// IPBillingTablePrinter print bills in a Table
+	IPBillingTablePrinter struct {
+		TablePrinter
+	}
+	// NetworkTrafficBillingTablePrinter print bills in a Table
+	NetworkTrafficBillingTablePrinter struct {
+		TablePrinter
+	}
 	// S3BillingTablePrinter print bills in a Table
 	S3BillingTablePrinter struct {
 		TablePrinter
@@ -239,6 +247,211 @@ func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 	s.render()
 }
 
+// Print a cluster usage as table
+func (s IPBillingTablePrinter) Print(data *models.V1IPUsageResponse) {
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "IP", "Start", "End", "Lifetime", "Warnings"}
+	s.shortHeader = []string{"Tenant", "ProjectID", "IP", "Start", "End", "Lifetime"}
+	s.Order(data.Usage)
+	for _, u := range data.Usage {
+		var from string
+		if data.From != nil {
+			from = data.From.String()
+		}
+		var to string
+		if !time.Time(data.To).IsZero() {
+			to = data.To.String()
+		}
+		var tenant string
+		if u.Tenant != nil {
+			tenant = *u.Tenant
+		}
+		var projectID string
+		if u.Projectid != nil {
+			projectID = *u.Projectid
+		}
+		var projectName string
+		if u.Projectname != nil {
+			projectName = *u.Projectname
+		}
+		var ip string
+		if u.IP != nil {
+			ip = *u.IP
+		}
+		var start string
+		if u.Start != nil {
+			start = u.Start.String()
+		}
+		var end string
+		if u.End != nil {
+			end = u.End.String()
+		}
+		var lifetime time.Duration
+		if u.Lifetime != nil {
+			lifetime = time.Duration(*u.Lifetime)
+		}
+		var warnings string
+		if u.Warnings != nil {
+			warnings = strings.Join(u.Warnings, ", ")
+		}
+		wide := []string{
+			tenant,
+			from,
+			to,
+			projectID,
+			projectName,
+			ip,
+			start,
+			end,
+			humanizeDuration(lifetime),
+			warnings,
+		}
+		short := []string{
+			tenant,
+			projectID,
+			ip,
+			start,
+			end,
+			humanizeDuration(lifetime),
+		}
+
+		s.addWideData(wide, data)
+		s.addShortData(short, data)
+	}
+
+	footer := []string{"Total",
+		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)),
+	}
+	shortFooter := make([]string, len(s.shortHeader)-len(footer))
+	wideFooter := make([]string, len(s.wideHeader)-len(footer))
+	s.addWideData(append(wideFooter, footer...), data)
+
+	s.addShortData(append(shortFooter, footer...), data)
+	s.render()
+}
+
+// Print a volume usage as table
+func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResponse) {
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Start", "End", "Device", "In (Gi)", "Out (Gi)", "Lifetime", "Warnings"}
+	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "Device", "In (Gi)", "Out (Gi)", "Lifetime"}
+	s.Order(data.Usage)
+	for _, u := range data.Usage {
+		var from string
+		if data.From != nil {
+			from = data.From.String()
+		}
+		var to string
+		if !time.Time(data.To).IsZero() {
+			to = data.To.String()
+		}
+		var tenant string
+		if u.Tenant != nil {
+			tenant = *u.Tenant
+		}
+		var projectID string
+		if u.Projectid != nil {
+			projectID = *u.Projectid
+		}
+		var projectName string
+		if u.Projectname != nil {
+			projectName = *u.Projectname
+		}
+		var partition string
+		if u.Partition != nil {
+			partition = *u.Partition
+		}
+		var clusterID string
+		if u.Clusterid != nil {
+			clusterID = *u.Clusterid
+		}
+		var clusterName string
+		if u.Clustername != nil {
+			clusterName = *u.Clustername
+		}
+		var start string
+		if u.Start != nil {
+			start = u.Start.String()
+		}
+		var end string
+		if u.End != nil {
+			end = u.End.String()
+		}
+		var device string
+		if u.Device != nil {
+			device = *u.Device
+		}
+		var in string
+		if u.In != nil {
+			in = humanizeBytesToGi(*u.In)
+		}
+		var out string
+		if u.Out != nil {
+			out = humanizeBytesToGi(*u.Out)
+		}
+		var lifetime time.Duration
+		if u.Lifetime != nil {
+			lifetime = time.Duration(*u.Lifetime)
+		}
+		var warnings string
+		if u.Warnings != nil {
+			warnings = strings.Join(u.Warnings, ", ")
+		}
+		wide := []string{
+			tenant,
+			from,
+			to,
+			projectID,
+			projectName,
+			partition,
+			clusterID,
+			clusterName,
+			start,
+			end,
+			device,
+			in,
+			out,
+			humanizeDuration(lifetime),
+			warnings,
+		}
+		short := []string{
+			tenant,
+			projectID,
+			partition,
+			clusterName,
+			device,
+			in,
+			out,
+			humanizeDuration(lifetime),
+		}
+
+		s.addWideData(wide, data)
+		s.addShortData(short, data)
+	}
+
+	var in string
+	if data.Accumulatedusage.In != nil {
+		in = humanizeBytesToGi(*data.Accumulatedusage.In) + giCosts(*data.Accumulatedusage.In, viper.GetFloat64("costs-incoming-network-traffic-gi"))
+	}
+	var out string
+	if data.Accumulatedusage.Out != nil {
+		out = humanizeBytesToGi(*data.Accumulatedusage.Out) + giCosts(*data.Accumulatedusage.Out, viper.GetFloat64("costs-outgoing-network-traffic-gi"))
+	}
+	var lifetime string
+	if data.Accumulatedusage.Lifetime != nil {
+		lifetime = humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime))
+	}
+	footer := []string{"Total",
+		in,
+		out,
+		lifetime,
+	}
+	shortFooter := make([]string, len(s.shortHeader)-len(footer))
+	wideFooter := make([]string, len(s.wideHeader)-len(footer))
+	s.addWideData(append(wideFooter, footer...), data)
+
+	s.addShortData(append(shortFooter, footer...), data)
+	s.render()
+}
+
 // Print a s3 usage as table
 func (s S3BillingTablePrinter) Print(data *models.V1S3UsageResponse) {
 	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "User", "Bucket Name", "Bucket ID", "Start", "End", "Objects", "StorageSeconds (Gi * h)", "Lifetime", "Warnings"}
@@ -347,7 +560,7 @@ func (s S3BillingTablePrinter) Print(data *models.V1S3UsageResponse) {
 		storage = humanizeMemory(*data.Accumulatedusage.Storageseconds) + storageCosts(*data.Accumulatedusage.Storageseconds)
 	}
 	var lifetime string
-	if data.Accumulatedusage.Storageseconds != nil {
+	if data.Accumulatedusage.Lifetime != nil {
 		lifetime = humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime))
 	}
 	footer := []string{"Total",
@@ -496,6 +709,13 @@ func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageRespons
 	s.render()
 }
 
+func humanizeBytesToGi(amountInBytes string) string {
+	i := new(big.Float)
+	i.SetString(amountInBytes)
+	gi := new(big.Float).Quo(i, big.NewFloat(1<<30))
+	return fmt.Sprintf("%.2f", gi)
+}
+
 func humanizeMemory(memorySeconds string) string {
 	i := new(big.Float)
 	i.SetString(memorySeconds)
@@ -535,6 +755,18 @@ func memoryCosts(memorySeconds string) string {
 	memoryHours := new(big.Float).Quo(ms, big.NewFloat(3600))
 	memoryCosts := new(big.Float).Mul(memoryHours, big.NewFloat(memoryPerGiAndHour))
 	return fmt.Sprintf(" (%.2f €)", memoryCosts)
+}
+
+func giCosts(amountInBytes string, costsPerGi float64) string {
+	if costsPerGi <= 0 {
+		return ""
+	}
+
+	i := new(big.Float)
+	i.SetString(amountInBytes)
+	gi := new(big.Float).Quo(i, big.NewFloat(1<<30))
+	costs := new(big.Float).Mul(gi, big.NewFloat(costsPerGi))
+	return fmt.Sprintf(" (%.2f €)", costs)
 }
 
 func storageCosts(storageSeconds string) string {
