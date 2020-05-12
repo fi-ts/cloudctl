@@ -1,6 +1,8 @@
 package output
 
 import (
+	"bytes"
+	"net"
 	"sort"
 	"strconv"
 	"strings"
@@ -375,16 +377,37 @@ func (s *IPBillingTablePrinter) Order(data []*models.V1IPUsage) {
 						return false
 					}
 				case "project":
-					if A.Projectname == nil {
+					if A.Projectid == nil {
 						return true
 					}
-					if B.Projectname == nil {
+					if B.Projectid == nil {
 						return false
 					}
-					if *A.Projectname < *B.Projectname {
+					if *A.Projectid < *B.Projectid {
 						return true
 					}
-					if *A.Projectname != *B.Projectname {
+					if *A.Projectid != *B.Projectid {
+						return false
+					}
+				case "ip":
+					if A.IP == nil {
+						return true
+					}
+					if B.IP == nil {
+						return false
+					}
+					ipA := net.ParseIP(*A.IP)
+					if ipA == nil {
+						return true
+					}
+					ipB := net.ParseIP(*B.IP)
+					if ipB == nil {
+						return false
+					}
+					if bytes.Compare(ipA, ipB) < 0 {
+						return true
+					}
+					if !ipA.Equal(ipB) {
 						return false
 					}
 				case "lifetime":
