@@ -202,6 +202,9 @@ func (t TablePrinter) Print(data interface{}) error {
 	case *models.V1ClusterUsageResponse:
 		ClusterBillingTablePrinter{t}.Print(d)
 	case *models.V1IPUsageResponse:
+		if t.order == "" {
+			t.order = "tenant,project,ip"
+		}
 		IPBillingTablePrinter{t}.Print(d)
 	case *models.V1NetworkUsageResponse:
 		NetworkTrafficBillingTablePrinter{t}.Print(d)
