@@ -110,7 +110,7 @@ cloudctl login
 
 A Browser window will open and you are prompted to select your backend.
 
-* Choose "Log in with OpenLDAP Demo (TEST)"
+* Choose the login for your organization and type your login credentials
 * Push green button: "Grant Access"
 
 Token will be written to default kubectl-config, e.g. ~/.kube/config
@@ -151,6 +151,7 @@ Remember project UID for cluster creation.
 cloudctl cluster create \
   --name banking \
   --project <project UID> \
+  --partition <partition id> \
   --description "banking cluster for project banking next generation" \
   --minsize 2 \
   --maxsize 2
@@ -166,6 +167,47 @@ UID                                   NAME     VERSION  PARTITION  DOMAIN       
 ```
 
 Remember the cluster UID for further references.
+
+You can list possible input options for the cluster create command via (some of them are defaulted, so you do not have to define all of them):
+
+```bash
+cloudctl cluster inputs
+    firewallimages:
+      - firewall-2.0.20200331
+      - firewall-ubuntu-2.0.20200331
+    firewalltypes:
+      - c1-xlarge-x86
+      - s2-xlarge-x86
+    kubernetesversions:
+      - 1.15.10
+      - 1.15.11
+      - 1.16.7
+      - 1.16.8
+      - 1.16.9
+      - 1.17.3
+      - 1.17.4
+      - 1.17.5
+    machineimages:
+      - name: ubuntu
+        version: "19.10"
+    machinetypes:
+      - c1-xlarge-x86
+      - s2-xlarge-x86
+    partitionconstraints:
+        fel-wps101:
+            networks:
+              - internet
+              - mpls-fits
+              - ...
+        stg-kkw701:
+            networks:
+              - internet
+              - mpls-fits
+              - ...
+    partitions:
+      - fel-wps101
+      - stg-kkw701
+```
 
 ### Download Kubeconfig
 
