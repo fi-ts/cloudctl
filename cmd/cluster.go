@@ -667,7 +667,7 @@ func clusterDescribe(args []string) error {
 			return output.UnconventionalError(err)
 		}
 	}
-	return output.YAMLPrinter{}.Print(shoot.Payload)
+	return printer.Print(shoot.Payload)
 }
 
 func clusterMachines(args []string) error {
