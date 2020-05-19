@@ -139,12 +139,18 @@ func NewPrinter(format, order, tpl string, noHeaders bool) (Printer, error) {
 }
 
 func newTablePrinter(format, order string, noHeaders bool, template *template.Template) TablePrinter {
+	tp := TablePrinter{
+		wide:      false,
+		order:     order,
+		noHeaders: noHeaders,
+	}
 	table := tablewriter.NewWriter(os.Stdout)
-	wide := false
 	if format == "wide" {
-		wide = true
+		tp.wide = true
 	}
 	switch format {
+	case "template":
+		tp.template = template
 	case "markdown":
 		table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
 		table.SetCenterSeparator("|")
@@ -160,13 +166,8 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 		table.SetTablePadding("\t") // pad with tabs
 		table.SetNoWhiteSpace(true) // no whitespace in front of every line
 	}
-	return TablePrinter{
-		table:     table,
-		wide:      wide,
-		order:     order,
-		noHeaders: noHeaders,
-		template:  template,
-	}
+	tp.table = table
+	return tp
 }
 
 // Print a model in a human readable table
