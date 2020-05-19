@@ -231,6 +231,8 @@ func init() {
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
 	clusterUpdateCmd.Flags().String("firewalltype", "", "machine type to use for the firewall.")
 	clusterUpdateCmd.Flags().String("firewallimage", "", "machine image to use for the firewall.")
+	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster, please add --i-am-aware-of-dangerous-settings")
+	clusterUpdateCmd.Flags().BoolP("i-am-aware-of-dangerous-settings", "", false, "required when modify dangerous settings")
 	clusterUpdateCmd.Flags().String("purpose", "", "purpose of the cluster, can be one of production|testing|development|evaluation. SLA is only given on production clusters.")
 	clusterUpdateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return versionListCompletion()
@@ -572,11 +574,6 @@ func updateCluster(args []string) error {
 			cur.Workers[0].Maximum = &maxsize
 		}
 	}
-	if version != "" {
-		cur.Kubernetes = &models.V1Kubernetes{
-			Version: &version,
-		}
-	}
 	if firewallImage != "" {
 		cur.FirewallImage = &firewallImage
 	}
@@ -586,6 +583,19 @@ func updateCluster(args []string) error {
 	if purpose != "" {
 		cur.Purpose = &purpose
 	}
+
+	k8s := &models.V1Kubernetes{}
+	if version != "" {
+		k8s.Version = &version
+	}
+	if viper.IsSet("allowprivileged") {
+		if !viper.GetBool("i-am-aware-of-dangerous-settings") {
+			return fmt.Errorf("allowprivileged is set but you forgot to add --i-am-aware-of-dangerous-settings")
+		}
+		allowPrivileged := viper.GetBool("allowprivileged")
+		k8s.AllowPrivilegedContainers = &allowPrivileged
+	}
+	cur.Kubernetes = k8s
 
 	request.SetBody(cur)
 	shoot, err := cloud.Cluster.UpdateCluster(request, cloud.Auth)
