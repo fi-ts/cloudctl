@@ -56,7 +56,28 @@ contexts:
 		ApiURL:    "http://localhost:8080/cloud",
 		IssuerURL: "http://localhost:8080/",
 	}
+	contextShortCmd = &cobra.Command{
+		Use:   "short",
+		Short: "only show the default context name",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return contextShort()
+		},
+		PreRun: bindPFlags,
+	}
 )
+
+func init() {
+	contextCmd.AddCommand(contextShortCmd)
+}
+
+func contextShort() error {
+	ctxs, err := getContexts()
+	if err != nil {
+		return err
+	}
+	fmt.Println(ctxs.CurrentContext)
+	return nil
+}
 
 func contextSet(args []string) error {
 	if len(args) < 1 {
