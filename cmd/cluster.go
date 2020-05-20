@@ -453,7 +453,7 @@ func clusterKubeconfig(args []string) error {
 	kubeconfigContent := *credentials.Payload.Kubeconfig
 
 	kubeconfigFile := viper.GetString("kubeConfig")
-	authContext, err := auth.CurrentAuthContext(kubeconfigFile)
+	authContext, err := getAuthContext(kubeconfigFile)
 	if err != nil {
 		return err
 	}
@@ -480,7 +480,7 @@ func clusterKubeconfig(args []string) error {
 	contextName := fmt.Sprintf("%s@%s", userName, clusterName)
 
 	// merge with current user credentials
-	err = auth.AddUser(cfg, authContext)
+	err = auth.AddUser(cfg, *authContext)
 	if err != nil {
 		return err
 	}
