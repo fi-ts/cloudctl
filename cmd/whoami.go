@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/metal-stack/metal-lib/auth"
 	"github.com/metal-stack/metal-lib/jwt/sec"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -15,14 +14,9 @@ var whoamiCmd = &cobra.Command{
 	Long:  "shows the current user, that will be used to authenticate commands.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		kubeconfig := viper.GetString("kubeConfig")
-		authContext, err := auth.CurrentAuthContext(kubeconfig)
+		authContext, err := getAuthContext(viper.GetString("kubeConfig"))
 		if err != nil {
 			return err
-		}
-
-		if !authContext.AuthProviderOidc {
-			return fmt.Errorf("active user %s has no oidc authProvider, check config", authContext.User)
 		}
 
 		user, parsedClaims, err := sec.ParseTokenUnvalidatedUnfiltered(authContext.IDToken)
