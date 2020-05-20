@@ -9,7 +9,6 @@ import (
 	output "git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
 	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
 	c "git.f-i-ts.de/cloud-native/cloudctl/pkg/cloud"
-	"github.com/metal-stack/metal-lib/auth"
 	"github.com/metal-stack/v"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -133,10 +132,9 @@ func initConfig() {
 	// if there is no api token explicitly specified we try to pull it out of
 	// the kubeconfig context
 	if apiToken == "" {
-		kubeconfig := viper.GetString("kubeconfig")
-		authContext, err := auth.CurrentAuthContext(kubeconfig)
+		authContext, err := getAuthContext(viper.GetString("kubeConfig"))
 		// if there is an error, no kubeconfig exists for us ... this is not really an error
-		// if metalctl is used in scripting with an hmac-key
+		// if cloudctl is used in scripting with an hmac-key
 		if err == nil {
 			apiToken = authContext.IDToken
 		}

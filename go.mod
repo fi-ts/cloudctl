@@ -15,8 +15,7 @@ require (
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/jinzhu/now v1.1.1
 	github.com/leodido/go-urn v1.2.0 // indirect
-	github.com/lestrrat-go/jwx v0.9.1 // indirect
-	github.com/metal-stack/metal-lib v0.3.4
+	github.com/metal-stack/metal-lib v0.4.0
 	github.com/metal-stack/security v0.3.0
 	github.com/metal-stack/updater v1.0.1
 	github.com/metal-stack/v v1.0.2
@@ -27,9 +26,6 @@ require (
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.6.3
-	go.mongodb.org/mongo-driver v1.3.1 // indirect
-	golang.org/x/crypto v0.0.0-20200220183623-bac4c82f6975 // indirect
-	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect
 	google.golang.org/protobuf v1.21.0 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v9 v9.31.0
