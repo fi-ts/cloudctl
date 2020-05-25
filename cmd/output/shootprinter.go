@@ -44,7 +44,7 @@ func (s ShootConditionsTablePrinter) Print(data []*models.V1beta1Condition) {
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
+	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged"}
 	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 	s.Order(data)
 	for _, cluster := range data {
@@ -100,6 +100,8 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 			purpose = shoot.Spec.Purpose[:4]
 		}
 
+		privileged := shoot.Spec.Kubernetes.AllowPrivilegedContainers
+
 		autoScaleMin := int32(0)
 		autoScaleMax := int32(0)
 		if shoot.Spec.Provider.Workers != nil && len(shoot.Spec.Provider.Workers) > 0 {
@@ -119,6 +121,7 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 			size,
 			age,
 			purpose,
+			fmt.Sprintf("%t", privileged),
 		}
 		short := []string{shoot.Metadata.UID,
 			tenant,
