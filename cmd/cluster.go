@@ -152,6 +152,20 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+	clusterLogsCmd = &cobra.Command{
+		Use:   "logs",
+		Short: "get logs for the cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterLogs(args)
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return clusterListCompletion()
+		},
+		PreRun: bindPFlags,
+	}
 )
 
 func init() {
@@ -257,6 +271,7 @@ func init() {
 	clusterCmd.AddCommand(clusterSSHKeyPairCmd)
 	clusterCmd.AddCommand(clusterUpdateCmd)
 	clusterCmd.AddCommand(clusterMachinesCmd)
+	clusterCmd.AddCommand(clusterLogsCmd)
 }
 
 func clusterCreate() error {
@@ -701,6 +716,29 @@ func clusterMachines(args []string) error {
 	}
 	fmt.Println("\nMachines:")
 	return printer.Print(shoot.Payload.Machines)
+}
+
+func clusterLogs(args []string) error {
+	ci, err := clusterID("machines", args)
+	if err != nil {
+		return err
+	}
+	findRequest := cluster.NewFindClusterParams()
+	findRequest.SetID(ci)
+	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	if err != nil {
+		switch e := err.(type) {
+		case *cluster.FindClusterDefault:
+			return output.HTTPError(e.Payload)
+		default:
+			return output.UnconventionalError(err)
+		}
+	}
+	var conditions []*models.V1beta1Condition
+	if shoot.Payload != nil && shoot.Payload.Shoot != nil && shoot.Payload.Shoot.Status != nil {
+		conditions = shoot.Payload.Shoot.Status.Conditions
+	}
+	return printer.Print(conditions)
 }
 
 func clusterInputs() error {

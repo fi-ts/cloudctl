@@ -180,6 +180,8 @@ func (t TablePrinter) Print(data interface{}) error {
 			t.order = "tenant,project,name"
 		}
 		ShootTablePrinter{t}.Print(d)
+	case []*models.V1beta1Condition:
+		ShootConditionsTablePrinter{t}.Print(d)
 	case *models.V1Project:
 		ProjectTablePrinter{t}.Print([]*models.V1Project{d})
 	case []*models.V1Project:
