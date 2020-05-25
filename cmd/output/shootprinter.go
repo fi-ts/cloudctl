@@ -17,7 +17,30 @@ type (
 	ShootTablePrinter struct {
 		TablePrinter
 	}
+	// ShootConditionsTablePrinter print the Conditions of a Shoot Cluster in a Table
+	ShootConditionsTablePrinter struct {
+		TablePrinter
+	}
 )
+
+func (s ShootConditionsTablePrinter) Print(data []*models.V1beta1Condition) {
+	s.wideHeader = []string{"LastTransistion", "LastUpdate", "Message", "Reason", "Status", "Type"}
+	s.shortHeader = []string{"LastTransistion", "LastUpdate", "Message", "Reason", "Status", "Type"}
+	for _, condition := range data {
+		wide := []string{
+			strValue(condition.LastTransitionTime),
+			strValue(condition.LastUpdateTime),
+			strValue(condition.Message),
+			strValue(condition.Reason),
+			strValue(condition.Status),
+			strValue(condition.Type),
+		}
+		short := wide
+		s.addWideData(wide, data)
+		s.addShortData(short, data)
+	}
+	s.render()
+}
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
