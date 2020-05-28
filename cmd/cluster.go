@@ -179,6 +179,7 @@ func init() {
 	clusterCreateCmd.Flags().String("machineimage", "", "machine image to use for the nodes, must be in the form of <name>-<version> [optional]")
 	clusterCreateCmd.Flags().String("firewalltype", "", "machine type to use for the firewall. [optional]")
 	clusterCreateCmd.Flags().String("firewallimage", "", "machine image to use for the firewall. [optional]")
+	clusterCreateCmd.Flags().String("cri", "docker", "container runtime to use, only docker|containerd supported as alternative actually. [optional]")
 	clusterCreateCmd.Flags().Int32("minsize", 1, "minimal workers of the cluster.")
 	clusterCreateCmd.Flags().Int32("maxsize", 1, "maximal workers of the cluster.")
 	clusterCreateCmd.Flags().String("maxsurge", "1", "max number (e.g. 1) or percentage (e.g. 10%) of workers created during a update of the cluster.")
@@ -226,6 +227,9 @@ func init() {
 	})
 	clusterCreateCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"production", "testing", "development", "evaluation"}, cobra.ShellCompDirectiveDefault
+	})
+	clusterCreateCmd.RegisterFlagCompletionFunc("cri", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"docker", "containerd"}, cobra.ShellCompDirectiveDefault
 	})
 
 	// Cluster list --------------------------------------------------------------------
@@ -284,6 +288,8 @@ func clusterCreate() error {
 	machineImageAndVersion := viper.GetString("machineimage")
 	firewallType := viper.GetString("firewalltype")
 	firewallImage := viper.GetString("firewallimage")
+
+	cri := viper.GetString("cri")
 
 	minsize := viper.GetInt32("minsize")
 	maxsize := viper.GetInt32("maxsize")
@@ -348,6 +354,20 @@ func clusterCreate() error {
 		}
 	}
 
+	var workerCRI models.V1beta1CRI
+	if cri == "containerd" {
+		workerCRI = models.V1beta1CRI{
+			Name: &cri,
+			ContainerRuntimes: []*models.V1beta1ContainerRuntime{
+				{
+					Type: &cri,
+					// FIXME what is the content of ProviderConfig
+					ProviderConfig: "",
+				},
+			},
+		}
+	}
+
 	scr := &models.V1ClusterCreateRequest{
 		ProjectID:   &project,
 		Name:        &name,
@@ -361,6 +381,7 @@ func clusterCreate() error {
 				MaxUnavailable: &maxunavailable,
 				MachineType:    &machineType,
 				MachineImage:   &machineImage,
+				CRI:            &workerCRI,
 			},
 		},
 		FirewallSize:  &firewallType,
