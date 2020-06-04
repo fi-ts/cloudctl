@@ -142,7 +142,7 @@ func init() {
 	s3DeleteCmd.Flags().StringP("partition", "p", "", "name of s3 partition where this user is in [required]")
 	s3DeleteCmd.Flags().String("project", "", "id of the project that the s3 user belongs to [required]")
 	s3DeleteCmd.Flags().StringP("tenant", "t", "", "tenant of the s3 user, defaults to logged in tenant")
-	s3DeleteCmd.Flags().Bool("force", false, "forces s3 user deletion if if buckets and bucket objects exist (dangerous!)")
+	s3DeleteCmd.Flags().Bool("force", false, "forces s3 user deletion along with buckets and bucket objects even if those still exist (dangerous!)")
 	err = s3DeleteCmd.MarkFlagRequired("id")
 	if err != nil {
 		log.Fatal(err.Error())
