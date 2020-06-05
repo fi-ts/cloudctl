@@ -77,7 +77,7 @@ func init() {
 	projectCreateCmd.Flags().String("name", "", "name of the project, max 10 characters. [required]")
 	projectCreateCmd.Flags().String("description", "", "description of the project. [required]")
 	projectCreateCmd.Flags().String("tenant", "", "create project for given tenant")
-	projectCreateCmd.Flags().StringSlice("label", nil, "add initial label, can be given multiple times to add multiple labels, e.g. --label=foo --lable=bar")
+	projectCreateCmd.Flags().StringSlice("label", nil, "add initial label, can be given multiple times to add multiple labels, e.g. --label=foo --label=bar")
 	projectCreateCmd.Flags().StringSlice("annotation", nil, "add initial annotation, must be in the form of key=value, can be given multiple times to add multiple annotations, e.g. --annotation key=value --annotation foo=bar")
 	projectCreateCmd.Flags().Int32("cluster-quota", 0, "cluster quota")
 	projectCreateCmd.Flags().Int32("machine-quota", 0, "machine quota")
