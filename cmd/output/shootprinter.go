@@ -44,7 +44,7 @@ func (s ShootConditionsTablePrinter) Print(data []*models.V1beta1Condition) {
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged"}
+	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Firewall"}
 	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 	s.Order(data)
 	for _, cluster := range data {
@@ -113,6 +113,10 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 		tenant := shoot.Metadata.Annotations[tag.ClusterTenant]
 		project := shoot.Metadata.Annotations[tag.ClusterProject]
 
+		firewallImage := ""
+		if infrastructure.Firewall != nil && infrastructure.Firewall.Image != nil {
+			firewallImage = *infrastructure.Firewall.Image
+		}
 		wide := []string{shoot.Metadata.UID, shoot.Metadata.Name,
 			version, partition, dnsdomain,
 			operation,
@@ -122,6 +126,7 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 			age,
 			purpose,
 			fmt.Sprintf("%t", privileged),
+			firewallImage,
 		}
 		short := []string{shoot.Metadata.UID,
 			tenant,
