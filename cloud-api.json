@@ -1594,6 +1594,10 @@
           "description": "the tenant of this network device",
           "type": "string"
         },
+        "total": {
+          "description": "the total traffic of this network device (byte)",
+          "type": "string"
+        },
         "warnings": {
           "description": "warnings that occurred when calculating the usage of this device's network traffic",
           "items": {
@@ -1615,6 +1619,7 @@
         "projectname",
         "start",
         "tenant",
+        "total",
         "warnings"
       ]
     },
@@ -1632,12 +1637,17 @@
         "out": {
           "description": "the accumulated outgoing traffic (byte)",
           "type": "string"
+        },
+        "total": {
+          "description": "the accumulated total traffic (byte)",
+          "type": "string"
         }
       },
       "required": [
         "in",
         "lifetime",
-        "out"
+        "out",
+        "total"
       ]
     },
     "v1.NetworkUsageRequest": {

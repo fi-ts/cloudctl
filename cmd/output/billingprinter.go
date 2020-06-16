@@ -331,8 +331,8 @@ func (s IPBillingTablePrinter) Print(data *models.V1IPUsageResponse) {
 
 // Print a volume usage as table
 func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResponse) {
-	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Start", "End", "Device", "In (Gi)", "Out (Gi)", "Lifetime", "Warnings"}
-	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "Device", "In (Gi)", "Out (Gi)", "Lifetime"}
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Start", "End", "Device", "In (Gi)", "Out (Gi)", "Total (Gi)", "Lifetime", "Warnings"}
+	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "Device", "In (Gi)", "Out (Gi)", "Total (Gi)", "Lifetime"}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {
 		var from string
@@ -387,6 +387,10 @@ func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResp
 		if u.Out != nil {
 			out = humanizeBytesToGi(*u.Out)
 		}
+		var total string
+		if u.Total != nil {
+			total = humanizeBytesToGi(*u.Total)
+		}
 		var lifetime time.Duration
 		if u.Lifetime != nil {
 			lifetime = time.Duration(*u.Lifetime)
@@ -409,6 +413,7 @@ func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResp
 			device,
 			in,
 			out,
+			total,
 			humanizeDuration(lifetime),
 			warnings,
 		}
@@ -420,6 +425,7 @@ func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResp
 			device,
 			in,
 			out,
+			total,
 			humanizeDuration(lifetime),
 		}
 
@@ -435,6 +441,10 @@ func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResp
 	if data.Accumulatedusage.Out != nil {
 		out = humanizeBytesToGi(*data.Accumulatedusage.Out) + giCosts(*data.Accumulatedusage.Out, viper.GetFloat64("costs-outgoing-network-traffic-gi"))
 	}
+	var total string
+	if data.Accumulatedusage.Total != nil {
+		total = humanizeBytesToGi(*data.Accumulatedusage.Total) + giCosts(*data.Accumulatedusage.Total, viper.GetFloat64("costs-total-network-traffic-gi"))
+	}
 	var lifetime string
 	if data.Accumulatedusage.Lifetime != nil {
 		lifetime = humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime))
@@ -442,6 +452,7 @@ func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResp
 	footer := []string{"Total",
 		in,
 		out,
+		total,
 		lifetime,
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
