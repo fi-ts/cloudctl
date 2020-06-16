@@ -495,6 +495,19 @@ func (s *NetworkTrafficBillingTablePrinter) Order(data []*models.V1NetworkUsage)
 					if *A.Clustername != *B.Clustername {
 						return false
 					}
+				case "device":
+					if A.Device == nil {
+						return true
+					}
+					if B.Device == nil {
+						return false
+					}
+					if *A.Device < *B.Device {
+						return true
+					}
+					if *A.Device != *B.Device {
+						return false
+					}
 				case "lifetime":
 					if A.Lifetime == nil {
 						return true
