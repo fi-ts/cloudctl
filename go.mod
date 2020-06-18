@@ -15,6 +15,7 @@ require (
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/jinzhu/now v1.1.1
 	github.com/leodido/go-urn v1.2.0 // indirect
+	github.com/metal-stack/cloud-go v0.7.12
 	github.com/metal-stack/metal-lib v0.4.0
 	github.com/metal-stack/security v0.3.0
 	github.com/metal-stack/updater v1.0.1

@@ -8,15 +8,15 @@ import (
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/metal-stack/security"
 
-	"git.f-i-ts.de/cloud-native/cloudctl/api/client"
-	"git.f-i-ts.de/cloud-native/cloudctl/api/client/accounting"
-	"git.f-i-ts.de/cloud-native/cloudctl/api/client/cluster"
-	"git.f-i-ts.de/cloud-native/cloudctl/api/client/ip"
-	"git.f-i-ts.de/cloud-native/cloudctl/api/client/project"
-	"git.f-i-ts.de/cloud-native/cloudctl/api/client/s3"
-	"git.f-i-ts.de/cloud-native/cloudctl/api/client/tenant"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
+	"github.com/metal-stack/cloud-go/api/client"
+	"github.com/metal-stack/cloud-go/api/client/accounting"
+	"github.com/metal-stack/cloud-go/api/client/cluster"
+	"github.com/metal-stack/cloud-go/api/client/ip"
+	"github.com/metal-stack/cloud-go/api/client/project"
+	"github.com/metal-stack/cloud-go/api/client/s3"
+	"github.com/metal-stack/cloud-go/api/client/tenant"
 )
 
 // Cloud provides cloud functions

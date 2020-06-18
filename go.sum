@@ -219,6 +219,7 @@ github.com/go-openapi/loads v0.19.5/go.mod h1:dswLCAdonkRufe/gSUC3gN8nTSaB9uaS2e
 github.com/go-openapi/runtime v0.0.0-20180920151709-4f900dc2ade9/go.mod h1:6v9a6LTXWQCdL8k1AO3cvqx5OtZY/Y9wKTgaoP6YRfA=
 github.com/go-openapi/runtime v0.19.0/go.mod h1:OwNfisksmmaZse4+gpV3Ne9AyMOlP1lt4sK4FXt0O64=
 github.com/go-openapi/runtime v0.19.4/go.mod h1:X277bwSUBxVlCYR3r7xgZZGKVvBd/29gLDlFGtJ8NL4=
+github.com/go-openapi/runtime v0.19.8/go.mod h1:dhGWCTKRXlAfGnQG0ONViOZpjfg0m2gUt9nTQPQZuoo=
 github.com/go-openapi/runtime v0.19.15 h1:2GIefxs9Rx1vCDNghRtypRq+ig8KSLrjHbAYI/gCLCM=
 github.com/go-openapi/runtime v0.19.15/go.mod h1:dhGWCTKRXlAfGnQG0ONViOZpjfg0m2gUt9nTQPQZuoo=
 github.com/go-openapi/spec v0.0.0-20160808142527-6aced65f8501/go.mod h1:J8+jY1nAiCcj+friV/PDoE1/3eeccG9LYBs0tYvLOWc=
@@ -471,8 +472,13 @@ github.com/mattn/go-runewidth v0.0.7/go.mod h1:H031xJmbD/WCDINGzjvQ9THkh0rPKHF+m
 github.com/mattn/go-runewidth v0.0.8 h1:3tS41NlGYSmhhe/8fhGRzc+z3AYCw1Fe1WAyLuujKs0=
 github.com/mattn/go-runewidth v0.0.8/go.mod h1:H031xJmbD/WCDINGzjvQ9THkh0rPKHF+m2gUSrubnMI=
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
+github.com/metal-stack/cloud-go v0.7.11 h1:ib9wxKJCnXhSLboBrnJxH60DnaYeWs/IMyqz+g+gv0A=
+github.com/metal-stack/cloud-go v0.7.11/go.mod h1:JuF9ykZTjokwg3PY4l/Z3OzVdaW8o0uYYxmwnSGNNss=
+github.com/metal-stack/cloud-go v0.7.12 h1:DC3lWqgoDlUkQ3baKTnv1I8knPuQCejjLA06uOHgy44=
+github.com/metal-stack/cloud-go v0.7.12/go.mod h1:JuF9ykZTjokwg3PY4l/Z3OzVdaW8o0uYYxmwnSGNNss=
 github.com/metal-stack/metal-lib v0.4.0 h1:rSvunSurQuxBxQMXaDhm1aNvI2nKwG8wLYyGwB73WS0=
 github.com/metal-stack/metal-lib v0.4.0/go.mod h1:KPSjh6x9PaLqn9el1p3/Z5NGK5IsX9lDbRrEUNvgj3E=
+github.com/metal-stack/security v0.0.0-20200213101721-0aed751953ac/go.mod h1:xa0eka4HttrfhDTJPzcSDBGgaFyNBGXhz0B5YGqtKuU=
 github.com/metal-stack/security v0.3.0 h1:YJL0qlsXlvA9O3iIWuk5YqF02IX9f6I60n93FkQpV4k=
 github.com/metal-stack/security v0.3.0/go.mod h1:xa0eka4HttrfhDTJPzcSDBGgaFyNBGXhz0B5YGqtKuU=
 github.com/metal-stack/updater v1.0.1 h1:m26wwoqPzr4OK1Q0r54UZb322nMP72HHCJkTukviVAY=

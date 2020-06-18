@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
+	"github.com/metal-stack/cloud-go/api/models"
 )
 
 type (

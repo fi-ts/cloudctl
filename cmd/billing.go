@@ -5,11 +5,11 @@ import (
 	"log"
 	"time"
 
-	"git.f-i-ts.de/cloud-native/cloudctl/api/client/accounting"
-	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
 	output "git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
 	"github.com/go-openapi/strfmt"
 	"github.com/jinzhu/now"
+	"github.com/metal-stack/cloud-go/api/client/accounting"
+	"github.com/metal-stack/cloud-go/api/models"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/go-playground/validator.v9"
