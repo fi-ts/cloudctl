@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
-	"git.f-i-ts.de/cloud-native/cloudctl/api/client/cluster"
-	"git.f-i-ts.de/cloud-native/cloudctl/api/client/project"
-	"git.f-i-ts.de/cloud-native/cloudctl/api/client/s3"
+	"github.com/metal-stack/cloud-go/api/client/cluster"
+	"github.com/metal-stack/cloud-go/api/client/project"
+	"github.com/metal-stack/cloud-go/api/client/s3"
 	"github.com/spf13/cobra"
 )
 

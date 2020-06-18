@@ -3,8 +3,8 @@ package output
 import (
 	"strings"
 
-	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
 	"git.f-i-ts.de/cloud-native/cloudctl/cmd/helper"
+	"github.com/metal-stack/cloud-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/tag"
 )
 

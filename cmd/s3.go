@@ -3,10 +3,10 @@ package cmd
 import (
 	"log"
 
-	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
+	"github.com/metal-stack/cloud-go/api/models"
 
-	"git.f-i-ts.de/cloud-native/cloudctl/api/client/s3"
 	"git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
+	"github.com/metal-stack/cloud-go/api/client/s3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

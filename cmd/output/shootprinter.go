@@ -7,9 +7,9 @@ import (
 
 	"github.com/metal-stack/metal-lib/pkg/tag"
 
-	"git.f-i-ts.de/cloud-native/cloudctl/api/models"
 	"git.f-i-ts.de/cloud-native/cloudctl/cmd/helper"
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/metal-stack/cloud-go/api/models"
 )
 
 type (
