@@ -23,6 +23,7 @@ type BillingOpts struct {
 	To         time.Time
 	ProjectID  string
 	ClusterID  string
+	Device     string
 	Namespace  string
 	CSV        bool
 }
@@ -200,6 +201,7 @@ func init() {
 	networkTrafficBillingCmd.Flags().StringVarP(&billingOpts.ToString, "to", "", "", "the end time in the accounting window to look at (optional, defaults to current system time)")
 	networkTrafficBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
 	networkTrafficBillingCmd.Flags().StringVarP(&billingOpts.ClusterID, "cluster-id", "c", "", "the cluster to account")
+	networkTrafficBillingCmd.Flags().StringVarP(&billingOpts.Device, "device", "", "", "the device to account")
 	networkTrafficBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 
 	err = viper.BindPFlags(networkTrafficBillingCmd.Flags())
@@ -447,6 +449,9 @@ func networkTrafficUsage() error {
 	}
 	if billingOpts.ClusterID != "" {
 		cur.Clusterid = billingOpts.ClusterID
+	}
+	if billingOpts.Device != "" {
+		cur.Device = billingOpts.Device
 	}
 
 	if billingOpts.CSV {

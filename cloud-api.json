@@ -1656,6 +1656,10 @@
           "description": "the cluster id to account for",
           "type": "string"
         },
+        "device": {
+          "description": "the device to account for",
+          "type": "string"
+        },
         "from": {
           "description": "the start time in the accounting window to look at",
           "format": "date-time",
