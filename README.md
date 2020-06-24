@@ -215,7 +215,7 @@ In order to be able to download the kubeconfig the cluster must have reached the
 This can be checked with subsequent `cloudctl cluster ls` calls, or even more convenient `watch cloudctl cluster ls`.
 
 ```bash
-cloudctl cluster credentials <cluster UID> > banking.kubeconfig
+cloudctl cluster kubeconfig <cluster UID> > banking.kubeconfig
 
 kubectl --kubeconfig ./banking.kubeconfig get nodes
 
