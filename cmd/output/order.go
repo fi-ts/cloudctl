@@ -752,3 +752,33 @@ func (m MachineTablePrinter) Order(data []*models.ModelsV1MachineResponse) {
 		})
 	}
 }
+
+// Order s3 partitions
+func (m S3PartitionTablePrinter) Order(data []*models.V1S3PartitionResponse) {
+	cols := strings.Split(m.order, ",")
+	if len(cols) > 0 {
+		sort.SliceStable(data, func(i, j int) bool {
+			A := data[i]
+			B := data[j]
+			for _, order := range cols {
+				order = strings.ToLower(order)
+				switch order {
+				case "id":
+					if A.ID == nil {
+						return true
+					}
+					if B.ID == nil {
+						return false
+					}
+					if *A.ID < *B.ID {
+						return true
+					}
+					if *A.ID != *B.ID {
+						return false
+					}
+				}
+			}
+			return false
+		})
+	}
+}
