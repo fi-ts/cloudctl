@@ -236,13 +236,21 @@ func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 		s.addShortData(short, data)
 	}
 
+	var capacity string
+	if data.Accumulatedusage.Capacityseconds != nil {
+		capacity = humanizeMemory(*data.Accumulatedusage.Capacityseconds)
+	}
+	var lifetime string
+	if data.Accumulatedusage.Lifetime != nil {
+		lifetime = humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime))
+	}
 	footer := []string{"Total",
-		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)),
+		capacity,
+		lifetime,
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
 	wideFooter := make([]string, len(s.wideHeader)-len(footer))
 	s.addWideData(append(wideFooter, footer...), data)
-
 	s.addShortData(append(shortFooter, footer...), data)
 	s.render()
 }
