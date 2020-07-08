@@ -476,6 +476,8 @@ github.com/metal-stack/cloud-go v0.7.11 h1:ib9wxKJCnXhSLboBrnJxH60DnaYeWs/IMyqz+
 github.com/metal-stack/cloud-go v0.7.11/go.mod h1:JuF9ykZTjokwg3PY4l/Z3OzVdaW8o0uYYxmwnSGNNss=
 github.com/metal-stack/cloud-go v0.7.12 h1:DC3lWqgoDlUkQ3baKTnv1I8knPuQCejjLA06uOHgy44=
 github.com/metal-stack/cloud-go v0.7.12/go.mod h1:JuF9ykZTjokwg3PY4l/Z3OzVdaW8o0uYYxmwnSGNNss=
+github.com/metal-stack/cloud-go v0.7.13 h1:hEJUCxcjX+/mkYD5ZBBc2MIVMr91Pn29BkLGO3ee1RY=
+github.com/metal-stack/cloud-go v0.7.13/go.mod h1:JuF9ykZTjokwg3PY4l/Z3OzVdaW8o0uYYxmwnSGNNss=
 github.com/metal-stack/metal-lib v0.4.0 h1:rSvunSurQuxBxQMXaDhm1aNvI2nKwG8wLYyGwB73WS0=
 github.com/metal-stack/metal-lib v0.4.0/go.mod h1:KPSjh6x9PaLqn9el1p3/Z5NGK5IsX9lDbRrEUNvgj3E=
 github.com/metal-stack/security v0.0.0-20200213101721-0aed751953ac/go.mod h1:xa0eka4HttrfhDTJPzcSDBGgaFyNBGXhz0B5YGqtKuU=
