@@ -24,8 +24,8 @@ type (
 )
 
 func (s ShootConditionsTablePrinter) Print(data []*models.V1beta1Condition) {
-	s.wideHeader = []string{"LastTransistion", "LastUpdate", "Message", "Reason", "Status", "Type"}
-	s.shortHeader = []string{"LastTransistion", "LastUpdate", "Message", "Reason", "Status", "Type"}
+	s.wideHeader = []string{"LastTransition", "LastUpdate", "Message", "Reason", "Status", "Type"}
+	s.shortHeader = []string{"LastTransition", "LastUpdate", "Message", "Reason", "Status", "Type"}
 	for _, condition := range data {
 		wide := []string{
 			strValue(condition.LastTransitionTime),
