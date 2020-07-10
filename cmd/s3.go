@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/metal-stack/cloud-go/api/models"
@@ -78,6 +79,15 @@ var (
 	}
 )
 
+var s3cmdTemplate = `cat << EOF > ${HOME}/.s3cfg
+[default]
+access_key = %s
+host_base = %s
+host_bucket = %s
+secret_key = %s
+EOF
+`
+
 func init() {
 	s3CreateCmd.Flags().StringP("id", "i", "", "id of the s3 user [required]")
 	s3CreateCmd.Flags().StringP("partition", "p", "", "name of s3 partition to create the s3 user in [required]")
@@ -119,6 +129,7 @@ func init() {
 	s3DescribeCmd.Flags().StringP("partition", "p", "", "name of s3 partition where this user is in [required]")
 	s3DescribeCmd.Flags().String("project", "", "id of the project that the s3 user belongs to [required]")
 	s3DescribeCmd.Flags().StringP("tenant", "t", "", "tenant of the s3 user, defaults to logged in tenant")
+	s3DescribeCmd.Flags().StringP("for-client", "", "", "output suitable client configuration for either minio|s3cmd")
 	err = s3DescribeCmd.MarkFlagRequired("id")
 	if err != nil {
 		log.Fatal(err.Error())
@@ -225,6 +236,7 @@ func s3Describe() error {
 	id := viper.GetString("id")
 	partition := viper.GetString("partition")
 	project := viper.GetString("project")
+	client := viper.GetString("for-client")
 
 	p := &models.V1S3GetRequest{
 		ID:        &id,
@@ -245,7 +257,18 @@ func s3Describe() error {
 			return output.UnconventionalError(err)
 		}
 	}
-
+	cfg := response.Payload
+	switch client {
+	case "":
+	case "minio":
+		fmt.Printf("mc config host add %s %s %s %s\n", *cfg.ID, *cfg.Endpoint, *cfg.Keys[0].AccessKey, *cfg.Keys[0].SecretKey)
+		return nil
+	case "s3cmd":
+		fmt.Printf(s3cmdTemplate, *cfg.Keys[0].AccessKey, *cfg.Endpoint, *cfg.Endpoint, *cfg.Keys[0].SecretKey)
+		return nil
+	default:
+		return fmt.Errorf("unsupported s3 client configuration:%s", client)
+	}
 	return output.YAMLPrinter{}.Print(response.Payload)
 }
 
