@@ -249,6 +249,8 @@ func init() {
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
 	clusterUpdateCmd.Flags().String("firewalltype", "", "machine type to use for the firewall.")
 	clusterUpdateCmd.Flags().String("firewallimage", "", "machine image to use for the firewall.")
+	clusterUpdateCmd.Flags().StringSlice("addlabels", []string{}, "labels to add to the cluster")
+	clusterUpdateCmd.Flags().StringSlice("removelabels", []string{}, "labels to remove from the cluster")
 	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster, please add --i-am-aware-of-dangerous-settings")
 	clusterUpdateCmd.Flags().BoolP("i-am-aware-of-dangerous-settings", "", false, "required when modify dangerous settings")
 	clusterUpdateCmd.Flags().String("purpose", "", "purpose of the cluster, can be one of production|testing|development|evaluation. SLA is only given on production clusters.")
@@ -298,6 +300,8 @@ func clusterCreate() error {
 
 	allowprivileged := viper.GetBool("allowprivileged")
 	defaultingress := viper.GetBool("defaultingress")
+
+	labels := viper.GetStringSlice("labels")
 
 	// FIXME helper and validation
 	networks := viper.GetStringSlice("external-networks")
@@ -354,6 +358,15 @@ func clusterCreate() error {
 		}
 	}
 
+	labelMap := make(map[string]string)
+	for _, l := range labels {
+		parts := strings.SplitN(l, "=", 2)
+		if len(parts) != 2 {
+			log.Fatalf("provided labels must be in the form <key>=<value>, found: %s", l)
+		}
+		labelMap[parts[0]] = parts[1]
+	}
+
 	var workerCRI models.V1beta1CRI
 	if cri == "containerd" {
 		workerCRI = models.V1beta1CRI{
@@ -371,6 +384,7 @@ func clusterCreate() error {
 	scr := &models.V1ClusterCreateRequest{
 		ProjectID:   &project,
 		Name:        &name,
+		Labels:      labelMap,
 		Description: &desc,
 		Purpose:     &purpose,
 		Workers: []*models.V1Worker{
@@ -595,6 +609,8 @@ func updateCluster(args []string) error {
 	firewallType := viper.GetString("firewalltype")
 	firewallImage := viper.GetString("firewallimage")
 	purpose := viper.GetString("purpose")
+	addLabels := viper.GetStringSlice("addlabels")
+	removeLabels := viper.GetStringSlice("removelabels")
 
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
@@ -618,6 +634,35 @@ func updateCluster(args []string) error {
 	}
 	if purpose != "" {
 		cur.Purpose = &purpose
+	}
+
+	if len(addLabels) > 0 || len(removeLabels) > 0 {
+		findRequest := cluster.NewFindClusterParams()
+		findRequest.SetID(ci)
+		shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+		if err != nil {
+			switch e := err.(type) {
+			case *cluster.FindClusterDefault:
+				return output.HTTPError(e.Payload)
+			default:
+				return output.UnconventionalError(err)
+			}
+		}
+		labelMap := shoot.Payload.Shoot.Metadata.Labels
+
+		for _, l := range removeLabels {
+			parts := strings.SplitN(l, "=", 2)
+			delete(labelMap, parts[0])
+		}
+		for _, l := range addLabels {
+			parts := strings.SplitN(l, "=", 2)
+			if len(parts) != 2 {
+				log.Fatalf("provided labels must be in the form <key>=<value>, found: %s", l)
+			}
+			labelMap[parts[0]] = parts[1]
+		}
+
+		cur.Labels = labelMap
 	}
 
 	k8s := &models.V1Kubernetes{}
