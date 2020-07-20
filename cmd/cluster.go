@@ -249,6 +249,8 @@ func init() {
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
 	clusterUpdateCmd.Flags().String("firewalltype", "", "machine type to use for the firewall.")
 	clusterUpdateCmd.Flags().String("firewallimage", "", "machine image to use for the firewall.")
+	clusterUpdateCmd.Flags().String("machinetype", "", "machine type to use for the nodes.")
+	clusterUpdateCmd.Flags().String("machineimage", "", "machine image to use for the nodes, must be in the form of <name>-<version> ")
 	clusterUpdateCmd.Flags().StringSlice("addlabels", []string{}, "labels to add to the cluster")
 	clusterUpdateCmd.Flags().StringSlice("removelabels", []string{}, "labels to remove from the cluster")
 	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster, please add --i-am-aware-of-dangerous-settings")
@@ -262,6 +264,12 @@ func init() {
 	})
 	clusterUpdateCmd.RegisterFlagCompletionFunc("firewallimage", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return firewallImageListCompletion()
+	})
+	clusterUpdateCmd.RegisterFlagCompletionFunc("machinetype", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return machineTypeListCompletion()
+	})
+	clusterUpdateCmd.RegisterFlagCompletionFunc("machineimage", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return machineImageListCompletion()
 	})
 	clusterUpdateCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"production", "testing", "development", "evaluation"}, cobra.ShellCompDirectiveDefault
@@ -608,6 +616,8 @@ func updateCluster(args []string) error {
 	version := viper.GetString("version")
 	firewallType := viper.GetString("firewalltype")
 	firewallImage := viper.GetString("firewallimage")
+	machineType := viper.GetString("machinetype")
+	machineImageAndVersion := viper.GetString("machineimage")
 	purpose := viper.GetString("purpose")
 	addLabels := viper.GetStringSlice("addlabels")
 	removeLabels := viper.GetStringSlice("removelabels")
@@ -626,6 +636,25 @@ func updateCluster(args []string) error {
 			cur.Workers[0].Maximum = &maxsize
 		}
 	}
+
+	machineImage := models.V1MachineImage{}
+	if machineImageAndVersion != "" {
+		machineImageParts := strings.Split(machineImageAndVersion, "-")
+		if len(machineImageParts) == 2 {
+			machineImage = models.V1MachineImage{
+				Name:    &machineImageParts[0],
+				Version: &machineImageParts[1],
+			}
+		} else {
+			log.Fatalf("given machineimage:%s is invalid must be in the form <name>-<version>", machineImageAndVersion)
+		}
+
+		cur.Workers[0].MachineImage = &machineImage
+	}
+	if machineType != "" {
+		cur.Workers[0].MachineType = &machineType
+	}
+
 	if firewallImage != "" {
 		cur.FirewallImage = &firewallImage
 	}
