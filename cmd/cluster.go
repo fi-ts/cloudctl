@@ -379,13 +379,6 @@ func clusterCreate() error {
 	if cri == "containerd" {
 		workerCRI = models.V1beta1CRI{
 			Name: &cri,
-			ContainerRuntimes: []*models.V1beta1ContainerRuntime{
-				{
-					Type: &cri,
-					// FIXME what is the content of ProviderConfig
-					ProviderConfig: "",
-				},
-			},
 		}
 	}
 
