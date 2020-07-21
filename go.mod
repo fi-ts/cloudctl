@@ -7,7 +7,6 @@ require (
 	github.com/fatih/color v1.9.0
 	github.com/fi-ts/cloud-go v0.7.15
 	github.com/gardener/gardener v1.4.2
-	github.com/go-openapi/loads v0.19.5 // indirect
 	github.com/go-openapi/runtime v0.19.20
 	github.com/go-openapi/strfmt v0.19.5
 	github.com/go-playground/universal-translator v0.17.0 // indirect
