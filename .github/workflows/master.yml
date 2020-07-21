@@ -16,9 +16,11 @@ jobs:
         with:
           args: run
       - name: Build
-        uses: metal-stack/builder
-        run: |
-          make platforms
-          bin/cloudctl-linux-amd64 update dump bin/cloudctl-linux-amd64 > version-linux-amd64.json
-          bin/cloudctl-linux-amd64 update dump bin/cloudctl-windows-amd64 > version-windows-amd64.json
-          bin/cloudctl-linux-amd64 update dump bin/cloudctl-darwin-amd64 > version-darwin-amd64.json
+        uses: metal-stack/action-docker-make@master
+        with:
+          args: >
+            --no-cache
+            --no-push
+            --build-only cloudctl-master
+            -x rule2,rule3
+            --summary
