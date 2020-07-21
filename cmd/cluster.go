@@ -10,11 +10,11 @@ import (
 	"github.com/metal-stack/metal-lib/auth"
 	"gopkg.in/yaml.v3"
 
-	"github.com/metal-stack/cloud-go/api/client/cluster"
+	"github.com/fi-ts/cloud-go/api/client/cluster"
 
-	"git.f-i-ts.de/cloud-native/cloudctl/cmd/helper"
-	"git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
-	"github.com/metal-stack/cloud-go/api/models"
+	"github.com/fi-ts/cloud-go/api/models"
+	"github.com/fi-ts/cloudctl/cmd/helper"
+	"github.com/fi-ts/cloudctl/cmd/output"
 
 	"github.com/Masterminds/semver"
 	"github.com/spf13/cobra"

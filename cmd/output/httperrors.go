@@ -3,7 +3,7 @@ package output
 import (
 	"fmt"
 
-	"github.com/metal-stack/cloud-go/api/models"
+	"github.com/fi-ts/cloud-go/api/models"
 )
 
 // HTTPError prints an HTTP error

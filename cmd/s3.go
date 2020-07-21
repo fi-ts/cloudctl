@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/metal-stack/cloud-go/api/models"
+	"github.com/fi-ts/cloud-go/api/models"
 
-	"git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
-	"github.com/metal-stack/cloud-go/api/client/s3"
+	"github.com/fi-ts/cloud-go/api/client/s3"
+	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

@@ -3,11 +3,11 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/metal-stack/cloud-go/api/client/ip"
+	"github.com/fi-ts/cloud-go/api/client/ip"
 
-	"git.f-i-ts.de/cloud-native/cloudctl/cmd/helper"
-	output "git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
-	"github.com/metal-stack/cloud-go/api/models"
+	"github.com/fi-ts/cloud-go/api/models"
+	"github.com/fi-ts/cloudctl/cmd/helper"
+	output "github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/spf13/cobra"
 )
 

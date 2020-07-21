@@ -1,7 +1,7 @@
 package main
 
 import (
-	"git.f-i-ts.de/cloud-native/cloudctl/cmd"
+	"github.com/fi-ts/cloudctl/cmd"
 )
 
 func main() {

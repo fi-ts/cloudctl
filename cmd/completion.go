@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/metal-stack/cloud-go/api/client/cluster"
-	"github.com/metal-stack/cloud-go/api/client/project"
-	"github.com/metal-stack/cloud-go/api/client/s3"
+	"github.com/fi-ts/cloud-go/api/client/cluster"
+	"github.com/fi-ts/cloud-go/api/client/project"
+	"github.com/fi-ts/cloud-go/api/client/s3"
 	"github.com/spf13/cobra"
 )
 

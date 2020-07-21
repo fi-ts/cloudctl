@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
-	output "git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
-	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
-	c "git.f-i-ts.de/cloud-native/cloudctl/pkg/cloud"
+	output "github.com/fi-ts/cloudctl/cmd/output"
+	"github.com/fi-ts/cloudctl/pkg/api"
+	c "github.com/fi-ts/cloudctl/pkg/cloud"
 	"github.com/metal-stack/v"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"

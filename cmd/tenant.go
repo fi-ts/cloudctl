@@ -3,12 +3,12 @@ package cmd
 import (
 	"fmt"
 
-	"git.f-i-ts.de/cloud-native/cloudctl/cmd/helper"
-	output "git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
-	"github.com/metal-stack/cloud-go/api/models"
+	"github.com/fi-ts/cloud-go/api/models"
+	"github.com/fi-ts/cloudctl/cmd/helper"
+	output "github.com/fi-ts/cloudctl/cmd/output"
 	"gopkg.in/yaml.v3"
 
-	"github.com/metal-stack/cloud-go/api/client/tenant"
+	"github.com/fi-ts/cloud-go/api/client/tenant"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

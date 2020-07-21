@@ -1,5 +1,5 @@
 BINARY := cloudctl
-MAINMODULE := git.f-i-ts.de/cloud-native/cloudctl
+MAINMODULE := github.com/fi-ts/cloudctl
 COMMONDIR := $(or ${COMMONDIR},../common)
 
 include $(COMMONDIR)/Makefile.inc

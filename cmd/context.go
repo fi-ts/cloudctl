@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
+	"github.com/fi-ts/cloudctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"

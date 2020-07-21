@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/metal-stack/cloud-go/api/models"
+	"github.com/fi-ts/cloud-go/api/models"
 )
 
 type (

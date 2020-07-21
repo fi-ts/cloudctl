@@ -7,8 +7,8 @@ import (
 	"os"
 	"text/template"
 
-	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
-	"github.com/metal-stack/cloud-go/api/models"
+	"github.com/fi-ts/cloud-go/api/models"
+	"github.com/fi-ts/cloudctl/pkg/api"
 
 	"github.com/olekukonko/tablewriter"
 	"gopkg.in/yaml.v3"

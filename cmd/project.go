@@ -5,12 +5,12 @@ import (
 	"log"
 	"strings"
 
-	"github.com/metal-stack/cloud-go/api/models"
+	"github.com/fi-ts/cloud-go/api/models"
 	"gopkg.in/yaml.v3"
 
-	"git.f-i-ts.de/cloud-native/cloudctl/cmd/helper"
-	"git.f-i-ts.de/cloud-native/cloudctl/cmd/output"
-	"github.com/metal-stack/cloud-go/api/client/project"
+	"github.com/fi-ts/cloud-go/api/client/project"
+	"github.com/fi-ts/cloudctl/cmd/helper"
+	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

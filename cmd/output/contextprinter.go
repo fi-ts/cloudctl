@@ -1,7 +1,7 @@
 package output
 
 import (
-	"git.f-i-ts.de/cloud-native/cloudctl/pkg/api"
+	"github.com/fi-ts/cloudctl/pkg/api"
 )
 
 type (
