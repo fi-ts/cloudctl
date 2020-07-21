@@ -15,7 +15,7 @@ require (
 	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/metal-stack/metal-lib v0.4.0
 	github.com/metal-stack/security v0.3.0
-	github.com/metal-stack/updater v1.0.1
+	github.com/metal-stack/updater v1.1.0
 	github.com/metal-stack/v v1.0.2
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/pkg/errors v0.9.1

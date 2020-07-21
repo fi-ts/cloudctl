@@ -62,8 +62,6 @@ copy cloudctl-windows-amd64 cloudctl.exe
 
 ### cloudctl update
 
-FIXME change to use github releases.
-
 In order to keep your local `cloudctl` installation up to date, you can update the binary like this:
 
 ```bash
