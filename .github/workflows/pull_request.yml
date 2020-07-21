@@ -18,6 +18,7 @@ jobs:
         with:
           args: >
             --no-cache
+            --no-push
             --build-only cloudctl-slug
             -x rule2,rule3
             --summary
