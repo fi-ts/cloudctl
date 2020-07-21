@@ -1,0 +1,89 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  GCS_BUCKET: images.metal-pod.io
+      
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@master
+      - name: Make tag
+        run: echo "::set-env name=TAG_NAME::${GITHUB_REF##*/}"
+      - name: Build
+        uses: metal-stack/builder
+        run: |
+          make platforms
+          bin/cloudctl-linux-amd64 update dump bin/cloudctl-linux-amd64 > version-linux-amd64.json
+          bin/cloudctl-linux-amd64 update dump bin/cloudctl-windows-amd64 > version-windows-amd64.json
+          bin/cloudctl-linux-amd64 update dump bin/cloudctl-darwin-amd64 > version-darwin-amd64.json
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: cloudctl ${{ github.ref }}
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: result/cloudctl-linux-amd64
+          asset_name: cloudctl-linux-amd64
+          asset_content_type: application/octet-stream
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: result/cloudctl-windows-amd64
+          asset_name: cloudctl-windows-amd64
+          asset_content_type: application/octet-stream
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: result/cloudctl-darwin-amd64
+          asset_name: cloudctl-darwin-amd64
+          asset_content_type: application/octet-stream
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: result/cloudctl-linux-amd64.md5
+          asset_name: cloudctl-linux-amd64.md5
+          asset_content_type: application/octet-stream
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: result/cloudctl-windows-amd64.md5
+          asset_name: cloudctl-windows-amd64.md5
+          asset_content_type: application/octet-stream
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: result/cloudctl-darwin-amd64.md5
+          asset_name: cloudctl-darwin-amd64.md5
+          asset_content_type: application/octet-stream
