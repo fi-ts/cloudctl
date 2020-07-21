@@ -33,14 +33,14 @@ Commandline client for "Kubernetes as a Service" and more!
 
 Download locations:
 
-* [cloudctl-linux-amd64](https://blobstore.fi-ts.io/cloud-native/cloudctl/cloudctl-linux-amd64)
-* [cloudctl-darwin-amd64](https://blobstore.fi-ts.io/cloud-native/cloudctl/cloudctl-darwin-amd64)
-* [cloudctl-windows-amd64](https://blobstore.fi-ts.io/cloud-native/cloudctl/cloudctl-windows-amd64)
+- [cloudctl-linux-amd64](https://github.com/fi-ts/cloudctl/releases/download/v0.7.12/cloudctl-linux-amd64)
+- [cloudctl-darwin-amd64](https://github.com/fi-ts/cloudctl/releases/download/v0.7.12/cloudctl-darwin-amd64)
+- [cloudctl-windows-amd64](https://github.com/fi-ts/cloudctl/releases/download/v0.7.12/cloudctl-windows-amd64)
 
 ### Installation on Linux
 
 ```bash
-curl -LO https://blobstore.fi-ts.io/cloud-native/cloudctl/cloudctl-linux-amd64
+curl -LO https://github.com/fi-ts/cloudctl/releases/download/v0.7.12/cloudctl-linux-amd64
 chmod +x cloudctl-linux-amd64
 sudo mv cloudctl-linux-amd64 /usr/local/bin/cloudctl
 ```
@@ -48,7 +48,7 @@ sudo mv cloudctl-linux-amd64 /usr/local/bin/cloudctl
 ### Installation on MacOS
 
 ```bash
-curl -LO https://blobstore.fi-ts.io/cloud-native/cloudctl/cloudctl-darwin-amd64
+curl -LO https://github.com/fi-ts/cloudctl/releases/download/v0.7.12/cloudctl-darwin-amd64
 chmod +x cloudctl-darwin-amd64
 sudo mv cloudctl-darwin-amd64 /usr/local/bin/cloudctl
 ```
@@ -56,11 +56,13 @@ sudo mv cloudctl-darwin-amd64 /usr/local/bin/cloudctl
 ### Installation on Windows
 
 ```bash
-curl -LO https://blobstore.fi-ts.io/cloud-native/cloudctl/cloudctl-windows-amd64
+curl -LO https://github.com/fi-ts/cloudctl/releases/download/v0.7.12/cloudctl-windows-amd64
 copy cloudctl-windows-amd64 cloudctl.exe
 ```
 
 ### cloudctl update
+
+FIXME change to use github releases.
 
 In order to keep your local `cloudctl` installation up to date, you can update the binary like this:
 
@@ -110,8 +112,8 @@ cloudctl login
 
 A Browser window will open and you are prompted to select your backend.
 
-* Choose the login for your organization and type your login credentials
-* Push green button: "Grant Access"
+- Choose the login for your organization and type your login credentials
+- Push green button: "Grant Access"
 
 Token will be written to default kubectl-config, e.g. ~/.kube/config
 
@@ -402,16 +404,16 @@ Example calculation:
 
 given
 
-* pod starts at 12am with 100m cpu resource limits set
-* time window between 12am and 1pm
-* pod resource limits get modified from 100m to 200m at 12:30am
+- pod starts at 12am with 100m cpu resource limits set
+- time window between 12am and 1pm
+- pod resource limits get modified from 100m to 200m at 12:30am
 
 results
 
-* pod lifetime is 1hour
-* cpu seconds in the time window is the integral of a step function:
+- pod lifetime is 1hour
+- cpu seconds in the time window is the integral of a step function:
   `1800s * 100ms + 1800s * 200ms = 540000ms*s = 540s*s (=> 30min with cpu:100m and 30min with cpu:200m)`
-* for the sake of readability, the output of cloudctl is made in hours: `540s*s/3600s => 0,15s*h`
+- for the sake of readability, the output of cloudctl is made in hours: `540s*s/3600s => 0,15s*h`
 
 ## S3
 
@@ -419,15 +421,15 @@ You can manage S3 storage using `cloudctl` when S3 is configured in your metal s
 
 To list the available S3 partitions in your control plane, issue the following command:
 
-```
+```bash
 $ cloudctl s3 partitions
-NAME      	ENDPOINT                            
-fel-wps101	https://s3.test-01-fel-wps101.metal-pod.dev
+NAME        ENDPOINT
+fel-wps101  https://s3.test-01-fel-wps101.metal-pod.dev
 ```
 
 In this case, the partition `fel-wps101` offers S3 storage. You can now create an S3 user to get storage access:
 
-```
+```bash
 $ cloudctl s3 create --id my-user --project dc565451-3864-4355-bef5-080a9d0e4068 --partition fel-wps101 -n "My User"
 accesskey: 3ZA4D7NFT1K6UB1N2ON1
 name: My User
@@ -445,7 +447,7 @@ After that, you can configure an S3 client to access the storage with this user.
 
 If you need to look up the user at a later point in time again, you can use the describe command:
 
-```
+```bash
 $ cloudctl s3 describe --name test --partition fel-wps101
 accesskey: 3ZA4D7NFT1K6UB1N2ON1
 name: My User
@@ -461,7 +463,7 @@ tenant: fits
 
 Or if you want to delete the user again, run the delete command:
 
-```
+```bash
 $ cloudctl s3 delete --name test --partition fel-wps101
 endpoint: https://s3.test-01-fel-wps101.metal-pod.dev
 id: my-user
@@ -472,8 +474,11 @@ tenant: fits
 
 ### Configuring the minio mc client
 
-```
-$ mc config host add test https://s3.test-01-fel-wps101.metal-pod.dev <your access key> <your secret key>
+the command: `cloudctl s3 describe --for-client minio|s3cmd` will echo the required cli for the requested flavour.
+
+```bash
+$ cloudctl s3 describe --for-client minio --id test --partition=fel-wps101 --project=4fe217b4-3b3d-413e-87fc-fb89054cc70c
+mc config host add test https://s3.test-01-fel-wps101.fits.cloud <your access key> <your secret key>
 
 $ mc mb test/testbucket
 Bucket created successfully `test/testbucket`.
@@ -491,7 +496,16 @@ $ mc ls test/testbucket
 export AWS_ACCESS_KEY_ID= <your access key>
 export AWS_SECRET_ACCESS_KEY=<your secret key>
 
-$ s3cmd la --host=https://s3.test-01-fel-wps101.metal-pod.dev --host-bucket=https://s3.test-01-fel-wps101.metal-pod.dev
+$ cloudctl s3 describe --for-client s3cmd --id test --partition=fel-wps101 --project=4fe217b4-3b3d-413e-87fc-fb89054cc70c
+cat << EOF > ${HOME}/.s3cfg
+[default]
+access_key = 45F3GU4DYSSN958I0HI8
+host_base = https://s3.prod-01-fel-wps101.fits.cloud
+host_bucket = https://s3.prod-01-fel-wps101.fits.cloud
+secret_key = OOg11VYMgCgjMFCSTUk41RaD5wgDKeRh6EyS6bxR
+EOF
+
+s3cmd la
 2020-04-07 07:34      4147   s3://test/README.md
 ```
 
