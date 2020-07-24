@@ -9,8 +9,8 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/fi-ts/cloud-go/api/client/project"
-	"github.com/fi-ts/cloudctl/cmd/helper"
-	"github.com/fi-ts/cloudctl/cmd/output"
+	"github.com/mreiger/cloudctl/cmd/helper"
+	"github.com/mreiger/cloudctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

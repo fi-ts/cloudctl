@@ -13,8 +13,8 @@ import (
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 
 	"github.com/fi-ts/cloud-go/api/models"
-	"github.com/fi-ts/cloudctl/cmd/helper"
-	"github.com/fi-ts/cloudctl/cmd/output"
+	"github.com/mreiger/cloudctl/cmd/helper"
+	"github.com/mreiger/cloudctl/cmd/output"
 
 	"github.com/Masterminds/semver"
 	"github.com/spf13/cobra"

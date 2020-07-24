@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/fi-ts/cloud-go/api/models"
-	"github.com/fi-ts/cloudctl/cmd/helper"
-	output "github.com/fi-ts/cloudctl/cmd/output"
+	"github.com/mreiger/cloudctl/cmd/helper"
+	output "github.com/mreiger/cloudctl/cmd/output"
 	"gopkg.in/yaml.v3"
 
 	"github.com/fi-ts/cloud-go/api/client/tenant"

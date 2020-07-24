@@ -7,9 +7,9 @@ import (
 
 	"github.com/fi-ts/cloud-go/api/client/accounting"
 	"github.com/fi-ts/cloud-go/api/models"
-	output "github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/go-openapi/strfmt"
 	"github.com/jinzhu/now"
+	output "github.com/mreiger/cloudctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/go-playground/validator.v9"

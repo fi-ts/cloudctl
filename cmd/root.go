@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
-	output "github.com/fi-ts/cloudctl/cmd/output"
-	"github.com/fi-ts/cloudctl/pkg/api"
-	c "github.com/fi-ts/cloudctl/pkg/cloud"
 	"github.com/metal-stack/v"
+	output "github.com/mreiger/cloudctl/cmd/output"
+	"github.com/mreiger/cloudctl/pkg/api"
+	c "github.com/mreiger/cloudctl/pkg/cloud"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
