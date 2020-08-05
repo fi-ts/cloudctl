@@ -20,14 +20,14 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
           args: >
             --no-cache
-            --build-only metalctl-slug
+            --build-only cloudctl-slug
             -x rule2,rule3
             --summary
       - name: Prepare upload
         run: |
-          mkdir -p metalctl/pull-requests/${TAG_NAME}
+          mkdir -p cloudctl/pull-requests/${TAG_NAME}
           sudo chown -R $(id -u):$(id -g) result
-          mv result/* metalctl/pull-requests/${TAG_NAME}
+          mv result/* cloudctl/pull-requests/${TAG_NAME}
       - name: Upload image tarballs to GCS
-        run: gsutil -m cp -r -p metalctl gs://$GCS_BUCKET
+        run: gsutil -m cp -r -p cloudctl gs://$GCS_BUCKET
     
