@@ -87,7 +87,10 @@ github.com/bitly/go-hostpool v0.0.0-20171023180738-a3a6125de932/go.mod h1:NOuUCS
 github.com/bitly/timer_metrics v0.0.0-20170606164300-b1c65ca7ae62/go.mod h1:EJqiy/5FjJk5tEOxXhnxvFijOmeB5ka1D2fvqHOXUXA=
 github.com/bketelsen/crypt v0.0.3-0.20200106085610-5cbc8cc4026c/go.mod h1:MKsuJmJgSg28kpZDP6UIiPt0e0Oz0kqKNGyRaWEPv84=
 github.com/blang/semver v3.5.0+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnwebNt5EWlYSAyrTnjyyk=
+github.com/blang/semver v3.5.1+incompatible h1:cQNTCjp13qL8KC3Nbxr/y2Bqb63oX6wdnnjpJbkM4JQ=
 github.com/blang/semver v3.5.1+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnwebNt5EWlYSAyrTnjyyk=
+github.com/blang/semver/v4 v4.0.0 h1:1PFHFE6yCCTv8C1TeyNNarDzntLi7wMI5i/pzqYIsAM=
+github.com/blang/semver/v4 v4.0.0/go.mod h1:IbckMUScFkM3pff0VJDNKRiT6TG/YpiHIM2yvyW5YoQ=
 github.com/bmizerany/perks v0.0.0-20141205001514-d9a9656a3a4b/go.mod h1:ac9efd0D1fsDb3EJvhqgXRbFx7bs2wqZ10HQPeU8U/Q=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/cespare/xxhash v1.1.0/go.mod h1:XrSqR1VqqWfGrhpAt58auRo0WTKS1nRRg3ghfAqPWnc=
@@ -492,8 +495,8 @@ github.com/metal-stack/metal-lib v0.4.0 h1:rSvunSurQuxBxQMXaDhm1aNvI2nKwG8wLYyGw
 github.com/metal-stack/metal-lib v0.4.0/go.mod h1:KPSjh6x9PaLqn9el1p3/Z5NGK5IsX9lDbRrEUNvgj3E=
 github.com/metal-stack/security v0.3.0 h1:YJL0qlsXlvA9O3iIWuk5YqF02IX9f6I60n93FkQpV4k=
 github.com/metal-stack/security v0.3.0/go.mod h1:xa0eka4HttrfhDTJPzcSDBGgaFyNBGXhz0B5YGqtKuU=
-github.com/metal-stack/updater v1.1.0 h1:MLHcI+3++QTZIPxnFNdnppv6lxMVZHx6aco4LWcAqWM=
-github.com/metal-stack/updater v1.1.0/go.mod h1:pbKbDztEG17xzNtF6NMAlubuwiHWqfNKRjc22ol60ys=
+github.com/metal-stack/updater v1.1.1 h1:A9C9DR7ETupni7FPnTju+ezM3rEsck4b/ml0YvR7NKA=
+github.com/metal-stack/updater v1.1.1/go.mod h1:9zgEvoH/jTCP32Ab3J8WvF83un6lfHgtQ08VTQROQ7U=
 github.com/metal-stack/v v1.0.2 h1:IGtLAGtazQd8r0i/5+YNjBJUEIZYrbVxynY9EXrlTV4=
 github.com/metal-stack/v v1.0.2/go.mod h1:YTahEu7/ishwpYKnp/VaW/7nf8+PInogkfGwLcGPdXg=
 github.com/mholt/archiver v3.1.1+incompatible/go.mod h1:Dh2dOXnSdiLxRiPoVfIr/fI1TwETms9B8CTWfeh7ROU=
