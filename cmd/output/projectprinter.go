@@ -35,7 +35,7 @@ func (p ProjectTablePrinter) Print(data []*models.V1Project) {
 			}
 			if qs.Machine != nil {
 				mq := "∞"
-				if qs.Cluster.Quota != 0 {
+				if qs.Machine.Quota != 0 {
 					mq = strconv.FormatInt(int64(qs.Machine.Quota), 10)
 				}
 				machineQuota = fmt.Sprintf("%d/%s", qs.Machine.Used, mq)
