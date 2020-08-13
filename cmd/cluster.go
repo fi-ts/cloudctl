@@ -4,8 +4,10 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
+	"net"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/metal-stack/metal-lib/auth"
 	"gopkg.in/yaml.v3"
@@ -88,20 +90,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	clusterSSHKeyPairCmd = &cobra.Command{
-		Use:   "sshkeypair <uid>",
-		Short: "get cluster sshkeypair",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterSSHKeyPair(args)
-		},
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
-			}
-			return clusterListCompletion()
-		},
-		PreRun: bindPFlags,
-	}
+
 	clusterReconcileCmd = &cobra.Command{
 		Use:   "reconcile <uid>",
 		Short: "trigger cluster reconciliation",
@@ -143,6 +132,25 @@ var (
 		Short: "get machines in the cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterMachines(args)
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return clusterListCompletion()
+		},
+		PreRun: bindPFlags,
+	}
+	clusterMachineCmd = &cobra.Command{
+		Use:   "machine",
+		Short: "access machines of the cluster",
+		Long:  "ssh access to machines or firewall.",
+	}
+	clusterMachineSSHCmd = &cobra.Command{
+		Use:   "ssh <clusterid>",
+		Short: "ssh access a machine/firewall of the cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterMachineSSH(args)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) != 0 {
@@ -275,6 +283,13 @@ func init() {
 		return []string{"production", "testing", "development", "evaluation"}, cobra.ShellCompDirectiveDefault
 	})
 
+	clusterMachineSSHCmd.Flags().String("machineid", "", "machine to connect to.")
+	clusterMachineSSHCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		fmt.Printf("args:%v\n", args)
+		return clusterMachineListCompletion("123")
+	})
+	clusterMachineCmd.AddCommand(clusterMachineSSHCmd)
+
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
 	clusterCmd.AddCommand(clusterKubeconfigCmd)
@@ -282,8 +297,8 @@ func init() {
 	clusterCmd.AddCommand(clusterDescribeCmd)
 	clusterCmd.AddCommand(clusterInputsCmd)
 	clusterCmd.AddCommand(clusterReconcileCmd)
-	clusterCmd.AddCommand(clusterSSHKeyPairCmd)
 	clusterCmd.AddCommand(clusterUpdateCmd)
+	clusterCmd.AddCommand(clusterMachineCmd)
 	clusterCmd.AddCommand(clusterMachinesCmd)
 	clusterCmd.AddCommand(clusterLogsCmd)
 }
@@ -558,33 +573,35 @@ func clusterKubeconfig(args []string) error {
 	return nil
 }
 
-func clusterSSHKeyPair(args []string) error {
-	ci, err := clusterID("credentials", args)
-	if err != nil {
-		return err
-	}
+type sshkeypair struct {
+	privatekey []byte
+	publickey  []byte
+}
+
+func sshKeyPair(clusterID string) (*sshkeypair, error) {
 	request := cluster.NewGetSSHKeyPairParams()
-	request.SetID(ci)
+	request.SetID(clusterID)
 	credentials, err := cloud.Cluster.GetSSHKeyPair(request, cloud.Auth)
 	if err != nil {
 		switch e := err.(type) {
 		case *cluster.GetSSHKeyPairDefault:
-			return output.HTTPError(e.Payload)
+			return nil, output.HTTPError(e.Payload)
 		default:
-			return output.UnconventionalError(err)
+			return nil, output.UnconventionalError(err)
 		}
 	}
 	privateKey, err := base64.StdEncoding.DecodeString(*credentials.Payload.SSHKeyPair.PrivateKey)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	publicKey, err := base64.StdEncoding.DecodeString(*credentials.Payload.SSHKeyPair.PublicKey)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	fmt.Printf("private key:\n%s\n", privateKey)
-	fmt.Printf("public  key:\n%s\n", publicKey)
-	return nil
+	return &sshkeypair{
+		privatekey: privateKey,
+		publickey:  publicKey,
+	}, nil
 }
 
 func reconcileCluster(args []string) error {
@@ -814,7 +831,7 @@ func clusterMachines(args []string) error {
 }
 
 func clusterLogs(args []string) error {
-	ci, err := clusterID("machines", args)
+	ci, err := clusterID("logs", args)
 	if err != nil {
 		return err
 	}
@@ -849,6 +866,73 @@ func clusterInputs() error {
 	}
 
 	return output.YAMLPrinter{}.Print(sc)
+}
+
+func clusterMachineSSH(args []string) error {
+	cid, err := clusterID("ssh", args)
+	if err != nil {
+		return err
+	}
+	mid := viper.GetString("machineid")
+	fmt.Printf("cid:%s mid:%s\n", cid, mid)
+
+	findRequest := cluster.NewFindClusterParams()
+	findRequest.SetID(cid)
+	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	if err != nil {
+		switch e := err.(type) {
+		case *cluster.FindClusterDefault:
+			return output.HTTPError(e.Payload)
+		default:
+			return output.UnconventionalError(err)
+		}
+	}
+
+	keypair, err := sshKeyPair(cid)
+	if err != nil {
+		return err
+	}
+	for _, m := range shoot.Payload.Machines {
+		if *m.ID == mid {
+			networks := m.Allocation.Networks
+			feature := m.Allocation.Image.Features[0]
+			switch feature {
+			case "firewall":
+				for _, nw := range networks {
+					if *nw.Underlay || *nw.Private {
+						continue
+					}
+					for _, ip := range nw.Ips {
+						if portOpen(ip, "22", time.Second) {
+							fmt.Printf("ssh metal@%s\n", ip)
+							err := helper.SSHClient("metal", ip, 22, keypair.privatekey)
+							return err
+						}
+					}
+				}
+				fmt.Printf("firewall networks:%v privatekey:%s\n", networks, keypair.privatekey)
+			case "machine":
+				fmt.Printf("machine networks:%v privatekey:%s\n", networks, keypair.privatekey)
+			default:
+				return fmt.Errorf("unknown machine type:%s", feature)
+			}
+		}
+	}
+
+	return nil
+}
+
+func portOpen(ip string, port string, timeout time.Duration) bool {
+	address := net.JoinHostPort(ip, port)
+	conn, err := net.DialTimeout("tcp", address, timeout)
+	if err != nil {
+		return false
+	}
+	if conn != nil {
+		_ = conn.Close()
+		return true
+	}
+	return false
 }
 
 func clusterID(verb string, args []string) (string, error) {
