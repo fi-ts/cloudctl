@@ -910,9 +910,9 @@ func clusterMachineSSH(args []string) error {
 						}
 					}
 				}
-				fmt.Printf("firewall networks:%v privatekey:%s\n", networks, keypair.privatekey)
 			case "machine":
-				fmt.Printf("machine networks:%v privatekey:%s\n", networks, keypair.privatekey)
+				// TODO implement
+				fmt.Println("not implemented for machines")
 			default:
 				return fmt.Errorf("unknown machine type:%s", feature)
 			}
