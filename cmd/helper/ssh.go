@@ -3,24 +3,39 @@ package helper
 import (
 	"fmt"
 	"os"
+	"os/user"
 	"time"
 
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/knownhosts"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
 // SSHClient opens a interactive ssh session to the host on port with user, authenticated by the key.
-func SSHClient(user, host string, port int, privateKey []byte) error {
+func SSHClient(username, host string, port int, privateKey []byte) error {
 	publicKeyAuthMethod, err := publicKey(privateKey)
 	if err != nil {
 		return err
 	}
+	user, err := user.Current()
+	if err != nil {
+		return err
+	}
+	// from https://skarlso.github.io/2019/02/17/go-ssh-with-host-key-verification/
+	// TODO: still complains if no known_hosts entry exists
+	// see: https://github.com/golang/crypto/blob/master/ssh/example_test.go
+	// and: https://stackoverflow.com/questions/45441735/ssh-handshake-complains-about-missing-host-key
+	hostKeyCallback, err := knownhosts.New(user.HomeDir + "/.ssh/known_hosts")
+	if err != nil {
+		return fmt.Errorf("could not create hostkeycallback function: %v", err)
+	}
+
 	config := &ssh.ClientConfig{
-		User: user,
+		User: username,
 		Auth: []ssh.AuthMethod{
 			publicKeyAuthMethod,
 		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: hostKeyCallback,
 		Timeout:         2 * time.Second,
 	}
 
@@ -35,6 +50,8 @@ func SSHClient(user, host string, port int, privateKey []byte) error {
 		return err
 	}
 	defer session.Close()
+	// TODO for machine access we need agent forwarding
+	// agent.RequestAgentForwarding(session)
 
 	// Set IO
 	session.Stdout = os.Stdout
