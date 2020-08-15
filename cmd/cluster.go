@@ -915,7 +915,7 @@ func clusterMachineSSH(args []string, console bool) error {
 		return err
 	}
 	privateKeyFile := "." + cid + ".id_rsa"
-	ioutil.WriteFile(privateKeyFile, keypair.privatekey, 0600)
+	ioutil.WriteFile(privateKeyFile, keypair.privatekey, 0400)
 	defer os.Remove(privateKeyFile)
 	for _, m := range shoot.Payload.Machines {
 		if *m.ID == mid {
@@ -950,7 +950,7 @@ func clusterMachineSSH(args []string, console bool) error {
 		}
 	}
 
-	return nil
+	return fmt.Errorf("machine:%s not found in cluster:%s", mid, cid)
 }
 
 func ssh(args ...string) error {
