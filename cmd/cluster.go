@@ -3,8 +3,11 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
+	"os"
+	"os/exec"
 	"sort"
 	"strings"
 	"time"
@@ -150,7 +153,21 @@ var (
 		Use:   "ssh <clusterid>",
 		Short: "ssh access a machine/firewall of the cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterMachineSSH(args)
+			return clusterMachineSSH(args, false)
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return clusterListCompletion()
+		},
+		PreRun: bindPFlags,
+	}
+	clusterMachineConsoleCmd = &cobra.Command{
+		Use:   "console <clusterid>",
+		Short: "console access a machine/firewall of the cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterMachineSSH(args, true)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) != 0 {
@@ -288,7 +305,13 @@ func init() {
 		fmt.Printf("args:%v\n", args)
 		return clusterMachineListCompletion("123")
 	})
+	clusterMachineConsoleCmd.Flags().String("machineid", "", "machine to connect to.")
+	clusterMachineConsoleCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		fmt.Printf("args:%v\n", args)
+		return clusterMachineListCompletion("123")
+	})
 	clusterMachineCmd.AddCommand(clusterMachineSSHCmd)
+	clusterMachineCmd.AddCommand(clusterMachineConsoleCmd)
 
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
@@ -868,13 +891,12 @@ func clusterInputs() error {
 	return output.YAMLPrinter{}.Print(sc)
 }
 
-func clusterMachineSSH(args []string) error {
+func clusterMachineSSH(args []string, console bool) error {
 	cid, err := clusterID("ssh", args)
 	if err != nil {
 		return err
 	}
 	mid := viper.GetString("machineid")
-	fmt.Printf("cid:%s mid:%s\n", cid, mid)
 
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(cid)
@@ -892,8 +914,17 @@ func clusterMachineSSH(args []string) error {
 	if err != nil {
 		return err
 	}
+	privateKeyFile := "." + cid + ".id_rsa"
+	ioutil.WriteFile(privateKeyFile, keypair.privatekey, 0600)
+	defer os.Remove(privateKeyFile)
 	for _, m := range shoot.Payload.Machines {
 		if *m.ID == mid {
+			if console {
+				fmt.Printf("access console via ssh\n")
+				bmcConsolePort := "5222"
+				err := ssh("-i", privateKeyFile, mid+"@"+cloud.ConsoleHost, "-p", bmcConsolePort)
+				return err
+			}
 			networks := m.Allocation.Networks
 			feature := m.Allocation.Image.Features[0]
 			switch feature {
@@ -904,15 +935,15 @@ func clusterMachineSSH(args []string) error {
 					}
 					for _, ip := range nw.Ips {
 						if portOpen(ip, "22", time.Second) {
-							fmt.Printf("ssh metal@%s\n", ip)
-							err := helper.SSHClient("metal", ip, 22, keypair.privatekey)
+							err := ssh("-i", privateKeyFile, "metal"+"@"+ip)
 							return err
 						}
 					}
 				}
 			case "machine":
-				// TODO implement
-				fmt.Println("not implemented for machines")
+				// FIXME metal user is not allowed to execute
+				// ip vrf exec <tenantvrf> ssh <machineip>
+				return fmt.Errorf("machine access via ssh not implemented")
 			default:
 				return fmt.Errorf("unknown machine type:%s", feature)
 			}
@@ -920,6 +951,19 @@ func clusterMachineSSH(args []string) error {
 	}
 
 	return nil
+}
+
+func ssh(args ...string) error {
+	path, err := exec.LookPath("ssh")
+	if err != nil {
+		return fmt.Errorf("unable to locate ssh in path")
+	}
+	fmt.Printf("%s %s\n", path, strings.Join(args, " "))
+	cmd := exec.Command(path, args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stdout
+	return cmd.Run()
 }
 
 func portOpen(ip string, port string, timeout time.Duration) bool {

@@ -12,7 +12,9 @@ import (
 )
 
 // SSHClient opens a interactive ssh session to the host on port with user, authenticated by the key.
+// FIXME not used anymore
 func SSHClient(username, host string, port int, privateKey []byte) error {
+	fmt.Printf("ssh %s@%s -p %d\n", username, host, port)
 	publicKeyAuthMethod, err := publicKey(privateKey)
 	if err != nil {
 		return err

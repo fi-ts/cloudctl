@@ -21,13 +21,14 @@ import (
 
 // Cloud provides cloud functions
 type Cloud struct {
-	Cluster    *cluster.Client
-	Project    *project.Client
-	Tenant     *tenant.Client
-	IP         *ip.Client
-	Accounting *accounting.Client
-	S3         *s3.Client
-	Auth       runtime.ClientAuthInfoWriter
+	Cluster     *cluster.Client
+	Project     *project.Client
+	Tenant      *tenant.Client
+	IP          *ip.Client
+	Accounting  *accounting.Client
+	S3          *s3.Client
+	Auth        runtime.ClientAuthInfoWriter
+	ConsoleHost string
 }
 
 // NewCloud create a new Cloud-Client.
@@ -62,13 +63,14 @@ func NewCloud(apiurl, apiToken string, hmac string) (*Cloud, error) {
 	cloud := client.New(transport, strfmt.Default)
 
 	c := &Cloud{
-		Auth:       auther,
-		Cluster:    cloud.Cluster,
-		Project:    cloud.Project,
-		Tenant:     cloud.Tenant,
-		IP:         cloud.IP,
-		Accounting: cloud.Accounting,
-		S3:         cloud.S3,
+		Auth:        auther,
+		Cluster:     cloud.Cluster,
+		Project:     cloud.Project,
+		Tenant:      cloud.Tenant,
+		IP:          cloud.IP,
+		Accounting:  cloud.Accounting,
+		S3:          cloud.S3,
+		ConsoleHost: parsedurl.Host,
 	}
 	return c, nil
 }
