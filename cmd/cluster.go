@@ -301,11 +301,13 @@ func init() {
 	})
 
 	clusterMachineSSHCmd.Flags().String("machineid", "", "machine to connect to.")
+	clusterMachineSSHCmd.MarkFlagRequired("machineid")
 	clusterMachineSSHCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		fmt.Printf("args:%v\n", args)
 		return clusterMachineListCompletion("123")
 	})
 	clusterMachineConsoleCmd.Flags().String("machineid", "", "machine to connect to.")
+	clusterMachineConsoleCmd.MarkFlagRequired("machineid")
 	clusterMachineConsoleCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		fmt.Printf("args:%v\n", args)
 		return clusterMachineListCompletion("123")
