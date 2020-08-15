@@ -303,12 +303,14 @@ func init() {
 	clusterMachineSSHCmd.Flags().String("machineid", "", "machine to connect to.")
 	clusterMachineSSHCmd.MarkFlagRequired("machineid")
 	clusterMachineSSHCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		// FIXME howto implement flag based completion for a already given clusterid
 		fmt.Printf("args:%v\n", args)
 		return clusterMachineListCompletion("123")
 	})
 	clusterMachineConsoleCmd.Flags().String("machineid", "", "machine to connect to.")
 	clusterMachineConsoleCmd.MarkFlagRequired("machineid")
 	clusterMachineConsoleCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		// FIXME howto implement flag based completion for a already given clusterid
 		fmt.Printf("args:%v\n", args)
 		return clusterMachineListCompletion("123")
 	})
@@ -916,11 +918,11 @@ func clusterMachineSSH(args []string, console bool) error {
 	if err != nil {
 		return err
 	}
-	privateKeyFile := "." + cid + ".id_rsa"
-	ioutil.WriteFile(privateKeyFile, keypair.privatekey, 0400)
-	defer os.Remove(privateKeyFile)
 	for _, m := range shoot.Payload.Machines {
 		if *m.ID == mid {
+			privateKeyFile := "." + cid + ".id_rsa"
+			ioutil.WriteFile(privateKeyFile, keypair.privatekey, 0400)
+			defer os.Remove(privateKeyFile)
 			if console {
 				fmt.Printf("access console via ssh\n")
 				bmcConsolePort := "5222"
