@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"path"
 	"sort"
 	"strings"
 	"time"
@@ -921,8 +922,15 @@ func clusterMachineSSH(args []string, console bool) error {
 	}
 	for _, m := range shoot.Payload.Machines {
 		if *m.ID == mid {
-			privateKeyFile := "." + cid + ".id_rsa"
-			ioutil.WriteFile(privateKeyFile, keypair.privatekey, 0400)
+			home, err := os.UserHomeDir()
+			if err != nil {
+				return fmt.Errorf("unable determine home directory:%v", err)
+			}
+			privateKeyFile := path.Join(home, "."+programName, "."+cid+".id_rsa")
+			err = ioutil.WriteFile(privateKeyFile, keypair.privatekey, 0400)
+			if err != nil {
+				return fmt.Errorf("unable to write private key:%s error:%v", privateKeyFile, err)
+			}
 			defer os.Remove(privateKeyFile)
 			if console {
 				fmt.Printf("access console via ssh\n")
