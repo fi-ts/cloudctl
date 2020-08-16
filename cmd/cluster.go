@@ -130,9 +130,15 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	clusterMachinesCmd = &cobra.Command{
-		Use:   "machines",
-		Short: "get machines in the cluster",
+	clusterMachineCmd = &cobra.Command{
+		Use:     "machine",
+		Aliases: []string{"machines"},
+		Short:   "list and access machines in the cluster",
+	}
+	clusterMachineListCmd = &cobra.Command{
+		Use:     "ls",
+		Aliases: []string{"list"},
+		Short:   "list machines of the cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterMachines(args)
 		},
@@ -143,11 +149,6 @@ var (
 			return clusterListCompletion()
 		},
 		PreRun: bindPFlags,
-	}
-	clusterMachineCmd = &cobra.Command{
-		Use:   "machine",
-		Short: "access machines of the cluster",
-		Long:  "ssh access to machines or firewall.",
 	}
 	clusterMachineSSHCmd = &cobra.Command{
 		Use:   "ssh <clusterid>",
@@ -314,6 +315,7 @@ func init() {
 		fmt.Printf("args:%v\n", args)
 		return clusterMachineListCompletion("123")
 	})
+	clusterMachineCmd.AddCommand(clusterMachineListCmd)
 	clusterMachineCmd.AddCommand(clusterMachineSSHCmd)
 	clusterMachineCmd.AddCommand(clusterMachineConsoleCmd)
 
@@ -326,7 +328,6 @@ func init() {
 	clusterCmd.AddCommand(clusterReconcileCmd)
 	clusterCmd.AddCommand(clusterUpdateCmd)
 	clusterCmd.AddCommand(clusterMachineCmd)
-	clusterCmd.AddCommand(clusterMachinesCmd)
 	clusterCmd.AddCommand(clusterLogsCmd)
 }
 
