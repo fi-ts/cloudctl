@@ -14,14 +14,15 @@ require (
 	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/metal-stack/metal-lib v0.5.0
 	github.com/metal-stack/security v0.3.0
-	github.com/metal-stack/updater v1.1.0
+	github.com/metal-stack/updater v1.1.1
 	github.com/metal-stack/v v1.0.2
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/spf13/viper v1.7.0
+	github.com/spf13/viper v1.7.1
+	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
 	google.golang.org/protobuf v1.21.0 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v9 v9.31.0

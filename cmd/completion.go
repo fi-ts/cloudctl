@@ -75,6 +75,20 @@ func clusterListCompletion() ([]string, cobra.ShellCompDirective) {
 	return names, cobra.ShellCompDirectiveDefault
 }
 
+func clusterMachineListCompletion(clusterID string) ([]string, cobra.ShellCompDirective) {
+	findRequest := cluster.NewFindClusterParams()
+	findRequest.SetID(clusterID)
+	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var machines []string
+	for _, m := range shoot.Payload.Machines {
+		machines = append(machines, *m.ID)
+	}
+	return machines, cobra.ShellCompDirectiveDefault
+}
+
 func projectListCompletion() ([]string, cobra.ShellCompDirective) {
 	request := project.NewListProjectsParams()
 	response, err := cloud.Project.ListProjects(request, cloud.Auth)
