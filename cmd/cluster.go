@@ -420,10 +420,15 @@ func clusterCreate() error {
 	}
 
 	var workerCRI models.V1beta1CRI
-	if cri == "containerd" {
+	switch cri {
+	case "containerd":
 		workerCRI = models.V1beta1CRI{
 			Name: &cri,
 		}
+	case "docker":
+		// noop
+	default:
+		log.Fatalf("provided cri:%s is not supported, only docker or containerd at the moment", cri)
 	}
 
 	scr := &models.V1ClusterCreateRequest{
