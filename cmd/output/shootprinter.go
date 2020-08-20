@@ -44,7 +44,7 @@ func (s ShootConditionsTablePrinter) Print(data []*models.V1beta1Condition) {
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Firewall"}
+	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall"}
 	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 	s.Order(data)
 	for _, cluster := range data {
@@ -102,12 +102,16 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 
 		privileged := shoot.Spec.Kubernetes.AllowPrivilegedContainers
 
+		runtime := "docker"
 		autoScaleMin := int32(0)
 		autoScaleMax := int32(0)
 		if shoot.Spec.Provider.Workers != nil && len(shoot.Spec.Provider.Workers) > 0 {
 			workers := shoot.Spec.Provider.Workers[0]
 			autoScaleMin = *workers.Minimum
 			autoScaleMax = *workers.Maximum
+			if workers.Cri != nil && *workers.Cri.Name != "" {
+				runtime = *workers.Cri.Name
+			}
 		}
 		size := fmt.Sprintf("%d/%d", autoScaleMin, autoScaleMax)
 		tenant := shoot.Metadata.Annotations[tag.ClusterTenant]
@@ -126,6 +130,7 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 			age,
 			purpose,
 			fmt.Sprintf("%t", privileged),
+			runtime,
 			firewallImage,
 		}
 		short := []string{shoot.Metadata.UID,
