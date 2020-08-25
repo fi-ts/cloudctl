@@ -57,6 +57,10 @@ func init() {
 	ipListCmd.Flags().StringP("prefix", "", "", "prefx to filter [optional]")
 	ipListCmd.Flags().StringP("machineid", "", "", "machineid to filter [optional]")
 	ipListCmd.Flags().StringP("network", "", "", "network to filter [optional]")
+
+	ipStaticCmd.Flags().StringP("name", "", "", "set name of the ip address [optional]")
+	ipStaticCmd.Flags().StringP("description", "", "", "set description of the ip address [optional]")
+
 	ipListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return projectListCompletion()
 	})
@@ -108,6 +112,13 @@ func ipStatic(args []string) error {
 		Ipaddress: &ipAddress,
 		Type:      "static",
 	}
+	if helper.ViperString("name") != nil {
+		iur.Name = *helper.ViperString("name")
+	}
+	if helper.ViperString("description") != nil {
+		iur.Description = *helper.ViperString("description")
+	}
+
 	params.SetBody(iur)
 	resp, err := cloud.IP.UpdateIP(params, cloud.Auth)
 	if err != nil {
