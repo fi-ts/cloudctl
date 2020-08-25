@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/mitchellh/go-homedir"
+
 	output "github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/fi-ts/cloudctl/pkg/api"
 	c "github.com/fi-ts/cloudctl/pkg/cloud"
@@ -108,7 +110,12 @@ func initConfig() {
 	} else {
 		viper.SetConfigName("config")
 		viper.AddConfigPath(fmt.Sprintf("/etc/%s", programName))
-		viper.AddConfigPath(fmt.Sprintf("$HOME/.%s", programName))
+		h, err := homedir.Dir()
+		if err != nil {
+			log.Printf("unable to figure out user home directory, skipping config lookup path: %v", err)
+		} else {
+			viper.AddConfigPath(fmt.Sprintf(h+"/.%s", programName))
+		}
 		viper.AddConfigPath(".")
 		if err := viper.ReadInConfig(); err != nil {
 			usedCfg := viper.ConfigFileUsed()
