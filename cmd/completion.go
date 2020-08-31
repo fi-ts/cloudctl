@@ -70,7 +70,7 @@ func clusterListCompletion() ([]string, cobra.ShellCompDirective) {
 	}
 	var names []string
 	for _, c := range response.Payload {
-		names = append(names, c.Shoot.Metadata.UID)
+		names = append(names, *c.ID)
 	}
 	return names, cobra.ShellCompDirectiveDefault
 }

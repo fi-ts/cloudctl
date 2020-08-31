@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/fi-ts/cloud-go/api/models"
-	"github.com/metal-stack/metal-lib/pkg/tag"
 )
 
 // Order cluster
@@ -18,52 +17,70 @@ func (s ShootTablePrinter) Order(data []*models.V1ClusterResponse) {
 		sort.SliceStable(data, func(i, j int) bool {
 			A := data[i]
 			B := data[j]
-			tenantA := A.Shoot.Metadata.Annotations[tag.ClusterTenant]
-			tenantB := B.Shoot.Metadata.Annotations[tag.ClusterTenant]
-			projectA := A.Shoot.Metadata.Annotations[tag.ClusterProject]
-			projectB := B.Shoot.Metadata.Annotations[tag.ClusterProject]
-			nameA := A.Shoot.Metadata.Name
-			nameB := B.Shoot.Metadata.Name
+			tenantA := A.Tenant
+			tenantB := B.Tenant
+			projectA := A.ProjectID
+			projectB := B.ProjectID
+			nameA := A.Name
+			nameB := B.Name
 			for _, order := range cols {
 				order = strings.ToLower(order)
 				switch order {
 				case "tenant":
-					if tenantA == "" {
+					if A.Tenant == nil {
 						return true
 					}
-					if tenantB == "" {
+					if B.Tenant == nil {
 						return false
 					}
-					if tenantA < tenantB {
+					if *tenantA == "" {
 						return true
 					}
-					if tenantA != tenantB {
+					if *tenantB == "" {
+						return false
+					}
+					if *tenantA < *tenantB {
+						return true
+					}
+					if *tenantA != *tenantB {
 						return false
 					}
 				case "project":
-					if projectA == "" {
+					if A.ProjectID == nil {
 						return true
 					}
-					if projectB == "" {
+					if B.ProjectID == nil {
 						return false
 					}
-					if projectA < projectB {
+					if *projectA == "" {
 						return true
 					}
-					if projectA != projectB {
+					if *projectB == "" {
+						return false
+					}
+					if *projectA < *projectB {
+						return true
+					}
+					if *projectA != *projectB {
 						return false
 					}
 				case "name":
-					if nameA == "" {
+					if A.Name == nil {
 						return true
 					}
-					if nameB == "" {
+					if B.Name == nil {
 						return false
 					}
-					if nameA < nameB {
+					if *nameA == "" {
 						return true
 					}
-					if nameA != nameB {
+					if *nameB == "" {
+						return false
+					}
+					if *nameA < *nameB {
+						return true
+					}
+					if *nameA != *nameB {
 						return false
 					}
 				}

@@ -2,10 +2,7 @@ package output
 
 import (
 	"fmt"
-	"os"
 	"time"
-
-	"github.com/metal-stack/metal-lib/pkg/tag"
 
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
@@ -47,9 +44,8 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall"}
 	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 	s.Order(data)
-	for _, cluster := range data {
-		shoot := cluster.Shoot
-		infrastructure := cluster.Infrastructure
+	for i := range data {
+		shoot := data[i]
 
 		apiserver := ""
 		controlplane := ""
@@ -71,12 +67,10 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 			}
 		}
 
-		created, err := time.Parse(time.RFC3339, shoot.Metadata.CreationTimestamp)
-		if err != nil {
-			fmt.Printf("unable to parse creationtime: %v", err)
-			os.Exit(1)
+		age := ""
+		if shoot.CreationTimestamp != nil {
+			age = helper.HumanizeDuration(time.Since(time.Time(*shoot.CreationTimestamp)))
 		}
-		age := helper.HumanizeDuration(time.Since(created))
 		operation := ""
 		progress := "0%"
 		if shoot.Status.LastOperation != nil {
@@ -84,44 +78,54 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 			progress = fmt.Sprintf("%d%% [%s]", *shoot.Status.LastOperation.Progress, *shoot.Status.LastOperation.Type)
 		}
 		partition := ""
-		if infrastructure != nil && infrastructure.PartitionID != nil {
-			partition = *infrastructure.PartitionID
+		if shoot.PartitionID != nil {
+			partition = *shoot.PartitionID
 		}
 		dnsdomain := ""
-		if shoot.Spec.DNS != nil && shoot.Spec.DNS.Domain != "" {
-			dnsdomain = shoot.Spec.DNS.Domain
+		if shoot.DNSEndpoint != nil {
+			dnsdomain = *shoot.DNSEndpoint
 		}
 		version := ""
-		if shoot.Spec.Kubernetes.Version != nil {
-			version = *shoot.Spec.Kubernetes.Version
+		if shoot.Kubernetes.Version != nil {
+			version = *shoot.Kubernetes.Version
 		}
 		purpose := ""
-		if len(shoot.Spec.Purpose) > 0 {
-			purpose = shoot.Spec.Purpose[:4]
+		if shoot.Purpose != nil {
+			p := *shoot.Purpose
+			purpose = p[:4]
 		}
 
-		privileged := shoot.Spec.Kubernetes.AllowPrivilegedContainers
+		privileged := ""
+		if shoot.Kubernetes.AllowPrivilegedContainers != nil {
+			privileged = fmt.Sprintf("%t", *shoot.Kubernetes.AllowPrivilegedContainers)
+		}
 
 		runtime := "docker"
 		autoScaleMin := int32(0)
 		autoScaleMax := int32(0)
-		if shoot.Spec.Provider.Workers != nil && len(shoot.Spec.Provider.Workers) > 0 {
-			workers := shoot.Spec.Provider.Workers[0]
+		if shoot.Workers != nil && len(shoot.Workers) > 0 {
+			workers := shoot.Workers[0]
 			autoScaleMin = *workers.Minimum
 			autoScaleMax = *workers.Maximum
-			if workers.Cri != nil && *workers.Cri.Name != "" {
-				runtime = *workers.Cri.Name
+			if workers.CRI != nil && *workers.CRI != "" {
+				runtime = *workers.CRI
 			}
 		}
 		size := fmt.Sprintf("%d/%d", autoScaleMin, autoScaleMax)
-		tenant := shoot.Metadata.Annotations[tag.ClusterTenant]
-		project := shoot.Metadata.Annotations[tag.ClusterProject]
+		tenant := ""
+		if shoot.Tenant != nil {
+			tenant = *shoot.Tenant
+		}
+		project := ""
+		if shoot.ProjectID != nil {
+			project = *shoot.ProjectID
+		}
 
 		firewallImage := ""
-		if infrastructure.Firewall != nil && infrastructure.Firewall.Image != nil {
-			firewallImage = *infrastructure.Firewall.Image
+		if shoot.FirewallImage != nil {
+			firewallImage = *shoot.FirewallImage
 		}
-		wide := []string{shoot.Metadata.UID, shoot.Metadata.Name,
+		wide := []string{*shoot.ID, *shoot.Name,
 			version, partition, dnsdomain,
 			operation,
 			progress,
@@ -129,14 +133,14 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 			size,
 			age,
 			purpose,
-			fmt.Sprintf("%t", privileged),
+			privileged,
 			runtime,
 			firewallImage,
 		}
-		short := []string{shoot.Metadata.UID,
+		short := []string{*shoot.ID,
 			tenant,
 			project,
-			shoot.Metadata.Name,
+			*shoot.Name,
 			version, partition,
 			operation,
 			progress,

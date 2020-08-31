@@ -1,13 +1,13 @@
 module github.com/fi-ts/cloudctl
 
-go 1.14
+go 1.15
 
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/fatih/color v1.9.0
-	github.com/fi-ts/cloud-go v0.7.15
-	github.com/gardener/gardener v1.4.2
-	github.com/go-openapi/runtime v0.19.20
+	github.com/fi-ts/cloud-go v0.7.16-0.20200831112603-f57bc639d446
+	github.com/gardener/gardener v1.8.2
+	github.com/go-openapi/runtime v0.19.21
 	github.com/go-openapi/strfmt v0.19.5
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/jinzhu/now v1.1.1
@@ -27,7 +27,9 @@ require (
 	google.golang.org/protobuf v1.21.0 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v9 v9.31.0
-	gopkg.in/ini.v1 v1.57.0 // indirect
+	gopkg.in/ini.v1 v1.60.2 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
-	k8s.io/api v0.17.4 // indirect
+	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
 )
+
+replace k8s.io/client-go => k8s.io/client-go v0.17.6
