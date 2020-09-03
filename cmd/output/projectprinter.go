@@ -16,7 +16,7 @@ type (
 )
 
 // Print a Project as table
-func (p ProjectTablePrinter) Print(data []*models.V1Project) {
+func (p ProjectTablePrinter) Print(data []*models.V1ProjectResponse) {
 	p.wideHeader = []string{"UID", "Tenant", "Name", "Description", "Clusters", "Machines", "IPs", "Labels", "Annotations"}
 	p.shortHeader = p.wideHeader
 	p.Order(data)

@@ -74,7 +74,7 @@ func (s ShootTablePrinter) Order(data []*models.V1ClusterResponse) {
 }
 
 // Order Project
-func (s ProjectTablePrinter) Order(data []*models.V1Project) {
+func (s ProjectTablePrinter) Order(data []*models.V1ProjectResponse) {
 	cols := strings.Split(s.order, ",")
 	if len(cols) > 0 {
 		sort.SliceStable(data, func(i, j int) bool {
