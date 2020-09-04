@@ -130,7 +130,7 @@ func projectCreate() error {
 		return err
 	}
 
-	p := &models.V1Project{
+	pcr := &models.V1ProjectCreateRequest{
 		Name:        name,
 		Description: desc,
 		TenantID:    tenant,
@@ -146,12 +146,9 @@ func projectCreate() error {
 			Labels:      labels,
 		},
 	}
-	pcr := models.V1ProjectCreateRequest{
-		Project: p,
-	}
 
 	request := project.NewCreateProjectParams()
-	request.SetBody(&pcr)
+	request.SetBody(pcr)
 
 	response, err := cloud.Project.CreateProject(request, cloud.Auth)
 	if err != nil {
@@ -165,7 +162,7 @@ func projectCreate() error {
 		}
 	}
 
-	return printer.Print(response.Payload.Project)
+	return printer.Print(response.Payload)
 }
 
 func projectDescribe(args []string) error {
@@ -186,7 +183,7 @@ func projectDescribe(args []string) error {
 		}
 	}
 
-	return printer.Print(p.Payload.Project)
+	return printer.Print(p.Payload)
 }
 
 func projectDelete(args []string) error {
@@ -207,7 +204,7 @@ func projectDelete(args []string) error {
 		}
 	}
 
-	return printer.Print(response.Payload.Project)
+	return printer.Print(response.Payload)
 }
 
 func projectList() error {
@@ -235,19 +232,19 @@ func projectID(verb string, args []string) (string, error) {
 }
 
 func projectApply() error {
-	var pars []models.V1Project
-	var par models.V1Project
+	var pars []models.V1ProjectCreateRequest
+	var par models.V1ProjectCreateRequest
 	err := helper.ReadFrom(viper.GetString("file"), &par, func(data interface{}) {
-		doc := data.(*models.V1Project)
+		doc := data.(*models.V1ProjectCreateRequest)
 		pars = append(pars, *doc)
 		// the request needs to be renewed as otherwise the pointers in the request struct will
 		// always point to same last value in the multi-document loop
-		par = models.V1Project{}
+		par = models.V1ProjectCreateRequest{}
 	})
 	if err != nil {
 		return err
 	}
-	var response []*models.V1Project
+	var response []*models.V1ProjectResponse
 	for _, par := range pars {
 		request := project.NewFindProjectParams()
 		request.SetID(par.Meta.ID)
@@ -260,9 +257,9 @@ func projectApply() error {
 				return output.UnconventionalError(err)
 			}
 		}
-		if p.Payload.Project == nil {
+		if p.Payload == nil {
 			params := project.NewCreateProjectParams()
-			params.SetBody(&models.V1ProjectCreateRequest{Project: &par})
+			params.SetBody(&par)
 			resp, err := cloud.Project.CreateProject(params, cloud.Auth)
 			if err != nil {
 				switch e := err.(type) {
@@ -274,12 +271,28 @@ func projectApply() error {
 					return output.UnconventionalError(err)
 				}
 			}
-			response = append(response, resp.Payload.Project)
+			response = append(response, resp.Payload)
 			continue
 		}
-		if p.Payload.Project.Meta != nil {
+		if p.Payload.Meta != nil {
 			params := project.NewUpdateProjectParams()
-			params.SetBody(&models.V1ProjectUpdateRequest{Project: &par})
+			pur := &models.V1ProjectUpdateRequest{}
+			if par.Description != "" {
+				pur.Description = par.Description
+			}
+			if par.Name != "" {
+				pur.Name = par.Name
+			}
+			if par.Quotas != nil {
+				pur.Quotas = par.Quotas
+			}
+			if par.Meta != nil {
+				pur.Meta = par.Meta
+			}
+			if par.TenantID != "" {
+				pur.TenantID = par.TenantID
+			}
+			params.SetBody(pur)
 			resp, err := cloud.Project.UpdateProject(params, cloud.Auth)
 			if err != nil {
 				switch e := err.(type) {
@@ -289,7 +302,7 @@ func projectApply() error {
 					return output.UnconventionalError(err)
 				}
 			}
-			response = append(response, resp.Payload.Project)
+			response = append(response, resp.Payload)
 			continue
 		}
 	}
@@ -309,7 +322,7 @@ func projectEdit(args []string) error {
 		if err != nil {
 			return nil, fmt.Errorf("project describe error:%v", err)
 		}
-		content, err := yaml.Marshal(resp.Payload.Project)
+		content, err := yaml.Marshal(resp.Payload)
 		if err != nil {
 			return nil, err
 		}
@@ -324,7 +337,7 @@ func projectEdit(args []string) error {
 			return fmt.Errorf("project update error more or less than one project given:%d", len(purs))
 		}
 		pup := project.NewUpdateProjectParams()
-		pup.Body = &models.V1ProjectUpdateRequest{Project: &purs[0]}
+		pup.Body = &purs[0]
 		uresp, err := cloud.Project.UpdateProject(pup, cloud.Auth)
 		if err != nil {
 			switch e := err.(type) {
@@ -334,26 +347,26 @@ func projectEdit(args []string) error {
 				return output.UnconventionalError(err)
 			}
 		}
-		return printer.Print(uresp.Payload.Project)
+		return printer.Print(uresp.Payload)
 	}
 
 	return helper.Edit(id, getFunc, updateFunc)
 }
 
-func readProjectUpdateRequests(filename string) ([]models.V1Project, error) {
-	var pcrs []models.V1Project
-	var pcr models.V1Project
-	err := helper.ReadFrom(filename, &pcr, func(data interface{}) {
-		doc := data.(*models.V1Project)
-		pcrs = append(pcrs, *doc)
+func readProjectUpdateRequests(filename string) ([]models.V1ProjectUpdateRequest, error) {
+	var purs []models.V1ProjectUpdateRequest
+	var pur models.V1ProjectUpdateRequest
+	err := helper.ReadFrom(filename, &pur, func(data interface{}) {
+		doc := data.(*models.V1ProjectUpdateRequest)
+		purs = append(purs, *doc)
 	})
 	if err != nil {
-		return pcrs, err
+		return purs, err
 	}
-	if len(pcrs) != 1 {
-		return pcrs, fmt.Errorf("project update error more or less than one project given:%d", len(pcrs))
+	if len(purs) != 1 {
+		return purs, fmt.Errorf("project update error more or less than one project given:%d", len(purs))
 	}
-	return pcrs, nil
+	return purs, nil
 }
 
 func annotationsAsMap(annotations []string) (map[string]string, error) {

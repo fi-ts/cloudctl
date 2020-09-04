@@ -182,9 +182,9 @@ func (t TablePrinter) Print(data interface{}) error {
 		ShootTablePrinter{t}.Print(d)
 	case []*models.V1beta1Condition:
 		ShootConditionsTablePrinter{t}.Print(d)
-	case *models.V1Project:
-		ProjectTablePrinter{t}.Print([]*models.V1Project{d})
-	case []*models.V1Project:
+	case *models.V1ProjectResponse:
+		ProjectTablePrinter{t}.Print([]*models.V1ProjectResponse{d})
+	case []*models.V1ProjectResponse:
 		if t.order == "" {
 			t.order = "tenant,project"
 		}

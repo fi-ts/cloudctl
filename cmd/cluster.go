@@ -214,7 +214,6 @@ func init() {
 	clusterCreateCmd.Flags().StringSlice("labels", []string{}, "labels of the cluster")
 	clusterCreateCmd.Flags().StringSlice("external-networks", []string{"internet"}, "external networks of the cluster, can be internet,mpls")
 	clusterCreateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster.")
-	clusterCreateCmd.Flags().BoolP("defaultingress", "", false, "deploy a default ingress controller")
 
 	err := clusterCreateCmd.MarkFlagRequired("name")
 	if err != nil {
@@ -351,7 +350,6 @@ func clusterCreate() error {
 	maxunavailable := viper.GetString("maxunavailable")
 
 	allowprivileged := viper.GetBool("allowprivileged")
-	defaultingress := viper.GetBool("defaultingress")
 
 	labels := viper.GetStringSlice("labels")
 
@@ -361,8 +359,6 @@ func clusterCreate() error {
 	autoUpdateMachineImage := false
 	maintenanceBegin := "220000+0100"
 	maintenanceEnd := "233000+0100"
-
-	kubernetesEnabled := false
 
 	version := viper.GetString("version")
 	if version == "" {
@@ -419,14 +415,9 @@ func clusterCreate() error {
 		labelMap[parts[0]] = parts[1]
 	}
 
-	var workerCRI models.V1beta1CRI
 	switch cri {
 	case "containerd":
-		workerCRI = models.V1beta1CRI{
-			Name: &cri,
-		}
 	case "docker":
-		// noop
 	default:
 		log.Fatalf("provided cri:%s is not supported, only docker or containerd at the moment", cri)
 	}
@@ -445,7 +436,7 @@ func clusterCreate() error {
 				MaxUnavailable: &maxunavailable,
 				MachineType:    &machineType,
 				MachineImage:   &machineImage,
-				CRI:            &workerCRI,
+				CRI:            &cri,
 			},
 		},
 		FirewallSize:  &firewallType,
@@ -466,10 +457,6 @@ func clusterCreate() error {
 		},
 		AdditionalNetworks: networks,
 		PartitionID:        &partition,
-		Addons: &models.V1Addons{
-			KubernetesDashboard: &kubernetesEnabled,
-			NginxIngress:        &defaultingress,
-		},
 	}
 	request := cluster.NewCreateClusterParams()
 	request.SetBody(scr)
@@ -721,7 +708,7 @@ func updateCluster(args []string) error {
 				return output.UnconventionalError(err)
 			}
 		}
-		labelMap := shoot.Payload.Shoot.Metadata.Labels
+		labelMap := shoot.Payload.Labels
 
 		for _, l := range removeLabels {
 			parts := strings.SplitN(l, "=", 2)
@@ -781,13 +768,13 @@ func clusterDelete(args []string) error {
 		}
 	}
 	printer.Print(resp.Payload)
-	firstPartOfClusterID := strings.Split(resp.Payload.Shoot.Metadata.UID, "-")[0]
+	firstPartOfClusterID := strings.Split(*resp.Payload.ID, "-")[0]
 	fmt.Println("Please answer some security questions to delete this cluster")
 	err = helper.Prompt("first part of clusterID:", firstPartOfClusterID)
 	if err != nil {
 		return err
 	}
-	err = helper.Prompt("Clustername:", resp.Payload.Shoot.Metadata.Name)
+	err = helper.Prompt("Clustername:", *resp.Payload.Name)
 	if err != nil {
 		return err
 	}
@@ -874,8 +861,8 @@ func clusterLogs(args []string) error {
 		}
 	}
 	var conditions []*models.V1beta1Condition
-	if shoot.Payload != nil && shoot.Payload.Shoot != nil && shoot.Payload.Shoot.Status != nil {
-		conditions = shoot.Payload.Shoot.Status.Conditions
+	if shoot.Payload != nil && shoot.Payload.Status != nil {
+		conditions = shoot.Payload.Status.Conditions
 	}
 	return printer.Print(conditions)
 }
