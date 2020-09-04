@@ -16,6 +16,10 @@ jobs:
         uses: actions/checkout@master
       - name: Make tag
         run: echo "::set-env name=TAG_NAME::${GITHUB_REF##*/}"
+      - name: Get release
+        id: get_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Build
         uses: metal-stack/action-docker-make@master
         with:
@@ -25,8 +29,6 @@ jobs:
             --build-only cloudctl-slug
             -x rule2,rule3
             --summary
-      - name: Get release
-        id: get_release
         uses: bruceadams/get-release@v1.2.1
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1.0.2
