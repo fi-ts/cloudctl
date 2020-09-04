@@ -25,12 +25,15 @@ jobs:
             --build-only cloudctl-slug
             -x rule2,rule3
             --summary
+      - name: Get release
+        id: get_release
+        uses: bruceadams/get-release@v1.2.0
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1.0.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: result/cloudctl-linux-amd64
           asset_name: cloudctl-linux-amd64
           asset_content_type: application/octet-stream
@@ -39,7 +42,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: result/cloudctl-windows-amd64
           asset_name: cloudctl-windows-amd64
           asset_content_type: application/octet-stream
@@ -48,7 +51,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: result/cloudctl-darwin-amd64
           asset_name: cloudctl-darwin-amd64
           asset_content_type: application/octet-stream
@@ -57,7 +60,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: result/cloudctl-linux-amd64.md5
           asset_name: cloudctl-linux-amd64.md5
           asset_content_type: application/octet-stream
@@ -66,7 +69,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: result/cloudctl-windows-amd64.md5
           asset_name: cloudctl-windows-amd64.md5
           asset_content_type: application/octet-stream
@@ -75,7 +78,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: result/cloudctl-darwin-amd64.md5
           asset_name: cloudctl-darwin-amd64.md5
           asset_content_type: application/octet-stream
