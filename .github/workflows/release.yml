@@ -30,7 +30,6 @@ jobs:
             --build-only cloudctl-slug
             -x rule2,rule3
             --summary
-        uses: bruceadams/get-release@v1.2.1
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1.0.2
         env:
