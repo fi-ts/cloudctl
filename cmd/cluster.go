@@ -767,17 +767,21 @@ func clusterDelete(args []string) error {
 			return output.UnconventionalError(err)
 		}
 	}
-	printer.Print(resp.Payload)
-	firstPartOfClusterID := strings.Split(*resp.Payload.ID, "-")[0]
-	fmt.Println("Please answer some security questions to delete this cluster")
-	err = helper.Prompt("first part of clusterID:", firstPartOfClusterID)
-	if err != nil {
-		return err
+
+	if !viper.GetBool("yes-i-really-mean-it") {
+		printer.Print(resp.Payload)
+		firstPartOfClusterID := strings.Split(*resp.Payload.ID, "-")[0]
+		fmt.Println("Please answer some security questions to delete this cluster")
+		err = helper.Prompt("first part of clusterID:", firstPartOfClusterID)
+		if err != nil {
+			return err
+		}
+		err = helper.Prompt("Clustername:", *resp.Payload.Name)
+		if err != nil {
+			return err
+		}
 	}
-	err = helper.Prompt("Clustername:", *resp.Payload.Name)
-	if err != nil {
-		return err
-	}
+
 	request := cluster.NewDeleteClusterParams()
 	request.SetID(ci)
 	c, err := cloud.Cluster.DeleteCluster(request, cloud.Auth)
