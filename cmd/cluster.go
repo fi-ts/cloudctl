@@ -279,8 +279,7 @@ func init() {
 	clusterUpdateCmd.Flags().String("machineimage", "", "machine image to use for the nodes, must be in the form of <name>-<version> ")
 	clusterUpdateCmd.Flags().StringSlice("addlabels", []string{}, "labels to add to the cluster")
 	clusterUpdateCmd.Flags().StringSlice("removelabels", []string{}, "labels to remove from the cluster")
-	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster, please add --i-am-aware-of-dangerous-settings")
-	clusterUpdateCmd.Flags().BoolP("i-am-aware-of-dangerous-settings", "", false, "required when modify dangerous settings")
+	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster, please add --yes-i-really-mean-it")
 	clusterUpdateCmd.Flags().String("purpose", "", "purpose of the cluster, can be one of production|testing|development|evaluation. SLA is only given on production clusters.")
 	clusterUpdateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return versionListCompletion()
@@ -730,8 +729,8 @@ func updateCluster(args []string) error {
 		k8s.Version = &version
 	}
 	if viper.IsSet("allowprivileged") {
-		if !viper.GetBool("i-am-aware-of-dangerous-settings") {
-			return fmt.Errorf("allowprivileged is set but you forgot to add --i-am-aware-of-dangerous-settings")
+		if !viper.GetBool("yes-i-really-mean-it") {
+			return fmt.Errorf("allowprivileged is set but you forgot to add --yes-i-really-mean-it")
 		}
 		allowPrivileged := viper.GetBool("allowprivileged")
 		k8s.AllowPrivilegedContainers = &allowPrivileged
@@ -756,19 +755,20 @@ func clusterDelete(args []string) error {
 	if err != nil {
 		return err
 	}
-	findRequest := cluster.NewFindClusterParams()
-	findRequest.SetID(ci)
-	resp, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
-	if err != nil {
-		switch e := err.(type) {
-		case *cluster.FindClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
-	}
 
 	if !viper.GetBool("yes-i-really-mean-it") {
+		findRequest := cluster.NewFindClusterParams()
+		findRequest.SetID(ci)
+		resp, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+		if err != nil {
+			switch e := err.(type) {
+			case *cluster.FindClusterDefault:
+				return output.HTTPError(e.Payload)
+			default:
+				return output.UnconventionalError(err)
+			}
+		}
+
 		printer.Print(resp.Payload)
 		firstPartOfClusterID := strings.Split(*resp.Payload.ID, "-")[0]
 		fmt.Println("Please answer some security questions to delete this cluster")
