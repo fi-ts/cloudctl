@@ -776,30 +776,31 @@ func clusterDelete(args []string) error {
 		return err
 	}
 
-	if !viper.GetBool("yes-i-really-mean-it") {
-		findRequest := cluster.NewFindClusterParams()
-		findRequest.SetID(ci)
-		resp, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
-		if err != nil {
-			switch e := err.(type) {
-			case *cluster.FindClusterDefault:
-				return output.HTTPError(e.Payload)
-			default:
-				return output.UnconventionalError(err)
-			}
+	// we discussed that users are not able to skip the cluster deletion prompt
+	// with the --yes-i-really-mean-it flag because deleting our clusters with
+	// local storage only could lead to very big problems for users.
+	findRequest := cluster.NewFindClusterParams()
+	findRequest.SetID(ci)
+	resp, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	if err != nil {
+		switch e := err.(type) {
+		case *cluster.FindClusterDefault:
+			return output.HTTPError(e.Payload)
+		default:
+			return output.UnconventionalError(err)
 		}
+	}
 
-		printer.Print(resp.Payload)
-		firstPartOfClusterID := strings.Split(*resp.Payload.ID, "-")[0]
-		fmt.Println("Please answer some security questions to delete this cluster")
-		err = helper.Prompt("first part of clusterID:", firstPartOfClusterID)
-		if err != nil {
-			return err
-		}
-		err = helper.Prompt("Clustername:", *resp.Payload.Name)
-		if err != nil {
-			return err
-		}
+	printer.Print(resp.Payload)
+	firstPartOfClusterID := strings.Split(*resp.Payload.ID, "-")[0]
+	fmt.Println("Please answer some security questions to delete this cluster")
+	err = helper.Prompt("first part of clusterID:", firstPartOfClusterID)
+	if err != nil {
+		return err
+	}
+	err = helper.Prompt("Clustername:", *resp.Payload.Name)
+	if err != nil {
+		return err
 	}
 
 	request := cluster.NewDeleteClusterParams()
