@@ -318,6 +318,9 @@ func init() {
 	clusterMachineCmd.AddCommand(clusterMachineSSHCmd)
 	clusterMachineCmd.AddCommand(clusterMachineConsoleCmd)
 
+	clusterReconcileCmd.Flags().Bool("retry", false, "Executes a cluster \"retry\" operation instead of regular \"reconcile\".")
+	clusterReconcileCmd.Flags().Bool("maintain", false, "Executes a cluster \"maintain\" operation instead of regular \"reconcile\".")
+
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
 	clusterCmd.AddCommand(clusterKubeconfigCmd)
@@ -622,8 +625,25 @@ func reconcileCluster(args []string) error {
 	if err != nil {
 		return err
 	}
+
 	request := cluster.NewReconcileClusterParams()
 	request.SetID(ci)
+
+	if helper.ViperBool("retry") != nil && helper.ViperBool("maintain") != nil {
+		return fmt.Errorf("--retry and --maintain are mutually exclusive")
+	}
+
+	var operation *string
+	if viper.GetBool("retry") {
+		o := "retry"
+		operation = &o
+	}
+	if viper.GetBool("maintain") {
+		o := "maintain"
+		operation = &o
+	}
+	request.Body = &models.V1ClusterReconcileRequest{Operation: operation}
+
 	shoot, err := cloud.Cluster.ReconcileCluster(request, cloud.Auth)
 	if err != nil {
 		switch e := err.(type) {
