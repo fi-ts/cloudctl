@@ -279,8 +279,7 @@ func init() {
 	clusterUpdateCmd.Flags().String("machineimage", "", "machine image to use for the nodes, must be in the form of <name>-<version> ")
 	clusterUpdateCmd.Flags().StringSlice("addlabels", []string{}, "labels to add to the cluster")
 	clusterUpdateCmd.Flags().StringSlice("removelabels", []string{}, "labels to remove from the cluster")
-	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster, please add --i-am-aware-of-dangerous-settings")
-	clusterUpdateCmd.Flags().BoolP("i-am-aware-of-dangerous-settings", "", false, "required when modify dangerous settings")
+	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster, please add --yes-i-really-mean-it")
 	clusterUpdateCmd.Flags().String("purpose", "", "purpose of the cluster, can be one of production|testing|development|evaluation. SLA is only given on production clusters.")
 	clusterUpdateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return versionListCompletion()
@@ -318,6 +317,9 @@ func init() {
 	clusterMachineCmd.AddCommand(clusterMachineListCmd)
 	clusterMachineCmd.AddCommand(clusterMachineSSHCmd)
 	clusterMachineCmd.AddCommand(clusterMachineConsoleCmd)
+
+	clusterReconcileCmd.Flags().Bool("retry", false, "Executes a cluster \"retry\" operation instead of regular \"reconcile\".")
+	clusterReconcileCmd.Flags().Bool("maintain", false, "Executes a cluster \"maintain\" operation instead of regular \"reconcile\".")
 
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
@@ -623,8 +625,25 @@ func reconcileCluster(args []string) error {
 	if err != nil {
 		return err
 	}
+
 	request := cluster.NewReconcileClusterParams()
 	request.SetID(ci)
+
+	if helper.ViperBool("retry") != nil && helper.ViperBool("maintain") != nil {
+		return fmt.Errorf("--retry and --maintain are mutually exclusive")
+	}
+
+	var operation *string
+	if viper.GetBool("retry") {
+		o := "retry"
+		operation = &o
+	}
+	if viper.GetBool("maintain") {
+		o := "maintain"
+		operation = &o
+	}
+	request.Body = &models.V1ClusterReconcileRequest{Operation: operation}
+
 	shoot, err := cloud.Cluster.ReconcileCluster(request, cloud.Auth)
 	if err != nil {
 		switch e := err.(type) {
@@ -730,8 +749,8 @@ func updateCluster(args []string) error {
 		k8s.Version = &version
 	}
 	if viper.IsSet("allowprivileged") {
-		if !viper.GetBool("i-am-aware-of-dangerous-settings") {
-			return fmt.Errorf("allowprivileged is set but you forgot to add --i-am-aware-of-dangerous-settings")
+		if !viper.GetBool("yes-i-really-mean-it") {
+			return fmt.Errorf("allowprivileged is set but you forgot to add --yes-i-really-mean-it")
 		}
 		allowPrivileged := viper.GetBool("allowprivileged")
 		k8s.AllowPrivilegedContainers = &allowPrivileged
@@ -756,6 +775,10 @@ func clusterDelete(args []string) error {
 	if err != nil {
 		return err
 	}
+
+	// we discussed that users are not able to skip the cluster deletion prompt
+	// with the --yes-i-really-mean-it flag because deleting our clusters with
+	// local storage only could lead to very big problems for users.
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
 	resp, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
@@ -767,6 +790,7 @@ func clusterDelete(args []string) error {
 			return output.UnconventionalError(err)
 		}
 	}
+
 	printer.Print(resp.Payload)
 	firstPartOfClusterID := strings.Split(*resp.Payload.ID, "-")[0]
 	fmt.Println("Please answer some security questions to delete this cluster")
@@ -778,6 +802,7 @@ func clusterDelete(args []string) error {
 	if err != nil {
 		return err
 	}
+
 	request := cluster.NewDeleteClusterParams()
 	request.SetID(ci)
 	c, err := cloud.Cluster.DeleteCluster(request, cloud.Auth)

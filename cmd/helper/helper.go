@@ -53,7 +53,7 @@ func HumanizeDuration(duration time.Duration) string {
 
 // Prompt the user to given compare text
 func Prompt(msg, compare string) error {
-	fmt.Print(msg)
+	fmt.Print(msg + " ")
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()
 	if err := scanner.Err(); err != nil {
@@ -61,7 +61,7 @@ func Prompt(msg, compare string) error {
 	}
 	text := scanner.Text()
 	if text != compare {
-		return fmt.Errorf("wrong part (%s) of the clusterid given, please try again", text)
+		return fmt.Errorf("unexpected answer given (%q), aborting...", text)
 	}
 	return nil
 }
