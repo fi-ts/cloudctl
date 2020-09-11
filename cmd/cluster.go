@@ -259,6 +259,8 @@ func init() {
 	})
 
 	// Cluster list --------------------------------------------------------------------
+	clusterListCmd.Flags().String("id", "", "show clusters of given id")
+	clusterListCmd.Flags().String("name", "", "show clusters of given name")
 	clusterListCmd.Flags().String("project", "", "show clusters of given project")
 	clusterListCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterListCmd.Flags().String("tenant", "", "show clusters of given tenant")
@@ -477,12 +479,21 @@ func clusterCreate() error {
 }
 
 func clusterList() error {
+	id := viper.GetString("id")
+	name := viper.GetString("name")
 	tenant := viper.GetString("tenant")
 	partition := viper.GetString("partition")
 	project := viper.GetString("project")
 	var cfr *models.V1ClusterFindRequest
-	if tenant != "" || partition != "" || project != "" {
+	if id != "" || name != "" || tenant != "" || partition != "" || project != "" {
 		cfr = &models.V1ClusterFindRequest{}
+
+		if id != "" {
+			cfr.ID = &id
+		}
+		if name != "" {
+			cfr.Name = &name
+		}
 		if tenant != "" {
 			cfr.Tenant = &tenant
 		}

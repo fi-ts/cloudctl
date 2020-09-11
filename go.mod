@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/fatih/color v1.9.0
-	github.com/fi-ts/cloud-go v0.8.1
+	github.com/fi-ts/cloud-go v0.8.2-0.20200911074633-0fe708149df5
 	github.com/gardener/gardener v1.8.2
 	github.com/go-openapi/runtime v0.19.21
 	github.com/go-openapi/strfmt v0.19.5
@@ -31,3 +31,5 @@ require (
 )
 
 replace k8s.io/client-go => k8s.io/client-go v0.17.6
+
+// replace github.com/fi-ts/cloud-go => ../cloud-go
