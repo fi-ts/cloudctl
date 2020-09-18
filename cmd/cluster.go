@@ -963,16 +963,21 @@ func clusterMachineSSH(args []string, console bool) error {
 			feature := m.Allocation.Image.Features[0]
 			switch feature {
 			case "firewall":
+				openPortFound := false
 				for _, nw := range networks {
 					if *nw.Underlay || *nw.Private {
 						continue
 					}
 					for _, ip := range nw.Ips {
 						if portOpen(ip, "22", time.Second) {
+							openPortFound = true
 							err := ssh("-i", privateKeyFile, "metal"+"@"+ip)
 							return err
 						}
 					}
+				}
+				if !openPortFound {
+					return fmt.Errorf("no ip with a open ssh port found")
 				}
 			case "machine":
 				// FIXME metal user is not allowed to execute
