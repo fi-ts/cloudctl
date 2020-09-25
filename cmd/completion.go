@@ -108,11 +108,8 @@ func partitionListCompletion() ([]string, cobra.ShellCompDirective) {
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
-	var names []string
-	for p := range sc.Payload.PartitionConstraints {
-		names = append(names, p)
-	}
-	return names, cobra.ShellCompDirectiveDefault
+
+	return sc.Payload.Partitions, cobra.ShellCompDirectiveDefault
 }
 
 func networkListCompletion() ([]string, cobra.ShellCompDirective) {
@@ -121,11 +118,8 @@ func networkListCompletion() ([]string, cobra.ShellCompDirective) {
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
-	var names []string
-	for _, pc := range sc.Payload.PartitionConstraints {
-		names = append(names, pc.Networks...)
-	}
-	return names, cobra.ShellCompDirectiveDefault
+
+	return sc.Payload.Networks, cobra.ShellCompDirectiveDefault
 }
 func versionListCompletion() ([]string, cobra.ShellCompDirective) {
 	request := cluster.NewListConstraintsParams()
