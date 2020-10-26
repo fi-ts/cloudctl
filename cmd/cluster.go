@@ -867,15 +867,8 @@ func clusterMachines(args []string) error {
 	printer.Print(shoot.Payload)
 
 	// FIXME this is a ugly hack to reset the printer and have a new header.
-	printer, err = output.NewPrinter(
-		viper.GetString("output-format"),
-		viper.GetString("order"),
-		viper.GetString("template"),
-		viper.GetBool("no-headers"),
-	)
-	if err != nil {
-		log.Fatalf("unable to initialize printer:%v", err)
-	}
+	initPrinter()
+
 	fmt.Println("\nMachines:")
 	return printer.Print(shoot.Payload.Machines)
 }
@@ -897,10 +890,34 @@ func clusterLogs(args []string) error {
 		}
 	}
 	var conditions []*models.V1beta1Condition
+	var lastOperation *models.V1beta1LastOperation
+	var lastErrors []*models.V1beta1LastError
 	if shoot.Payload != nil && shoot.Payload.Status != nil {
 		conditions = shoot.Payload.Status.Conditions
+		lastOperation = shoot.Payload.Status.LastOperation
+		lastErrors = shoot.Payload.Status.LastErrors
 	}
-	return printer.Print(conditions)
+
+	fmt.Println("Conditions:")
+	err = printer.Print(conditions)
+	if err != nil {
+		return err
+	}
+
+	// FIXME this is a ugly hack to reset the printer and have a new header.
+	initPrinter()
+
+	fmt.Println("\nLast Errors:")
+	err = printer.Print(lastErrors)
+	if err != nil {
+		return err
+	}
+
+	// FIXME this is a ugly hack to reset the printer and have a new header.
+	initPrinter()
+
+	fmt.Println("\nLast Operation:")
+	return printer.Print(lastOperation)
 }
 
 func clusterInputs() error {

@@ -173,8 +173,8 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 // Print a model in a human readable table
 func (t TablePrinter) Print(data interface{}) error {
 	switch d := data.(type) {
-	case *models.V1ClusterResponse:
-		ShootTablePrinter{t}.Print([]*models.V1ClusterResponse{d})
+	case *models.V1ClusterDetailResponse:
+		ShootTableDetailPrinter{t}.Print(d)
 	case []*models.V1ClusterResponse:
 		if t.order == "" {
 			t.order = "tenant,project,name"
@@ -182,6 +182,10 @@ func (t TablePrinter) Print(data interface{}) error {
 		ShootTablePrinter{t}.Print(d)
 	case []*models.V1beta1Condition:
 		ShootConditionsTablePrinter{t}.Print(d)
+	case []*models.V1beta1LastError:
+		ShootLastErrorsTablePrinter{t}.Print(d)
+	case *models.V1beta1LastOperation:
+		ShootLastOperationTablePrinter{t}.Print(d)
 	case *models.V1ProjectResponse:
 		ProjectTablePrinter{t}.Print([]*models.V1ProjectResponse{d})
 	case []*models.V1ProjectResponse:
