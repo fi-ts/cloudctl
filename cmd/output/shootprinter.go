@@ -33,7 +33,8 @@ type (
 )
 
 const (
-	ImageExpirationDaysDefault = 7
+	ImageExpirationDaysDefault      = 14
+	KuberentesExpirationDaysDefault = 14
 )
 
 type shootStats struct {
@@ -41,43 +42,6 @@ type shootStats struct {
 	controlPlane string
 	nodes        string
 	system       string
-}
-
-func newShootStats(status *models.V1beta1ShootStatus) *shootStats {
-	res := shootStats{}
-	if status != nil {
-		for _, condition := range status.Conditions {
-			status := *condition.Status
-			switch *condition.Type {
-			case string(v1beta1.ShootControlPlaneHealthy):
-				res.controlPlane = status
-			case string(v1beta1.ShootEveryNodeReady):
-				res.nodes = status
-			case string(v1beta1.ShootSystemComponentsHealthy):
-				res.system = status
-			case string(v1beta1.ShootAPIServerAvailable):
-				res.apiServer = status
-			}
-		}
-	}
-	return &res
-}
-
-func imageExpires(id string, expirationDate string) error {
-	t, err := time.Parse(time.RFC3339, expirationDate)
-	if err != nil {
-		return fmt.Errorf("Image has no expiration date set: %s", id)
-	}
-
-	viper.SetDefault("image-expiration-warning-days", ImageExpirationDaysDefault)
-	expirationWarningDays := viper.GetInt("image-expiration-warning-days")
-	expiresInHours := int(time.Until(t).Hours())
-	if expiresInHours > 0 && expiresInHours < expirationWarningDays*24 {
-		return fmt.Errorf("Image expires in %d day(s): %s", expiresInHours/24, id)
-	} else if expiresInHours < 0 {
-		return fmt.Errorf("Image has expired since %d day(s): %s", -expiresInHours/24, id)
-	}
-	return nil
 }
 
 func (s ShootConditionsTablePrinter) Print(data []*models.V1beta1Condition) {
@@ -176,9 +140,27 @@ func shootData(shoot *models.V1ClusterResponse) ([]string, []string, []string) {
 				actions = append(actions, expires.Error())
 			}
 		}
-		// TODO: Check Kubernetes version expiration
-		// TODO: Add check for MCM OOT migration
 	}
+	if shoot.Kubernetes != nil && shoot.Kubernetes.ExpirationDate != nil && !time.Time(*shoot.Kubernetes.ExpirationDate).IsZero() {
+		viper.SetDefault("kubernetes-expiration-warning-days", ImageExpirationDaysDefault)
+		expirationWarningDays := viper.GetInt("kubernetes-expiration-warning-days")
+		expiresInHours := int(time.Until(time.Time(*shoot.Kubernetes.ExpirationDate)).Hours())
+		if expiresInHours > 0 && expiresInHours < expirationWarningDays*24 {
+			actions = append(actions, fmt.Sprintf("Kubernetes support expires in %d day(s): %s", expiresInHours/24, *shoot.Kubernetes.Version))
+		} else if expiresInHours < 0 {
+			actions = append(actions, fmt.Sprintf("Kubernetes support has expired since %d day(s): %s", -expiresInHours/24, *shoot.Kubernetes.Version))
+		}
+	}
+	mcmMigrated := false
+	for _, feature := range shoot.ControlPlaneFeatureGates {
+		if feature == "machineControllerManagerOOT" {
+			mcmMigrated = true
+		}
+	}
+	if !mcmMigrated {
+		actions = append(actions, "Cluster requires migration to out-of-tree machine-controller-manager, please enable via shoot spec")
+	}
+
 	if len(actions) > 0 {
 		maintainEmoji = "⚠️"
 	}
@@ -277,4 +259,41 @@ func shootData(shoot *models.V1ClusterResponse) ([]string, []string, []string) {
 	}
 
 	return short, wide, actions
+}
+
+func newShootStats(status *models.V1beta1ShootStatus) *shootStats {
+	res := shootStats{}
+	if status != nil {
+		for _, condition := range status.Conditions {
+			status := *condition.Status
+			switch *condition.Type {
+			case string(v1beta1.ShootControlPlaneHealthy):
+				res.controlPlane = status
+			case string(v1beta1.ShootEveryNodeReady):
+				res.nodes = status
+			case string(v1beta1.ShootSystemComponentsHealthy):
+				res.system = status
+			case string(v1beta1.ShootAPIServerAvailable):
+				res.apiServer = status
+			}
+		}
+	}
+	return &res
+}
+
+func imageExpires(id string, expirationDate string) error {
+	t, err := time.Parse(time.RFC3339, expirationDate)
+	if err != nil {
+		return fmt.Errorf("Image has no expiration date set: %s", id)
+	}
+
+	viper.SetDefault("image-expiration-warning-days", ImageExpirationDaysDefault)
+	expirationWarningDays := viper.GetInt("image-expiration-warning-days")
+	expiresInHours := int(time.Until(t).Hours())
+	if expiresInHours > 0 && expiresInHours < expirationWarningDays*24 {
+		return fmt.Errorf("Image expires in %d day(s): %s", expiresInHours/24, id)
+	} else if expiresInHours < 0 {
+		return fmt.Errorf("Image has expired since %d day(s): %s", -expiresInHours/24, id)
+	}
+	return nil
 }
