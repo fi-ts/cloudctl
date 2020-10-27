@@ -173,7 +173,7 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 // Print a model in a human readable table
 func (t TablePrinter) Print(data interface{}) error {
 	switch d := data.(type) {
-	case *models.V1ClusterDetailResponse:
+	case *models.V1ClusterResponse:
 		ShootTableDetailPrinter{t}.Print(d)
 	case []*models.V1ClusterResponse:
 		if t.order == "" {

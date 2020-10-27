@@ -15,7 +15,6 @@ type (
 	ShootTablePrinter struct {
 		TablePrinter
 	}
-	// ShootTableDetailPrinter print a Shoot Cluster in a Table
 	ShootTableDetailPrinter struct {
 		TablePrinter
 	}
@@ -134,132 +133,38 @@ func (s ShootLastOperationTablePrinter) Print(data *models.V1beta1LastOperation)
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall"}
+	s.wideHeader = []string{"UID", "", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall"}
 	s.shortHeader = []string{"UID", "", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
-	s.Order(data)
-	for i := range data {
-		shoot := data[i]
 
-		shootStats := newShootStats(shoot.Status)
-
-		maintainEmoji := ""
-		actionsRequired := false
-		for _, m := range shoot.Machines {
-			if m.Image != nil && m.Image.ExpirationDate != nil {
-				expires := imageExpires(*m.Image.ID, *m.Image.ExpirationDate)
-				if expires != nil {
-					actionsRequired = true
-				}
-			}
-			// TODO: Check Kubernetes version expiration
-			// TODO: Add check for MCM OOT migration
-		}
-		if actionsRequired {
-			maintainEmoji = "⚠️"
-		}
-
-		age := ""
-		if shoot.CreationTimestamp != nil {
-			age = helper.HumanizeDuration(time.Since(time.Time(*shoot.CreationTimestamp)))
-		}
-		operation := ""
-		progress := "0%"
-		if shoot.Status.LastOperation != nil {
-			operation = *shoot.Status.LastOperation.State
-			progress = fmt.Sprintf("%d%% [%s]", *shoot.Status.LastOperation.Progress, *shoot.Status.LastOperation.Type)
-		}
-		partition := ""
-		if shoot.PartitionID != nil {
-			partition = *shoot.PartitionID
-		}
-		dnsdomain := ""
-		if shoot.DNSEndpoint != nil {
-			dnsdomain = *shoot.DNSEndpoint
-		}
-		version := ""
-		if shoot.Kubernetes.Version != nil {
-			version = *shoot.Kubernetes.Version
-		}
-		purpose := ""
-		if shoot.Purpose != nil {
-			p := *shoot.Purpose
-			purpose = p[:4]
-		}
-
-		privileged := ""
-		if shoot.Kubernetes.AllowPrivilegedContainers != nil {
-			privileged = fmt.Sprintf("%t", *shoot.Kubernetes.AllowPrivilegedContainers)
-		}
-
-		runtime := "docker"
-		autoScaleMin := int32(0)
-		autoScaleMax := int32(0)
-		if shoot.Workers != nil && len(shoot.Workers) > 0 {
-			workers := shoot.Workers[0]
-			autoScaleMin = *workers.Minimum
-			autoScaleMax = *workers.Maximum
-			if workers.CRI != nil && *workers.CRI != "" {
-				runtime = *workers.CRI
-			}
-		}
-		currentMachines := "x"
-		if shoot.Machines != nil {
-			currentMachines = fmt.Sprintf("%d", len(shoot.Machines))
-		}
-		size := fmt.Sprintf("%d≤%s≤%d", autoScaleMin, currentMachines, autoScaleMax)
-
-		tenant := ""
-		if shoot.Tenant != nil {
-			tenant = *shoot.Tenant
-		}
-		project := ""
-		if shoot.ProjectID != nil {
-			project = *shoot.ProjectID
-		}
-
-		firewallImage := ""
-		if shoot.FirewallImage != nil {
-			firewallImage = *shoot.FirewallImage
-		}
-		wide := []string{
-			*shoot.ID,
-			*shoot.Name,
-			version, partition, dnsdomain,
-			operation,
-			progress,
-			shootStats.apiServer, shootStats.controlPlane, shootStats.nodes, shootStats.system,
-			size,
-			age,
-			purpose,
-			privileged,
-			runtime,
-			firewallImage,
-		}
-		short := []string{
-			*shoot.ID,
-			maintainEmoji,
-			tenant,
-			project,
-			*shoot.Name,
-			version, partition,
-			operation,
-			progress,
-			shootStats.apiServer, shootStats.controlPlane, shootStats.nodes, shootStats.system,
-			size,
-			age,
-			purpose,
-		}
+	for _, shoot := range data {
+		short, wide, _ := shootData(shoot)
 		s.addWideData(wide, shoot)
 		s.addShortData(short, shoot)
 	}
 	s.render()
+
+	if len(data) == 1 {
+		fmt.Println("\nRequired Actions:")
+		//YAMLPrinter{}.Print(actions)
+	}
 }
 
 // Print a Shoot as table
-func (s ShootTableDetailPrinter) Print(shoot *models.V1ClusterDetailResponse) {
+func (s ShootTableDetailPrinter) Print(shoot *models.V1ClusterResponse) {
 	s.wideHeader = []string{"UID", "", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall"}
 	s.shortHeader = []string{"UID", "", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
+	short, wide, actions := shootData(shoot)
+	s.addWideData(wide, shoot)
+	s.addShortData(short, shoot)
+
+	s.render()
+
+	fmt.Println("\nRequired Actions:")
+	YAMLPrinter{}.Print(actions)
+}
+
+func shootData(shoot *models.V1ClusterResponse) ([]string, []string, []string) {
 	shootStats := newShootStats(shoot.Status)
 
 	maintainEmoji := ""
@@ -370,11 +275,6 @@ func (s ShootTableDetailPrinter) Print(shoot *models.V1ClusterDetailResponse) {
 		age,
 		purpose,
 	}
-	s.addWideData(wide, shoot)
-	s.addShortData(short, shoot)
 
-	s.render()
-
-	fmt.Println("\nRequired Actions:")
-	YAMLPrinter{}.Print(actions)
+	return short, wide, actions
 }
