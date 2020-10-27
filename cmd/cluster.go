@@ -316,6 +316,13 @@ func init() {
 		fmt.Printf("args:%v\n", args)
 		return clusterMachineListCompletion("123")
 	})
+
+	clusterMachineListCmd.Flags().String("id", "", "show clusters of given id")
+	clusterMachineListCmd.Flags().String("name", "", "show clusters of given name")
+	clusterMachineListCmd.Flags().String("project", "", "show clusters of given project")
+	clusterMachineListCmd.Flags().String("partition", "", "show clusters in partition")
+	clusterMachineListCmd.Flags().String("tenant", "", "show clusters of given tenant")
+
 	clusterMachineCmd.AddCommand(clusterMachineListCmd)
 	clusterMachineCmd.AddCommand(clusterMachineSSHCmd)
 	clusterMachineCmd.AddCommand(clusterMachineConsoleCmd)
@@ -848,6 +855,62 @@ func clusterDescribe(args []string) error {
 }
 
 func clusterMachines(args []string) error {
+	if len(args) == 0 {
+		id := viper.GetString("id")
+		name := viper.GetString("name")
+		tenant := viper.GetString("tenant")
+		partition := viper.GetString("partition")
+		project := viper.GetString("project")
+		boolTrue := true
+		var cfr *models.V1ClusterFindRequest
+		if id != "" || name != "" || tenant != "" || partition != "" || project != "" {
+			cfr = &models.V1ClusterFindRequest{}
+
+			if id != "" {
+				cfr.ID = &id
+			}
+			if name != "" {
+				cfr.Name = &name
+			}
+			if tenant != "" {
+				cfr.Tenant = &tenant
+			}
+			if project != "" {
+				cfr.ProjectID = &project
+			}
+			if partition != "" {
+				cfr.PartitionID = &partition
+			}
+		}
+
+		if cfr != nil {
+			fcp := cluster.NewFindClustersParams().WithReturnMachines(&boolTrue)
+			fcp.SetBody(cfr)
+			response, err := cloud.Cluster.FindClusters(fcp, cloud.Auth)
+			if err != nil {
+				switch e := err.(type) {
+				case *cluster.FindClustersDefault:
+					return output.HTTPError(e.Payload)
+				default:
+					return output.UnconventionalError(err)
+				}
+			}
+			return printer.Print(response.Payload)
+		}
+
+		request := cluster.NewListClustersParams().WithReturnMachines(&boolTrue)
+		shoots, err := cloud.Cluster.ListClusters(request, cloud.Auth)
+		if err != nil {
+			switch e := err.(type) {
+			case *cluster.ListClustersDefault:
+				return output.HTTPError(e.Payload)
+			default:
+				return output.UnconventionalError(err)
+			}
+		}
+		return printer.Print(shoots.Payload)
+	}
+
 	ci, err := clusterID("machines", args)
 	if err != nil {
 		return err
@@ -865,6 +928,15 @@ func clusterMachines(args []string) error {
 	}
 	fmt.Println("Cluster:")
 	printer.Print(shoot.Payload)
+
+	// FIXME this is a ugly hack to reset the printer and have a new header.
+	initPrinter()
+
+	fmt.Println("\nFirewalls:")
+	err = printer.Print(shoot.Payload.Firewalls)
+	if err != nil {
+		return err
+	}
 
 	// FIXME this is a ugly hack to reset the printer and have a new header.
 	initPrinter()

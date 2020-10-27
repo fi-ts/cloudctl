@@ -202,7 +202,12 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 				runtime = *workers.CRI
 			}
 		}
-		size := fmt.Sprintf("%d≤%d≤%d", autoScaleMin, len(shoot.Machines), autoScaleMax)
+		currentMachines := "x"
+		if shoot.Machines != nil {
+			currentMachines = fmt.Sprintf("%d", len(shoot.Machines))
+		}
+		size := fmt.Sprintf("%d≤%s≤%d", autoScaleMin, currentMachines, autoScaleMax)
+
 		tenant := ""
 		if shoot.Tenant != nil {
 			tenant = *shoot.Tenant
@@ -317,7 +322,11 @@ func (s ShootTableDetailPrinter) Print(shoot *models.V1ClusterDetailResponse) {
 			runtime = *workers.CRI
 		}
 	}
-	size := fmt.Sprintf("%d≤%d≤%d", autoScaleMin, len(shoot.Machines), autoScaleMax)
+	currentMachines := "x"
+	if shoot.Machines != nil {
+		currentMachines = fmt.Sprintf("%d", len(shoot.Machines))
+	}
+	size := fmt.Sprintf("%d≤%s≤%d", autoScaleMin, currentMachines, autoScaleMax)
 
 	tenant := ""
 	if shoot.Tenant != nil {
