@@ -140,7 +140,7 @@ func shootData(shoot *models.V1ClusterResponse) ([]string, []string, []string) {
 	var actions []string
 	for _, m := range shoot.Machines {
 		if m.Allocation != nil && m.Allocation.Image != nil && m.Allocation.Image.ExpirationDate != nil {
-			expires := imageExpires(*m.Allocation.Image.ID, *m.Allocation.Image.ExpirationDate)
+			expires := imageExpires(*m.Allocation.Image.ID, *m.Allocation.Image.ExpirationDate, *m.Allocation.Name)
 			if expires != nil {
 				actions = append(actions, expires.Error())
 			}
@@ -286,19 +286,19 @@ func newShootStats(status *models.V1beta1ShootStatus) *shootStats {
 	return &res
 }
 
-func imageExpires(id string, expirationDate string) error {
+func imageExpires(imageID, expirationDate, host string) error {
 	t, err := time.Parse(time.RFC3339, expirationDate)
 	if err != nil {
-		return fmt.Errorf("Image has no expiration date set: %s", id)
+		return fmt.Errorf("Image of worker %q has no valid expiration date: %s", host, imageID)
 	}
 
 	viper.SetDefault("image-expiration-warning-days", ImageExpirationDaysDefault)
 	expirationWarningDays := viper.GetInt("image-expiration-warning-days")
 	expiresInHours := int(time.Until(t).Hours())
 	if expiresInHours > 0 && expiresInHours < expirationWarningDays*24 {
-		return fmt.Errorf("Image expires in %d day(s): %s", expiresInHours/24, id)
+		return fmt.Errorf("Image of worker %q expires in %d day(s): %s", host, expiresInHours/24, imageID)
 	} else if expiresInHours < 0 {
-		return fmt.Errorf("Image has expired since %d day(s): %s", -expiresInHours/24, id)
+		return fmt.Errorf("Image of worker %q has expired since %d day(s): %s", host, -expiresInHours/24, imageID)
 	}
 	return nil
 }
