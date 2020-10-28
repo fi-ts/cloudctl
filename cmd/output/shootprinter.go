@@ -100,16 +100,19 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 	s.wideHeader = []string{"UID", "", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall"}
 	s.shortHeader = []string{"UID", "", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
+	var short []string
+	var wide []string
+	var actions []string
 	for _, shoot := range data {
-		short, wide, _ := shootData(shoot)
+		short, wide, actions = shootData(shoot)
 		s.addWideData(wide, shoot)
 		s.addShortData(short, shoot)
 	}
 	s.render()
 
-	if len(data) == 1 {
+	if len(data) == 1 && len(actions) > 0 {
 		fmt.Println("\nRequired Actions:")
-		//YAMLPrinter{}.Print(actions)
+		YAMLPrinter{}.Print(actions)
 	}
 }
 
@@ -124,8 +127,10 @@ func (s ShootTableDetailPrinter) Print(shoot *models.V1ClusterResponse) {
 
 	s.render()
 
-	fmt.Println("\nRequired Actions:")
-	YAMLPrinter{}.Print(actions)
+	if len(actions) > 0 {
+		fmt.Println("\nRequired Actions:")
+		YAMLPrinter{}.Print(actions)
+	}
 }
 
 func shootData(shoot *models.V1ClusterResponse) ([]string, []string, []string) {
