@@ -932,17 +932,10 @@ func clusterMachines(args []string) error {
 	// FIXME this is a ugly hack to reset the printer and have a new header.
 	initPrinter()
 
-	fmt.Println("\nFirewalls:")
-	err = printer.Print(shoot.Payload.Firewalls)
-	if err != nil {
-		return err
-	}
-
-	// FIXME this is a ugly hack to reset the printer and have a new header.
-	initPrinter()
-
+	ms := shoot.Payload.Machines
+	ms = append(ms, shoot.Payload.Firewalls...)
 	fmt.Println("\nMachines:")
-	return printer.Print(shoot.Payload.Machines)
+	return printer.Print(ms)
 }
 
 func clusterLogs(args []string) error {
