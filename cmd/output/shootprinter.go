@@ -112,7 +112,7 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 
 	if len(data) == 1 && len(actions) > 0 {
 		fmt.Println("\nRequired Actions:")
-		YAMLPrinter{}.Print(actions)
+		printStringSlice(actions)
 	}
 }
 
@@ -129,7 +129,7 @@ func (s ShootTableDetailPrinter) Print(shoot *models.V1ClusterResponse) {
 
 	if len(actions) > 0 {
 		fmt.Println("\nRequired Actions:")
-		YAMLPrinter{}.Print(actions)
+		printStringSlice(actions)
 	}
 }
 
