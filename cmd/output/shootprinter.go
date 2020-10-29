@@ -149,6 +149,9 @@ func shootData(shoot *models.V1ClusterResponse) ([]string, []string, []string) {
 			}
 		}
 	}
+	if len(shoot.Firewalls) > 1 {
+		actions = append(actions, "Cluster has multiple firewalls, cluster requires manual administration")
+	}
 	if shoot.Kubernetes != nil && shoot.Kubernetes.ExpirationDate != nil && !time.Time(*shoot.Kubernetes.ExpirationDate).IsZero() {
 		viper.SetDefault("kubernetes-expiration-warning-days", ImageExpirationDaysDefault)
 		expirationWarningDays := viper.GetInt("kubernetes-expiration-warning-days")
