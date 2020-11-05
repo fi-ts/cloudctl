@@ -213,6 +213,7 @@ func init() {
 	clusterCreateCmd.Flags().String("maxunavailable", "1", "max number (e.g. 1) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
 	clusterCreateCmd.Flags().StringSlice("labels", []string{}, "labels of the cluster")
 	clusterCreateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
+	clusterCreateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-seperated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]")
 	clusterCreateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster.")
 
 	err := clusterCreateCmd.MarkFlagRequired("name")
@@ -283,6 +284,8 @@ func init() {
 	clusterUpdateCmd.Flags().StringSlice("removelabels", []string{}, "labels to remove from the cluster")
 	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster, please add --yes-i-really-mean-it")
 	clusterUpdateCmd.Flags().String("purpose", "", "purpose of the cluster, can be one of production|testing|development|evaluation. SLA is only given on production clusters.")
+	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-seperated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]")
+
 	clusterUpdateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return versionListCompletion()
 	})
@@ -359,6 +362,7 @@ func clusterCreate() error {
 
 	// FIXME helper and validation
 	networks := viper.GetStringSlice("external-networks")
+	egress := viper.GetStringSlice("egress")
 	autoUpdateKubernetes := false
 	autoUpdateMachineImage := false
 	maintenanceBegin := "220000+0100"
@@ -462,6 +466,12 @@ func clusterCreate() error {
 		AdditionalNetworks: networks,
 		PartitionID:        &partition,
 	}
+
+	egressRules := makeEgressRules(egress)
+	if len(egressRules) > 0 {
+		scr.EgressRules = egressRules
+	}
+
 	request := cluster.NewCreateClusterParams()
 	request.SetBody(scr)
 	shoot, err := cloud.Cluster.CreateCluster(request, cloud.Auth)
@@ -682,6 +692,7 @@ func updateCluster(args []string) error {
 	purpose := viper.GetString("purpose")
 	addLabels := viper.GetStringSlice("addlabels")
 	removeLabels := viper.GetStringSlice("removelabels")
+	egress := viper.GetStringSlice("egress")
 
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
@@ -767,6 +778,11 @@ func updateCluster(args []string) error {
 		k8s.AllowPrivilegedContainers = &allowPrivileged
 	}
 	cur.Kubernetes = k8s
+
+	egressRules := makeEgressRules(egress)
+	if len(egressRules) > 0 {
+		cur.EgressRules = egressRules
+	}
 
 	request.SetBody(cur)
 	shoot, err := cloud.Cluster.UpdateCluster(request, cloud.Auth)
@@ -1022,4 +1038,29 @@ func clusterID(verb string, args []string) (string, error) {
 		return args[0], nil
 	}
 	return "", fmt.Errorf("cluster %s requires exactly one clusterID as argument", verb)
+}
+
+func makeEgressRules(egressFlagValue []string) []*models.V1EgressRule {
+	egressRules := []*models.V1EgressRule{}
+	for _, e := range egressFlagValue {
+		parts := strings.Split(e, ":")
+		if len(parts) != 2 {
+			log.Fatalf("egress config needs format <networkID>:<comma-seperated list of IPs> but got %q", e)
+		}
+		n, ips := parts[0], parts[1]
+		ipList := strings.Split(ips, ";")
+		if len(ipList) == 0 {
+			log.Fatalf("egress config for network %s needs at least a single IP", n)
+		}
+		for _, i := range ipList {
+			if net.ParseIP(i) == nil {
+				log.Fatalf("egress config contains an invalid IP %s for network %s", i, n)
+			}
+		}
+		egressRules = append(egressRules, &models.V1EgressRule{
+			NetworkID: &n,
+			Ips:       ipList,
+		})
+	}
+	return egressRules
 }

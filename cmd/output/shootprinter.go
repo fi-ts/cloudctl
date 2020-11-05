@@ -2,6 +2,7 @@ package output
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/fi-ts/cloud-go/api/models"
@@ -41,7 +42,7 @@ func (s ShootConditionsTablePrinter) Print(data []*models.V1beta1Condition) {
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall"}
+	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall", "Egress Net", "Egress IP"}
 	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 	s.Order(data)
 	for i := range data {
@@ -125,6 +126,19 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 		if shoot.FirewallImage != nil {
 			firewallImage = *shoot.FirewallImage
 		}
+
+		egressNets := []string{}
+		egressIPs := []string{}
+		for _, e := range shoot.EgressRules {
+			if e == nil {
+				continue
+			}
+			for _, i := range e.Ips {
+				egressNets = append(egressNets, *e.NetworkID)
+				egressIPs = append(egressIPs, i)
+			}
+		}
+
 		wide := []string{*shoot.ID, *shoot.Name,
 			version, partition, dnsdomain,
 			operation,
@@ -136,6 +150,8 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 			privileged,
 			runtime,
 			firewallImage,
+			strings.Join(egressNets, "\n"),
+			strings.Join(egressIPs, "\n"),
 		}
 		short := []string{*shoot.ID,
 			tenant,
