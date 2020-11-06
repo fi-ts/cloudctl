@@ -213,7 +213,7 @@ func init() {
 	clusterCreateCmd.Flags().String("maxunavailable", "1", "max number (e.g. 1) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
 	clusterCreateCmd.Flags().StringSlice("labels", []string{}, "labels of the cluster")
 	clusterCreateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
-	clusterCreateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-seperated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]")
+	clusterCreateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <network>:<ip>; e.g.: --egress internet:1.2.3.4,extnet:123.1.1.1 --egress internet:1.2.3.5 [optional]")
 	clusterCreateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster.")
 
 	err := clusterCreateCmd.MarkFlagRequired("name")
@@ -1041,26 +1041,31 @@ func clusterID(verb string, args []string) (string, error) {
 }
 
 func makeEgressRules(egressFlagValue []string) []*models.V1EgressRule {
-	egressRules := []*models.V1EgressRule{}
+	m := map[string]models.V1EgressRule{}
 	for _, e := range egressFlagValue {
 		parts := strings.Split(e, ":")
 		if len(parts) != 2 {
-			log.Fatalf("egress config needs format <networkID>:<semicolon-separated list of IPs> but got %q", e)
+			log.Fatalf("egress config needs format <network>:<ip> but got %q", e)
 		}
-		n, ips := parts[0], parts[1]
-		ipList := strings.Split(ips, ";")
-		if len(ipList) == 0 {
-			log.Fatalf("egress config for network %s needs at least a single IP", n)
+		n, ip := strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1])
+		if net.ParseIP(ip) == nil {
+			log.Fatalf("egress config contains an invalid IP %s for network %s", ip, n)
 		}
-		for _, i := range ipList {
-			if net.ParseIP(i) == nil {
-				log.Fatalf("egress config contains an invalid IP %s for network %s", i, n)
+
+		if _, ok := m[n]; !ok {
+			m[n] = models.V1EgressRule{
+				NetworkID: &n,
 			}
 		}
-		egressRules = append(egressRules, &models.V1EgressRule{
-			NetworkID: &n,
-			Ips:       ipList,
-		})
+
+		element := m[n]
+		element.Ips = append(element.Ips, ip)
+		m[n] = element
+	}
+
+	egressRules := []*models.V1EgressRule{}
+	for _, e := range m {
+		egressRules = append(egressRules, &e)
 	}
 	return egressRules
 }

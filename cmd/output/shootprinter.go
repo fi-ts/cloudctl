@@ -42,7 +42,7 @@ func (s ShootConditionsTablePrinter) Print(data []*models.V1beta1Condition) {
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall", "Egress Net", "Egress IP"}
+	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall", "Egress IPs"}
 	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 	s.Order(data)
 	for i := range data {
@@ -127,15 +127,13 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 			firewallImage = *shoot.FirewallImage
 		}
 
-		egressNets := []string{}
 		egressIPs := []string{}
 		for _, e := range shoot.EgressRules {
 			if e == nil {
 				continue
 			}
 			for _, i := range e.Ips {
-				egressNets = append(egressNets, *e.NetworkID)
-				egressIPs = append(egressIPs, i)
+				egressIPs = append(egressIPs, fmt.Sprintf("%s: %s", *e.NetworkID, i))
 			}
 		}
 
@@ -150,7 +148,6 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 			privileged,
 			runtime,
 			firewallImage,
-			strings.Join(egressNets, "\n"),
 			strings.Join(egressIPs, "\n"),
 		}
 		short := []string{*shoot.ID,
