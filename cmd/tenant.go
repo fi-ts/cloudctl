@@ -117,7 +117,7 @@ func tenantApply() error {
 	if err != nil {
 		return err
 	}
-	response := []*models.V1Tenant{}
+	response := []*models.V1TenantResponse{}
 	for _, tar := range tars {
 		request := tenant.NewGetTenantParams()
 		request.SetID(tar.Meta.ID)
@@ -145,7 +145,7 @@ func tenantApply() error {
 					return output.UnconventionalError(err)
 				}
 			}
-			response = append(response, resp.Payload.Tenant)
+			response = append(response, resp.Payload)
 			continue
 		}
 	}
