@@ -18,6 +18,15 @@ var (
 		Use:   "tenant",
 		Short: "manage tenants",
 	}
+	tenantListCmd = &cobra.Command{
+		Use:     "list",
+		Short:   "lists tenants",
+		Aliases: []string{"ls"},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return tenantList(args)
+		},
+		PreRun: bindPFlags,
+	}
 	tenantDescribeCmd = &cobra.Command{
 		Use:   "describe <tenantID>",
 		Short: "describe a tenant",
@@ -47,6 +56,7 @@ var (
 func init() {
 	tenantCmd.AddCommand(tenantDescribeCmd)
 	tenantCmd.AddCommand(tenantEditCmd)
+	tenantCmd.AddCommand(tenantListCmd)
 	tenantApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
 	Example tenant update:
 
@@ -82,7 +92,16 @@ func tenantDescribe(args []string) error {
 	if err != nil {
 		return fmt.Errorf("tenant describe error:%v", err)
 	}
-	return printer.Print(resp.Payload.Tenant)
+	return printer.Print(resp.Payload)
+}
+
+func tenantList(args []string) error {
+	request := tenant.NewListTenantsParams()
+	resp, err := cloud.Tenant.ListTenants(request, cloud.Auth)
+	if err != nil {
+		return fmt.Errorf("tenant list error:%v", err)
+	}
+	return printer.Print(resp.Payload)
 }
 
 func tenantApply() error {
@@ -171,7 +190,7 @@ func tenantEdit(args []string) error {
 				return output.UnconventionalError(err)
 			}
 		}
-		return printer.Print(uresp.Payload.Tenant)
+		return printer.Print(uresp.Payload)
 	}
 
 	return helper.Edit(id, getFunc, updateFunc)

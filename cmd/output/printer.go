@@ -189,10 +189,10 @@ func (t TablePrinter) Print(data interface{}) error {
 			t.order = "tenant,project"
 		}
 		ProjectTablePrinter{t}.Print(d)
-	case []*models.V1Tenant:
+	case []*models.V1TenantResponse:
 		TenantTablePrinter{t}.Print(d)
-	case *models.V1Tenant:
-		TenantTablePrinter{t}.Print([]*models.V1Tenant{d})
+	case *models.V1TenantResponse:
+		TenantTablePrinter{t}.Print([]*models.V1TenantResponse{d})
 	case []*models.ModelsV1IPResponse:
 		IPTablePrinter{t}.Print(d)
 	case *models.ModelsV1IPResponse:
