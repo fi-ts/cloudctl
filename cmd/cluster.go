@@ -284,7 +284,7 @@ func init() {
 	clusterUpdateCmd.Flags().StringSlice("removelabels", []string{}, "labels to remove from the cluster")
 	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster, please add --yes-i-really-mean-it")
 	clusterUpdateCmd.Flags().String("purpose", "", "purpose of the cluster, can be one of production|testing|development|evaluation. SLA is only given on production clusters.")
-	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-seperated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]")
+	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]")
 
 	clusterUpdateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return versionListCompletion()
@@ -1045,7 +1045,7 @@ func makeEgressRules(egressFlagValue []string) []*models.V1EgressRule {
 	for _, e := range egressFlagValue {
 		parts := strings.Split(e, ":")
 		if len(parts) != 2 {
-			log.Fatalf("egress config needs format <networkID>:<comma-seperated list of IPs> but got %q", e)
+			log.Fatalf("egress config needs format <networkID>:<semicolon-separated list of IPs> but got %q", e)
 		}
 		n, ips := parts[0], parts[1]
 		ipList := strings.Split(ips, ";")
