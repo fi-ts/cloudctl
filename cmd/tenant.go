@@ -138,9 +138,7 @@ func tenantApply() error {
 			params.SetBody(&models.V1TenantUpdateRequest{Tenant: &tar})
 			//necessary to resolv error 412 Failed Precondition -> set Version always to last Version from master DB
 			//UpdateTenant setVersion +1 to new meta.version
-			if &params.Body.Tenant.Meta.Version == nil || params.Body.Tenant.Meta.Version < t.Payload.Tenant.Meta.Version {
-				params.Body.Tenant.Meta.Version = t.Payload.Tenant.Meta.Version
-			}
+			params.Body.Tenant.Meta.Version = t.Payload.Tenant.Meta.Version
 			resp, err := cloud.Tenant.UpdateTenant(params, cloud.Auth)
 			if err != nil {
 				switch e := err.(type) {
