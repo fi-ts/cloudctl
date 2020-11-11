@@ -280,6 +280,10 @@ func imageExpires(m *models.ModelsV1MachineResponse) error {
 		return fmt.Errorf("Image of %q has no valid expiration date: %s", host, imageID)
 	}
 
+	if t.IsZero() {
+		return nil
+	}
+
 	viper.SetDefault("image-expiration-warning-days", ImageExpirationDaysDefault)
 	expirationWarningDays := viper.GetInt("image-expiration-warning-days")
 	expiresInHours := int(time.Until(t).Hours())
