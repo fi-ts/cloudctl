@@ -11,8 +11,13 @@ import (
 )
 
 type (
+	ShootIssuesResponse  *models.V1ClusterResponse
+	ShootIssuesResponses []*models.V1ClusterResponse
 	// ShootTablePrinter print a Shoot Cluster in a Table
 	ShootTablePrinter struct {
+		TablePrinter
+	}
+	ShootIssuesTablePrinter struct {
 		TablePrinter
 	}
 	// ShootConditionsTablePrinter print the Conditions of a Shoot Cluster in a Table
@@ -94,6 +99,22 @@ func (s ShootLastOperationTablePrinter) Print(data *models.V1beta1LastOperation)
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
+	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall"}
+	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
+
+	s.Order(data)
+
+	var short []string
+	var wide []string
+	for _, shoot := range data {
+		short, wide, _ = shootData(shoot, false)
+		s.addWideData(wide, shoot)
+		s.addShortData(short, shoot)
+	}
+	s.render()
+}
+
+func (s ShootIssuesTablePrinter) Print(data []*models.V1ClusterResponse) {
 	s.wideHeader = []string{"UID", "", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall"}
 	s.shortHeader = []string{"UID", "", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
@@ -103,7 +124,7 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 	var wide []string
 	var actions []string
 	for _, shoot := range data {
-		short, wide, actions = shootData(shoot)
+		short, wide, actions = shootData(shoot, true)
 		s.addWideData(wide, shoot)
 		s.addShortData(short, shoot)
 	}
@@ -115,7 +136,7 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 	}
 }
 
-func shootData(shoot *models.V1ClusterResponse) ([]string, []string, []string) {
+func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []string, []string) {
 	shootStats := newShootStats(shoot.Status)
 
 	maintainEmoji := ""
@@ -225,7 +246,6 @@ func shootData(shoot *models.V1ClusterResponse) ([]string, []string, []string) {
 	}
 	wide := []string{
 		*shoot.ID,
-		maintainEmoji,
 		*shoot.Name,
 		version, partition, dnsdomain,
 		operation,
@@ -240,7 +260,6 @@ func shootData(shoot *models.V1ClusterResponse) ([]string, []string, []string) {
 	}
 	short := []string{
 		*shoot.ID,
-		maintainEmoji,
 		tenant,
 		project,
 		*shoot.Name,
@@ -251,6 +270,11 @@ func shootData(shoot *models.V1ClusterResponse) ([]string, []string, []string) {
 		size,
 		age,
 		purpose,
+	}
+
+	if withIssues {
+		wide = append([]string{*shoot.ID, maintainEmoji}, wide[1:]...)
+		short = append([]string{*shoot.ID, maintainEmoji}, short[1:]...)
 	}
 
 	return short, wide, actions

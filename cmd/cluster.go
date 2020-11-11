@@ -151,6 +151,21 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+	clusterIssuesCmd = &cobra.Command{
+		Use:     "issues",
+		Aliases: []string{"problems", "warnings"},
+		Short:   "lists cluster issues",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterIssues(args)
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return clusterListCompletion()
+		},
+		PreRun: bindPFlags,
+	}
 	clusterMachineSSHCmd = &cobra.Command{
 		Use:   "ssh <clusterid>",
 		Short: "ssh access a machine/firewall of the cluster",
@@ -316,19 +331,18 @@ func init() {
 		fmt.Printf("args:%v\n", args)
 		return clusterMachineListCompletion("123")
 	})
-
-	clusterMachineListCmd.Flags().String("id", "", "show clusters of given id")
-	clusterMachineListCmd.Flags().String("name", "", "show clusters of given name")
-	clusterMachineListCmd.Flags().String("project", "", "show clusters of given project")
-	clusterMachineListCmd.Flags().String("partition", "", "show clusters in partition")
-	clusterMachineListCmd.Flags().String("tenant", "", "show clusters of given tenant")
-
 	clusterMachineCmd.AddCommand(clusterMachineListCmd)
 	clusterMachineCmd.AddCommand(clusterMachineSSHCmd)
 	clusterMachineCmd.AddCommand(clusterMachineConsoleCmd)
 
 	clusterReconcileCmd.Flags().Bool("retry", false, "Executes a cluster \"retry\" operation instead of regular \"reconcile\".")
 	clusterReconcileCmd.Flags().Bool("maintain", false, "Executes a cluster \"maintain\" operation instead of regular \"reconcile\".")
+
+	clusterIssuesCmd.Flags().String("id", "", "show clusters of given id")
+	clusterIssuesCmd.Flags().String("name", "", "show clusters of given name")
+	clusterIssuesCmd.Flags().String("project", "", "show clusters of given project")
+	clusterIssuesCmd.Flags().String("partition", "", "show clusters in partition")
+	clusterIssuesCmd.Flags().String("tenant", "", "show clusters of given tenant")
 
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
@@ -340,6 +354,7 @@ func init() {
 	clusterCmd.AddCommand(clusterUpdateCmd)
 	clusterCmd.AddCommand(clusterMachineCmd)
 	clusterCmd.AddCommand(clusterLogsCmd)
+	clusterCmd.AddCommand(clusterIssuesCmd)
 }
 
 func clusterCreate() error {
@@ -854,7 +869,7 @@ func clusterDescribe(args []string) error {
 	return printer.Print(shoot.Payload)
 }
 
-func clusterMachines(args []string) error {
+func clusterIssues(args []string) error {
 	if len(args) == 0 {
 		id := viper.GetString("id")
 		name := viper.GetString("name")
@@ -895,7 +910,7 @@ func clusterMachines(args []string) error {
 					return output.UnconventionalError(err)
 				}
 			}
-			return printer.Print(response.Payload)
+			return printer.Print(output.ShootIssuesResponses(response.Payload))
 		}
 
 		request := cluster.NewListClustersParams().WithReturnMachines(&boolTrue)
@@ -908,9 +923,28 @@ func clusterMachines(args []string) error {
 				return output.UnconventionalError(err)
 			}
 		}
-		return printer.Print(shoots.Payload)
+		return printer.Print(output.ShootIssuesResponses(shoots.Payload))
 	}
 
+	ci, err := clusterID("issues", args)
+	if err != nil {
+		return err
+	}
+	findRequest := cluster.NewFindClusterParams()
+	findRequest.SetID(ci)
+	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	if err != nil {
+		switch e := err.(type) {
+		case *cluster.FindClusterDefault:
+			return output.HTTPError(e.Payload)
+		default:
+			return output.UnconventionalError(err)
+		}
+	}
+	return printer.Print(output.ShootIssuesResponse(shoot.Payload))
+}
+
+func clusterMachines(args []string) error {
 	ci, err := clusterID("machines", args)
 	if err != nil {
 		return err
