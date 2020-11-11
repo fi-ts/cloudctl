@@ -16,10 +16,11 @@ type (
 )
 
 // Print a Project as table
-func (p TenantTablePrinter) Print(tenants []*models.V1Tenant) {
-	p.wideHeader = []string{"Name", "Description", "Clusters", "Machines", "IPs", "Labels", "Annotations"}
+func (p TenantTablePrinter) Print(tenants []*models.V1TenantResponse) {
+	p.wideHeader = []string{"ID", "Name", "Description", "Clusters", "Machines", "IPs", "Labels", "Annotations"}
 	p.shortHeader = p.wideHeader
-	for _, tenant := range tenants {
+	for _, tenantResponse := range tenants {
+		tenant := tenantResponse.Tenant
 		clusterQuota := ""
 		machineQuota := ""
 		ipQuota := ""
@@ -55,7 +56,7 @@ func (p TenantTablePrinter) Print(tenants []*models.V1Tenant) {
 		}
 		annotations := strings.Join(as, "\n")
 
-		wide := []string{tenant.Name, tenant.Description, clusterQuota, machineQuota, ipQuota, labels, annotations}
+		wide := []string{tenant.Meta.ID, tenant.Name, tenant.Description, clusterQuota, machineQuota, ipQuota, labels, annotations}
 		p.addWideData(wide, tenant)
 		p.addShortData(wide, tenant)
 	}
