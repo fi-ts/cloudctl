@@ -563,12 +563,7 @@ func clusterApply(args []string) error {
 			params.SetBody(ccr)
 			resp, err := cloud.Cluster.CreateCluster(params, cloud.Auth)
 			if err != nil {
-				switch e := err.(type) {
-				case *cluster.CreateClusterDefault:
-					return output.HTTPError(e.Payload)
-				default:
-					return output.UnconventionalError(err)
-				}
+				return err
 			}
 			responses = append(responses, resp.Payload)
 			continue
@@ -776,12 +771,7 @@ func updateCluster(args []string) error {
 	findRequest.SetID(ci)
 	current, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.FindClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	request := cluster.NewUpdateClusterParams()
