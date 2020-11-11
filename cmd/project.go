@@ -10,7 +10,6 @@ import (
 
 	"github.com/fi-ts/cloud-go/api/client/project"
 	"github.com/fi-ts/cloudctl/cmd/helper"
-	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -152,14 +151,7 @@ func projectCreate() error {
 
 	response, err := cloud.Project.CreateProject(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *project.CreateProjectConflict:
-			return output.HTTPError(e.Payload)
-		case *project.CreateProjectDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	return printer.Print(response.Payload)
@@ -175,12 +167,7 @@ func projectDescribe(args []string) error {
 	request.SetID(id)
 	p, err := cloud.Project.FindProject(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *project.FindProjectDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	return printer.Print(p.Payload)
@@ -196,12 +183,7 @@ func projectDelete(args []string) error {
 
 	response, err := cloud.Project.DeleteProject(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *project.DeleteProjectDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	return printer.Print(response.Payload)
@@ -211,12 +193,7 @@ func projectList() error {
 	request := project.NewListProjectsParams()
 	response, err := cloud.Project.ListProjects(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *project.ListProjectsDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	return printer.Print(response.Payload.Projects)
 }
@@ -250,26 +227,14 @@ func projectApply() error {
 		request.SetID(par.Meta.ID)
 		p, err := cloud.Project.FindProject(request, cloud.Auth)
 		if err != nil {
-			switch e := err.(type) {
-			case *project.FindProjectDefault:
-				return output.HTTPError(e.Payload)
-			default:
-				return output.UnconventionalError(err)
-			}
+			return err
 		}
 		if p.Payload == nil {
 			params := project.NewCreateProjectParams()
 			params.SetBody(&par)
 			resp, err := cloud.Project.CreateProject(params, cloud.Auth)
 			if err != nil {
-				switch e := err.(type) {
-				case *project.CreateProjectDefault:
-					return output.HTTPError(e.Payload)
-				case *project.CreateProjectConflict:
-					return output.HTTPError(e.Payload)
-				default:
-					return output.UnconventionalError(err)
-				}
+				return err
 			}
 			response = append(response, resp.Payload)
 			continue
@@ -295,12 +260,7 @@ func projectApply() error {
 			params.SetBody(pur)
 			resp, err := cloud.Project.UpdateProject(params, cloud.Auth)
 			if err != nil {
-				switch e := err.(type) {
-				case *project.UpdateProjectPreconditionFailed:
-					return output.HTTPError(e.Payload)
-				default:
-					return output.UnconventionalError(err)
-				}
+				return err
 			}
 			response = append(response, resp.Payload)
 			continue
@@ -340,12 +300,7 @@ func projectEdit(args []string) error {
 		pup.Body = &purs[0]
 		uresp, err := cloud.Project.UpdateProject(pup, cloud.Auth)
 		if err != nil {
-			switch e := err.(type) {
-			case *project.UpdateProjectPreconditionFailed:
-				return output.HTTPError(e.Payload)
-			default:
-				return output.UnconventionalError(err)
-			}
+			return err
 		}
 		return printer.Print(uresp.Payload)
 	}
