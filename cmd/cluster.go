@@ -415,12 +415,7 @@ func clusterCreate() error {
 		request := cluster.NewListConstraintsParams()
 		constraints, err := cloud.Cluster.ListConstraints(request, cloud.Auth)
 		if err != nil {
-			switch e := err.(type) {
-			case *cluster.ListConstraintsDefault:
-				return output.HTTPError(e.Payload)
-			default:
-				return output.UnconventionalError(err)
-			}
+			return err
 		}
 
 		availableVersions := constraints.Payload.KubernetesVersions
@@ -512,14 +507,7 @@ func clusterCreate() error {
 	request.SetBody(scr)
 	shoot, err := cloud.Cluster.CreateCluster(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.CreateClusterConflict:
-			return output.HTTPError(e.Payload)
-		case *cluster.CreateClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	return printer.Print(shoot.Payload)
 }
@@ -634,12 +622,7 @@ func clusterList() error {
 		fcp.SetBody(cfr)
 		response, err := cloud.Cluster.FindClusters(fcp, cloud.Auth)
 		if err != nil {
-			switch e := err.(type) {
-			case *cluster.FindClustersDefault:
-				return output.HTTPError(e.Payload)
-			default:
-				return output.UnconventionalError(err)
-			}
+			return err
 		}
 		return printer.Print(response.Payload)
 	}
@@ -647,12 +630,7 @@ func clusterList() error {
 	request := cluster.NewListClustersParams()
 	shoots, err := cloud.Cluster.ListClusters(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.ListClustersDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	return printer.Print(shoots.Payload)
 }
@@ -666,12 +644,7 @@ func clusterKubeconfig(args []string) error {
 	request.SetID(ci)
 	credentials, err := cloud.Cluster.GetClusterKubeconfigTpl(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.GetClusterKubeconfigTplDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	// kubeconfig with cluster
@@ -735,12 +708,7 @@ func sshKeyPair(clusterID string) (*sshkeypair, error) {
 	request.SetID(clusterID)
 	credentials, err := cloud.Cluster.GetSSHKeyPair(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.GetSSHKeyPairDefault:
-			return nil, output.HTTPError(e.Payload)
-		default:
-			return nil, output.UnconventionalError(err)
-		}
+		return nil, err
 	}
 	privateKey, err := base64.StdEncoding.DecodeString(*credentials.Payload.SSHKeyPair.PrivateKey)
 	if err != nil {
@@ -782,12 +750,7 @@ func reconcileCluster(args []string) error {
 
 	shoot, err := cloud.Cluster.ReconcileCluster(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.ReconcileClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	return printer.Print(shoot.Payload)
 }
@@ -916,12 +879,7 @@ func updateCluster(args []string) error {
 	request.SetBody(cur)
 	shoot, err := cloud.Cluster.UpdateCluster(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.UpdateClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	return printer.Print(shoot.Payload)
 }
@@ -939,12 +897,7 @@ func clusterDelete(args []string) error {
 	findRequest.SetID(ci)
 	resp, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.FindClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	printer.Print(resp.Payload)
@@ -963,12 +916,7 @@ func clusterDelete(args []string) error {
 	request.SetID(ci)
 	c, err := cloud.Cluster.DeleteCluster(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.DeleteClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	return printer.Print(c.Payload)
 }
@@ -982,12 +930,7 @@ func clusterDescribe(args []string) error {
 	findRequest.SetID(ci)
 	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.FindClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	return printer.Print(shoot.Payload)
 }
@@ -1026,12 +969,7 @@ func clusterIssues(args []string) error {
 			fcp.SetBody(cfr)
 			response, err := cloud.Cluster.FindClusters(fcp, cloud.Auth)
 			if err != nil {
-				switch e := err.(type) {
-				case *cluster.FindClustersDefault:
-					return output.HTTPError(e.Payload)
-				default:
-					return output.UnconventionalError(err)
-				}
+				return err
 			}
 			return printer.Print(output.ShootIssuesResponses(response.Payload))
 		}
@@ -1039,12 +977,7 @@ func clusterIssues(args []string) error {
 		request := cluster.NewListClustersParams().WithReturnMachines(&boolTrue)
 		shoots, err := cloud.Cluster.ListClusters(request, cloud.Auth)
 		if err != nil {
-			switch e := err.(type) {
-			case *cluster.ListClustersDefault:
-				return output.HTTPError(e.Payload)
-			default:
-				return output.UnconventionalError(err)
-			}
+			return err
 		}
 		return printer.Print(output.ShootIssuesResponses(shoots.Payload))
 	}
@@ -1057,12 +990,7 @@ func clusterIssues(args []string) error {
 	findRequest.SetID(ci)
 	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.FindClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	return printer.Print(output.ShootIssuesResponse(shoot.Payload))
 }
@@ -1076,12 +1004,7 @@ func clusterMachines(args []string) error {
 	findRequest.SetID(ci)
 	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.FindClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	fmt.Println("Cluster:")
 	printer.Print(shoot.Payload)
@@ -1104,12 +1027,7 @@ func clusterLogs(args []string) error {
 	findRequest.SetID(ci)
 	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.FindClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	var conditions []*models.V1beta1Condition
 	var lastOperation *models.V1beta1LastOperation
@@ -1146,12 +1064,7 @@ func clusterInputs() error {
 	request := cluster.NewListConstraintsParams()
 	sc, err := cloud.Cluster.ListConstraints(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.ListConstraintsDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	return output.YAMLPrinter{}.Print(sc)
@@ -1168,12 +1081,7 @@ func clusterMachineSSH(args []string, console bool) error {
 	findRequest.SetID(cid)
 	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.FindClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	keypair, err := sshKeyPair(cid)

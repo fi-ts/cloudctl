@@ -5,7 +5,6 @@ import (
 
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
-	output "github.com/fi-ts/cloudctl/cmd/output"
 	"gopkg.in/yaml.v3"
 
 	"github.com/fi-ts/cloud-go/api/client/tenant"
@@ -123,12 +122,7 @@ func tenantApply() error {
 		request.SetID(tar.Meta.ID)
 		t, err := cloud.Tenant.GetTenant(request, cloud.Auth)
 		if err != nil {
-			switch e := err.(type) {
-			case *tenant.GetTenantDefault:
-				return output.HTTPError(e.Payload)
-			default:
-				return output.UnconventionalError(err)
-			}
+			return err
 		}
 		if t.Payload.Tenant == nil {
 			return fmt.Errorf("Only tenant update is supported")
@@ -138,12 +132,7 @@ func tenantApply() error {
 			params.SetBody(&models.V1TenantUpdateRequest{Tenant: &tar})
 			resp, err := cloud.Tenant.UpdateTenant(params, cloud.Auth)
 			if err != nil {
-				switch e := err.(type) {
-				case *tenant.UpdateTenantPreconditionFailed:
-					return output.HTTPError(e.Payload)
-				default:
-					return output.UnconventionalError(err)
-				}
+				return err
 			}
 			response = append(response, resp.Payload)
 			continue
@@ -183,12 +172,7 @@ func tenantEdit(args []string) error {
 		pup.Body = &models.V1TenantUpdateRequest{Tenant: &purs[0]}
 		uresp, err := cloud.Tenant.UpdateTenant(pup, cloud.Auth)
 		if err != nil {
-			switch e := err.(type) {
-			case *tenant.UpdateTenantPreconditionFailed:
-				return output.HTTPError(e.Payload)
-			default:
-				return output.UnconventionalError(err)
-			}
+			return err
 		}
 		return printer.Print(uresp.Payload)
 	}

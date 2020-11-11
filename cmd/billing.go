@@ -7,7 +7,6 @@ import (
 
 	"github.com/fi-ts/cloud-go/api/client/accounting"
 	"github.com/fi-ts/cloud-go/api/models"
-	output "github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/go-openapi/strfmt"
 	"github.com/jinzhu/now"
 	"github.com/spf13/cobra"
@@ -292,12 +291,7 @@ func clusterUsageJSON(cur *models.V1ClusterUsageRequest) error {
 
 	response, err := cloud.Accounting.ClusterUsage(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *accounting.ClusterUsageDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	return printer.Print(response.Payload)
@@ -309,12 +303,7 @@ func clusterUsageCSV(cur *models.V1ClusterUsageRequest) error {
 
 	response, err := cloud.Accounting.ClusterUsageCSV(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *accounting.ClusterUsageCSVDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	fmt.Println(response.Payload)
@@ -352,12 +341,7 @@ func containerUsageJSON(cur *models.V1ContainerUsageRequest) error {
 
 	response, err := cloud.Accounting.ContainerUsage(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *accounting.ContainerUsageDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	return printer.Print(response.Payload)
@@ -369,12 +353,7 @@ func containerUsageCSV(cur *models.V1ContainerUsageRequest) error {
 
 	response, err := cloud.Accounting.ContainerUsageCSV(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *accounting.ContainerUsageCSVDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	fmt.Println(response.Payload)
@@ -406,12 +385,7 @@ func ipUsageJSON(iur *models.V1IPUsageRequest) error {
 
 	response, err := cloud.Accounting.IPUsage(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *accounting.IPUsageDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	return printer.Print(response.Payload)
@@ -423,12 +397,7 @@ func ipUsageCSV(iur *models.V1IPUsageRequest) error {
 
 	response, err := cloud.Accounting.IPUsageCSV(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *accounting.IPUsageDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	fmt.Println(response.Payload)
@@ -466,12 +435,7 @@ func networkTrafficUsageJSON(cur *models.V1NetworkUsageRequest) error {
 
 	response, err := cloud.Accounting.NetworkUsage(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *accounting.NetworkUsageDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	return printer.Print(response.Payload)
@@ -483,12 +447,7 @@ func networkTrafficUsageCSV(cur *models.V1NetworkUsageRequest) error {
 
 	response, err := cloud.Accounting.NetworkUsageCSV(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *accounting.NetworkUsageCSVDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	fmt.Println(response.Payload)
@@ -520,12 +479,7 @@ func s3UsageJSON(sur *models.V1S3UsageRequest) error {
 
 	response, err := cloud.Accounting.S3Usage(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *accounting.S3UsageDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	return printer.Print(response.Payload)
@@ -537,12 +491,7 @@ func s3UsageCSV(sur *models.V1S3UsageRequest) error {
 
 	response, err := cloud.Accounting.S3UsageCSV(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *accounting.S3UsageCSVDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	fmt.Println(response.Payload)
@@ -580,12 +529,7 @@ func volumeUsageJSON(vur *models.V1VolumeUsageRequest) error {
 
 	response, err := cloud.Accounting.VolumeUsage(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *accounting.VolumeUsageDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	return printer.Print(response.Payload)
@@ -597,12 +541,7 @@ func volumeUsageCSV(vur *models.V1VolumeUsageRequest) error {
 
 	response, err := cloud.Accounting.VolumeUsageCSV(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *accounting.VolumeUsageCSVDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	fmt.Println(response.Payload)
