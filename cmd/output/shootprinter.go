@@ -123,15 +123,24 @@ func shootData(shoot *models.V1ClusterResponse) ([]string, []string, []string) {
 
 	ms := shoot.Machines
 	ms = append(ms, shoot.Firewalls...)
+
 	for _, m := range ms {
 		expires := imageExpires(m)
 		if expires != nil {
 			actions = append(actions, expires.Error())
 		}
 	}
-	if len(shoot.Firewalls) > 1 {
-		actions = append(actions, "Cluster has multiple firewalls, cluster requires manual administration")
+
+	if shoot.Firewalls != nil {
+		switch len(shoot.Firewalls) {
+		case 0:
+			actions = append(actions, "Cluster has no firewall")
+		case 1:
+		default:
+			actions = append(actions, "Cluster has multiple firewalls, cluster requires manual administration")
+		}
 	}
+
 	expires := kubernetesExpires(shoot)
 	if expires != nil {
 		actions = append(actions, expires.Error())
