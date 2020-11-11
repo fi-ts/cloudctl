@@ -301,10 +301,11 @@ func imageExpires(m *models.ModelsV1MachineResponse) error {
 	viper.SetDefault("image-expiration-warning-days", ImageExpirationDaysDefault)
 	expirationWarningDays := viper.GetInt("image-expiration-warning-days")
 	expiresInHours := int(time.Until(t).Hours())
-	if expiresInHours > 0 && expiresInHours < expirationWarningDays*24 {
-		return fmt.Errorf("Image of %q expires in %d day(s): %s", host, expiresInHours/24, imageID)
-	} else if expiresInHours < 0 {
+
+	if expiresInHours <= 0 {
 		return fmt.Errorf("Image of %q has expired since %d day(s): %s", host, -expiresInHours/24, imageID)
+	} else if expiresInHours < expirationWarningDays*24 {
+		return fmt.Errorf("Image of %q expires in %d day(s): %s", host, expiresInHours/24, imageID)
 	}
 
 	return nil
@@ -318,10 +319,11 @@ func kubernetesExpires(shoot *models.V1ClusterResponse) error {
 	viper.SetDefault("kubernetes-expiration-warning-days", ImageExpirationDaysDefault)
 	expirationWarningDays := viper.GetInt("kubernetes-expiration-warning-days")
 	expiresInHours := int(time.Until(time.Time(*shoot.Kubernetes.ExpirationDate)).Hours())
-	if expiresInHours > 0 && expiresInHours < expirationWarningDays*24 {
-		return fmt.Errorf("Kubernetes support expires in %d day(s): %s", expiresInHours/24, *shoot.Kubernetes.Version)
-	} else if expiresInHours < 0 {
+
+	if expiresInHours <= 0 {
 		return fmt.Errorf("Kubernetes support has expired since %d day(s): %s", -expiresInHours/24, *shoot.Kubernetes.Version)
+	} else if expiresInHours < expirationWarningDays*24 {
+		return fmt.Errorf("Kubernetes support expires in %d day(s): %s", expiresInHours/24, *shoot.Kubernetes.Version)
 	}
 
 	return nil
