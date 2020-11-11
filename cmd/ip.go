@@ -119,7 +119,7 @@ func init() {
 
 func ipList() error {
 	if helper.AtLeastOneViperStringFlagGiven("ipaddress", "project", "prefix", "machineid", "network") {
-		params := ip.NewFindIpsParams()
+		params := ip.NewFindIPsParams()
 		ifr := &models.V1IPFindRequest{
 			IPAddress:        helper.ViperString("ipaddress"),
 			ProjectID:        helper.ViperString("project"),
@@ -128,10 +128,10 @@ func ipList() error {
 			MachineID:        helper.ViperString("machineid"),
 		}
 		params.SetBody(ifr)
-		resp, err := cloud.IP.FindIps(params, cloud.Auth)
+		resp, err := cloud.IP.FindIPs(params, cloud.Auth)
 		if err != nil {
 			switch e := err.(type) {
-			case *ip.FindIpsDefault:
+			case *ip.FindIPsDefault:
 				return output.HTTPError(e.Payload)
 			default:
 				return output.UnconventionalError(err)
@@ -139,10 +139,10 @@ func ipList() error {
 		}
 		return printer.Print(resp.Payload)
 	}
-	resp, err := cloud.IP.ListIps(nil, cloud.Auth)
+	resp, err := cloud.IP.ListIPs(nil, cloud.Auth)
 	if err != nil {
 		switch e := err.(type) {
-		case *ip.ListIpsDefault:
+		case *ip.ListIPsDefault:
 			return output.HTTPError(e.Payload)
 		default:
 			return output.UnconventionalError(err)
