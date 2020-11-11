@@ -539,7 +539,7 @@ func clusterApply(args []string) error {
 	}
 	var responses []*models.V1ClusterResponse
 	for _, input := range inputFiles {
-		var c *cluster.FindClusterOK
+		var existingCluster *models.V1ClusterResponse
 
 		rawID, ok := input["id"]
 		if ok {
@@ -550,7 +550,7 @@ func clusterApply(args []string) error {
 
 			request := cluster.NewFindClusterParams()
 			request.SetID(id)
-			c, err = cloud.Cluster.FindCluster(request, cloud.Auth)
+			c, err := cloud.Cluster.FindCluster(request, cloud.Auth)
 			if err != nil {
 				switch e := err.(type) {
 				case *cluster.FindClusterDefault:
@@ -561,11 +561,13 @@ func clusterApply(args []string) error {
 					return err
 				}
 			}
+
+			existingCluster = c.Payload
 		}
 
-		if c.Payload == nil {
+		if existingCluster == nil {
 			var ccr *models.V1ClusterCreateRequest
-			err = mapstructure.Decode(input, ccr)
+			err = mapstructure.Decode(input, &ccr)
 			if err != nil {
 				return fmt.Errorf("could not decode into cluster create request: %v", err)
 			}
