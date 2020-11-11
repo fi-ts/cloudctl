@@ -142,30 +142,23 @@ func shootData(shoot *models.V1ClusterResponse) ([]string, []string, []string) {
 	ms := shoot.Machines
 	ms = append(ms, shoot.Firewalls...)
 	for _, m := range ms {
-		if m.Allocation != nil && m.Allocation.Image != nil && m.Allocation.Image.ExpirationDate != nil {
-			expires := imageExpires(*m.Allocation.Image.ID, *m.Allocation.Image.ExpirationDate, *m.Allocation.Name)
-			if expires != nil {
-				actions = append(actions, expires.Error())
-			}
+		expires := imageExpires(m)
+		if expires != nil {
+			actions = append(actions, expires.Error())
 		}
 	}
 	if len(shoot.Firewalls) > 1 {
 		actions = append(actions, "Cluster has multiple firewalls, cluster requires manual administration")
 	}
-	if shoot.Kubernetes != nil && shoot.Kubernetes.ExpirationDate != nil && !time.Time(*shoot.Kubernetes.ExpirationDate).IsZero() {
-		viper.SetDefault("kubernetes-expiration-warning-days", ImageExpirationDaysDefault)
-		expirationWarningDays := viper.GetInt("kubernetes-expiration-warning-days")
-		expiresInHours := int(time.Until(time.Time(*shoot.Kubernetes.ExpirationDate)).Hours())
-		if expiresInHours > 0 && expiresInHours < expirationWarningDays*24 {
-			actions = append(actions, fmt.Sprintf("Kubernetes support expires in %d day(s): %s", expiresInHours/24, *shoot.Kubernetes.Version))
-		} else if expiresInHours < 0 {
-			actions = append(actions, fmt.Sprintf("Kubernetes support has expired since %d day(s): %s", -expiresInHours/24, *shoot.Kubernetes.Version))
-		}
+	expires := kubernetesExpires(shoot)
+	if expires != nil {
+		actions = append(actions, expires.Error())
 	}
 	mcmMigrated := false
 	for _, feature := range shoot.ControlPlaneFeatureGates {
 		if feature == "machineControllerManagerOOT" {
 			mcmMigrated = true
+			break
 		}
 	}
 	if !mcmMigrated {
@@ -292,8 +285,15 @@ func newShootStats(status *models.V1beta1ShootStatus) *shootStats {
 	return &res
 }
 
-func imageExpires(imageID, expirationDate, host string) error {
-	t, err := time.Parse(time.RFC3339, expirationDate)
+func imageExpires(m *models.ModelsV1MachineResponse) error {
+	if m.Allocation == nil || m.Allocation.Image == nil || m.Allocation.Image.ExpirationDate == nil {
+		return nil
+	}
+
+	host := *m.Allocation.Name
+	imageID := *m.Allocation.Image.ID
+
+	t, err := time.Parse(time.RFC3339, *m.Allocation.Image.ExpirationDate)
 	if err != nil {
 		return fmt.Errorf("Image of %q has no valid expiration date: %s", host, imageID)
 	}
@@ -306,5 +306,23 @@ func imageExpires(imageID, expirationDate, host string) error {
 	} else if expiresInHours < 0 {
 		return fmt.Errorf("Image of %q has expired since %d day(s): %s", host, -expiresInHours/24, imageID)
 	}
+
+	return nil
+}
+
+func kubernetesExpires(shoot *models.V1ClusterResponse) error {
+	if shoot.Kubernetes == nil || shoot.Kubernetes.ExpirationDate == nil || !time.Time(*shoot.Kubernetes.ExpirationDate).IsZero() {
+		return nil
+	}
+
+	viper.SetDefault("kubernetes-expiration-warning-days", ImageExpirationDaysDefault)
+	expirationWarningDays := viper.GetInt("kubernetes-expiration-warning-days")
+	expiresInHours := int(time.Until(time.Time(*shoot.Kubernetes.ExpirationDate)).Hours())
+	if expiresInHours > 0 && expiresInHours < expirationWarningDays*24 {
+		return fmt.Errorf("Kubernetes support expires in %d day(s): %s", expiresInHours/24, *shoot.Kubernetes.Version)
+	} else if expiresInHours < 0 {
+		return fmt.Errorf("Kubernetes support has expired since %d day(s): %s", -expiresInHours/24, *shoot.Kubernetes.Version)
+	}
+
 	return nil
 }
