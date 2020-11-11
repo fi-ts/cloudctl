@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -536,27 +537,32 @@ func clusterApply(args []string) error {
 	if err != nil {
 		return err
 	}
-	var response []*models.V1ClusterResponse
+	var responses []*models.V1ClusterResponse
 	for _, input := range inputFiles {
-		request := cluster.NewFindClusterParams()
+		var c *cluster.FindClusterOK
+
 		rawID, ok := input["id"]
-		if !ok {
-			return fmt.Errorf("id needs to be specified")
-		}
-		id, ok := rawID.(string)
-		if !ok {
-			return fmt.Errorf("id needs to be a string")
-		}
-		request.SetID(id)
-		c, err := cloud.Cluster.FindCluster(request, cloud.Auth)
-		if err != nil {
-			switch e := err.(type) {
-			case *cluster.FindClusterDefault:
-				return output.HTTPError(e.Payload)
-			default:
-				return output.UnconventionalError(err)
+		if ok {
+			id, ok := rawID.(string)
+			if !ok {
+				return fmt.Errorf("id needs to be a string")
+			}
+
+			request := cluster.NewFindClusterParams()
+			request.SetID(id)
+			c, err = cloud.Cluster.FindCluster(request, cloud.Auth)
+			if err != nil {
+				switch e := err.(type) {
+				case *cluster.FindClusterDefault:
+					if e.Code() != http.StatusNotFound {
+						return err
+					}
+				default:
+					return err
+				}
 			}
 		}
+
 		if c.Payload == nil {
 			var ccr *models.V1ClusterCreateRequest
 			err = mapstructure.Decode(input, ccr)
@@ -574,9 +580,10 @@ func clusterApply(args []string) error {
 					return output.UnconventionalError(err)
 				}
 			}
-			response = append(response, resp.Payload)
+			responses = append(responses, resp.Payload)
 			continue
 		}
+
 		var cur *models.V1ClusterUpdateRequest
 		err = mapstructure.Decode(input, cur)
 		if err != nil {
@@ -588,9 +595,10 @@ func clusterApply(args []string) error {
 		if err != nil {
 			return err
 		}
-		response = append(response, resp.Payload)
+		responses = append(responses, resp.Payload)
 	}
-	return printer.Print(response)
+
+	return printer.Print(responses)
 }
 
 func clusterList() error {
