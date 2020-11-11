@@ -8,7 +8,6 @@ import (
 
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
-	output "github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -130,23 +129,13 @@ func ipList() error {
 		params.SetBody(ifr)
 		resp, err := cloud.IP.FindIPs(params, cloud.Auth)
 		if err != nil {
-			switch e := err.(type) {
-			case *ip.FindIPsDefault:
-				return output.HTTPError(e.Payload)
-			default:
-				return output.UnconventionalError(err)
-			}
+			return err
 		}
 		return printer.Print(resp.Payload)
 	}
 	resp, err := cloud.IP.ListIPs(nil, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *ip.ListIPsDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	return printer.Print(resp.Payload)
 }
@@ -181,12 +170,7 @@ func ipStatic(args []string) error {
 	params.SetBody(iur)
 	resp, err := cloud.IP.UpdateIP(params, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *ip.UpdateIPDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	return printer.Print(resp.Payload)
 }
@@ -217,12 +201,7 @@ func ipAllocate(args []string) error {
 	params.SetBody(iar)
 	resp, err := cloud.IP.AllocateIP(params, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *ip.AllocateIPDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	return printer.Print(resp.Payload)
 }
@@ -237,12 +216,7 @@ func ipFree(args []string) error {
 	params.SetIP(ipAddress)
 	resp, err := cloud.IP.FreeIP(params, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *ip.FreeIPDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	return printer.Print(resp.Payload)
@@ -259,12 +233,7 @@ func getIPFromArgs(args []string) (string, error) {
 
 	_, err := cloud.IP.GetIP(params, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *ip.GetIPDefault:
-			return "", output.HTTPError(e.Payload)
-		default:
-			return "", output.UnconventionalError(err)
-		}
+		return "", err
 	}
 	return ipAddress, nil
 }
