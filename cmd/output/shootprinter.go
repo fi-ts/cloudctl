@@ -122,17 +122,17 @@ func (s ShootIssuesTablePrinter) Print(data []*models.V1ClusterResponse) {
 
 	var short []string
 	var wide []string
-	var actions []string
+	var issues []string
 	for _, shoot := range data {
-		short, wide, actions = shootData(shoot, true)
+		short, wide, issues = shootData(shoot, true)
 		s.addWideData(wide, shoot)
 		s.addShortData(short, shoot)
 	}
 	s.render()
 
-	if len(data) == 1 && len(actions) > 0 {
-		fmt.Println("\nRequired Actions:")
-		printStringSlice(actions)
+	if len(data) == 1 && len(issues) > 0 {
+		fmt.Println("\nIssues:")
+		printStringSlice(issues)
 	}
 }
 
@@ -140,7 +140,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 	shootStats := newShootStats(shoot.Status)
 
 	maintainEmoji := ""
-	var actions []string
+	var issues []string
 
 	ms := shoot.Machines
 	ms = append(ms, shoot.Firewalls...)
@@ -148,23 +148,23 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 	for _, m := range ms {
 		expires := imageExpires(m)
 		if expires != nil {
-			actions = append(actions, expires.Error())
+			issues = append(issues, expires.Error())
 		}
 	}
 
 	if shoot.Firewalls != nil {
 		switch len(shoot.Firewalls) {
 		case 0:
-			actions = append(actions, "Cluster has no firewall")
+			issues = append(issues, "Cluster has no firewall")
 		case 1:
 		default:
-			actions = append(actions, "Cluster has multiple firewalls, cluster requires manual administration")
+			issues = append(issues, "Cluster has multiple firewalls, cluster requires manual administration")
 		}
 	}
 
 	expires := kubernetesExpires(shoot)
 	if expires != nil {
-		actions = append(actions, expires.Error())
+		issues = append(issues, expires.Error())
 	}
 	mcmMigrated := false
 	for _, feature := range shoot.ControlPlaneFeatureGates {
@@ -174,10 +174,10 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		}
 	}
 	if !mcmMigrated {
-		actions = append(actions, "Cluster requires migration to out-of-tree machine-controller-manager, please enable via shoot spec")
+		issues = append(issues, "Cluster requires migration to out-of-tree machine-controller-manager, please enable via shoot spec")
 	}
 
-	if len(actions) > 0 {
+	if len(issues) > 0 {
 		maintainEmoji = "⚠️"
 	}
 
@@ -277,7 +277,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		short = append([]string{*shoot.ID, maintainEmoji}, short[1:]...)
 	}
 
-	return short, wide, actions
+	return short, wide, issues
 }
 
 func newShootStats(status *models.V1beta1ShootStatus) *shootStats {
