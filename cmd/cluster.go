@@ -152,9 +152,9 @@ var (
 		PreRun: bindPFlags,
 	}
 	clusterIssuesCmd = &cobra.Command{
-		Use:     "issues",
+		Use:     "issues [<uid>]",
 		Aliases: []string{"problems", "warnings"},
-		Short:   "lists cluster issues",
+		Short:   "lists cluster issues, shows required actions explicitly when id argument is given",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterIssues(args)
 		},
