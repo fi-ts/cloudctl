@@ -15,9 +15,6 @@ type (
 	ShootTablePrinter struct {
 		TablePrinter
 	}
-	ShootTableDetailPrinter struct {
-		TablePrinter
-	}
 	// ShootConditionsTablePrinter print the Conditions of a Shoot Cluster in a Table
 	ShootConditionsTablePrinter struct {
 		TablePrinter
@@ -111,23 +108,6 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 	s.render()
 
 	if len(data) == 1 && len(actions) > 0 {
-		fmt.Println("\nRequired Actions:")
-		printStringSlice(actions)
-	}
-}
-
-// Print a Shoot as table
-func (s ShootTableDetailPrinter) Print(shoot *models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall"}
-	s.shortHeader = []string{"UID", "", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
-
-	short, wide, actions := shootData(shoot)
-	s.addWideData(wide, shoot)
-	s.addShortData(short, shoot)
-
-	s.render()
-
-	if len(actions) > 0 {
 		fmt.Println("\nRequired Actions:")
 		printStringSlice(actions)
 	}
@@ -312,7 +292,7 @@ func imageExpires(m *models.ModelsV1MachineResponse) error {
 }
 
 func kubernetesExpires(shoot *models.V1ClusterResponse) error {
-	if shoot.Kubernetes == nil || shoot.Kubernetes.ExpirationDate == nil || !time.Time(*shoot.Kubernetes.ExpirationDate).IsZero() {
+	if shoot.Kubernetes == nil || shoot.Kubernetes.ExpirationDate == nil || time.Time(*shoot.Kubernetes.ExpirationDate).IsZero() {
 		return nil
 	}
 

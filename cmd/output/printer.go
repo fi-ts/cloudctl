@@ -174,7 +174,7 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 func (t TablePrinter) Print(data interface{}) error {
 	switch d := data.(type) {
 	case *models.V1ClusterResponse:
-		ShootTableDetailPrinter{t}.Print(d)
+		ShootTablePrinter{t}.Print([]*models.V1ClusterResponse{d})
 	case []*models.V1ClusterResponse:
 		if t.order == "" {
 			t.order = "tenant,project,name"
