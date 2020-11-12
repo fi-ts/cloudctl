@@ -255,7 +255,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		age,
 		purpose,
 		privileged,
-		strings.Join(uniqueStringSlice(runtimes), ", "),
+		strings.Join(uniqueStringSlice(runtimes), "\n"),
 		firewallImage,
 	}
 	short := []string{

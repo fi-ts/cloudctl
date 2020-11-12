@@ -359,12 +359,10 @@ func init() {
 	clusterApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
 	Example cluster update:
 
-	# cloudctl cluster describe cluster1 -o yaml > cluster1.yaml
-	# vi cluster1.yaml
 	## either via stdin
-	# cat cluster1.yaml | cloudctl cluster apply -f -
+	# cat cluster.yaml | cloudctl cluster apply -f -
 	## or via file
-	# cloudctl cluster apply -f cluster1.yaml
+	# cloudctl cluster apply -f cluster.yaml
 	`)
 
 	clusterCmd.AddCommand(clusterApplyCmd)
@@ -570,7 +568,7 @@ func clusterApply(args []string) error {
 		}
 
 		var cur *models.V1ClusterUpdateRequest
-		err = mapstructure.Decode(input, cur)
+		err = mapstructure.Decode(input, &cur)
 		if err != nil {
 			return fmt.Errorf("could not decode into cluster update request: %v", err)
 		}
@@ -780,9 +778,11 @@ func updateCluster(args []string) error {
 	}
 
 	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" {
+		workers := current.Payload.Workers
+
 		var worker *models.V1Worker
 		if workergroupname != "" {
-			for _, w := range current.Payload.Workers {
+			for _, w := range workers {
 				if w.Name != nil && *w.Name == workergroupname {
 					worker = w
 					break
@@ -791,8 +791,8 @@ func updateCluster(args []string) error {
 			if worker == nil {
 				return fmt.Errorf("no worker group found by name: %s", workergroupname)
 			}
-		} else if len(current.Payload.Workers) == 1 {
-			worker = current.Payload.Workers[0]
+		} else if len(workers) == 1 {
+			worker = workers[0]
 		} else {
 			return fmt.Errorf("there are multiple worker groups, please specify the worker group you want to update with --workergroup")
 		}
@@ -822,7 +822,7 @@ func updateCluster(args []string) error {
 			worker.MachineType = &machineType
 		}
 
-		cur.Workers = append(cur.Workers, worker)
+		cur.Workers = append(cur.Workers, workers...)
 	}
 
 	if firewallImage != "" {
