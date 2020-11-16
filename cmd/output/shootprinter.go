@@ -215,15 +215,14 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		privileged = fmt.Sprintf("%t", *shoot.Kubernetes.AllowPrivilegedContainers)
 	}
 
-	runtime := "docker"
+	runtimes := []string{"docker"}
 	autoScaleMin := int32(0)
 	autoScaleMax := int32(0)
-	if shoot.Workers != nil && len(shoot.Workers) > 0 {
-		workers := shoot.Workers[0]
-		autoScaleMin = *workers.Minimum
-		autoScaleMax = *workers.Maximum
-		if workers.CRI != nil && *workers.CRI != "" {
-			runtime = *workers.CRI
+	for _, w := range shoot.Workers {
+		autoScaleMin += *w.Minimum
+		autoScaleMax += *w.Maximum
+		if w.CRI != nil && *w.CRI != "" {
+			runtimes = append(runtimes, *w.CRI)
 		}
 	}
 	currentMachines := "x"
@@ -267,7 +266,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		age,
 		purpose,
 		privileged,
-		runtime,
+		strings.Join(uniqueStringSlice(runtimes), "\n"),
 		firewallImage,
 		strings.Join(egressIPs, "\n"),
 	}

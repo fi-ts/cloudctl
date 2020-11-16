@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -25,6 +26,8 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 var (
@@ -77,6 +80,14 @@ var (
 				return nil, cobra.ShellCompDirectiveNoFileComp
 			}
 			return clusterListCompletion()
+		},
+		PreRun: bindPFlags,
+	}
+	clusterApplyCmd = &cobra.Command{
+		Use:   "apply",
+		Short: "create/update a cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterApply(args)
 		},
 		PreRun: bindPFlags,
 	}
@@ -288,6 +299,7 @@ func init() {
 	})
 
 	// Cluster update --------------------------------------------------------------------
+	clusterUpdateCmd.Flags().String("workergroup", "", "the name of the worker group to apply updates to, only required when there are multiple worker groups.")
 	clusterUpdateCmd.Flags().Int32("minsize", 0, "minimal workers of the cluster.")
 	clusterUpdateCmd.Flags().Int32("maxsize", 0, "maximal workers of the cluster.")
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
@@ -347,6 +359,16 @@ func init() {
 	clusterIssuesCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterIssuesCmd.Flags().String("tenant", "", "show clusters of given tenant")
 
+	clusterApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
+	Example cluster update:
+
+	## either via stdin
+	# cat cluster.yaml | cloudctl cluster apply -f -
+	## or via file
+	# cloudctl cluster apply -f cluster.yaml
+	`)
+
+	clusterCmd.AddCommand(clusterApplyCmd)
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
 	clusterCmd.AddCommand(clusterKubeconfigCmd)
@@ -496,6 +518,80 @@ func clusterCreate() error {
 		return err
 	}
 	return printer.Print(shoot.Payload)
+}
+
+func clusterApply(args []string) error {
+	var inputFiles []map[string]interface{}
+	var genericInput map[string]interface{}
+	err := helper.ReadFrom(viper.GetString("file"), &genericInput, func(data interface{}) {
+		doc := data.(*map[string]interface{})
+		inputFiles = append(inputFiles, *doc)
+		// the request needs to be renewed as otherwise the pointers in the request struct will
+		// always point to same last value in the multi-document loop
+		genericInput = make(map[string]interface{})
+	})
+	if err != nil {
+		return err
+	}
+	var responses []*models.V1ClusterResponse
+	for _, input := range inputFiles {
+		var existingCluster *models.V1ClusterResponse
+
+		rawID, ok := input["id"]
+		if ok {
+			id, ok := rawID.(string)
+			if !ok {
+				return fmt.Errorf("id needs to be a string")
+			}
+
+			request := cluster.NewFindClusterParams()
+			request.SetID(id)
+			c, err := cloud.Cluster.FindCluster(request, cloud.Auth)
+			if err != nil {
+				switch e := err.(type) {
+				case *cluster.FindClusterDefault:
+					if e.Code() != http.StatusNotFound {
+						return err
+					}
+				default:
+					return err
+				}
+			}
+
+			existingCluster = c.Payload
+		}
+
+		if existingCluster == nil {
+			var ccr *models.V1ClusterCreateRequest
+			err = mapstructure.Decode(input, &ccr)
+			if err != nil {
+				return fmt.Errorf("could not decode into cluster create request: %v", err)
+			}
+			params := cluster.NewCreateClusterParams()
+			params.SetBody(ccr)
+			resp, err := cloud.Cluster.CreateCluster(params, cloud.Auth)
+			if err != nil {
+				return err
+			}
+			responses = append(responses, resp.Payload)
+			continue
+		}
+
+		var cur *models.V1ClusterUpdateRequest
+		err = mapstructure.Decode(input, &cur)
+		if err != nil {
+			return fmt.Errorf("could not decode into cluster update request: %v", err)
+		}
+		params := cluster.NewUpdateClusterParams()
+		params.SetBody(cur)
+		resp, err := cloud.Cluster.UpdateCluster(params, cloud.Auth)
+		if err != nil {
+			return err
+		}
+		responses = append(responses, resp.Payload)
+	}
+
+	return printer.Print(responses)
 }
 
 func clusterList() error {
@@ -667,6 +763,7 @@ func updateCluster(args []string) error {
 	if err != nil {
 		return err
 	}
+	workergroupname := viper.GetString("workergroup")
 	minsize := viper.GetInt32("minsize")
 	maxsize := viper.GetInt32("maxsize")
 	version := viper.GetString("version")
@@ -679,37 +776,64 @@ func updateCluster(args []string) error {
 	removeLabels := viper.GetStringSlice("removelabels")
 	egress := viper.GetStringSlice("egress")
 
+	findRequest := cluster.NewFindClusterParams()
+	findRequest.SetID(ci)
+	current, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	if err != nil {
+		return err
+	}
+
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
 		ID: &ci,
 	}
-	worker := &models.V1Worker{}
-	cur.Workers = append(cur.Workers, worker)
-	if minsize != 0 || maxsize != 0 {
+
+	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" {
+		workers := current.Payload.Workers
+
+		var worker *models.V1Worker
+		if workergroupname != "" {
+			for _, w := range workers {
+				if w.Name != nil && *w.Name == workergroupname {
+					worker = w
+					break
+				}
+			}
+			if worker == nil {
+				return fmt.Errorf("no worker group found by name: %s", workergroupname)
+			}
+		} else if len(workers) == 1 {
+			worker = workers[0]
+		} else {
+			return fmt.Errorf("there are multiple worker groups, please specify the worker group you want to update with --workergroup")
+		}
+
 		if minsize != 0 {
-			cur.Workers[0].Minimum = &minsize
+			worker.Minimum = &minsize
 		}
 		if maxsize != 0 {
-			cur.Workers[0].Maximum = &maxsize
+			worker.Maximum = &maxsize
 		}
-	}
 
-	machineImage := models.V1MachineImage{}
-	if machineImageAndVersion != "" {
-		machineImageParts := strings.Split(machineImageAndVersion, "-")
-		if len(machineImageParts) == 2 {
-			machineImage = models.V1MachineImage{
-				Name:    &machineImageParts[0],
-				Version: &machineImageParts[1],
+		if machineImageAndVersion != "" {
+			machineImage := models.V1MachineImage{}
+			machineImageParts := strings.Split(machineImageAndVersion, "-")
+			if len(machineImageParts) == 2 {
+				machineImage = models.V1MachineImage{
+					Name:    &machineImageParts[0],
+					Version: &machineImageParts[1],
+				}
+			} else {
+				log.Fatalf("given machineimage:%s is invalid must be in the form <name>-<version>", machineImageAndVersion)
 			}
-		} else {
-			log.Fatalf("given machineimage:%s is invalid must be in the form <name>-<version>", machineImageAndVersion)
+			worker.MachineImage = &machineImage
 		}
 
-		cur.Workers[0].MachineImage = &machineImage
-	}
-	if machineType != "" {
-		cur.Workers[0].MachineType = &machineType
+		if machineType != "" {
+			worker.MachineType = &machineType
+		}
+
+		cur.Workers = append(cur.Workers, workers...)
 	}
 
 	if firewallImage != "" {
@@ -723,13 +847,7 @@ func updateCluster(args []string) error {
 	}
 
 	if len(addLabels) > 0 || len(removeLabels) > 0 {
-		findRequest := cluster.NewFindClusterParams()
-		findRequest.SetID(ci)
-		shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
-		if err != nil {
-			return err
-		}
-		labelMap := shoot.Payload.Labels
+		labelMap := current.Payload.Labels
 
 		for _, l := range removeLabels {
 			parts := strings.SplitN(l, "=", 2)
