@@ -81,3 +81,11 @@ func strValue(strPtr *string) string {
 	}
 	return ""
 }
+
+func printStringSlice(s []string) {
+	var dashed []string
+	for _, elem := range s {
+		dashed = append(dashed, "- "+elem)
+	}
+	fmt.Println(strings.Join(dashed, "\n"))
+}

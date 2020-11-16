@@ -21,12 +21,12 @@ import (
 
 // Cloud provides cloud functions
 type Cloud struct {
-	Cluster     *cluster.Client
-	Project     *project.Client
-	Tenant      *tenant.Client
-	IP          *ip.Client
-	Accounting  *accounting.Client
-	S3          *s3.Client
+	Cluster     cluster.ClientService
+	Project     project.ClientService
+	Tenant      tenant.ClientService
+	IP          ip.ClientService
+	Accounting  accounting.ClientService
+	S3          s3.ClientService
 	Auth        runtime.ClientAuthInfoWriter
 	ConsoleHost string
 }

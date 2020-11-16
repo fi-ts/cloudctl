@@ -250,12 +250,7 @@ func s3Describe() error {
 
 	response, err := cloud.S3.Gets3(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *s3.Gets3Default:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	cfg := response.Payload
 	switch client {
@@ -303,12 +298,7 @@ func s3Create() error {
 
 	response, err := cloud.S3.Creates3(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *s3.Creates3Default:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	return output.YAMLPrinter{}.Print(response.Payload)
@@ -334,12 +324,7 @@ func s3Delete(args []string) error {
 
 	response, err := cloud.S3.Deletes3(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *s3.Deletes3Default:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	return output.YAMLPrinter{}.Print(response.Payload)
@@ -371,12 +356,7 @@ func s3AddKey(args []string) error {
 
 	response, err := cloud.S3.Updates3(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *s3.Updates3Default:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	return output.YAMLPrinter{}.Print(response.Payload)
@@ -404,12 +384,7 @@ func s3RemoveKey(args []string) error {
 
 	response, err := cloud.S3.Updates3(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *s3.Updates3Default:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	return output.YAMLPrinter{}.Print(response.Payload)
@@ -428,12 +403,7 @@ func s3List() error {
 
 	response, err := cloud.S3.Lists3(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *s3.Lists3Default:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	if project == "" {
@@ -454,12 +424,7 @@ func s3ListPartitions() error {
 
 	response, err := cloud.S3.Lists3partitions(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *s3.Lists3partitionsDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	return printer.Print(response.Payload)
 }

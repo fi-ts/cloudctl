@@ -90,6 +90,86 @@ func (s ShootTablePrinter) Order(data []*models.V1ClusterResponse) {
 	}
 }
 
+// Order cluster
+func (s ShootIssuesTablePrinter) Order(data []*models.V1ClusterResponse) {
+	cols := strings.Split(s.order, ",")
+	if len(cols) > 0 {
+		sort.SliceStable(data, func(i, j int) bool {
+			A := data[i]
+			B := data[j]
+			tenantA := A.Tenant
+			tenantB := B.Tenant
+			projectA := A.ProjectID
+			projectB := B.ProjectID
+			nameA := A.Name
+			nameB := B.Name
+			for _, order := range cols {
+				order = strings.ToLower(order)
+				switch order {
+				case "tenant":
+					if A.Tenant == nil {
+						return true
+					}
+					if B.Tenant == nil {
+						return false
+					}
+					if *tenantA == "" {
+						return true
+					}
+					if *tenantB == "" {
+						return false
+					}
+					if *tenantA < *tenantB {
+						return true
+					}
+					if *tenantA != *tenantB {
+						return false
+					}
+				case "project":
+					if A.ProjectID == nil {
+						return true
+					}
+					if B.ProjectID == nil {
+						return false
+					}
+					if *projectA == "" {
+						return true
+					}
+					if *projectB == "" {
+						return false
+					}
+					if *projectA < *projectB {
+						return true
+					}
+					if *projectA != *projectB {
+						return false
+					}
+				case "name":
+					if A.Name == nil {
+						return true
+					}
+					if B.Name == nil {
+						return false
+					}
+					if *nameA == "" {
+						return true
+					}
+					if *nameB == "" {
+						return false
+					}
+					if *nameA < *nameB {
+						return true
+					}
+					if *nameA != *nameB {
+						return false
+					}
+				}
+			}
+			return false
+		})
+	}
+}
+
 // Order Project
 func (s ProjectTablePrinter) Order(data []*models.V1ProjectResponse) {
 	cols := strings.Split(s.order, ",")

@@ -151,6 +151,21 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+	clusterIssuesCmd = &cobra.Command{
+		Use:     "issues [<uid>]",
+		Aliases: []string{"problems", "warnings"},
+		Short:   "lists cluster issues, shows required actions explicitly when id argument is given",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterIssues(args)
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return clusterListCompletion()
+		},
+		PreRun: bindPFlags,
+	}
 	clusterMachineSSHCmd = &cobra.Command{
 		Use:   "ssh <clusterid>",
 		Short: "ssh access a machine/firewall of the cluster",
@@ -326,6 +341,12 @@ func init() {
 	clusterReconcileCmd.Flags().Bool("retry", false, "Executes a cluster \"retry\" operation instead of regular \"reconcile\".")
 	clusterReconcileCmd.Flags().Bool("maintain", false, "Executes a cluster \"maintain\" operation instead of regular \"reconcile\".")
 
+	clusterIssuesCmd.Flags().String("id", "", "show clusters of given id")
+	clusterIssuesCmd.Flags().String("name", "", "show clusters of given name")
+	clusterIssuesCmd.Flags().String("project", "", "show clusters of given project")
+	clusterIssuesCmd.Flags().String("partition", "", "show clusters in partition")
+	clusterIssuesCmd.Flags().String("tenant", "", "show clusters of given tenant")
+
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
 	clusterCmd.AddCommand(clusterKubeconfigCmd)
@@ -336,6 +357,7 @@ func init() {
 	clusterCmd.AddCommand(clusterUpdateCmd)
 	clusterCmd.AddCommand(clusterMachineCmd)
 	clusterCmd.AddCommand(clusterLogsCmd)
+	clusterCmd.AddCommand(clusterIssuesCmd)
 }
 
 func clusterCreate() error {
@@ -373,12 +395,7 @@ func clusterCreate() error {
 		request := cluster.NewListConstraintsParams()
 		constraints, err := cloud.Cluster.ListConstraints(request, cloud.Auth)
 		if err != nil {
-			switch e := err.(type) {
-			case *cluster.ListConstraintsDefault:
-				return output.HTTPError(e.Payload)
-			default:
-				return output.UnconventionalError(err)
-			}
+			return err
 		}
 
 		availableVersions := constraints.Payload.KubernetesVersions
@@ -476,14 +493,7 @@ func clusterCreate() error {
 	request.SetBody(scr)
 	shoot, err := cloud.Cluster.CreateCluster(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.CreateClusterConflict:
-			return output.HTTPError(e.Payload)
-		case *cluster.CreateClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	return printer.Print(shoot.Payload)
 }
@@ -519,12 +529,7 @@ func clusterList() error {
 		fcp.SetBody(cfr)
 		response, err := cloud.Cluster.FindClusters(fcp, cloud.Auth)
 		if err != nil {
-			switch e := err.(type) {
-			case *cluster.FindClustersDefault:
-				return output.HTTPError(e.Payload)
-			default:
-				return output.UnconventionalError(err)
-			}
+			return err
 		}
 		return printer.Print(response.Payload)
 	}
@@ -532,12 +537,7 @@ func clusterList() error {
 	request := cluster.NewListClustersParams()
 	shoots, err := cloud.Cluster.ListClusters(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.ListClustersDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	return printer.Print(shoots.Payload)
 }
@@ -551,12 +551,7 @@ func clusterKubeconfig(args []string) error {
 	request.SetID(ci)
 	credentials, err := cloud.Cluster.GetClusterKubeconfigTpl(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.GetClusterKubeconfigTplDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	// kubeconfig with cluster
@@ -620,12 +615,7 @@ func sshKeyPair(clusterID string) (*sshkeypair, error) {
 	request.SetID(clusterID)
 	credentials, err := cloud.Cluster.GetSSHKeyPair(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.GetSSHKeyPairDefault:
-			return nil, output.HTTPError(e.Payload)
-		default:
-			return nil, output.UnconventionalError(err)
-		}
+		return nil, err
 	}
 	privateKey, err := base64.StdEncoding.DecodeString(*credentials.Payload.SSHKeyPair.PrivateKey)
 	if err != nil {
@@ -667,12 +657,7 @@ func reconcileCluster(args []string) error {
 
 	shoot, err := cloud.Cluster.ReconcileCluster(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.ReconcileClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	return printer.Print(shoot.Payload)
 }
@@ -742,12 +727,7 @@ func updateCluster(args []string) error {
 		findRequest.SetID(ci)
 		shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
 		if err != nil {
-			switch e := err.(type) {
-			case *cluster.FindClusterDefault:
-				return output.HTTPError(e.Payload)
-			default:
-				return output.UnconventionalError(err)
-			}
+			return err
 		}
 		labelMap := shoot.Payload.Labels
 
@@ -787,12 +767,7 @@ func updateCluster(args []string) error {
 	request.SetBody(cur)
 	shoot, err := cloud.Cluster.UpdateCluster(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.UpdateClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	return printer.Print(shoot.Payload)
 }
@@ -810,12 +785,7 @@ func clusterDelete(args []string) error {
 	findRequest.SetID(ci)
 	resp, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.FindClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	printer.Print(resp.Payload)
@@ -834,12 +804,7 @@ func clusterDelete(args []string) error {
 	request.SetID(ci)
 	c, err := cloud.Cluster.DeleteCluster(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.DeleteClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	return printer.Print(c.Payload)
 }
@@ -853,14 +818,69 @@ func clusterDescribe(args []string) error {
 	findRequest.SetID(ci)
 	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.FindClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	return printer.Print(shoot.Payload)
+}
+
+func clusterIssues(args []string) error {
+	if len(args) == 0 {
+		id := viper.GetString("id")
+		name := viper.GetString("name")
+		tenant := viper.GetString("tenant")
+		partition := viper.GetString("partition")
+		project := viper.GetString("project")
+		boolTrue := true
+		var cfr *models.V1ClusterFindRequest
+		if id != "" || name != "" || tenant != "" || partition != "" || project != "" {
+			cfr = &models.V1ClusterFindRequest{}
+
+			if id != "" {
+				cfr.ID = &id
+			}
+			if name != "" {
+				cfr.Name = &name
+			}
+			if tenant != "" {
+				cfr.Tenant = &tenant
+			}
+			if project != "" {
+				cfr.ProjectID = &project
+			}
+			if partition != "" {
+				cfr.PartitionID = &partition
+			}
+		}
+
+		if cfr != nil {
+			fcp := cluster.NewFindClustersParams().WithReturnMachines(&boolTrue)
+			fcp.SetBody(cfr)
+			response, err := cloud.Cluster.FindClusters(fcp, cloud.Auth)
+			if err != nil {
+				return err
+			}
+			return printer.Print(output.ShootIssuesResponses(response.Payload))
+		}
+
+		request := cluster.NewListClustersParams().WithReturnMachines(&boolTrue)
+		shoots, err := cloud.Cluster.ListClusters(request, cloud.Auth)
+		if err != nil {
+			return err
+		}
+		return printer.Print(output.ShootIssuesResponses(shoots.Payload))
+	}
+
+	ci, err := clusterID("issues", args)
+	if err != nil {
+		return err
+	}
+	findRequest := cluster.NewFindClusterParams()
+	findRequest.SetID(ci)
+	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	if err != nil {
+		return err
+	}
+	return printer.Print(output.ShootIssuesResponse(shoot.Payload))
 }
 
 func clusterMachines(args []string) error {
@@ -872,28 +892,18 @@ func clusterMachines(args []string) error {
 	findRequest.SetID(ci)
 	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.FindClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	fmt.Println("Cluster:")
 	printer.Print(shoot.Payload)
 
 	// FIXME this is a ugly hack to reset the printer and have a new header.
-	printer, err = output.NewPrinter(
-		viper.GetString("output-format"),
-		viper.GetString("order"),
-		viper.GetString("template"),
-		viper.GetBool("no-headers"),
-	)
-	if err != nil {
-		log.Fatalf("unable to initialize printer:%v", err)
-	}
+	initPrinter()
+
+	ms := shoot.Payload.Machines
+	ms = append(ms, shoot.Payload.Firewalls...)
 	fmt.Println("\nMachines:")
-	return printer.Print(shoot.Payload.Machines)
+	return printer.Print(ms)
 }
 
 func clusterLogs(args []string) error {
@@ -905,30 +915,44 @@ func clusterLogs(args []string) error {
 	findRequest.SetID(ci)
 	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.FindClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 	var conditions []*models.V1beta1Condition
+	var lastOperation *models.V1beta1LastOperation
+	var lastErrors []*models.V1beta1LastError
 	if shoot.Payload != nil && shoot.Payload.Status != nil {
 		conditions = shoot.Payload.Status.Conditions
+		lastOperation = shoot.Payload.Status.LastOperation
+		lastErrors = shoot.Payload.Status.LastErrors
 	}
-	return printer.Print(conditions)
+
+	fmt.Println("Conditions:")
+	err = printer.Print(conditions)
+	if err != nil {
+		return err
+	}
+
+	// FIXME this is a ugly hack to reset the printer and have a new header.
+	initPrinter()
+
+	fmt.Println("\nLast Errors:")
+	err = printer.Print(lastErrors)
+	if err != nil {
+		return err
+	}
+
+	// FIXME this is a ugly hack to reset the printer and have a new header.
+	initPrinter()
+
+	fmt.Println("\nLast Operation:")
+	return printer.Print(lastOperation)
 }
 
 func clusterInputs() error {
 	request := cluster.NewListConstraintsParams()
 	sc, err := cloud.Cluster.ListConstraints(request, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.ListConstraintsDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	return output.YAMLPrinter{}.Print(sc)
@@ -945,12 +969,7 @@ func clusterMachineSSH(args []string, console bool) error {
 	findRequest.SetID(cid)
 	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
 	if err != nil {
-		switch e := err.(type) {
-		case *cluster.FindClusterDefault:
-			return output.HTTPError(e.Payload)
-		default:
-			return output.UnconventionalError(err)
-		}
+		return err
 	}
 
 	keypair, err := sshKeyPair(cid)
@@ -1043,6 +1062,7 @@ func clusterID(verb string, args []string) (string, error) {
 func makeEgressRules(egressFlagValue []string) []*models.V1EgressRule {
 	m := map[string]models.V1EgressRule{}
 	for _, e := range egressFlagValue {
+		fmt.Println(e)
 		parts := strings.Split(e, ":")
 		if len(parts) != 2 {
 			log.Fatalf("egress config needs format <network>:<ip> but got %q", e)
@@ -1065,7 +1085,8 @@ func makeEgressRules(egressFlagValue []string) []*models.V1EgressRule {
 
 	egressRules := []*models.V1EgressRule{}
 	for _, e := range m {
-		egressRules = append(egressRules, &e)
+		r := e
+		egressRules = append(egressRules, &r)
 	}
 	return egressRules
 }
