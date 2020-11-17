@@ -1094,7 +1094,9 @@ func clusterMachineSSH(args []string, console bool) error {
 	if err != nil {
 		return err
 	}
-	for _, m := range shoot.Payload.Machines {
+	ms := shoot.Payload.Machines
+	ms = append(ms, shoot.Payload.Firewalls...)
+	for _, m := range ms {
 		if *m.ID == mid {
 			home, err := os.UserHomeDir()
 			if err != nil {
