@@ -193,8 +193,8 @@ github.com/evanphx/json-patch v4.5.0+incompatible/go.mod h1:50XU6AFN0ol/bzJsmQLi
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fatih/color v1.9.0 h1:8xPHl4/q1VyqGIPif1F+1V3Y3lSmrq01EabUW3CoW5s=
 github.com/fatih/color v1.9.0/go.mod h1:eQcE1qtQxscV5RaZvpXrrb8Drkc3/DdQ+uUYCNjL+zU=
-github.com/fi-ts/cloud-go v0.9.3-0.20201116104203-c7a0ad423522 h1:G/VMeRbylcJKDCN2tqRWu0LHP5FUrSrbj4nx8QS3cX8=
-github.com/fi-ts/cloud-go v0.9.3-0.20201116104203-c7a0ad423522/go.mod h1:62xg/xk1sh9qXtH1JelHirPUcjJVJTV+aQRzogP+sr4=
+github.com/fi-ts/cloud-go v0.10.0 h1:wGNV86AFsVlCCkR7Gdt0hguv3Gg30YUxkes2/uvzlIM=
+github.com/fi-ts/cloud-go v0.10.0/go.mod h1:62xg/xk1sh9qXtH1JelHirPUcjJVJTV+aQRzogP+sr4=
 github.com/frankban/quicktest v1.5.0/go.mod h1:jaStnuzAqU1AJdCO0l53JDCJrVDKcS03DbaAcR7Ks/o=
 github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
