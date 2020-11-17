@@ -89,3 +89,15 @@ func printStringSlice(s []string) {
 	}
 	fmt.Println(strings.Join(dashed, "\n"))
 }
+
+func uniqueStringSlice(s []string) []string {
+	m := make(map[string]bool)
+	var res []string
+	for _, elem := range s {
+		if _, ok := m[elem]; !ok {
+			m[elem] = true
+			res = append(res, elem)
+		}
+	}
+	return res
+}

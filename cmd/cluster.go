@@ -287,6 +287,7 @@ func init() {
 	})
 
 	// Cluster update --------------------------------------------------------------------
+	clusterUpdateCmd.Flags().String("workergroup", "", "the name of the worker group to apply updates to, only required when there are multiple worker groups.")
 	clusterUpdateCmd.Flags().Int32("minsize", 0, "minimal workers of the cluster.")
 	clusterUpdateCmd.Flags().Int32("maxsize", 0, "maximal workers of the cluster.")
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
@@ -657,6 +658,7 @@ func updateCluster(args []string) error {
 	if err != nil {
 		return err
 	}
+	workergroupname := viper.GetString("workergroup")
 	minsize := viper.GetInt32("minsize")
 	maxsize := viper.GetInt32("maxsize")
 	version := viper.GetString("version")
@@ -668,37 +670,64 @@ func updateCluster(args []string) error {
 	addLabels := viper.GetStringSlice("addlabels")
 	removeLabels := viper.GetStringSlice("removelabels")
 
+	findRequest := cluster.NewFindClusterParams()
+	findRequest.SetID(ci)
+	current, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	if err != nil {
+		return err
+	}
+
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
 		ID: &ci,
 	}
-	worker := &models.V1Worker{}
-	cur.Workers = append(cur.Workers, worker)
-	if minsize != 0 || maxsize != 0 {
+
+	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" {
+		workers := current.Payload.Workers
+
+		var worker *models.V1Worker
+		if workergroupname != "" {
+			for _, w := range workers {
+				if w.Name != nil && *w.Name == workergroupname {
+					worker = w
+					break
+				}
+			}
+			if worker == nil {
+				return fmt.Errorf("no worker group found by name: %s", workergroupname)
+			}
+		} else if len(workers) == 1 {
+			worker = workers[0]
+		} else {
+			return fmt.Errorf("there are multiple worker groups, please specify the worker group you want to update with --workergroup")
+		}
+
 		if minsize != 0 {
-			cur.Workers[0].Minimum = &minsize
+			worker.Minimum = &minsize
 		}
 		if maxsize != 0 {
-			cur.Workers[0].Maximum = &maxsize
+			worker.Maximum = &maxsize
 		}
-	}
 
-	machineImage := models.V1MachineImage{}
-	if machineImageAndVersion != "" {
-		machineImageParts := strings.Split(machineImageAndVersion, "-")
-		if len(machineImageParts) == 2 {
-			machineImage = models.V1MachineImage{
-				Name:    &machineImageParts[0],
-				Version: &machineImageParts[1],
+		if machineImageAndVersion != "" {
+			machineImage := models.V1MachineImage{}
+			machineImageParts := strings.Split(machineImageAndVersion, "-")
+			if len(machineImageParts) == 2 {
+				machineImage = models.V1MachineImage{
+					Name:    &machineImageParts[0],
+					Version: &machineImageParts[1],
+				}
+			} else {
+				log.Fatalf("given machineimage:%s is invalid must be in the form <name>-<version>", machineImageAndVersion)
 			}
-		} else {
-			log.Fatalf("given machineimage:%s is invalid must be in the form <name>-<version>", machineImageAndVersion)
+			worker.MachineImage = &machineImage
 		}
 
-		cur.Workers[0].MachineImage = &machineImage
-	}
-	if machineType != "" {
-		cur.Workers[0].MachineType = &machineType
+		if machineType != "" {
+			worker.MachineType = &machineType
+		}
+
+		cur.Workers = append(cur.Workers, workers...)
 	}
 
 	if firewallImage != "" {
@@ -712,13 +741,7 @@ func updateCluster(args []string) error {
 	}
 
 	if len(addLabels) > 0 || len(removeLabels) > 0 {
-		findRequest := cluster.NewFindClusterParams()
-		findRequest.SetID(ci)
-		shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
-		if err != nil {
-			return err
-		}
-		labelMap := shoot.Payload.Labels
+		labelMap := current.Payload.Labels
 
 		for _, l := range removeLabels {
 			parts := strings.SplitN(l, "=", 2)
