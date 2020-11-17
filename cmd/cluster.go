@@ -783,6 +783,13 @@ func updateCluster(args []string) error {
 		return err
 	}
 
+	findRequest := cluster.NewFindClusterParams()
+	findRequest.SetID(ci)
+	current, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	if err != nil {
+		return err
+	}
+
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
 		ID: &ci,
