@@ -17,7 +17,6 @@ require (
 	github.com/metal-stack/updater v1.1.1
 	github.com/metal-stack/v v1.0.2
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/mitchellh/mapstructure v1.3.2
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cast v1.3.1 // indirect

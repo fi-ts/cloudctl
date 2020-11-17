@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
-	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -26,8 +25,6 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-
-	"github.com/mitchellh/mapstructure"
 )
 
 var (
@@ -80,14 +77,6 @@ var (
 				return nil, cobra.ShellCompDirectiveNoFileComp
 			}
 			return clusterListCompletion()
-		},
-		PreRun: bindPFlags,
-	}
-	clusterApplyCmd = &cobra.Command{
-		Use:   "apply",
-		Short: "create/update a cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterApply(args)
 		},
 		PreRun: bindPFlags,
 	}
@@ -359,16 +348,6 @@ func init() {
 	clusterIssuesCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterIssuesCmd.Flags().String("tenant", "", "show clusters of given tenant")
 
-	clusterApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
-	Example cluster update:
-
-	## either via stdin
-	# cat cluster.yaml | cloudctl cluster apply -f -
-	## or via file
-	# cloudctl cluster apply -f cluster.yaml
-	`)
-
-	clusterCmd.AddCommand(clusterApplyCmd)
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
 	clusterCmd.AddCommand(clusterKubeconfigCmd)
@@ -518,80 +497,6 @@ func clusterCreate() error {
 		return err
 	}
 	return printer.Print(shoot.Payload)
-}
-
-func clusterApply(args []string) error {
-	var inputFiles []map[string]interface{}
-	var genericInput map[string]interface{}
-	err := helper.ReadFrom(viper.GetString("file"), &genericInput, func(data interface{}) {
-		doc := data.(*map[string]interface{})
-		inputFiles = append(inputFiles, *doc)
-		// the request needs to be renewed as otherwise the pointers in the request struct will
-		// always point to same last value in the multi-document loop
-		genericInput = make(map[string]interface{})
-	})
-	if err != nil {
-		return err
-	}
-	var responses []*models.V1ClusterResponse
-	for _, input := range inputFiles {
-		var existingCluster *models.V1ClusterResponse
-
-		rawID, ok := input["id"]
-		if ok {
-			id, ok := rawID.(string)
-			if !ok {
-				return fmt.Errorf("id needs to be a string")
-			}
-
-			request := cluster.NewFindClusterParams()
-			request.SetID(id)
-			c, err := cloud.Cluster.FindCluster(request, cloud.Auth)
-			if err != nil {
-				switch e := err.(type) {
-				case *cluster.FindClusterDefault:
-					if e.Code() != http.StatusNotFound {
-						return err
-					}
-				default:
-					return err
-				}
-			}
-
-			existingCluster = c.Payload
-		}
-
-		if existingCluster == nil {
-			var ccr *models.V1ClusterCreateRequest
-			err = mapstructure.Decode(input, &ccr)
-			if err != nil {
-				return fmt.Errorf("could not decode into cluster create request: %v", err)
-			}
-			params := cluster.NewCreateClusterParams()
-			params.SetBody(ccr)
-			resp, err := cloud.Cluster.CreateCluster(params, cloud.Auth)
-			if err != nil {
-				return err
-			}
-			responses = append(responses, resp.Payload)
-			continue
-		}
-
-		var cur *models.V1ClusterUpdateRequest
-		err = mapstructure.Decode(input, &cur)
-		if err != nil {
-			return fmt.Errorf("could not decode into cluster update request: %v", err)
-		}
-		params := cluster.NewUpdateClusterParams()
-		params.SetBody(cur)
-		resp, err := cloud.Cluster.UpdateCluster(params, cloud.Auth)
-		if err != nil {
-			return err
-		}
-		responses = append(responses, resp.Payload)
-	}
-
-	return printer.Print(responses)
 }
 
 func clusterList() error {
@@ -775,13 +680,6 @@ func updateCluster(args []string) error {
 	addLabels := viper.GetStringSlice("addlabels")
 	removeLabels := viper.GetStringSlice("removelabels")
 	egress := viper.GetStringSlice("egress")
-
-	findRequest := cluster.NewFindClusterParams()
-	findRequest.SetID(ci)
-	current, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
-	if err != nil {
-		return err
-	}
 
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
