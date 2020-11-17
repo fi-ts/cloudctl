@@ -228,6 +228,7 @@ func init() {
 	clusterCreateCmd.Flags().String("maxunavailable", "1", "max number (e.g. 1) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
 	clusterCreateCmd.Flags().StringSlice("labels", []string{}, "labels of the cluster")
 	clusterCreateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
+	clusterCreateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <network>:<ip>; e.g.: --egress internet:1.2.3.4,extnet:123.1.1.1 --egress internet:1.2.3.5 [optional]")
 	clusterCreateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster.")
 
 	err := clusterCreateCmd.MarkFlagRequired("name")
@@ -299,6 +300,8 @@ func init() {
 	clusterUpdateCmd.Flags().StringSlice("removelabels", []string{}, "labels to remove from the cluster")
 	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster, please add --yes-i-really-mean-it")
 	clusterUpdateCmd.Flags().String("purpose", "", "purpose of the cluster, can be one of production|testing|development|evaluation. SLA is only given on production clusters.")
+	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]")
+
 	clusterUpdateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return versionListCompletion()
 	})
@@ -382,6 +385,7 @@ func clusterCreate() error {
 
 	// FIXME helper and validation
 	networks := viper.GetStringSlice("external-networks")
+	egress := viper.GetStringSlice("egress")
 	autoUpdateKubernetes := false
 	autoUpdateMachineImage := false
 	maintenanceBegin := "220000+0100"
@@ -480,6 +484,12 @@ func clusterCreate() error {
 		AdditionalNetworks: networks,
 		PartitionID:        &partition,
 	}
+
+	egressRules := makeEgressRules(egress)
+	if len(egressRules) > 0 {
+		scr.EgressRules = egressRules
+	}
+
 	request := cluster.NewCreateClusterParams()
 	request.SetBody(scr)
 	shoot, err := cloud.Cluster.CreateCluster(request, cloud.Auth)
@@ -669,6 +679,7 @@ func updateCluster(args []string) error {
 	purpose := viper.GetString("purpose")
 	addLabels := viper.GetStringSlice("addlabels")
 	removeLabels := viper.GetStringSlice("removelabels")
+	egress := viper.GetStringSlice("egress")
 
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
@@ -770,6 +781,11 @@ func updateCluster(args []string) error {
 		k8s.AllowPrivilegedContainers = &allowPrivileged
 	}
 	cur.Kubernetes = k8s
+
+	egressRules := makeEgressRules(egress)
+	if len(egressRules) > 0 {
+		cur.EgressRules = egressRules
+	}
 
 	request.SetBody(cur)
 	shoot, err := cloud.Cluster.UpdateCluster(request, cloud.Auth)
@@ -983,7 +999,9 @@ func clusterMachineSSH(args []string, console bool) error {
 	if err != nil {
 		return err
 	}
-	for _, m := range shoot.Payload.Machines {
+	ms := shoot.Payload.Machines
+	ms = append(ms, shoot.Payload.Firewalls...)
+	for _, m := range ms {
 		if *m.ID == mid {
 			home, err := os.UserHomeDir()
 			if err != nil {
@@ -1064,4 +1082,36 @@ func clusterID(verb string, args []string) (string, error) {
 		return args[0], nil
 	}
 	return "", fmt.Errorf("cluster %s requires exactly one clusterID as argument", verb)
+}
+
+func makeEgressRules(egressFlagValue []string) []*models.V1EgressRule {
+	m := map[string]models.V1EgressRule{}
+	for _, e := range egressFlagValue {
+		fmt.Println(e)
+		parts := strings.Split(e, ":")
+		if len(parts) != 2 {
+			log.Fatalf("egress config needs format <network>:<ip> but got %q", e)
+		}
+		n, ip := strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1])
+		if net.ParseIP(ip) == nil {
+			log.Fatalf("egress config contains an invalid IP %s for network %s", ip, n)
+		}
+
+		if _, ok := m[n]; !ok {
+			m[n] = models.V1EgressRule{
+				NetworkID: &n,
+			}
+		}
+
+		element := m[n]
+		element.Ips = append(element.Ips, ip)
+		m[n] = element
+	}
+
+	egressRules := []*models.V1EgressRule{}
+	for _, e := range m {
+		r := e
+		egressRules = append(egressRules, &r)
+	}
+	return egressRules
 }

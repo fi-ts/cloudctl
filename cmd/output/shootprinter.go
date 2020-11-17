@@ -100,7 +100,7 @@ func (s ShootLastOperationTablePrinter) Print(data *models.V1beta1LastOperation)
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall"}
+	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall", "Egress IPs"}
 	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
 	s.Order(data)
@@ -244,6 +244,17 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 	if shoot.FirewallImage != nil {
 		firewallImage = *shoot.FirewallImage
 	}
+
+	egressIPs := []string{}
+	for _, e := range shoot.EgressRules {
+		if e == nil {
+			continue
+		}
+		for _, i := range e.Ips {
+			egressIPs = append(egressIPs, fmt.Sprintf("%s: %s", *e.NetworkID, i))
+		}
+	}
+
 	wide := []string{
 		*shoot.ID,
 		*shoot.Name,
@@ -257,6 +268,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		privileged,
 		strings.Join(uniqueStringSlice(runtimes), "\n"),
 		firewallImage,
+		strings.Join(egressIPs, "\n"),
 	}
 	short := []string{
 		*shoot.ID,
