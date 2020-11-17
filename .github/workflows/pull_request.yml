@@ -12,7 +12,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@master
       - name: Make tag
-        run: echo "::set-env name=TAG_NAME::$(echo $GITHUB_REF | awk -F / '{print $3}')-${GITHUB_HEAD_REF##*/}"
+        run: echo "TAG_NAME=$(echo $GITHUB_REF | awk -F / '{print $3}')-${GITHUB_HEAD_REF##*/}" >> $GITHUB_ENV
       - name: Build
         uses: metal-stack/action-docker-make@master
         with:

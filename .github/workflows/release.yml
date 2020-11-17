@@ -15,7 +15,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@master
       - name: Make tag
-        run: echo "::set-env name=TAG_NAME::${GITHUB_REF##*/}"
+        run: echo "TAG_NAME=${GITHUB_REF##*/}" >> $GITHUB_ENV
       - name: Get release
         id: get_release
         uses: bruceadams/get-release@v1.2.1
