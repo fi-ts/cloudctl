@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/fatih/color v1.9.0
-	github.com/fi-ts/cloud-go v0.10.0
+	github.com/fi-ts/cloud-go v0.10.1-0.20201125075351-bb672de7bc4e
 	github.com/gardener/gardener v1.8.2
 	github.com/go-openapi/runtime v0.19.21
 	github.com/go-openapi/strfmt v0.19.5
