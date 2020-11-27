@@ -325,14 +325,12 @@ func init() {
 	clusterMachineSSHCmd.MarkFlagRequired("machineid")
 	clusterMachineSSHCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		// FIXME howto implement flag based completion for a already given clusterid
-		fmt.Printf("args:%v\n", args)
 		return clusterMachineListCompletion("123")
 	})
 	clusterMachineConsoleCmd.Flags().String("machineid", "", "machine to connect to.")
 	clusterMachineConsoleCmd.MarkFlagRequired("machineid")
 	clusterMachineConsoleCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		// FIXME howto implement flag based completion for a already given clusterid
-		fmt.Printf("args:%v\n", args)
 		return clusterMachineListCompletion("123")
 	})
 	clusterMachineCmd.AddCommand(clusterMachineListCmd)
@@ -1087,7 +1085,6 @@ func clusterID(verb string, args []string) (string, error) {
 func makeEgressRules(egressFlagValue []string) []*models.V1EgressRule {
 	m := map[string]models.V1EgressRule{}
 	for _, e := range egressFlagValue {
-		fmt.Println(e)
 		parts := strings.Split(e, ":")
 		if len(parts) != 2 {
 			log.Fatalf("egress config needs format <network>:<ip> but got %q", e)
