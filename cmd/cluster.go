@@ -300,7 +300,7 @@ func init() {
 	clusterUpdateCmd.Flags().StringSlice("removelabels", []string{}, "labels to remove from the cluster")
 	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster, please add --yes-i-really-mean-it")
 	clusterUpdateCmd.Flags().String("purpose", "", "purpose of the cluster, can be one of production|testing|development|evaluation. SLA is only given on production clusters.")
-	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]")
+	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]. Use --egress none to remove all ingress rules.")
 
 	clusterUpdateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return versionListCompletion()
@@ -780,10 +780,7 @@ func updateCluster(args []string) error {
 	}
 	cur.Kubernetes = k8s
 
-	egressRules := makeEgressRules(egress)
-	if len(egressRules) > 0 {
-		cur.EgressRules = egressRules
-	}
+	cur.EgressRules = makeEgressRules(egress)
 
 	request.SetBody(cur)
 	shoot, err := cloud.Cluster.UpdateCluster(request, cloud.Auth)
@@ -1083,6 +1080,14 @@ func clusterID(verb string, args []string) (string, error) {
 }
 
 func makeEgressRules(egressFlagValue []string) []*models.V1EgressRule {
+	if len(egressFlagValue) == 0 {
+		return nil
+	}
+
+	if len(egressFlagValue) == 1 && egressFlagValue[0] == "none" {
+		return []*models.V1EgressRule{}
+	}
+
 	m := map[string]models.V1EgressRule{}
 	for _, e := range egressFlagValue {
 		parts := strings.Split(e, ":")
