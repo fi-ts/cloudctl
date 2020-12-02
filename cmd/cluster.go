@@ -301,6 +301,7 @@ func init() {
 	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster, please add --yes-i-really-mean-it")
 	clusterUpdateCmd.Flags().String("purpose", "", "purpose of the cluster, can be one of production|development|evaluation. SLA is only given on production clusters.")
 	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]. Use --egress none to remove all ingress rules.")
+	clusterUpdateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
 
 	clusterUpdateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return versionListCompletion()
@@ -672,6 +673,7 @@ func updateCluster(args []string) error {
 	version := viper.GetString("version")
 	firewallType := viper.GetString("firewalltype")
 	firewallImage := viper.GetString("firewallimage")
+	firewallNetworks := viper.GetStringSlice("external-networks")
 	machineType := viper.GetString("machinetype")
 	machineImageAndVersion := viper.GetString("machineimage")
 	purpose := viper.GetString("purpose")
@@ -745,6 +747,10 @@ func updateCluster(args []string) error {
 	if firewallType != "" {
 		cur.FirewallSize = &firewallType
 	}
+	if len(firewallNetworks) > 0 {
+		cur.AdditionalNetworks = firewallNetworks
+	}
+
 	if purpose != "" {
 		cur.Purpose = &purpose
 	}
@@ -1106,7 +1112,7 @@ func makeEgressRules(egressFlagValue []string) []*models.V1EgressRule {
 		}
 
 		element := m[n]
-		element.Ips = append(element.Ips, ip)
+		element.IPs = append(element.IPs, ip)
 		m[n] = element
 	}
 
