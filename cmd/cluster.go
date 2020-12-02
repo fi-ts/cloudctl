@@ -15,6 +15,7 @@ import (
 
 	"github.com/metal-stack/metal-lib/auth"
 	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 
@@ -683,10 +684,11 @@ func updateCluster(args []string) error {
 
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	current, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	resp, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
 	if err != nil {
 		return err
 	}
+	current := resp.Payload
 
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
@@ -694,7 +696,7 @@ func updateCluster(args []string) error {
 	}
 
 	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" {
-		workers := current.Payload.Workers
+		workers := current.Workers
 
 		var worker *models.V1Worker
 		if workergroupname != "" {
@@ -741,14 +743,20 @@ func updateCluster(args []string) error {
 		cur.Workers = append(cur.Workers, workers...)
 	}
 
-	if firewallImage != "" {
+	updateCausesDowntime := false
+	if firewallImage != "" && current.FirewallImage != nil && *current.FirewallImage != firewallImage {
 		cur.FirewallImage = &firewallImage
+		updateCausesDowntime = true
 	}
-	if firewallType != "" {
+	if firewallType != "" && current.FirewallSize != nil && *current.FirewallSize != firewallType {
 		cur.FirewallSize = &firewallType
+		updateCausesDowntime = true
 	}
 	if len(firewallNetworks) > 0 {
 		cur.AdditionalNetworks = firewallNetworks
+		if !sets.NewString(firewallNetworks...).Equal(sets.NewString(current.AdditionalNetworks...)) {
+			updateCausesDowntime = true
+		}
 	}
 
 	if purpose != "" {
@@ -756,7 +764,7 @@ func updateCluster(args []string) error {
 	}
 
 	if len(addLabels) > 0 || len(removeLabels) > 0 {
-		labelMap := current.Payload.Labels
+		labelMap := current.Labels
 
 		for _, l := range removeLabels {
 			parts := strings.SplitN(l, "=", 2)
@@ -787,6 +795,14 @@ func updateCluster(args []string) error {
 	cur.Kubernetes = k8s
 
 	cur.EgressRules = makeEgressRules(egress)
+
+	if updateCausesDowntime && !viper.GetBool("yes-i-really-mean-it") {
+		fmt.Println("This cluster update will cause downtime.")
+		err = helper.Prompt("Are you sure? (y/n)", "y")
+		if err != nil {
+			return err
+		}
+	}
 
 	request.SetBody(cur)
 	shoot, err := cloud.Cluster.UpdateCluster(request, cloud.Auth)

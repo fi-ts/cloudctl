@@ -27,6 +27,7 @@ require (
 	gopkg.in/go-playground/validator.v9 v9.31.0
 	gopkg.in/ini.v1 v1.60.2 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
+	k8s.io/apimachinery v0.17.11
 )
 
 replace k8s.io/client-go => k8s.io/client-go v0.17.6
