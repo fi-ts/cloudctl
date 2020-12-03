@@ -161,7 +161,7 @@ func ipStatic(args []string) error {
 
 	if !viper.GetBool("yes-i-really-mean-it") {
 		fmt.Println("Turning an IP from ephemeral to static is irreversible. The IP address is not cleaned up automatically on cluster deletion. The address will be accounted until the IP address gets freed manually from your side.")
-		err = helper.Prompt("Are you sure? (y/n)", "y")
+		err = helper.Prompt("Are you sure? (y)", "y")
 		if err != nil {
 			return err
 		}
@@ -192,7 +192,7 @@ func ipAllocate(args []string) error {
 
 	if !viper.GetBool("yes-i-really-mean-it") {
 		fmt.Println("Allocating a static IP address costs additional money because addresses are limited. The IP address is not cleaned up automatically on cluster deletion. The address will be accounted until the IP address gets freed manually from your side.")
-		err := helper.Prompt("Are you sure? (y/n)", "y")
+		err := helper.Prompt("Are you sure? (y)", "y")
 		if err != nil {
 			return err
 		}
