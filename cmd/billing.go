@@ -289,7 +289,7 @@ func clusterUsageJSON(cur *models.V1ClusterUsageRequest) error {
 	request := accounting.NewClusterUsageParams()
 	request.SetBody(cur)
 
-	response, err := cloud.Accounting.ClusterUsage(request, cloud.Auth)
+	response, err := cloud.Accounting.ClusterUsage(request, nil)
 	if err != nil {
 		return err
 	}
@@ -301,7 +301,7 @@ func clusterUsageCSV(cur *models.V1ClusterUsageRequest) error {
 	request := accounting.NewClusterUsageCSVParams()
 	request.SetBody(cur)
 
-	response, err := cloud.Accounting.ClusterUsageCSV(request, cloud.Auth)
+	response, err := cloud.Accounting.ClusterUsageCSV(request, nil)
 	if err != nil {
 		return err
 	}
@@ -339,7 +339,7 @@ func containerUsageJSON(cur *models.V1ContainerUsageRequest) error {
 	request := accounting.NewContainerUsageParams()
 	request.SetBody(cur)
 
-	response, err := cloud.Accounting.ContainerUsage(request, cloud.Auth)
+	response, err := cloud.Accounting.ContainerUsage(request, nil)
 	if err != nil {
 		return err
 	}
@@ -351,7 +351,7 @@ func containerUsageCSV(cur *models.V1ContainerUsageRequest) error {
 	request := accounting.NewContainerUsageCSVParams()
 	request.SetBody(cur)
 
-	response, err := cloud.Accounting.ContainerUsageCSV(request, cloud.Auth)
+	response, err := cloud.Accounting.ContainerUsageCSV(request, nil)
 	if err != nil {
 		return err
 	}
@@ -383,7 +383,7 @@ func ipUsageJSON(iur *models.V1IPUsageRequest) error {
 	request := accounting.NewIPUsageParams()
 	request.SetBody(iur)
 
-	response, err := cloud.Accounting.IPUsage(request, cloud.Auth)
+	response, err := cloud.Accounting.IPUsage(request, nil)
 	if err != nil {
 		return err
 	}
@@ -395,7 +395,7 @@ func ipUsageCSV(iur *models.V1IPUsageRequest) error {
 	request := accounting.NewIPUsageCSVParams()
 	request.SetBody(iur)
 
-	response, err := cloud.Accounting.IPUsageCSV(request, cloud.Auth)
+	response, err := cloud.Accounting.IPUsageCSV(request, nil)
 	if err != nil {
 		return err
 	}
@@ -433,7 +433,7 @@ func networkTrafficUsageJSON(cur *models.V1NetworkUsageRequest) error {
 	request := accounting.NewNetworkUsageParams()
 	request.SetBody(cur)
 
-	response, err := cloud.Accounting.NetworkUsage(request, cloud.Auth)
+	response, err := cloud.Accounting.NetworkUsage(request, nil)
 	if err != nil {
 		return err
 	}
@@ -445,7 +445,7 @@ func networkTrafficUsageCSV(cur *models.V1NetworkUsageRequest) error {
 	request := accounting.NewNetworkUsageCSVParams()
 	request.SetBody(cur)
 
-	response, err := cloud.Accounting.NetworkUsageCSV(request, cloud.Auth)
+	response, err := cloud.Accounting.NetworkUsageCSV(request, nil)
 	if err != nil {
 		return err
 	}
@@ -477,7 +477,7 @@ func s3UsageJSON(sur *models.V1S3UsageRequest) error {
 	request := accounting.NewS3UsageParams()
 	request.SetBody(sur)
 
-	response, err := cloud.Accounting.S3Usage(request, cloud.Auth)
+	response, err := cloud.Accounting.S3Usage(request, nil)
 	if err != nil {
 		return err
 	}
@@ -489,7 +489,7 @@ func s3UsageCSV(sur *models.V1S3UsageRequest) error {
 	request := accounting.NewS3UsageCSVParams()
 	request.SetBody(sur)
 
-	response, err := cloud.Accounting.S3UsageCSV(request, cloud.Auth)
+	response, err := cloud.Accounting.S3UsageCSV(request, nil)
 	if err != nil {
 		return err
 	}
@@ -527,7 +527,7 @@ func volumeUsageJSON(vur *models.V1VolumeUsageRequest) error {
 	request := accounting.NewVolumeUsageParams()
 	request.SetBody(vur)
 
-	response, err := cloud.Accounting.VolumeUsage(request, cloud.Auth)
+	response, err := cloud.Accounting.VolumeUsage(request, nil)
 	if err != nil {
 		return err
 	}
@@ -539,7 +539,7 @@ func volumeUsageCSV(vur *models.V1VolumeUsageRequest) error {
 	request := accounting.NewVolumeUsageCSVParams()
 	request.SetBody(vur)
 
-	response, err := cloud.Accounting.VolumeUsageCSV(request, cloud.Auth)
+	response, err := cloud.Accounting.VolumeUsageCSV(request, nil)
 	if err != nil {
 		return err
 	}
