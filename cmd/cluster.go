@@ -744,19 +744,23 @@ func updateCluster(args []string) error {
 	}
 
 	updateCausesDowntime := false
-	if firewallImage != "" && current.FirewallImage != nil && *current.FirewallImage != firewallImage {
+	if firewallImage != "" {
+		if current.FirewallImage != nil && *current.FirewallImage != firewallImage {
+			updateCausesDowntime = true
+		}
 		cur.FirewallImage = &firewallImage
-		updateCausesDowntime = true
 	}
-	if firewallType != "" && current.FirewallSize != nil && *current.FirewallSize != firewallType {
+	if firewallType != "" {
+		if current.FirewallSize != nil && *current.FirewallSize != firewallType {
+			updateCausesDowntime = true
+		}
 		cur.FirewallSize = &firewallType
-		updateCausesDowntime = true
 	}
 	if len(firewallNetworks) > 0 {
-		cur.AdditionalNetworks = firewallNetworks
 		if !sets.NewString(firewallNetworks...).Equal(sets.NewString(current.AdditionalNetworks...)) {
 			updateCausesDowntime = true
 		}
+		cur.AdditionalNetworks = firewallNetworks
 	}
 
 	if purpose != "" {
