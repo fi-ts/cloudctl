@@ -87,7 +87,8 @@ func init() {
 	rootCmd.AddCommand(s3Cmd)
 
 	rootCmd.AddCommand(completionCmd)
-	rootCmd.AddCommand(zshCompletionCmd)
+	completionCmd.AddCommand(bashCompletionCmd)
+	completionCmd.AddCommand(zshCompletionCmd)
 
 	err := viper.BindPFlags(rootCmd.PersistentFlags())
 	if err != nil {
