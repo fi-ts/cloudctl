@@ -41,7 +41,7 @@ var bashCompletionCmd = &cobra.Command{
 To configure your bash shell to load completions for each session add to your bashrc
 
 # ~/.bashrc or ~/.profile
-. <(cloudctl completion)
+. <(cloudctl completion bash)
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		err := rootCmd.GenBashCompletion(os.Stdout)
@@ -56,7 +56,7 @@ var zshCompletionCmd = &cobra.Command{
 	Short: "Generates Z shell completion scripts",
 	Long: `To load completion run
 
-. <(cloudctl zsh-completion)
+. <(cloudctl completion zsh)
 
 To configure your Z shell (with oh-my-zshell framework) to load completions for each session run
 
