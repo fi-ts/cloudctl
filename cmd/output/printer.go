@@ -233,6 +233,8 @@ func (t TablePrinter) Print(data interface{}) error {
 		MachineTablePrinter{t}.Print(d)
 	case []*models.V1S3Response:
 		S3TablePrinter{t}.Print(d)
+	case []*models.V1VolumeResponse:
+		VolumeTablePrinter{t}.Print(d)
 	case []*models.V1S3PartitionResponse:
 		if t.order == "" {
 			t.order = "id"

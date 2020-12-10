@@ -15,6 +15,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/client/project"
 	"github.com/fi-ts/cloud-go/api/client/s3"
 	"github.com/fi-ts/cloud-go/api/client/tenant"
+	"github.com/fi-ts/cloud-go/api/client/volume"
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 )
@@ -27,6 +28,7 @@ type Cloud struct {
 	IP          ip.ClientService
 	Accounting  accounting.ClientService
 	S3          s3.ClientService
+	Volume      volume.ClientService
 	Auth        runtime.ClientAuthInfoWriter
 	ConsoleHost string
 }
@@ -70,6 +72,7 @@ func NewCloud(apiurl, apiToken string, hmac string) (*Cloud, error) {
 		IP:          cloud.IP,
 		Accounting:  cloud.Accounting,
 		S3:          cloud.S3,
+		Volume:      cloud.Volume,
 		ConsoleHost: parsedurl.Host,
 	}
 	return c, nil

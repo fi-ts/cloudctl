@@ -1106,7 +1106,7 @@ func makeEgressRules(egressFlagValue []string) []*models.V1EgressRule {
 		}
 
 		element := m[n]
-		element.Ips = append(element.Ips, ip)
+		element.IPs = append(element.IPs, ip)
 		m[n] = element
 	}
 

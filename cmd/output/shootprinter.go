@@ -250,7 +250,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		if e == nil {
 			continue
 		}
-		for _, i := range e.Ips {
+		for _, i := range e.IPs {
 			egressIPs = append(egressIPs, fmt.Sprintf("%s: %s", *e.NetworkID, i))
 		}
 	}
