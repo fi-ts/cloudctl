@@ -33,14 +33,14 @@ Commandline client for "Kubernetes as a Service" and more!
 
 Download locations:
 
-- [cloudctl-linux-amd64](https://github.com/fi-ts/cloudctl/releases/download/v0.7.12/cloudctl-linux-amd64)
-- [cloudctl-darwin-amd64](https://github.com/fi-ts/cloudctl/releases/download/v0.7.12/cloudctl-darwin-amd64)
-- [cloudctl-windows-amd64](https://github.com/fi-ts/cloudctl/releases/download/v0.7.12/cloudctl-windows-amd64)
+- [cloudctl-linux-amd64](https://github.com/fi-ts/cloudctl/releases/latest/download/cloudctl-linux-amd64)
+- [cloudctl-darwin-amd64](https://github.com/fi-ts/cloudctl/releases/latest/download/cloudctl-darwin-amd64)
+- [cloudctl-windows-amd64](https://github.com/fi-ts/cloudctl/releases/latest/download/cloudctl-windows-amd64)
 
 ### Installation on Linux
 
 ```bash
-curl -LO https://github.com/fi-ts/cloudctl/releases/download/v0.7.12/cloudctl-linux-amd64
+curl -LO https://github.com/fi-ts/cloudctl/releases/latest/download/cloudctl-linux-amd64
 chmod +x cloudctl-linux-amd64
 sudo mv cloudctl-linux-amd64 /usr/local/bin/cloudctl
 ```
@@ -48,7 +48,7 @@ sudo mv cloudctl-linux-amd64 /usr/local/bin/cloudctl
 ### Installation on MacOS
 
 ```bash
-curl -LO https://github.com/fi-ts/cloudctl/releases/download/v0.7.12/cloudctl-darwin-amd64
+curl -LO https://github.com/fi-ts/cloudctl/releases/latest/download/cloudctl-darwin-amd64
 chmod +x cloudctl-darwin-amd64
 sudo mv cloudctl-darwin-amd64 /usr/local/bin/cloudctl
 ```
@@ -56,7 +56,7 @@ sudo mv cloudctl-darwin-amd64 /usr/local/bin/cloudctl
 ### Installation on Windows
 
 ```bash
-curl -LO https://github.com/fi-ts/cloudctl/releases/download/v0.7.12/cloudctl-windows-amd64
+curl -LO https://github.com/fi-ts/cloudctl/releases/latest/download/cloudctl-windows-amd64
 copy cloudctl-windows-amd64 cloudctl.exe
 ```
 

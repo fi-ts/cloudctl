@@ -215,7 +215,7 @@ func init() {
 	clusterCreateCmd.Flags().String("description", "", "description of the cluster. [optional]")
 	clusterCreateCmd.Flags().String("project", "", "project where this cluster should belong to. [required]")
 	clusterCreateCmd.Flags().String("partition", "", "partition of the cluster. [required]")
-	clusterCreateCmd.Flags().String("purpose", "evaluation", "purpose of the cluster, can be one of production|testing|development|evaluation. SLA is only given on production clusters. [optional]")
+	clusterCreateCmd.Flags().String("purpose", "evaluation", "purpose of the cluster, can be one of production|development|evaluation. SLA is only given on production clusters. [optional]")
 	clusterCreateCmd.Flags().String("version", "", "kubernetes version of the cluster. defaults to latest available, check cluster inputs for possible values. [optional]")
 	clusterCreateCmd.Flags().String("machinetype", "", "machine type to use for the nodes. [optional]")
 	clusterCreateCmd.Flags().String("machineimage", "", "machine image to use for the nodes, must be in the form of <name>-<version> [optional]")
@@ -269,7 +269,7 @@ func init() {
 		return firewallImageListCompletion()
 	})
 	clusterCreateCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"production", "testing", "development", "evaluation"}, cobra.ShellCompDirectiveDefault
+		return []string{"production", "development", "evaluation"}, cobra.ShellCompDirectiveDefault
 	})
 	clusterCreateCmd.RegisterFlagCompletionFunc("cri", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"docker", "containerd"}, cobra.ShellCompDirectiveDefault
@@ -301,8 +301,8 @@ func init() {
 	clusterUpdateCmd.Flags().StringSlice("addlabels", []string{}, "labels to add to the cluster")
 	clusterUpdateCmd.Flags().StringSlice("removelabels", []string{}, "labels to remove from the cluster")
 	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster, please add --yes-i-really-mean-it")
-	clusterUpdateCmd.Flags().String("purpose", "", "purpose of the cluster, can be one of production|testing|development|evaluation. SLA is only given on production clusters.")
-	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]")
+	clusterUpdateCmd.Flags().String("purpose", "", "purpose of the cluster, can be one of production|development|evaluation. SLA is only given on production clusters.")
+	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]. Use --egress none to remove all ingress rules.")
 
 	clusterUpdateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return versionListCompletion()
@@ -320,21 +320,19 @@ func init() {
 		return machineImageListCompletion()
 	})
 	clusterUpdateCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"production", "testing", "development", "evaluation"}, cobra.ShellCompDirectiveDefault
+		return []string{"production", "development", "evaluation"}, cobra.ShellCompDirectiveDefault
 	})
 
 	clusterMachineSSHCmd.Flags().String("machineid", "", "machine to connect to.")
 	clusterMachineSSHCmd.MarkFlagRequired("machineid")
 	clusterMachineSSHCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		// FIXME howto implement flag based completion for a already given clusterid
-		fmt.Printf("args:%v\n", args)
 		return clusterMachineListCompletion("123")
 	})
 	clusterMachineConsoleCmd.Flags().String("machineid", "", "machine to connect to.")
 	clusterMachineConsoleCmd.MarkFlagRequired("machineid")
 	clusterMachineConsoleCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		// FIXME howto implement flag based completion for a already given clusterid
-		fmt.Printf("args:%v\n", args)
 		return clusterMachineListCompletion("123")
 	})
 	clusterMachineCmd.AddCommand(clusterMachineListCmd)
@@ -790,10 +788,7 @@ func updateCluster(args []string) error {
 	}
 	cur.Kubernetes = k8s
 
-	egressRules := makeEgressRules(egress)
-	if len(egressRules) > 0 {
-		cur.EgressRules = egressRules
-	}
+	cur.EgressRules = makeEgressRules(egress)
 
 	request.SetBody(cur)
 	shoot, err := cloud.Cluster.UpdateCluster(request, cloud.Auth)
@@ -1093,9 +1088,16 @@ func clusterID(verb string, args []string) (string, error) {
 }
 
 func makeEgressRules(egressFlagValue []string) []*models.V1EgressRule {
+	if len(egressFlagValue) == 0 {
+		return nil
+	}
+
+	if len(egressFlagValue) == 1 && egressFlagValue[0] == "none" {
+		return []*models.V1EgressRule{}
+	}
+
 	m := map[string]models.V1EgressRule{}
 	for _, e := range egressFlagValue {
-		fmt.Println(e)
 		parts := strings.Split(e, ":")
 		if len(parts) != 2 {
 			log.Fatalf("egress config needs format <network>:<ip> but got %q", e)
