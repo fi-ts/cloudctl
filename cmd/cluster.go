@@ -295,6 +295,7 @@ func init() {
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
 	clusterUpdateCmd.Flags().String("firewalltype", "", "machine type to use for the firewall.")
 	clusterUpdateCmd.Flags().String("firewallimage", "", "machine image to use for the firewall.")
+	clusterUpdateCmd.Flags().String("firewallcontroller", "", "version of the firewall-controller to use.")
 	clusterUpdateCmd.Flags().String("machinetype", "", "machine type to use for the nodes.")
 	clusterUpdateCmd.Flags().String("machineimage", "", "machine image to use for the nodes, must be in the form of <name>-<version> ")
 	clusterUpdateCmd.Flags().StringSlice("addlabels", []string{}, "labels to add to the cluster")
