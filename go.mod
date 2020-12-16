@@ -5,10 +5,10 @@ go 1.15
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/fatih/color v1.9.0
-	github.com/fi-ts/cloud-go v0.10.0
+	github.com/fi-ts/cloud-go v0.11.0
 	github.com/gardener/gardener v1.8.2
-	github.com/go-openapi/runtime v0.19.21
-	github.com/go-openapi/strfmt v0.19.5
+	github.com/go-openapi/runtime v0.19.24
+	github.com/go-openapi/strfmt v0.19.11
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/jinzhu/now v1.1.1
 	github.com/leodido/go-urn v1.2.0 // indirect
