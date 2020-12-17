@@ -7,6 +7,7 @@ import (
 
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
+	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/spf13/cobra"
 )
 
@@ -103,14 +104,18 @@ func volumeDelete(args []string) error {
 
 	return printer.Print(resp.Payload)
 }
+
 func volumePV(args []string) error {
 	volumeID := args[0]
-	params := &volume.DeleteVolumeParams{}
-	params.SetID(volumeID)
-	resp, err := cloud.Volume.DeleteVolume(params, cloud.Auth)
+	params := volume.NewFindVolumesParams()
+	ifr := &models.V1VolumeFindRequest{
+		VolumeID: &volumeID,
+	}
+	params.SetBody(ifr)
+	resp, err := cloud.Volume.FindVolumes(params, cloud.Auth)
 	if err != nil {
 		return err
 	}
 
-	return printer.Print(resp.Payload)
+	return output.PersistenVolume(*resp.Payload[0])
 }
