@@ -25,14 +25,6 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	volumeFindCmd = &cobra.Command{
-		Use:   "find",
-		Short: "find volumes",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return volumeFind()
-		},
-		PreRun: bindPFlags,
-	}
 	volumeDeleteCmd = &cobra.Command{
 		Use:     "delete <volume>",
 		Aliases: []string{"rm", "destroy", "remove", "delete"},
@@ -42,29 +34,35 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+	volumePVCmd = &cobra.Command{
+		Use:   "pv <volume>",
+		Short: "create a static persistenvolumeclaim for a volume",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return volumePV(args)
+		},
+		PreRun: bindPFlags,
+	}
 )
 
 func init() {
 	rootCmd.AddCommand(volumeCmd)
 
 	volumeCmd.AddCommand(volumeListCmd)
-	volumeCmd.AddCommand(volumeFindCmd)
 	volumeCmd.AddCommand(volumeDeleteCmd)
+	volumeCmd.AddCommand(volumePVCmd)
 
-	volumeFindCmd.Flags().StringP("volumeid", "", "", "volumeid to filter [optional]")
-	volumeFindCmd.Flags().StringP("project", "", "", "project to filter [optional]")
-	volumeFindCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
+	volumeListCmd.Flags().StringP("volumeid", "", "", "volumeid to filter [optional]")
+	volumeListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
+	volumeListCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
 
-	volumeDeleteCmd.Flags().StringP("volumeid", "", "", "volumeid to delete [optional]")
-
-	err := volumeFindCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err := volumeListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return projectListCompletion()
 	})
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	err = volumeFindCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = volumeListCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return partitionListCompletion()
 	})
 	if err != nil {
@@ -97,7 +95,18 @@ func volumeFind() error {
 func volumeDelete(args []string) error {
 	volumeID := args[0]
 	params := &volume.DeleteVolumeParams{}
-	params.SetVolume(volumeID)
+	params.SetID(volumeID)
+	resp, err := cloud.Volume.DeleteVolume(params, cloud.Auth)
+	if err != nil {
+		return err
+	}
+
+	return printer.Print(resp.Payload)
+}
+func volumePV(args []string) error {
+	volumeID := args[0]
+	params := &volume.DeleteVolumeParams{}
+	params.SetID(volumeID)
 	resp, err := cloud.Volume.DeleteVolume(params, cloud.Auth)
 	if err != nil {
 		return err
