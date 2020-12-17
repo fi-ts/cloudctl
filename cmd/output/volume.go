@@ -21,7 +21,7 @@ type (
 
 // Print an ip as table
 func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
-	p.wideHeader = []string{"ID", "Size", "Replicas", "StorageClass", "Project", "Partition", "Nodes"}
+	p.wideHeader = []string{"ID", "Size", "Usage", "Replicas", "StorageClass", "Project", "Partition", "Nodes"}
 	p.shortHeader = p.wideHeader
 
 	for _, vol := range data {
@@ -31,7 +31,11 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 		}
 		size := ""
 		if vol.Size != nil {
-			size = fmt.Sprintf("%s", humanize.Bytes(uint64(*vol.Size)))
+			size = fmt.Sprintf("%s", humanize.IBytes(uint64(*vol.Size)))
+		}
+		usage := ""
+		if vol.Statistics != nil && vol.Statistics.LogicalUsedStorage != nil {
+			usage = fmt.Sprintf("%s", humanize.IBytes(uint64(*vol.Statistics.LogicalUsedStorage)))
 		}
 		replica := ""
 		if vol.ReplicaCount != nil {
@@ -50,7 +54,7 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 			project = *vol.ProjectID
 		}
 
-		wide := []string{volumeID, size, replica, sc, project, partition, strings.Join(vol.ConnectedHosts, "\n")}
+		wide := []string{volumeID, size, usage, replica, sc, project, partition, strings.Join(vol.ConnectedHosts, "\n")}
 		short := wide
 
 		p.addWideData(wide, vol)
@@ -89,8 +93,9 @@ func PersistenVolume(v models.V1VolumeResponse) error {
 		TypeMeta:   v1.TypeMeta{Kind: "PersistentVolume", APIVersion: "v1"},
 		ObjectMeta: v1.ObjectMeta{Name: "your-name-here", Namespace: "your-namespace-here"},
 		Spec: corev1.PersistentVolumeSpec{
-			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-			VolumeMode:       &filesystem,
+			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+			VolumeMode:  &filesystem,
+			// FIXME add Capacity once figured out
 			StorageClassName: *v.StorageClass,
 			PersistentVolumeSource: corev1.PersistentVolumeSource{
 				CSI: &corev1.CSIPersistentVolumeSource{

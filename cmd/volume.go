@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
+	"strings"
 
 	"github.com/fi-ts/cloud-go/api/client/volume"
 
@@ -37,7 +39,8 @@ var (
 	}
 	volumePVCmd = &cobra.Command{
 		Use:   "pv <volume>",
-		Short: "create a static persistenvolumeclaim for a volume",
+		Short: "create a static PersistenVolumeClaim for a volume",
+		Long:  "this is only useful for volumes which are not used in any k8s cluster. With the PersistenVolumeClaim given you can reuse it in a new cluster.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return volumePV(args)
 		},
@@ -94,9 +97,12 @@ func volumeFind() error {
 }
 
 func volumeDelete(args []string) error {
-	volumeID := args[0]
+	vol, err := getVolumeFromArgs(args)
+	if err != nil {
+		return err
+	}
 	params := &volume.DeleteVolumeParams{}
-	params.SetID(volumeID)
+	params.SetID(*vol.VolumeID)
 	resp, err := cloud.Volume.DeleteVolume(params, cloud.Auth)
 	if err != nil {
 		return err
@@ -106,6 +112,21 @@ func volumeDelete(args []string) error {
 }
 
 func volumePV(args []string) error {
+	volume, err := getVolumeFromArgs(args)
+	if err != nil {
+		return err
+	}
+	if len(volume.ConnectedHosts) > 0 {
+		return fmt.Errorf("volume:%s is still attached to a worker node:%s, persistenvolume not created", *volume.VolumeID, strings.Join(volume.ConnectedHosts, ","))
+	}
+
+	return output.PersistenVolume(*volume)
+}
+func getVolumeFromArgs(args []string) (*models.V1VolumeResponse, error) {
+	if len(args) < 1 {
+		return nil, fmt.Errorf("no volume given")
+	}
+
 	volumeID := args[0]
 	params := volume.NewFindVolumesParams()
 	ifr := &models.V1VolumeFindRequest{
@@ -114,8 +135,13 @@ func volumePV(args []string) error {
 	params.SetBody(ifr)
 	resp, err := cloud.Volume.FindVolumes(params, cloud.Auth)
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	return output.PersistenVolume(*resp.Payload[0])
+	if len(resp.Payload) < 1 {
+		return nil, fmt.Errorf("no volume for id:%s found", volumeID)
+	}
+	if len(resp.Payload) > 1 {
+		return nil, fmt.Errorf("more than one volume for id:%s found", volumeID)
+	}
+	return resp.Payload[0], nil
 }
