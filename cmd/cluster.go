@@ -221,6 +221,7 @@ func init() {
 	clusterCreateCmd.Flags().String("machineimage", "", "machine image to use for the nodes, must be in the form of <name>-<version> [optional]")
 	clusterCreateCmd.Flags().String("firewalltype", "", "machine type to use for the firewall. [optional]")
 	clusterCreateCmd.Flags().String("firewallimage", "", "machine image to use for the firewall. [optional]")
+	clusterCreateCmd.Flags().String("firewallcontroller", "", "version of the firewall-controller to use. [optional]")
 	clusterCreateCmd.Flags().String("cri", "docker", "container runtime to use, only docker|containerd supported as alternative actually. [optional]")
 	clusterCreateCmd.Flags().Int32("minsize", 1, "minimal workers of the cluster.")
 	clusterCreateCmd.Flags().Int32("maxsize", 1, "maximal workers of the cluster.")
@@ -294,6 +295,7 @@ func init() {
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
 	clusterUpdateCmd.Flags().String("firewalltype", "", "machine type to use for the firewall.")
 	clusterUpdateCmd.Flags().String("firewallimage", "", "machine image to use for the firewall.")
+	clusterUpdateCmd.Flags().String("firewallcontroller", "", "version of the firewall-controller to use.")
 	clusterUpdateCmd.Flags().String("machinetype", "", "machine type to use for the nodes.")
 	clusterUpdateCmd.Flags().String("machineimage", "", "machine image to use for the nodes, must be in the form of <name>-<version> ")
 	clusterUpdateCmd.Flags().StringSlice("addlabels", []string{}, "labels to add to the cluster")
@@ -369,6 +371,7 @@ func clusterCreate() error {
 	machineImageAndVersion := viper.GetString("machineimage")
 	firewallType := viper.GetString("firewalltype")
 	firewallImage := viper.GetString("firewallimage")
+	firewallController := viper.GetString("firewallcontroller")
 
 	cri := viper.GetString("cri")
 
@@ -463,8 +466,9 @@ func clusterCreate() error {
 				CRI:            &cri,
 			},
 		},
-		FirewallSize:  &firewallType,
-		FirewallImage: &firewallImage,
+		FirewallSize:              &firewallType,
+		FirewallImage:             &firewallImage,
+		FirewallControllerVersion: &firewallController,
 		Kubernetes: &models.V1Kubernetes{
 			AllowPrivilegedContainers: &allowprivileged,
 			Version:                   &version,
@@ -672,6 +676,7 @@ func updateCluster(args []string) error {
 	version := viper.GetString("version")
 	firewallType := viper.GetString("firewalltype")
 	firewallImage := viper.GetString("firewallimage")
+	firewallController := viper.GetString("firewallcontroller")
 	machineType := viper.GetString("machinetype")
 	machineImageAndVersion := viper.GetString("machineimage")
 	purpose := viper.GetString("purpose")
@@ -744,6 +749,9 @@ func updateCluster(args []string) error {
 	}
 	if firewallType != "" {
 		cur.FirewallSize = &firewallType
+	}
+	if firewallController != "" {
+		cur.FirewallControllerVersion = &firewallController
 	}
 	if purpose != "" {
 		cur.Purpose = &purpose
