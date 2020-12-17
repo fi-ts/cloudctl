@@ -8,6 +8,7 @@ require (
 	github.com/fatih/color v1.10.0
 	github.com/fi-ts/cloud-go v0.10.1-0.20201217093117-87b80601d8c5
 	github.com/gardener/gardener v1.8.2
+	github.com/ghodss/yaml v1.0.0
 	github.com/go-openapi/runtime v0.19.24
 	github.com/go-openapi/strfmt v0.19.11
 	github.com/go-playground/universal-translator v0.17.0 // indirect

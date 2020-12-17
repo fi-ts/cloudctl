@@ -1,12 +1,13 @@
 package output
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/dustin/go-humanize"
 	"github.com/fi-ts/cloud-go/api/models"
-	"gopkg.in/yaml.v3"
+	"github.com/ghodss/yaml"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -20,7 +21,7 @@ type (
 
 // Print an ip as table
 func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
-	p.wideHeader = []string{"ID", "Size", "Replicas", "Project", "Partition", "Nodes"}
+	p.wideHeader = []string{"ID", "Size", "Replicas", "StorageClass", "Project", "Partition", "Nodes"}
 	p.shortHeader = p.wideHeader
 
 	for _, vol := range data {
@@ -36,6 +37,10 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 		if vol.ReplicaCount != nil {
 			replica = fmt.Sprintf("%d", *vol.ReplicaCount)
 		}
+		sc := ""
+		if vol.StorageClass != nil {
+			sc = *vol.StorageClass
+		}
 		partition := ""
 		if vol.PartitionID != nil {
 			partition = *vol.PartitionID
@@ -45,7 +50,7 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 			project = *vol.ProjectID
 		}
 
-		wide := []string{volumeID, size, replica, project, partition, strings.Join(vol.ConnectedHosts, "\n")}
+		wide := []string{volumeID, size, replica, sc, project, partition, strings.Join(vol.ConnectedHosts, "\n")}
 		short := wide
 
 		p.addWideData(wide, vol)
@@ -81,6 +86,7 @@ Events:                <none>
 func PersistenVolume(v models.V1VolumeResponse) error {
 	filesystem := corev1.PersistentVolumeFilesystem
 	pv := corev1.PersistentVolume{
+		TypeMeta:   v1.TypeMeta{Kind: "PersistentVolume", APIVersion: "v1"},
 		ObjectMeta: v1.ObjectMeta{Name: "your-name-here", Namespace: "your-namespace-here"},
 		Spec: corev1.PersistentVolumeSpec{
 			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
@@ -96,10 +102,11 @@ func PersistenVolume(v models.V1VolumeResponse) error {
 			},
 		},
 	}
-	yml, err := yaml.Marshal(pv)
+	js, err := json.Marshal(pv)
 	if err != nil {
 		return fmt.Errorf("unable to marshal to yaml:%v", err)
 	}
-	fmt.Printf("%s\n", string(yml))
+	y, err := yaml.JSONToYAML(js)
+	fmt.Printf("%s\n", string(y))
 	return nil
 }
