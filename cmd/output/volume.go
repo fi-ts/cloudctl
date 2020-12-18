@@ -19,7 +19,7 @@ type (
 	}
 )
 
-// Print an ip as table
+// Print an volume as table
 func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 	p.wideHeader = []string{"ID", "Size", "Usage", "Replicas", "StorageClass", "Project", "Partition", "Nodes"}
 	p.shortHeader = p.wideHeader
@@ -65,6 +65,7 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 	p.render()
 }
 
+// ConnectedHosts returns the worker nodes without internal prefixes and suffixes
 func ConnectedHosts(vol *models.V1VolumeResponse) []string {
 	nodes := []string{}
 	for _, n := range vol.ConnectedHosts {
@@ -79,28 +80,47 @@ func ConnectedHosts(vol *models.V1VolumeResponse) []string {
 }
 
 /*
-Name:            pvc-e86fe06d-7d5e-44e0-b83b-e6758caa2826
-Labels:          <none>
-Annotations:     pv.kubernetes.io/provisioned-by: csi.lightbitslabs.com
-Finalizers:      [kubernetes.io/pv-protection external-attacher/csi-lightbitslabs-com]
-StorageClass:    partition-storage-gold
-Status:          Bound
-Claim:           default/example-mt-pvc
-Reclaim Policy:  Delete
-Access Modes:    RWO
-VolumeMode:      Filesystem
-Capacity:        10Gi
-Node Affinity:   <none>
-Message:
-Source:
-    Type:              CSI (a Container Storage Interface (CSI) volume source)
-    Driver:            csi.lightbitslabs.com
-    FSType:            ext4
-	VolumeHandle:      mgmt:10.131.44.1:443,10.131.44.2:443,10.131.44.3:443|nguid:9304ff62-2d56-4d67-9c3d-80585a6795df|proj:b5f26a3b-9a4d-48db-a6b3-d1dd4ac4abec|scheme:grpcs
-	                                                                              <volume.UUID>                             <volume.ProjectName>
-    ReadOnly:          false
-    VolumeAttributes:      storage.kubernetes.io/csiProvisionerIdentity=1607936819649-8081-csi.lightbitslabs.com
-Events:                <none>
+PersistenVolume create a manifest for static PV like so
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  annotations:
+    pv.kubernetes.io/provisioned-by: csi.lightbitslabs.com
+  name: pvc-7e3b4b43-0061-46f0-a125-e0c1a0b2a4fb
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 20Gi
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: example-mt-pvc-2
+    namespace: default
+    resourceVersion: "13088"
+    uid: 7e3b4b43-0061-46f0-a125-e0c1a0b2a4fb
+  csi:
+    controllerExpandSecretRef:
+      name: lb-csi-creds
+      namespace: kube-system
+    controllerPublishSecretRef:
+      name: lb-csi-creds
+      namespace: kube-system
+    driver: csi.lightbitslabs.com
+    fsType: ext4
+    nodePublishSecretRef:
+      name: lb-csi-creds
+      namespace: kube-system
+    nodeStageSecretRef:
+      name: lb-csi-creds
+      namespace: kube-system
+    volumeAttributes:
+      storage.kubernetes.io/csiProvisionerIdentity: 1608281061542-8081-csi.lightbitslabs.com
+    volumeHandle: mgmt:10.131.44.1:443,10.131.44.2:443,10.131.44.3:443|nguid:d798ec5a-84b3-4909-9938-785ebd3bbadb|proj:24235d11-deb9-46e3-9101-f906c78b10b6|scheme:grpcs
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: partition-silver
 */
 func PersistenVolume(v models.V1VolumeResponse, name, namespace string) error {
 	filesystem := corev1.PersistentVolumeFilesystem
