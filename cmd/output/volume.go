@@ -127,6 +127,12 @@ func PersistenVolume(v models.V1VolumeResponse, name, namespace string) error {
 		return fmt.Errorf("unable to marshal to yaml:%v", err)
 	}
 	y, err := yaml.JSONToYAML(js)
+
+	if len(v.ConnectedHosts) > 0 {
+		nodes := ConnectedHosts(&v)
+		fmt.Printf("# be cautios! at the time being your volume:%s is still attached to worker node:%s, you can not mount it twice\n", *v.VolumeID, strings.Join(nodes, ","))
+	}
+
 	fmt.Printf("%s\n", string(y))
 	return nil
 }

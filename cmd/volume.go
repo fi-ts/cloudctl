@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/fi-ts/cloud-go/api/client/volume"
 
@@ -119,10 +118,6 @@ func volumePV(args []string) error {
 	volume, err := getVolumeFromArgs(args)
 	if err != nil {
 		return err
-	}
-	if len(volume.ConnectedHosts) > 0 {
-		nodes := output.ConnectedHosts(volume)
-		return fmt.Errorf("volume:%s is still attached to a worker node:%s, persistenvolume not created", *volume.VolumeID, strings.Join(nodes, ","))
 	}
 	name := viper.GetString("name")
 	namespace := viper.GetString("namespace")
