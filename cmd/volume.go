@@ -11,6 +11,7 @@ import (
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -58,6 +59,9 @@ func init() {
 	volumeListCmd.Flags().StringP("volumeid", "", "", "volumeid to filter [optional]")
 	volumeListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
 	volumeListCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
+
+	volumePVCmd.Flags().StringP("name", "", "restored-pv", "name of the PersistentVolume")
+	volumePVCmd.Flags().StringP("namespace", "", "default", "namespace for the PersistentVolume")
 
 	err := volumeListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return projectListCompletion()
@@ -117,10 +121,13 @@ func volumePV(args []string) error {
 		return err
 	}
 	if len(volume.ConnectedHosts) > 0 {
-		return fmt.Errorf("volume:%s is still attached to a worker node:%s, persistenvolume not created", *volume.VolumeID, strings.Join(volume.ConnectedHosts, ","))
+		nodes := output.ConnectedHosts(volume)
+		return fmt.Errorf("volume:%s is still attached to a worker node:%s, persistenvolume not created", *volume.VolumeID, strings.Join(nodes, ","))
 	}
+	name := viper.GetString("name")
+	namespace := viper.GetString("namespace")
 
-	return output.PersistenVolume(*volume)
+	return output.PersistenVolume(*volume, name, namespace)
 }
 func getVolumeFromArgs(args []string) (*models.V1VolumeResponse, error) {
 	if len(args) < 1 {

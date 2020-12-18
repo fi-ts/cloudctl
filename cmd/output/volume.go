@@ -54,13 +54,28 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 			project = *vol.ProjectID
 		}
 
-		wide := []string{volumeID, size, usage, replica, sc, project, partition, strings.Join(vol.ConnectedHosts, "\n")}
+		nodes := ConnectedHosts(vol)
+
+		wide := []string{volumeID, size, usage, replica, sc, project, partition, strings.Join(nodes, "\n")}
 		short := wide
 
 		p.addWideData(wide, vol)
 		p.addShortData(short, vol)
 	}
 	p.render()
+}
+
+func ConnectedHosts(vol *models.V1VolumeResponse) []string {
+	nodes := []string{}
+	for _, n := range vol.ConnectedHosts {
+		// nqn.2019-09.com.lightbitslabs:host:shoot--pddhz9--duros-tst9-group-0-6b7bb-2cnvs.node
+		parts := strings.Split(n, ":host:")
+		if len(parts) >= 1 {
+			node := strings.TrimSuffix(parts[1], ".node")
+			nodes = append(nodes, node)
+		}
+	}
+	return nodes
 }
 
 /*
@@ -87,11 +102,11 @@ Source:
     VolumeAttributes:      storage.kubernetes.io/csiProvisionerIdentity=1607936819649-8081-csi.lightbitslabs.com
 Events:                <none>
 */
-func PersistenVolume(v models.V1VolumeResponse) error {
+func PersistenVolume(v models.V1VolumeResponse, name, namespace string) error {
 	filesystem := corev1.PersistentVolumeFilesystem
 	pv := corev1.PersistentVolume{
 		TypeMeta:   v1.TypeMeta{Kind: "PersistentVolume", APIVersion: "v1"},
-		ObjectMeta: v1.ObjectMeta{Name: "your-name-here", Namespace: "your-namespace-here"},
+		ObjectMeta: v1.ObjectMeta{Name: name, Namespace: namespace},
 		Spec: corev1.PersistentVolumeSpec{
 			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 			VolumeMode:  &filesystem,
