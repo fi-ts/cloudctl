@@ -920,6 +920,11 @@ func clusterMachines(args []string) error {
 	if err != nil {
 		return err
 	}
+
+	if printer.Type() != "table" {
+		return printer.Print(shoot.Payload)
+	}
+
 	fmt.Println("Cluster:")
 	printer.Print(shoot.Payload)
 
