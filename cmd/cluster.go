@@ -957,6 +957,19 @@ func clusterLogs(args []string) error {
 		lastErrors = shoot.Payload.Status.LastErrors
 	}
 
+	if printer.Type() != "table" {
+		type s struct {
+			Conditions    []*models.V1beta1Condition
+			LastOperation *models.V1beta1LastOperation
+			LastErrors    []*models.V1beta1LastError
+		}
+		return printer.Print(s{
+			Conditions:    conditions,
+			LastOperation: lastOperation,
+			LastErrors:    lastErrors,
+		})
+	}
+
 	fmt.Println("Conditions:")
 	err = printer.Print(conditions)
 	if err != nil {
