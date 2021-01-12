@@ -920,6 +920,11 @@ func clusterMachines(args []string) error {
 	if err != nil {
 		return err
 	}
+
+	if printer.Type() != "table" {
+		return printer.Print(shoot.Payload)
+	}
+
 	fmt.Println("Cluster:")
 	printer.Print(shoot.Payload)
 
@@ -950,6 +955,19 @@ func clusterLogs(args []string) error {
 		conditions = shoot.Payload.Status.Conditions
 		lastOperation = shoot.Payload.Status.LastOperation
 		lastErrors = shoot.Payload.Status.LastErrors
+	}
+
+	if printer.Type() != "table" {
+		type s struct {
+			Conditions    []*models.V1beta1Condition
+			LastOperation *models.V1beta1LastOperation
+			LastErrors    []*models.V1beta1LastError
+		}
+		return printer.Print(s{
+			Conditions:    conditions,
+			LastOperation: lastOperation,
+			LastErrors:    lastErrors,
+		})
 	}
 
 	fmt.Println("Conditions:")
