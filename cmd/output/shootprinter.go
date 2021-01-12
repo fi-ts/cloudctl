@@ -100,7 +100,7 @@ func (s ShootLastOperationTablePrinter) Print(data *models.V1beta1LastOperation)
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall", "Egress IPs"}
+	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall", "Firewall Controller", "Egress IPs"}
 	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
 	s.Order(data)
@@ -116,7 +116,7 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 }
 
 func (s ShootIssuesTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall"}
+	s.wideHeader = []string{"UID", "", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall", "Firewall Controller", "Egress IPs"}
 	s.shortHeader = []string{"UID", "", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
 	s.Order(data)
@@ -215,7 +215,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		privileged = fmt.Sprintf("%t", *shoot.Kubernetes.AllowPrivilegedContainers)
 	}
 
-	runtimes := []string{"docker"}
+	runtimes := []string{}
 	autoScaleMin := int32(0)
 	autoScaleMax := int32(0)
 	for _, w := range shoot.Workers {
@@ -223,6 +223,8 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		autoScaleMax += *w.Maximum
 		if w.CRI != nil && *w.CRI != "" {
 			runtimes = append(runtimes, *w.CRI)
+		} else {
+			runtimes = append(runtimes, "docker")
 		}
 	}
 	currentMachines := "x"
@@ -250,9 +252,14 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		if e == nil {
 			continue
 		}
-		for _, i := range e.Ips {
+		for _, i := range e.IPs {
 			egressIPs = append(egressIPs, fmt.Sprintf("%s: %s", *e.NetworkID, i))
 		}
+	}
+
+	firewallController := ""
+	if shoot.FirewallControllerVersion != nil {
+		firewallController = *shoot.FirewallControllerVersion
 	}
 
 	wide := []string{
@@ -268,6 +275,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		privileged,
 		strings.Join(uniqueStringSlice(runtimes), "\n"),
 		firewallImage,
+		firewallController,
 		strings.Join(egressIPs, "\n"),
 	}
 	short := []string{
