@@ -15,16 +15,17 @@ import (
 )
 
 type BillingOpts struct {
-	Tenant     string
-	FromString string
-	ToString   string
-	From       time.Time
-	To         time.Time
-	ProjectID  string
-	ClusterID  string
-	Device     string
-	Namespace  string
-	CSV        bool
+	Tenant      string
+	FromString  string
+	ToString    string
+	From        time.Time
+	To          time.Time
+	ProjectID   string
+	ClusterID   string
+	Device      string
+	Namespace   string
+	Annotations []string
+	CSV         bool
 }
 
 var (
@@ -162,6 +163,7 @@ func init() {
 	containerBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
 	containerBillingCmd.Flags().StringVarP(&billingOpts.ClusterID, "cluster-id", "c", "", "the cluster to account")
 	containerBillingCmd.Flags().StringVarP(&billingOpts.Namespace, "namespace", "n", "", "the namespace to account")
+	containerBillingCmd.Flags().StringSliceVar(&billingOpts.Annotations, "annotations", nil, "filter for accounting annotations")
 	containerBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 
 	err := viper.BindPFlags(containerBillingCmd.Flags())
@@ -227,6 +229,7 @@ func init() {
 	volumeBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
 	volumeBillingCmd.Flags().StringVarP(&billingOpts.Namespace, "namespace", "n", "", "the namespace to account")
 	volumeBillingCmd.Flags().StringVarP(&billingOpts.ClusterID, "cluster-id", "c", "", "the cluster to account")
+	volumeBillingCmd.Flags().StringSliceVar(&billingOpts.Annotations, "annotations", nil, "filter for accounting annotations")
 	volumeBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 
 	err = viper.BindPFlags(volumeBillingCmd.Flags())
@@ -313,8 +316,9 @@ func clusterUsageCSV(cur *models.V1ClusterUsageRequest) error {
 func containerUsage() error {
 	from := strfmt.DateTime(billingOpts.From)
 	cur := models.V1ContainerUsageRequest{
-		From: &from,
-		To:   strfmt.DateTime(billingOpts.To),
+		From:        &from,
+		To:          strfmt.DateTime(billingOpts.To),
+		Annotations: billingOpts.Annotations,
 	}
 	if billingOpts.Tenant != "" {
 		cur.Tenant = billingOpts.Tenant
@@ -501,8 +505,9 @@ func s3UsageCSV(sur *models.V1S3UsageRequest) error {
 func volumeUsage() error {
 	from := strfmt.DateTime(billingOpts.From)
 	vur := models.V1VolumeUsageRequest{
-		From: &from,
-		To:   strfmt.DateTime(billingOpts.To),
+		From:        &from,
+		To:          strfmt.DateTime(billingOpts.To),
+		Annotations: billingOpts.Annotations,
 	}
 	if billingOpts.Tenant != "" {
 		vur.Tenant = billingOpts.Tenant
