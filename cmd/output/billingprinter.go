@@ -134,7 +134,7 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 
 // Print a volume usage as table
 func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
-	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Start", "End", "Class", "Name", "Type", "CapacitySeconds (Gi * h)", "Lifetime", "Warnings"}
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Start", "End", "Class", "Name", "Type", "CapacitySeconds (Gi * h)", "Lifetime", "Annotations", "Warnings"}
 	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "Class", "Name", "Type", "CapacitySeconds (Gi * h)", "Lifetime"}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {
@@ -198,6 +198,10 @@ func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 		if u.Lifetime != nil {
 			lifetime = time.Duration(*u.Lifetime)
 		}
+		var annotations string
+		if u.Annotations != nil {
+			annotations = strings.Join(u.Annotations, ", ")
+		}
 		var warnings string
 		if u.Warnings != nil {
 			warnings = strings.Join(u.Warnings, ", ")
@@ -218,6 +222,7 @@ func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 			volumeType,
 			capacity,
 			humanizeDuration(lifetime),
+			annotations,
 			warnings,
 		}
 		short := []string{
@@ -597,7 +602,7 @@ func (s S3BillingTablePrinter) Print(data *models.V1S3UsageResponse) {
 
 // Print a container usage as table
 func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageResponse) {
-	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Namespace", "PodUUID", "PodName", "PodStartDate", "PodEndDate", "ContainerName", "ContainerImage", "Lifetime", "CPUSeconds", "MemorySeconds", "Warnings"}
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Namespace", "PodUUID", "PodName", "PodStartDate", "PodEndDate", "ContainerName", "ContainerImage", "Lifetime", "CPUSeconds", "MemorySeconds", "Annotations", "Warnings"}
 	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "Namespace", "PodName", "ContainerName", "Lifetime", "CPU (1 * s)", "Memory (Gi * h)"}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {
@@ -673,6 +678,10 @@ func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageRespons
 		if u.Memoryseconds != nil {
 			memoryUsage = humanizeMemory(*u.Memoryseconds)
 		}
+		var annotations string
+		if u.Annotations != nil {
+			annotations = strings.Join(u.Annotations, ", ")
+		}
 		var warnings string
 		if u.Warnings != nil {
 			warnings = strings.Join(u.Warnings, ", ")
@@ -696,6 +705,7 @@ func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageRespons
 			humanizeDuration(lifetime),
 			cpuUsage,
 			memoryUsage,
+			annotations,
 			warnings,
 		}
 		short := []string{
