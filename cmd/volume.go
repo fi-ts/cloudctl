@@ -86,13 +86,13 @@ func volumeFind() error {
 			PartitionID: helper.ViperString("partition"),
 		}
 		params.SetBody(ifr)
-		resp, err := cloud.Volume.FindVolumes(params, cloud.Auth)
+		resp, err := cloud.Volume.FindVolumes(params, nil)
 		if err != nil {
 			return err
 		}
 		return printer.Print(resp.Payload)
 	}
-	resp, err := cloud.Volume.ListVolumes(nil, cloud.Auth)
+	resp, err := cloud.Volume.ListVolumes(nil, nil)
 	if err != nil {
 		return err
 	}
@@ -106,7 +106,7 @@ func volumeDelete(args []string) error {
 	}
 	params := &volume.DeleteVolumeParams{}
 	params.SetID(*vol.VolumeID)
-	resp, err := cloud.Volume.DeleteVolume(params, cloud.Auth)
+	resp, err := cloud.Volume.DeleteVolume(params, nil)
 	if err != nil {
 		return err
 	}
@@ -135,7 +135,7 @@ func getVolumeFromArgs(args []string) (*models.V1VolumeResponse, error) {
 		VolumeID: &volumeID,
 	}
 	params.SetBody(ifr)
-	resp, err := cloud.Volume.FindVolumes(params, cloud.Auth)
+	resp, err := cloud.Volume.FindVolumes(params, nil)
 	if err != nil {
 		return nil, err
 	}
