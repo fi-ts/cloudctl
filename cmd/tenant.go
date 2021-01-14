@@ -87,7 +87,7 @@ func tenantDescribe(args []string) error {
 	}
 	request := tenant.NewGetTenantParams()
 	request.SetID(id)
-	resp, err := cloud.Tenant.GetTenant(request, cloud.Auth)
+	resp, err := cloud.Tenant.GetTenant(request, nil)
 	if err != nil {
 		return fmt.Errorf("tenant describe error:%v", err)
 	}
@@ -96,7 +96,7 @@ func tenantDescribe(args []string) error {
 
 func tenantList(args []string) error {
 	request := tenant.NewListTenantsParams()
-	resp, err := cloud.Tenant.ListTenants(request, cloud.Auth)
+	resp, err := cloud.Tenant.ListTenants(request, nil)
 	if err != nil {
 		return fmt.Errorf("tenant list error:%v", err)
 	}
@@ -120,7 +120,7 @@ func tenantApply() error {
 	for _, tar := range tars {
 		request := tenant.NewGetTenantParams()
 		request.SetID(tar.Meta.ID)
-		t, err := cloud.Tenant.GetTenant(request, cloud.Auth)
+		t, err := cloud.Tenant.GetTenant(request, nil)
 		if err != nil {
 			return err
 		}
@@ -130,7 +130,7 @@ func tenantApply() error {
 		if t.Payload.Tenant.Meta != nil {
 			params := tenant.NewUpdateTenantParams()
 			params.SetBody(&models.V1TenantUpdateRequest{Tenant: &tar})
-			resp, err := cloud.Tenant.UpdateTenant(params, cloud.Auth)
+			resp, err := cloud.Tenant.UpdateTenant(params, nil)
 			if err != nil {
 				return err
 			}
@@ -150,7 +150,7 @@ func tenantEdit(args []string) error {
 	getFunc := func(id string) ([]byte, error) {
 		request := tenant.NewGetTenantParams()
 		request.SetID(id)
-		resp, err := cloud.Tenant.GetTenant(request, cloud.Auth)
+		resp, err := cloud.Tenant.GetTenant(request, nil)
 		if err != nil {
 			return nil, fmt.Errorf("tenant describe error:%v", err)
 		}
@@ -170,7 +170,7 @@ func tenantEdit(args []string) error {
 		}
 		pup := tenant.NewUpdateTenantParams()
 		pup.Body = &models.V1TenantUpdateRequest{Tenant: &purs[0]}
-		uresp, err := cloud.Tenant.UpdateTenant(pup, cloud.Auth)
+		uresp, err := cloud.Tenant.UpdateTenant(pup, nil)
 		if err != nil {
 			return err
 		}

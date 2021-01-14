@@ -127,13 +127,13 @@ func ipList() error {
 			MachineID:        helper.ViperString("machineid"),
 		}
 		params.SetBody(ifr)
-		resp, err := cloud.IP.FindIPs(params, cloud.Auth)
+		resp, err := cloud.IP.FindIPs(params, nil)
 		if err != nil {
 			return err
 		}
 		return printer.Print(resp.Payload)
 	}
-	resp, err := cloud.IP.ListIPs(nil, cloud.Auth)
+	resp, err := cloud.IP.ListIPs(nil, nil)
 	if err != nil {
 		return err
 	}
@@ -168,7 +168,7 @@ func ipStatic(args []string) error {
 	}
 
 	params.SetBody(iur)
-	resp, err := cloud.IP.UpdateIP(params, cloud.Auth)
+	resp, err := cloud.IP.UpdateIP(params, nil)
 	if err != nil {
 		return err
 	}
@@ -199,7 +199,7 @@ func ipAllocate(args []string) error {
 	}
 
 	params.SetBody(iar)
-	resp, err := cloud.IP.AllocateIP(params, cloud.Auth)
+	resp, err := cloud.IP.AllocateIP(params, nil)
 	if err != nil {
 		return err
 	}
@@ -214,7 +214,7 @@ func ipFree(args []string) error {
 
 	params := ip.NewFreeIPParams()
 	params.SetIP(ipAddress)
-	resp, err := cloud.IP.FreeIP(params, cloud.Auth)
+	resp, err := cloud.IP.FreeIP(params, nil)
 	if err != nil {
 		return err
 	}
@@ -231,7 +231,7 @@ func getIPFromArgs(args []string) (string, error) {
 	params := ip.NewGetIPParams()
 	params.SetIP(ipAddress)
 
-	_, err := cloud.IP.GetIP(params, cloud.Auth)
+	_, err := cloud.IP.GetIP(params, nil)
 	if err != nil {
 		return "", err
 	}

@@ -18,6 +18,7 @@ type (
 	// Printer main Interface for implementations which spits out to stdout
 	Printer interface {
 		Print(data interface{}) error
+		Type() string
 	}
 	TablePrinter struct {
 		table       *tablewriter.Table
@@ -170,6 +171,10 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 	return tp
 }
 
+func (t TablePrinter) Type() string {
+	return "table"
+}
+
 // Print a model in a human readable table
 func (t TablePrinter) Print(data interface{}) error {
 	switch d := data.(type) {
@@ -258,6 +263,10 @@ func (j JSONPrinter) Print(data interface{}) error {
 	return nil
 }
 
+func (j JSONPrinter) Type() string {
+	return "json"
+}
+
 // Print a model in yaml format
 func (y YAMLPrinter) Print(data interface{}) error {
 	yml, err := yaml.Marshal(data)
@@ -266,4 +275,8 @@ func (y YAMLPrinter) Print(data interface{}) error {
 	}
 	fmt.Printf("%s\n", string(yml))
 	return nil
+}
+
+func (y YAMLPrinter) Type() string {
+	return "yaml"
 }

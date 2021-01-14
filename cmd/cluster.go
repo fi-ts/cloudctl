@@ -395,7 +395,7 @@ func clusterCreate() error {
 	version := viper.GetString("version")
 	if version == "" {
 		request := cluster.NewListConstraintsParams()
-		constraints, err := cloud.Cluster.ListConstraints(request, cloud.Auth)
+		constraints, err := cloud.Cluster.ListConstraints(request, nil)
 		if err != nil {
 			return err
 		}
@@ -494,7 +494,7 @@ func clusterCreate() error {
 
 	request := cluster.NewCreateClusterParams()
 	request.SetBody(scr)
-	shoot, err := cloud.Cluster.CreateCluster(request, cloud.Auth)
+	shoot, err := cloud.Cluster.CreateCluster(request, nil)
 	if err != nil {
 		return err
 	}
@@ -530,7 +530,7 @@ func clusterList() error {
 	if cfr != nil {
 		fcp := cluster.NewFindClustersParams()
 		fcp.SetBody(cfr)
-		response, err := cloud.Cluster.FindClusters(fcp, cloud.Auth)
+		response, err := cloud.Cluster.FindClusters(fcp, nil)
 		if err != nil {
 			return err
 		}
@@ -538,7 +538,7 @@ func clusterList() error {
 	}
 
 	request := cluster.NewListClustersParams()
-	shoots, err := cloud.Cluster.ListClusters(request, cloud.Auth)
+	shoots, err := cloud.Cluster.ListClusters(request, nil)
 	if err != nil {
 		return err
 	}
@@ -552,7 +552,7 @@ func clusterKubeconfig(args []string) error {
 	}
 	request := cluster.NewGetClusterKubeconfigTplParams()
 	request.SetID(ci)
-	credentials, err := cloud.Cluster.GetClusterKubeconfigTpl(request, cloud.Auth)
+	credentials, err := cloud.Cluster.GetClusterKubeconfigTpl(request, nil)
 	if err != nil {
 		return err
 	}
@@ -616,7 +616,7 @@ type sshkeypair struct {
 func sshKeyPair(clusterID string) (*sshkeypair, error) {
 	request := cluster.NewGetSSHKeyPairParams()
 	request.SetID(clusterID)
-	credentials, err := cloud.Cluster.GetSSHKeyPair(request, cloud.Auth)
+	credentials, err := cloud.Cluster.GetSSHKeyPair(request, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -658,7 +658,7 @@ func reconcileCluster(args []string) error {
 	}
 	request.Body = &models.V1ClusterReconcileRequest{Operation: operation}
 
-	shoot, err := cloud.Cluster.ReconcileCluster(request, cloud.Auth)
+	shoot, err := cloud.Cluster.ReconcileCluster(request, nil)
 	if err != nil {
 		return err
 	}
@@ -686,7 +686,7 @@ func updateCluster(args []string) error {
 
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	current, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	current, err := cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
@@ -791,7 +791,7 @@ func updateCluster(args []string) error {
 	cur.EgressRules = makeEgressRules(egress)
 
 	request.SetBody(cur)
-	shoot, err := cloud.Cluster.UpdateCluster(request, cloud.Auth)
+	shoot, err := cloud.Cluster.UpdateCluster(request, nil)
 	if err != nil {
 		return err
 	}
@@ -809,7 +809,7 @@ func clusterDelete(args []string) error {
 	// local storage only could lead to very big problems for users.
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	resp, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	resp, err := cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
@@ -828,7 +828,7 @@ func clusterDelete(args []string) error {
 
 	request := cluster.NewDeleteClusterParams()
 	request.SetID(ci)
-	c, err := cloud.Cluster.DeleteCluster(request, cloud.Auth)
+	c, err := cloud.Cluster.DeleteCluster(request, nil)
 	if err != nil {
 		return err
 	}
@@ -842,7 +842,7 @@ func clusterDescribe(args []string) error {
 	}
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
@@ -881,7 +881,7 @@ func clusterIssues(args []string) error {
 		if cfr != nil {
 			fcp := cluster.NewFindClustersParams().WithReturnMachines(&boolTrue)
 			fcp.SetBody(cfr)
-			response, err := cloud.Cluster.FindClusters(fcp, cloud.Auth)
+			response, err := cloud.Cluster.FindClusters(fcp, nil)
 			if err != nil {
 				return err
 			}
@@ -889,7 +889,7 @@ func clusterIssues(args []string) error {
 		}
 
 		request := cluster.NewListClustersParams().WithReturnMachines(&boolTrue)
-		shoots, err := cloud.Cluster.ListClusters(request, cloud.Auth)
+		shoots, err := cloud.Cluster.ListClusters(request, nil)
 		if err != nil {
 			return err
 		}
@@ -902,7 +902,7 @@ func clusterIssues(args []string) error {
 	}
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
@@ -916,10 +916,15 @@ func clusterMachines(args []string) error {
 	}
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
+
+	if printer.Type() != "table" {
+		return printer.Print(shoot.Payload)
+	}
+
 	fmt.Println("Cluster:")
 	printer.Print(shoot.Payload)
 
@@ -939,7 +944,7 @@ func clusterLogs(args []string) error {
 	}
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
@@ -950,6 +955,19 @@ func clusterLogs(args []string) error {
 		conditions = shoot.Payload.Status.Conditions
 		lastOperation = shoot.Payload.Status.LastOperation
 		lastErrors = shoot.Payload.Status.LastErrors
+	}
+
+	if printer.Type() != "table" {
+		type s struct {
+			Conditions    []*models.V1beta1Condition
+			LastOperation *models.V1beta1LastOperation
+			LastErrors    []*models.V1beta1LastError
+		}
+		return printer.Print(s{
+			Conditions:    conditions,
+			LastOperation: lastOperation,
+			LastErrors:    lastErrors,
+		})
 	}
 
 	fmt.Println("Conditions:")
@@ -976,7 +994,7 @@ func clusterLogs(args []string) error {
 
 func clusterInputs() error {
 	request := cluster.NewListConstraintsParams()
-	sc, err := cloud.Cluster.ListConstraints(request, cloud.Auth)
+	sc, err := cloud.Cluster.ListConstraints(request, nil)
 	if err != nil {
 		return err
 	}
@@ -993,7 +1011,7 @@ func clusterMachineSSH(args []string, console bool) error {
 
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(cid)
-	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
@@ -1019,7 +1037,7 @@ func clusterMachineSSH(args []string, console bool) error {
 			if console {
 				fmt.Printf("access console via ssh\n")
 				bmcConsolePort := "5222"
-				err := ssh("-i", privateKeyFile, mid+"@"+cloud.ConsoleHost, "-p", bmcConsolePort)
+				err := ssh("-i", privateKeyFile, mid+"@"+consoleHost, "-p", bmcConsolePort)
 				return err
 			}
 			networks := m.Allocation.Networks

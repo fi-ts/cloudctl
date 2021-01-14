@@ -3,14 +3,16 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"strings"
 
 	"github.com/mitchellh/go-homedir"
 
+	cloudgo "github.com/fi-ts/cloud-go"
+	"github.com/fi-ts/cloud-go/api/client"
 	output "github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/fi-ts/cloudctl/pkg/api"
-	c "github.com/fi-ts/cloudctl/pkg/cloud"
 	"github.com/metal-stack/v"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -23,9 +25,10 @@ const (
 )
 
 var (
-	ctx     api.Context
-	cloud   *c.Cloud
-	printer output.Printer
+	ctx         api.Context
+	cloud       *client.CloudAPI
+	consoleHost string
+	printer     output.Printer
 	// will bind all viper flags to subcommands and
 	// prevent overwrite of identical flag names from other commands
 	// see https://github.com/spf13/viper/issues/233#issuecomment-386791444
@@ -150,10 +153,16 @@ func initConfig() {
 	}
 
 	var err error
-	cloud, err = c.NewCloud(driverURL, apiToken, hmac)
+	cloud, err = cloudgo.NewClient(driverURL, apiToken, hmac)
 	if err != nil {
-		log.Fatalf("error setup root cmd:%v", err)
+		log.Fatalf("error initializing cloud-api client: %v", err)
 	}
+
+	parsedURL, err := url.Parse(driverURL)
+	if err != nil {
+		log.Fatalf("could not parse driver url: %v", err)
+	}
+	consoleHost = parsedURL.Host
 }
 
 func initPrinter() {
