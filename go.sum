@@ -214,6 +214,8 @@ github.com/fi-ts/cloud-go v0.10.1-0.20201217124933-2a9402f3ba44 h1:/0WuDF/XbruSe
 github.com/fi-ts/cloud-go v0.10.1-0.20201217124933-2a9402f3ba44/go.mod h1:b7gjlyjP5Pnctb/aeeKsANuGKh5lJHl8w0VSnhtIhLw=
 github.com/fi-ts/cloud-go v0.10.1-0.20201217125116-be9be10d577f h1:Hlr3PhrwI8oh756BVrepkeRkODWVMK4p4eaENRUyf7Y=
 github.com/fi-ts/cloud-go v0.10.1-0.20201217125116-be9be10d577f/go.mod h1:b7gjlyjP5Pnctb/aeeKsANuGKh5lJHl8w0VSnhtIhLw=
+github.com/fi-ts/cloud-go v0.10.1-0.20210118155104-8e1dab1c4237 h1:EEkOcdRiajXFiw4GyI5AV/Xl0YlnbXU+ng9o13nF0qk=
+github.com/fi-ts/cloud-go v0.10.1-0.20210118155104-8e1dab1c4237/go.mod h1:6AzwXmDWL4KJk3F+jZwu5fxwPT7qvAvAKDShiu1aMy8=
 github.com/frankban/quicktest v1.5.0/go.mod h1:jaStnuzAqU1AJdCO0l53JDCJrVDKcS03DbaAcR7Ks/o=
 github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
@@ -332,6 +334,8 @@ github.com/go-openapi/strfmt v0.19.5 h1:0utjKrw+BAh8s57XE9Xz8DUBsVvPmRUB6styvl9w
 github.com/go-openapi/strfmt v0.19.5/go.mod h1:eftuHTlB/dI8Uq8JJOyRlieZf+WkkxUuk0dgdHXr2Qk=
 github.com/go-openapi/strfmt v0.19.11 h1:0+YvbNh05rmBkgztd6zHp4OCFn7Mtu30bn46NQo2ZRw=
 github.com/go-openapi/strfmt v0.19.11/go.mod h1:UukAYgTaQfqJuAFlNxxMWNvMYiwiXtLsF2VwmoFtbtc=
+github.com/go-openapi/strfmt v0.20.0 h1:l2omNtmNbMc39IGptl9BuXBEKcZfS8zjrTsPKTiJiDM=
+github.com/go-openapi/strfmt v0.20.0/go.mod h1:UukAYgTaQfqJuAFlNxxMWNvMYiwiXtLsF2VwmoFtbtc=
 github.com/go-openapi/swag v0.0.0-20160704191624-1d0bd113de87/go.mod h1:DXUve3Dpr1UfpPtxFw+EFuQ41HhCWZfha5jSVRG7C7I=
 github.com/go-openapi/swag v0.17.0/go.mod h1:AByQ+nYG6gQg71GINrmuDXCPWdL640yX49/kXLo40Tg=
 github.com/go-openapi/swag v0.18.0/go.mod h1:AByQ+nYG6gQg71GINrmuDXCPWdL640yX49/kXLo40Tg=
@@ -344,6 +348,8 @@ github.com/go-openapi/swag v0.19.9 h1:1IxuqvBUU3S2Bi4YC7tlP9SJF1gVpCvqN0T2Qof4az
 github.com/go-openapi/swag v0.19.9/go.mod h1:ao+8BpOPyKdpQz3AOJfbeEVpLmWAvlT1IfTe5McPyhY=
 github.com/go-openapi/swag v0.19.12 h1:Bc0bnY2c3AoF7Gc+IMIAQQsD8fLHjHpc19wXvYuayQI=
 github.com/go-openapi/swag v0.19.12/go.mod h1:eFdyEBkTdoAf/9RXBvj4cr1nH7GD8Kzo5HTt47gr72M=
+github.com/go-openapi/swag v0.19.13 h1:233UVgMy1DlmCYYfOiFpta6e2urloh+sEs5id6lyzog=
+github.com/go-openapi/swag v0.19.13/go.mod h1:QYRuS/SOXUCsnplDa677K7+DxSOj6IPNl/eQntq43wQ=
 github.com/go-openapi/validate v0.18.0/go.mod h1:Uh4HdOzKt19xGIGm1qHf/ofbX1YQ4Y+MYsct2VUrAJ4=
 github.com/go-openapi/validate v0.19.2/go.mod h1:1tRCw7m3jtI8eNWEEliiAqUIcBztB2KDnRCRMUi7GTA=
 github.com/go-openapi/validate v0.19.3/go.mod h1:90Vh6jjkTn+OT1Eefm0ZixWNFjhtOH7vS9k0lo6zwJo=
@@ -354,6 +360,8 @@ github.com/go-openapi/validate v0.19.12/go.mod h1:Rzou8hA/CBw8donlS6WNEUQupNvUZ0
 github.com/go-openapi/validate v0.19.15/go.mod h1:tbn/fdOwYHgrhPBzidZfJC2MIVvs9GA7monOmWBbeCI=
 github.com/go-openapi/validate v0.20.0 h1:pzutNCCBZGZlE+u8HD3JZyWdc/TVbtVwlWUp8/vgUKk=
 github.com/go-openapi/validate v0.20.0/go.mod h1:b60iJT+xNNLfaQJUqLI7946tYiFEOuE9E4k54HpKcJ0=
+github.com/go-openapi/validate v0.20.1 h1:QGQ5CvK74E28t3DkegGweKR+auemUi5IdpMc4x3UW6s=
+github.com/go-openapi/validate v0.20.1/go.mod h1:b60iJT+xNNLfaQJUqLI7946tYiFEOuE9E4k54HpKcJ0=
 github.com/go-playground/locales v0.13.0 h1:HyWk6mgj5qFqCT5fjGBuRArbVDfE4hi8+e8ceBS/t7Q=
 github.com/go-playground/locales v0.13.0/go.mod h1:taPMhCMXrRLJO55olJkUXHZBHCxTMfnGwq/HNwmWNS8=
 github.com/go-playground/universal-translator v0.17.0 h1:icxd5fm+REJzpZx7ZfpaD876Lmtgy7VtROAbHHXk8no=
@@ -621,6 +629,8 @@ github.com/metal-stack/metal-lib v0.6.6 h1:5ajMDUGHruYOmRqn3r373rbIKbTtQkfVfKLKm
 github.com/metal-stack/metal-lib v0.6.6/go.mod h1:r8qhfX72eAzClR/pEaQvdwM//Otx9gegYoOphLPmmQ4=
 github.com/metal-stack/metal-lib v0.6.7 h1:tHmFjzr3+wdl2WoY8+M7l7CVyvBay2uslkq+ULnW2CI=
 github.com/metal-stack/metal-lib v0.6.7/go.mod h1:r8qhfX72eAzClR/pEaQvdwM//Otx9gegYoOphLPmmQ4=
+github.com/metal-stack/metal-lib v0.6.9 h1:6AvJ8RKJqjed2GdKIZlN9Qvt8sXhu3r6yfYKv++pLaU=
+github.com/metal-stack/metal-lib v0.6.9/go.mod h1:r8qhfX72eAzClR/pEaQvdwM//Otx9gegYoOphLPmmQ4=
 github.com/metal-stack/security v0.4.0 h1:NrPm5srgmgeS9UdQmGKLEJ3P7BSsV2Gm7P781LmM0Xo=
 github.com/metal-stack/security v0.4.0/go.mod h1:C7kSrHwRcG+47375RJjhakN1LenbEJF9uQd4I50nZlY=
 github.com/metal-stack/updater v1.1.1 h1:A9C9DR7ETupni7FPnTju+ezM3rEsck4b/ml0YvR7NKA=

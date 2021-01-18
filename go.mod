@@ -6,15 +6,15 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.10.0
-	github.com/fi-ts/cloud-go v0.10.1-0.20201217125116-be9be10d577f
+	github.com/fi-ts/cloud-go v0.10.1-0.20210118155104-8e1dab1c4237
 	github.com/gardener/gardener v1.8.2
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-openapi/runtime v0.19.24
-	github.com/go-openapi/strfmt v0.19.11
+	github.com/go-openapi/strfmt v0.20.0
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/jinzhu/now v1.1.1
 	github.com/leodido/go-urn v1.2.0 // indirect
-	github.com/metal-stack/metal-lib v0.6.7
+	github.com/metal-stack/metal-lib v0.6.9
 	github.com/metal-stack/security v0.4.0
 	github.com/metal-stack/updater v1.1.1
 	github.com/metal-stack/v v1.0.2
