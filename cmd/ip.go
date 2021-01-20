@@ -64,7 +64,7 @@ func init() {
 
 	ipListCmd.Flags().StringP("ipaddress", "", "", "ipaddress to filter [optional]")
 	ipListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
-	ipListCmd.Flags().StringP("prefix", "", "", "prefx to filter [optional]")
+	ipListCmd.Flags().StringP("prefix", "", "", "prefix to filter [optional]")
 	ipListCmd.Flags().StringP("machineid", "", "", "machineid to filter [optional]")
 	ipListCmd.Flags().StringP("network", "", "", "network to filter [optional]")
 
