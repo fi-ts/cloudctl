@@ -1026,12 +1026,12 @@ func clusterMachineSSH(args []string, console bool) error {
 		if *m.ID == mid {
 			home, err := os.UserHomeDir()
 			if err != nil {
-				return fmt.Errorf("unable determine home directory:%v", err)
+				return fmt.Errorf("unable determine home directory:%w", err)
 			}
 			privateKeyFile := path.Join(home, "."+programName, "."+cid+".id_rsa")
 			err = ioutil.WriteFile(privateKeyFile, keypair.privatekey, 0600)
 			if err != nil {
-				return fmt.Errorf("unable to write private key:%s error:%v", privateKeyFile, err)
+				return fmt.Errorf("unable to write private key:%s error:%w", privateKeyFile, err)
 			}
 			defer os.Remove(privateKeyFile)
 			if console {

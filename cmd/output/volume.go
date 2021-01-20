@@ -31,11 +31,11 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 		}
 		size := ""
 		if vol.Size != nil {
-			size = fmt.Sprintf("%s", humanize.IBytes(uint64(*vol.Size)))
+			size = humanize.IBytes(uint64(*vol.Size))
 		}
 		usage := ""
 		if vol.Statistics != nil && vol.Statistics.LogicalUsedStorage != nil {
-			usage = fmt.Sprintf("%s", humanize.IBytes(uint64(*vol.Statistics.LogicalUsedStorage)))
+			usage = humanize.IBytes(uint64(*vol.Statistics.LogicalUsedStorage))
 		}
 		replica := ""
 		if vol.ReplicaCount != nil {
@@ -148,10 +148,12 @@ func VolumeManifest(v models.V1VolumeResponse, name, namespace string) error {
 	}
 	js, err := json.Marshal(pv)
 	if err != nil {
-		return fmt.Errorf("unable to marshal to yaml:%v", err)
+		return fmt.Errorf("unable to marshal to yaml:%w", err)
 	}
 	y, err := yaml.JSONToYAML(js)
-
+	if err != nil {
+		return fmt.Errorf("unable to marshal to yaml:%w", err)
+	}
 	if len(v.ConnectedHosts) > 0 {
 		nodes := ConnectedHosts(&v)
 		fmt.Printf("# be cautios! at the time being your volume:%s is still attached to worker node:%s, you can not mount it twice\n", *v.VolumeID, strings.Join(nodes, ","))

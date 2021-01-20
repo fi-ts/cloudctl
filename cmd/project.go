@@ -222,7 +222,7 @@ func projectApply() error {
 		return err
 	}
 	var response []*models.V1ProjectResponse
-	for _, par := range pars {
+	for i, par := range pars {
 		request := project.NewFindProjectParams()
 		request.SetID(par.Meta.ID)
 		p, err := cloud.Project.FindProject(request, nil)
@@ -231,7 +231,7 @@ func projectApply() error {
 		}
 		if p.Payload == nil {
 			params := project.NewCreateProjectParams()
-			params.SetBody(&par)
+			params.SetBody(&pars[i])
 			resp, err := cloud.Project.CreateProject(params, nil)
 			if err != nil {
 				return err
@@ -280,7 +280,7 @@ func projectEdit(args []string) error {
 		request.SetID(id)
 		resp, err := cloud.Project.FindProject(request, nil)
 		if err != nil {
-			return nil, fmt.Errorf("project describe error:%v", err)
+			return nil, fmt.Errorf("project describe error:%w", err)
 		}
 		content, err := yaml.Marshal(resp.Payload)
 		if err != nil {
