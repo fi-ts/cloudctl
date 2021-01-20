@@ -6,10 +6,10 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.10.0
-	github.com/fi-ts/cloud-go v0.10.1-0.20210118155104-8e1dab1c4237
+	github.com/fi-ts/cloud-go v0.12.0
 	github.com/gardener/gardener v1.8.2
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-openapi/runtime v0.19.24
+	github.com/go-openapi/runtime v0.19.26
 	github.com/go-openapi/strfmt v0.20.0
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/jinzhu/now v1.1.1
@@ -28,7 +28,7 @@ require (
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v9 v9.31.0
 	gopkg.in/ini.v1 v1.60.2 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	k8s.io/api v0.17.12
 	k8s.io/apimachinery v0.17.12
 )
