@@ -37,12 +37,12 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	volumePVCmd = &cobra.Command{
-		Use:   "pv <volume>",
-		Short: "create a static PersistenVolumeClaim for a volume",
+	volumeManifestCmd = &cobra.Command{
+		Use:   "manifest <volume>",
+		Short: "print a manifest for a volume",
 		Long:  "this is only useful for volumes which are not used in any k8s cluster. With the PersistenVolumeClaim given you can reuse it in a new cluster.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return volumePV(args)
+			return volumeManifest(args)
 		},
 		PreRun: bindPFlags,
 	}
@@ -53,14 +53,14 @@ func init() {
 
 	volumeCmd.AddCommand(volumeListCmd)
 	volumeCmd.AddCommand(volumeDeleteCmd)
-	volumeCmd.AddCommand(volumePVCmd)
+	volumeCmd.AddCommand(volumeManifestCmd)
 
 	volumeListCmd.Flags().StringP("volumeid", "", "", "volumeid to filter [optional]")
 	volumeListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
 	volumeListCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
 
-	volumePVCmd.Flags().StringP("name", "", "restored-pv", "name of the PersistentVolume")
-	volumePVCmd.Flags().StringP("namespace", "", "default", "namespace for the PersistentVolume")
+	volumeManifestCmd.Flags().StringP("name", "", "restored-pv", "name of the PersistentVolume")
+	volumeManifestCmd.Flags().StringP("namespace", "", "default", "namespace for the PersistentVolume")
 
 	err := volumeListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return projectListCompletion()
@@ -114,7 +114,7 @@ func volumeDelete(args []string) error {
 	return printer.Print(resp.Payload)
 }
 
-func volumePV(args []string) error {
+func volumeManifest(args []string) error {
 	volume, err := getVolumeFromArgs(args)
 	if err != nil {
 		return err
@@ -122,7 +122,7 @@ func volumePV(args []string) error {
 	name := viper.GetString("name")
 	namespace := viper.GetString("namespace")
 
-	return output.PersistenVolume(*volume, name, namespace)
+	return output.VolumeManifest(*volume, name, namespace)
 }
 func getVolumeFromArgs(args []string) (*models.V1VolumeResponse, error) {
 	if len(args) < 1 {

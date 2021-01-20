@@ -84,7 +84,7 @@ func ConnectedHosts(vol *models.V1VolumeResponse) []string {
 }
 
 /*
-PersistenVolume create a manifest for static PV like so
+VolumeManifest create a manifest for static PV like so
 
 ---
 apiVersion: v1
@@ -126,7 +126,7 @@ spec:
   persistentVolumeReclaimPolicy: Delete
   storageClassName: partition-silver
 */
-func PersistenVolume(v models.V1VolumeResponse, name, namespace string) error {
+func VolumeManifest(v models.V1VolumeResponse, name, namespace string) error {
 	filesystem := corev1.PersistentVolumeFilesystem
 	pv := corev1.PersistentVolume{
 		TypeMeta:   v1.TypeMeta{Kind: "PersistentVolume", APIVersion: "v1"},

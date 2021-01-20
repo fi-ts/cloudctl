@@ -9,13 +9,12 @@ require (
 	github.com/fi-ts/cloud-go v0.12.0
 	github.com/gardener/gardener v1.8.2
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-openapi/runtime v0.19.26
+	github.com/go-openapi/runtime v0.19.26 // indirect
 	github.com/go-openapi/strfmt v0.20.0
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/jinzhu/now v1.1.1
 	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/metal-stack/metal-lib v0.6.9
-	github.com/metal-stack/security v0.4.0
 	github.com/metal-stack/updater v1.1.1
 	github.com/metal-stack/v v1.0.2
 	github.com/mitchellh/go-homedir v1.1.0
