@@ -231,6 +231,8 @@ func init() {
 	clusterCreateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
 	clusterCreateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <network>:<ip>; e.g.: --egress internet:1.2.3.4,extnet:123.1.1.1 --egress internet:1.2.3.5 [optional]")
 	clusterCreateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster.")
+	clusterCreateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced. [optional]")
+	clusterCreateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. [optional]")
 
 	err := clusterCreateCmd.MarkFlagRequired("name")
 	if err != nil {
@@ -303,6 +305,8 @@ func init() {
 	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster, please add --yes-i-really-mean-it")
 	clusterUpdateCmd.Flags().String("purpose", "", "purpose of the cluster, can be one of production|development|evaluation. SLA is only given on production clusters.")
 	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]. Use --egress none to remove all ingress rules.")
+	clusterUpdateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced.")
+	clusterUpdateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted.")
 
 	clusterUpdateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return versionListCompletion()
@@ -379,6 +383,9 @@ func clusterCreate() error {
 	maxsize := viper.GetInt32("maxsize")
 	maxsurge := viper.GetString("maxsurge")
 	maxunavailable := viper.GetString("maxunavailable")
+
+	healthtimeout := viper.GetDuration("healthtimeout")
+	draintimeout := viper.GetDuration("draintimeout")
 
 	allowprivileged := viper.GetBool("allowprivileged")
 
@@ -490,6 +497,14 @@ func clusterCreate() error {
 	egressRules := makeEgressRules(egress)
 	if len(egressRules) > 0 {
 		scr.EgressRules = egressRules
+	}
+
+	if healthtimeout != 0 {
+		scr.Workers[0].HealthTimeout = int64(healthtimeout)
+	}
+
+	if draintimeout != 0 {
+		scr.Workers[0].DrainTimeout = int64(draintimeout)
 	}
 
 	request := cluster.NewCreateClusterParams()
@@ -691,12 +706,15 @@ func updateCluster(args []string) error {
 		return err
 	}
 
+	healthtimeout := viper.GetDuration("healthtimeout")
+	draintimeout := viper.GetDuration("draintimeout")
+
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
 		ID: &ci,
 	}
 
-	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" {
+	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" || healthtimeout != 0 || draintimeout != 0 {
 		workers := current.Payload.Workers
 
 		var worker *models.V1Worker
@@ -739,6 +757,28 @@ func updateCluster(args []string) error {
 
 		if machineType != "" {
 			worker.MachineType = &machineType
+		}
+
+		mcmMigrated := false
+		for _, feature := range current.Payload.ControlPlaneFeatureGates {
+			if feature == "machineControllerManagerOOT" {
+				mcmMigrated = true
+				break
+			}
+		}
+
+		if healthtimeout != 0 {
+			if !mcmMigrated {
+				log.Fatal("custom healthtimeout requires feature: machineControllerManagerOOT")
+			}
+			worker.HealthTimeout = int64(healthtimeout)
+		}
+
+		if draintimeout != 0 {
+			if !mcmMigrated {
+				log.Fatal("custom draintimeout requires feature: machineControllerManagerOOT")
+			}
+			worker.DrainTimeout = int64(draintimeout)
 		}
 
 		cur.Workers = append(cur.Workers, workers...)
