@@ -89,7 +89,7 @@ func tenantDescribe(args []string) error {
 	request.SetID(id)
 	resp, err := cloud.Tenant.GetTenant(request, nil)
 	if err != nil {
-		return fmt.Errorf("tenant describe error:%v", err)
+		return fmt.Errorf("tenant describe error:%w", err)
 	}
 	return printer.Print(resp.Payload)
 }
@@ -98,7 +98,7 @@ func tenantList(args []string) error {
 	request := tenant.NewListTenantsParams()
 	resp, err := cloud.Tenant.ListTenants(request, nil)
 	if err != nil {
-		return fmt.Errorf("tenant list error:%v", err)
+		return fmt.Errorf("tenant list error:%w", err)
 	}
 	return printer.Print(resp.Payload)
 }
@@ -117,7 +117,7 @@ func tenantApply() error {
 		return err
 	}
 	response := []*models.V1TenantResponse{}
-	for _, tar := range tars {
+	for i, tar := range tars {
 		request := tenant.NewGetTenantParams()
 		request.SetID(tar.Meta.ID)
 		t, err := cloud.Tenant.GetTenant(request, nil)
@@ -129,7 +129,7 @@ func tenantApply() error {
 		}
 		if t.Payload.Tenant.Meta != nil {
 			params := tenant.NewUpdateTenantParams()
-			params.SetBody(&models.V1TenantUpdateRequest{Tenant: &tar})
+			params.SetBody(&models.V1TenantUpdateRequest{Tenant: &tars[i]})
 			resp, err := cloud.Tenant.UpdateTenant(params, nil)
 			if err != nil {
 				return err
@@ -152,7 +152,7 @@ func tenantEdit(args []string) error {
 		request.SetID(id)
 		resp, err := cloud.Tenant.GetTenant(request, nil)
 		if err != nil {
-			return nil, fmt.Errorf("tenant describe error:%v", err)
+			return nil, fmt.Errorf("tenant describe error:%w", err)
 		}
 		content, err := yaml.Marshal(resp.Payload.Tenant)
 		if err != nil {

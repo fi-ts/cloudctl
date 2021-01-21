@@ -130,7 +130,7 @@ func NewPrinter(format, order, tpl string, noHeaders bool) (Printer, error) {
 	case "template":
 		tmpl, err := template.New("").Parse(tpl)
 		if err != nil {
-			return nil, fmt.Errorf("template invalid:%v", err)
+			return nil, fmt.Errorf("template invalid:%w", err)
 		}
 		printer = newTablePrinter(format, order, true, tmpl)
 	default:
@@ -257,7 +257,7 @@ func (t TablePrinter) Print(data interface{}) error {
 func (j JSONPrinter) Print(data interface{}) error {
 	json, err := json.MarshalIndent(data, "", "    ")
 	if err != nil {
-		return fmt.Errorf("unable to marshal to json:%v", err)
+		return fmt.Errorf("unable to marshal to json:%w", err)
 	}
 	fmt.Printf("%s\n", string(json))
 	return nil
@@ -271,7 +271,7 @@ func (j JSONPrinter) Type() string {
 func (y YAMLPrinter) Print(data interface{}) error {
 	yml, err := yaml.Marshal(data)
 	if err != nil {
-		return fmt.Errorf("unable to marshal to yaml:%v", err)
+		return fmt.Errorf("unable to marshal to yaml:%w", err)
 	}
 	fmt.Printf("%s\n", string(yml))
 	return nil

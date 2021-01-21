@@ -2,6 +2,7 @@ package helper
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -95,17 +96,17 @@ func ReadFrom(from string, data interface{}, f func(target interface{})) error {
 	default:
 		reader, err = os.Open(from)
 		if err != nil {
-			return fmt.Errorf("unable to open %s %v", from, err)
+			return fmt.Errorf("unable to open %s %w", from, err)
 		}
 	}
 	dec := yaml.NewDecoder(reader)
 	for {
 		err := dec.Decode(data)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("decode error: %v", err)
+			return fmt.Errorf("decode error: %w", err)
 		}
 		f(data)
 	}
