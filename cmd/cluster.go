@@ -222,7 +222,7 @@ func init() {
 	clusterCreateCmd.Flags().String("firewalltype", "", "machine type to use for the firewall. [optional]")
 	clusterCreateCmd.Flags().String("firewallimage", "", "machine image to use for the firewall. [optional]")
 	clusterCreateCmd.Flags().String("firewallcontroller", "", "version of the firewall-controller to use. [optional]")
-	clusterCreateCmd.Flags().String("cri", "docker", "container runtime to use, only docker|containerd supported as alternative actually. [optional]")
+	clusterCreateCmd.Flags().String("cri", "", "container runtime to use, only docker|containerd supported as alternative actually. [optional]")
 	clusterCreateCmd.Flags().Int32("minsize", 1, "minimal workers of the cluster.")
 	clusterCreateCmd.Flags().Int32("maxsize", 1, "maximal workers of the cluster.")
 	clusterCreateCmd.Flags().String("maxsurge", "1", "max number (e.g. 1) or percentage (e.g. 10%) of workers created during a update of the cluster.")
@@ -452,6 +452,23 @@ func clusterCreate() error {
 	switch cri {
 	case "containerd":
 	case "docker":
+	case "":
+		// default CRI to containerd for k8s version >= 1.19
+		cc, err := semver.NewConstraint(">= 1.19")
+		if err != nil {
+			log.Fatalf("Error parsing constraint: %s", err)
+		}
+
+		v, err := semver.NewVersion(version)
+		if err != nil {
+			log.Fatalf("Error parsing kubernetes version: %s", err)
+		}
+
+		if cc.Check(v) {
+			cri = "containerd"
+		} else {
+			cri = "docker"
+		}
 	default:
 		log.Fatalf("provided cri:%s is not supported, only docker or containerd at the moment", cri)
 	}
