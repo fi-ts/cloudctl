@@ -149,7 +149,7 @@ func projectCreate() error {
 	request := project.NewCreateProjectParams()
 	request.SetBody(pcr)
 
-	response, err := cloud.Project.CreateProject(request, cloud.Auth)
+	response, err := cloud.Project.CreateProject(request, nil)
 	if err != nil {
 		return err
 	}
@@ -165,7 +165,7 @@ func projectDescribe(args []string) error {
 
 	request := project.NewFindProjectParams()
 	request.SetID(id)
-	p, err := cloud.Project.FindProject(request, cloud.Auth)
+	p, err := cloud.Project.FindProject(request, nil)
 	if err != nil {
 		return err
 	}
@@ -181,7 +181,7 @@ func projectDelete(args []string) error {
 
 	request := project.NewDeleteProjectParams().WithID(id)
 
-	response, err := cloud.Project.DeleteProject(request, cloud.Auth)
+	response, err := cloud.Project.DeleteProject(request, nil)
 	if err != nil {
 		return err
 	}
@@ -191,7 +191,7 @@ func projectDelete(args []string) error {
 
 func projectList() error {
 	request := project.NewListProjectsParams()
-	response, err := cloud.Project.ListProjects(request, cloud.Auth)
+	response, err := cloud.Project.ListProjects(request, nil)
 	if err != nil {
 		return err
 	}
@@ -222,17 +222,17 @@ func projectApply() error {
 		return err
 	}
 	var response []*models.V1ProjectResponse
-	for _, par := range pars {
+	for i, par := range pars {
 		request := project.NewFindProjectParams()
 		request.SetID(par.Meta.ID)
-		p, err := cloud.Project.FindProject(request, cloud.Auth)
+		p, err := cloud.Project.FindProject(request, nil)
 		if err != nil {
 			return err
 		}
 		if p.Payload == nil {
 			params := project.NewCreateProjectParams()
-			params.SetBody(&par)
-			resp, err := cloud.Project.CreateProject(params, cloud.Auth)
+			params.SetBody(&pars[i])
+			resp, err := cloud.Project.CreateProject(params, nil)
 			if err != nil {
 				return err
 			}
@@ -258,7 +258,7 @@ func projectApply() error {
 				pur.TenantID = par.TenantID
 			}
 			params.SetBody(pur)
-			resp, err := cloud.Project.UpdateProject(params, cloud.Auth)
+			resp, err := cloud.Project.UpdateProject(params, nil)
 			if err != nil {
 				return err
 			}
@@ -278,9 +278,9 @@ func projectEdit(args []string) error {
 	getFunc := func(id string) ([]byte, error) {
 		request := project.NewFindProjectParams()
 		request.SetID(id)
-		resp, err := cloud.Project.FindProject(request, cloud.Auth)
+		resp, err := cloud.Project.FindProject(request, nil)
 		if err != nil {
-			return nil, fmt.Errorf("project describe error:%v", err)
+			return nil, fmt.Errorf("project describe error:%w", err)
 		}
 		content, err := yaml.Marshal(resp.Payload)
 		if err != nil {
@@ -298,7 +298,7 @@ func projectEdit(args []string) error {
 		}
 		pup := project.NewUpdateProjectParams()
 		pup.Body = &purs[0]
-		uresp, err := cloud.Project.UpdateProject(pup, cloud.Auth)
+		uresp, err := cloud.Project.UpdateProject(pup, nil)
 		if err != nil {
 			return err
 		}

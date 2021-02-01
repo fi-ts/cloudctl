@@ -222,6 +222,7 @@ func init() {
 	clusterCreateCmd.Flags().String("machineimage", "", "machine image to use for the nodes, must be in the form of <name>-<version> [optional]")
 	clusterCreateCmd.Flags().String("firewalltype", "", "machine type to use for the firewall. [optional]")
 	clusterCreateCmd.Flags().String("firewallimage", "", "machine image to use for the firewall. [optional]")
+	clusterCreateCmd.Flags().String("firewallcontroller", "", "version of the firewall-controller to use. [optional]")
 	clusterCreateCmd.Flags().String("cri", "docker", "container runtime to use, only docker|containerd supported as alternative actually. [optional]")
 	clusterCreateCmd.Flags().Int32("minsize", 1, "minimal workers of the cluster.")
 	clusterCreateCmd.Flags().Int32("maxsize", 1, "maximal workers of the cluster.")
@@ -231,6 +232,8 @@ func init() {
 	clusterCreateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
 	clusterCreateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <network>:<ip>; e.g.: --egress internet:1.2.3.4,extnet:123.1.1.1 --egress internet:1.2.3.5 [optional]")
 	clusterCreateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster.")
+	clusterCreateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced. [optional]")
+	clusterCreateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. [optional]")
 
 	err := clusterCreateCmd.MarkFlagRequired("name")
 	if err != nil {
@@ -295,6 +298,7 @@ func init() {
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
 	clusterUpdateCmd.Flags().String("firewalltype", "", "machine type to use for the firewall.")
 	clusterUpdateCmd.Flags().String("firewallimage", "", "machine image to use for the firewall.")
+	clusterUpdateCmd.Flags().String("firewallcontroller", "", "version of the firewall-controller to use.")
 	clusterUpdateCmd.Flags().String("machinetype", "", "machine type to use for the nodes.")
 	clusterUpdateCmd.Flags().String("machineimage", "", "machine image to use for the nodes, must be in the form of <name>-<version> ")
 	clusterUpdateCmd.Flags().StringSlice("addlabels", []string{}, "labels to add to the cluster")
@@ -303,6 +307,8 @@ func init() {
 	clusterUpdateCmd.Flags().String("purpose", "", "purpose of the cluster, can be one of production|development|evaluation. SLA is only given on production clusters.")
 	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]. Use --egress none to remove all ingress rules.")
 	clusterUpdateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
+	clusterUpdateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced.")
+	clusterUpdateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted.")
 
 	clusterUpdateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return versionListCompletion()
@@ -371,6 +377,7 @@ func clusterCreate() error {
 	machineImageAndVersion := viper.GetString("machineimage")
 	firewallType := viper.GetString("firewalltype")
 	firewallImage := viper.GetString("firewallimage")
+	firewallController := viper.GetString("firewallcontroller")
 
 	cri := viper.GetString("cri")
 
@@ -378,6 +385,9 @@ func clusterCreate() error {
 	maxsize := viper.GetInt32("maxsize")
 	maxsurge := viper.GetString("maxsurge")
 	maxunavailable := viper.GetString("maxunavailable")
+
+	healthtimeout := viper.GetDuration("healthtimeout")
+	draintimeout := viper.GetDuration("draintimeout")
 
 	allowprivileged := viper.GetBool("allowprivileged")
 
@@ -394,7 +404,7 @@ func clusterCreate() error {
 	version := viper.GetString("version")
 	if version == "" {
 		request := cluster.NewListConstraintsParams()
-		constraints, err := cloud.Cluster.ListConstraints(request, cloud.Auth)
+		constraints, err := cloud.Cluster.ListConstraints(request, nil)
 		if err != nil {
 			return err
 		}
@@ -465,8 +475,9 @@ func clusterCreate() error {
 				CRI:            &cri,
 			},
 		},
-		FirewallSize:  &firewallType,
-		FirewallImage: &firewallImage,
+		FirewallSize:              &firewallType,
+		FirewallImage:             &firewallImage,
+		FirewallControllerVersion: &firewallController,
 		Kubernetes: &models.V1Kubernetes{
 			AllowPrivilegedContainers: &allowprivileged,
 			Version:                   &version,
@@ -490,9 +501,17 @@ func clusterCreate() error {
 		scr.EgressRules = egressRules
 	}
 
+	if healthtimeout != 0 {
+		scr.Workers[0].HealthTimeout = int64(healthtimeout)
+	}
+
+	if draintimeout != 0 {
+		scr.Workers[0].DrainTimeout = int64(draintimeout)
+	}
+
 	request := cluster.NewCreateClusterParams()
 	request.SetBody(scr)
-	shoot, err := cloud.Cluster.CreateCluster(request, cloud.Auth)
+	shoot, err := cloud.Cluster.CreateCluster(request, nil)
 	if err != nil {
 		return err
 	}
@@ -528,7 +547,7 @@ func clusterList() error {
 	if cfr != nil {
 		fcp := cluster.NewFindClustersParams()
 		fcp.SetBody(cfr)
-		response, err := cloud.Cluster.FindClusters(fcp, cloud.Auth)
+		response, err := cloud.Cluster.FindClusters(fcp, nil)
 		if err != nil {
 			return err
 		}
@@ -536,7 +555,7 @@ func clusterList() error {
 	}
 
 	request := cluster.NewListClustersParams()
-	shoots, err := cloud.Cluster.ListClusters(request, cloud.Auth)
+	shoots, err := cloud.Cluster.ListClusters(request, nil)
 	if err != nil {
 		return err
 	}
@@ -550,7 +569,7 @@ func clusterKubeconfig(args []string) error {
 	}
 	request := cluster.NewGetClusterKubeconfigTplParams()
 	request.SetID(ci)
-	credentials, err := cloud.Cluster.GetClusterKubeconfigTpl(request, cloud.Auth)
+	credentials, err := cloud.Cluster.GetClusterKubeconfigTpl(request, nil)
 	if err != nil {
 		return err
 	}
@@ -614,7 +633,7 @@ type sshkeypair struct {
 func sshKeyPair(clusterID string) (*sshkeypair, error) {
 	request := cluster.NewGetSSHKeyPairParams()
 	request.SetID(clusterID)
-	credentials, err := cloud.Cluster.GetSSHKeyPair(request, cloud.Auth)
+	credentials, err := cloud.Cluster.GetSSHKeyPair(request, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -656,7 +675,7 @@ func reconcileCluster(args []string) error {
 	}
 	request.Body = &models.V1ClusterReconcileRequest{Operation: operation}
 
-	shoot, err := cloud.Cluster.ReconcileCluster(request, cloud.Auth)
+	shoot, err := cloud.Cluster.ReconcileCluster(request, nil)
 	if err != nil {
 		return err
 	}
@@ -674,6 +693,7 @@ func updateCluster(args []string) error {
 	version := viper.GetString("version")
 	firewallType := viper.GetString("firewalltype")
 	firewallImage := viper.GetString("firewallimage")
+	firewallController := viper.GetString("firewallcontroller")
 	firewallNetworks := viper.GetStringSlice("external-networks")
 	machineType := viper.GetString("machinetype")
 	machineImageAndVersion := viper.GetString("machineimage")
@@ -684,18 +704,21 @@ func updateCluster(args []string) error {
 
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	resp, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	resp, err := cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
 	current := resp.Payload
+
+	healthtimeout := viper.GetDuration("healthtimeout")
+	draintimeout := viper.GetDuration("draintimeout")
 
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
 		ID: &ci,
 	}
 
-	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" {
+	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" || healthtimeout != 0 || draintimeout != 0 {
 		workers := current.Workers
 
 		var worker *models.V1Worker
@@ -740,6 +763,28 @@ func updateCluster(args []string) error {
 			worker.MachineType = &machineType
 		}
 
+		mcmMigrated := false
+		for _, feature := range current.ControlPlaneFeatureGates {
+			if feature == "machineControllerManagerOOT" {
+				mcmMigrated = true
+				break
+			}
+		}
+
+		if healthtimeout != 0 {
+			if !mcmMigrated {
+				log.Fatal("custom healthtimeout requires feature: machineControllerManagerOOT")
+			}
+			worker.HealthTimeout = int64(healthtimeout)
+		}
+
+		if draintimeout != 0 {
+			if !mcmMigrated {
+				log.Fatal("custom draintimeout requires feature: machineControllerManagerOOT")
+			}
+			worker.DrainTimeout = int64(draintimeout)
+		}
+
 		cur.Workers = append(cur.Workers, workers...)
 	}
 
@@ -755,6 +800,9 @@ func updateCluster(args []string) error {
 			updateCausesDowntime = true
 		}
 		cur.FirewallSize = &firewallType
+	}
+	if firewallController != "" {
+		cur.FirewallControllerVersion = &firewallController
 	}
 	if len(firewallNetworks) > 0 {
 		if !sets.NewString(firewallNetworks...).Equal(sets.NewString(current.AdditionalNetworks...)) {
@@ -809,7 +857,7 @@ func updateCluster(args []string) error {
 	}
 
 	request.SetBody(cur)
-	shoot, err := cloud.Cluster.UpdateCluster(request, cloud.Auth)
+	shoot, err := cloud.Cluster.UpdateCluster(request, nil)
 	if err != nil {
 		return err
 	}
@@ -827,7 +875,7 @@ func clusterDelete(args []string) error {
 	// local storage only could lead to very big problems for users.
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	resp, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	resp, err := cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
@@ -846,7 +894,7 @@ func clusterDelete(args []string) error {
 
 	request := cluster.NewDeleteClusterParams()
 	request.SetID(ci)
-	c, err := cloud.Cluster.DeleteCluster(request, cloud.Auth)
+	c, err := cloud.Cluster.DeleteCluster(request, nil)
 	if err != nil {
 		return err
 	}
@@ -860,7 +908,7 @@ func clusterDescribe(args []string) error {
 	}
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
@@ -899,7 +947,7 @@ func clusterIssues(args []string) error {
 		if cfr != nil {
 			fcp := cluster.NewFindClustersParams().WithReturnMachines(&boolTrue)
 			fcp.SetBody(cfr)
-			response, err := cloud.Cluster.FindClusters(fcp, cloud.Auth)
+			response, err := cloud.Cluster.FindClusters(fcp, nil)
 			if err != nil {
 				return err
 			}
@@ -907,7 +955,7 @@ func clusterIssues(args []string) error {
 		}
 
 		request := cluster.NewListClustersParams().WithReturnMachines(&boolTrue)
-		shoots, err := cloud.Cluster.ListClusters(request, cloud.Auth)
+		shoots, err := cloud.Cluster.ListClusters(request, nil)
 		if err != nil {
 			return err
 		}
@@ -920,7 +968,7 @@ func clusterIssues(args []string) error {
 	}
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
@@ -934,10 +982,15 @@ func clusterMachines(args []string) error {
 	}
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
+
+	if printer.Type() != "table" {
+		return printer.Print(shoot.Payload)
+	}
+
 	fmt.Println("Cluster:")
 	printer.Print(shoot.Payload)
 
@@ -957,7 +1010,7 @@ func clusterLogs(args []string) error {
 	}
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
@@ -968,6 +1021,19 @@ func clusterLogs(args []string) error {
 		conditions = shoot.Payload.Status.Conditions
 		lastOperation = shoot.Payload.Status.LastOperation
 		lastErrors = shoot.Payload.Status.LastErrors
+	}
+
+	if printer.Type() != "table" {
+		type s struct {
+			Conditions    []*models.V1beta1Condition
+			LastOperation *models.V1beta1LastOperation
+			LastErrors    []*models.V1beta1LastError
+		}
+		return printer.Print(s{
+			Conditions:    conditions,
+			LastOperation: lastOperation,
+			LastErrors:    lastErrors,
+		})
 	}
 
 	fmt.Println("Conditions:")
@@ -994,7 +1060,7 @@ func clusterLogs(args []string) error {
 
 func clusterInputs() error {
 	request := cluster.NewListConstraintsParams()
-	sc, err := cloud.Cluster.ListConstraints(request, cloud.Auth)
+	sc, err := cloud.Cluster.ListConstraints(request, nil)
 	if err != nil {
 		return err
 	}
@@ -1011,7 +1077,7 @@ func clusterMachineSSH(args []string, console bool) error {
 
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(cid)
-	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
@@ -1026,18 +1092,18 @@ func clusterMachineSSH(args []string, console bool) error {
 		if *m.ID == mid {
 			home, err := os.UserHomeDir()
 			if err != nil {
-				return fmt.Errorf("unable determine home directory:%v", err)
+				return fmt.Errorf("unable determine home directory:%w", err)
 			}
 			privateKeyFile := path.Join(home, "."+programName, "."+cid+".id_rsa")
 			err = ioutil.WriteFile(privateKeyFile, keypair.privatekey, 0600)
 			if err != nil {
-				return fmt.Errorf("unable to write private key:%s error:%v", privateKeyFile, err)
+				return fmt.Errorf("unable to write private key:%s error:%w", privateKeyFile, err)
 			}
 			defer os.Remove(privateKeyFile)
 			if console {
 				fmt.Printf("access console via ssh\n")
 				bmcConsolePort := "5222"
-				err := ssh("-i", privateKeyFile, mid+"@"+cloud.ConsoleHost, "-p", bmcConsolePort)
+				err := ssh("-i", privateKeyFile, mid+"@"+consoleHost, "-p", bmcConsolePort)
 				return err
 			}
 			networks := m.Allocation.Networks

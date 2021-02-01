@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// toplevel completion remains for compatibility
 var completionCmd = &cobra.Command{
 	Use:   "completion",
 	Short: "Generates bash completion scripts",
@@ -30,12 +31,32 @@ To configure your bash shell to load completions for each session add to your ba
 	},
 }
 
+var bashCompletionCmd = &cobra.Command{
+	Use:   "bash",
+	Short: "Generates bash completion scripts",
+	Long: `To load completion run
+
+. <(cloudctl completion)
+
+To configure your bash shell to load completions for each session add to your bashrc
+
+# ~/.bashrc or ~/.profile
+. <(cloudctl completion bash)
+`,
+	Run: func(cmd *cobra.Command, args []string) {
+		err := rootCmd.GenBashCompletion(os.Stdout)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	},
+}
+
 var zshCompletionCmd = &cobra.Command{
-	Use:   "zsh-completion",
+	Use:   "zsh",
 	Short: "Generates Z shell completion scripts",
 	Long: `To load completion run
 
-. <(cloudctl zsh-completion)
+. <(cloudctl completion zsh)
 
 To configure your Z shell (with oh-my-zshell framework) to load completions for each session run
 
@@ -64,7 +85,7 @@ func contextListCompletion() ([]string, cobra.ShellCompDirective) {
 
 func clusterListCompletion() ([]string, cobra.ShellCompDirective) {
 	request := cluster.NewListClustersParams()
-	response, err := cloud.Cluster.ListClusters(request, cloud.Auth)
+	response, err := cloud.Cluster.ListClusters(request, nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
@@ -78,7 +99,7 @@ func clusterListCompletion() ([]string, cobra.ShellCompDirective) {
 func clusterMachineListCompletion(clusterID string) ([]string, cobra.ShellCompDirective) {
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(clusterID)
-	shoot, err := cloud.Cluster.FindCluster(findRequest, cloud.Auth)
+	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
@@ -91,7 +112,7 @@ func clusterMachineListCompletion(clusterID string) ([]string, cobra.ShellCompDi
 
 func projectListCompletion() ([]string, cobra.ShellCompDirective) {
 	request := project.NewListProjectsParams()
-	response, err := cloud.Project.ListProjects(request, cloud.Auth)
+	response, err := cloud.Project.ListProjects(request, nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
@@ -104,7 +125,7 @@ func projectListCompletion() ([]string, cobra.ShellCompDirective) {
 
 func partitionListCompletion() ([]string, cobra.ShellCompDirective) {
 	request := cluster.NewListConstraintsParams()
-	sc, err := cloud.Cluster.ListConstraints(request, cloud.Auth)
+	sc, err := cloud.Cluster.ListConstraints(request, nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
@@ -114,7 +135,7 @@ func partitionListCompletion() ([]string, cobra.ShellCompDirective) {
 
 func networkListCompletion() ([]string, cobra.ShellCompDirective) {
 	request := cluster.NewListConstraintsParams()
-	sc, err := cloud.Cluster.ListConstraints(request, cloud.Auth)
+	sc, err := cloud.Cluster.ListConstraints(request, nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
@@ -123,7 +144,7 @@ func networkListCompletion() ([]string, cobra.ShellCompDirective) {
 }
 func versionListCompletion() ([]string, cobra.ShellCompDirective) {
 	request := cluster.NewListConstraintsParams()
-	sc, err := cloud.Cluster.ListConstraints(request, cloud.Auth)
+	sc, err := cloud.Cluster.ListConstraints(request, nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
@@ -132,7 +153,7 @@ func versionListCompletion() ([]string, cobra.ShellCompDirective) {
 
 func machineTypeListCompletion() ([]string, cobra.ShellCompDirective) {
 	request := cluster.NewListConstraintsParams()
-	sc, err := cloud.Cluster.ListConstraints(request, cloud.Auth)
+	sc, err := cloud.Cluster.ListConstraints(request, nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
@@ -141,7 +162,7 @@ func machineTypeListCompletion() ([]string, cobra.ShellCompDirective) {
 
 func machineImageListCompletion() ([]string, cobra.ShellCompDirective) {
 	request := cluster.NewListConstraintsParams()
-	sc, err := cloud.Cluster.ListConstraints(request, cloud.Auth)
+	sc, err := cloud.Cluster.ListConstraints(request, nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
@@ -155,7 +176,7 @@ func machineImageListCompletion() ([]string, cobra.ShellCompDirective) {
 
 func firewallTypeListCompletion() ([]string, cobra.ShellCompDirective) {
 	request := cluster.NewListConstraintsParams()
-	sc, err := cloud.Cluster.ListConstraints(request, cloud.Auth)
+	sc, err := cloud.Cluster.ListConstraints(request, nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
@@ -164,7 +185,7 @@ func firewallTypeListCompletion() ([]string, cobra.ShellCompDirective) {
 
 func firewallImageListCompletion() ([]string, cobra.ShellCompDirective) {
 	request := cluster.NewListConstraintsParams()
-	sc, err := cloud.Cluster.ListConstraints(request, cloud.Auth)
+	sc, err := cloud.Cluster.ListConstraints(request, nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
@@ -173,7 +194,7 @@ func firewallImageListCompletion() ([]string, cobra.ShellCompDirective) {
 
 func s3ListPartitionsCompletion() ([]string, cobra.ShellCompDirective) {
 	request := s3.NewLists3partitionsParams()
-	response, err := cloud.S3.Lists3partitions(request, cloud.Auth)
+	response, err := cloud.S3.Lists3partitions(request, nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}

@@ -248,7 +248,7 @@ func s3Describe() error {
 	request := s3.NewGets3Params()
 	request.SetBody(p)
 
-	response, err := cloud.S3.Gets3(request, cloud.Auth)
+	response, err := cloud.S3.Gets3(request, nil)
 	if err != nil {
 		return err
 	}
@@ -296,7 +296,7 @@ func s3Create() error {
 	request := s3.NewCreates3Params()
 	request.SetBody(p)
 
-	response, err := cloud.S3.Creates3(request, cloud.Auth)
+	response, err := cloud.S3.Creates3(request, nil)
 	if err != nil {
 		return err
 	}
@@ -322,7 +322,7 @@ func s3Delete(args []string) error {
 	request := s3.NewDeletes3Params()
 	request.SetBody(p)
 
-	response, err := cloud.S3.Deletes3(request, cloud.Auth)
+	response, err := cloud.S3.Deletes3(request, nil)
 	if err != nil {
 		return err
 	}
@@ -354,7 +354,7 @@ func s3AddKey(args []string) error {
 	request := s3.NewUpdates3Params()
 	request.SetBody(p)
 
-	response, err := cloud.S3.Updates3(request, cloud.Auth)
+	response, err := cloud.S3.Updates3(request, nil)
 	if err != nil {
 		return err
 	}
@@ -382,7 +382,7 @@ func s3RemoveKey(args []string) error {
 	request := s3.NewUpdates3Params()
 	request.SetBody(p)
 
-	response, err := cloud.S3.Updates3(request, cloud.Auth)
+	response, err := cloud.S3.Updates3(request, nil)
 	if err != nil {
 		return err
 	}
@@ -401,7 +401,7 @@ func s3List() error {
 	request := s3.NewLists3Params()
 	request.SetBody(p)
 
-	response, err := cloud.S3.Lists3(request, cloud.Auth)
+	response, err := cloud.S3.Lists3(request, nil)
 	if err != nil {
 		return err
 	}
@@ -422,7 +422,7 @@ func s3List() error {
 func s3ListPartitions() error {
 	request := s3.NewLists3partitionsParams()
 
-	response, err := cloud.S3.Lists3partitions(request, cloud.Auth)
+	response, err := cloud.S3.Lists3partitions(request, nil)
 	if err != nil {
 		return err
 	}

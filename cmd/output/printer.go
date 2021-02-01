@@ -18,6 +18,7 @@ type (
 	// Printer main Interface for implementations which spits out to stdout
 	Printer interface {
 		Print(data interface{}) error
+		Type() string
 	}
 	TablePrinter struct {
 		table       *tablewriter.Table
@@ -129,7 +130,7 @@ func NewPrinter(format, order, tpl string, noHeaders bool) (Printer, error) {
 	case "template":
 		tmpl, err := template.New("").Parse(tpl)
 		if err != nil {
-			return nil, fmt.Errorf("template invalid:%v", err)
+			return nil, fmt.Errorf("template invalid:%w", err)
 		}
 		printer = newTablePrinter(format, order, true, tmpl)
 	default:
@@ -168,6 +169,10 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 	}
 	tp.table = table
 	return tp
+}
+
+func (t TablePrinter) Type() string {
+	return "table"
 }
 
 // Print a model in a human readable table
@@ -233,6 +238,8 @@ func (t TablePrinter) Print(data interface{}) error {
 		MachineTablePrinter{t}.Print(d)
 	case []*models.V1S3Response:
 		S3TablePrinter{t}.Print(d)
+	case []*models.V1VolumeResponse:
+		VolumeTablePrinter{t}.Print(d)
 	case []*models.V1S3PartitionResponse:
 		if t.order == "" {
 			t.order = "id"
@@ -250,18 +257,26 @@ func (t TablePrinter) Print(data interface{}) error {
 func (j JSONPrinter) Print(data interface{}) error {
 	json, err := json.MarshalIndent(data, "", "    ")
 	if err != nil {
-		return fmt.Errorf("unable to marshal to json:%v", err)
+		return fmt.Errorf("unable to marshal to json:%w", err)
 	}
 	fmt.Printf("%s\n", string(json))
 	return nil
+}
+
+func (j JSONPrinter) Type() string {
+	return "json"
 }
 
 // Print a model in yaml format
 func (y YAMLPrinter) Print(data interface{}) error {
 	yml, err := yaml.Marshal(data)
 	if err != nil {
-		return fmt.Errorf("unable to marshal to yaml:%v", err)
+		return fmt.Errorf("unable to marshal to yaml:%w", err)
 	}
 	fmt.Printf("%s\n", string(yml))
 	return nil
+}
+
+func (y YAMLPrinter) Type() string {
+	return "yaml"
 }
