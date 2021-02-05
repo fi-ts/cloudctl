@@ -15,6 +15,7 @@ import (
 
 	"github.com/metal-stack/metal-lib/auth"
 	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 
@@ -305,6 +306,7 @@ func init() {
 	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster, please add --yes-i-really-mean-it")
 	clusterUpdateCmd.Flags().String("purpose", "", "purpose of the cluster, can be one of production|development|evaluation. SLA is only given on production clusters.")
 	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]. Use --egress none to remove all ingress rules.")
+	clusterUpdateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
 	clusterUpdateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced.")
 	clusterUpdateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted.")
 
@@ -692,6 +694,7 @@ func updateCluster(args []string) error {
 	firewallType := viper.GetString("firewalltype")
 	firewallImage := viper.GetString("firewallimage")
 	firewallController := viper.GetString("firewallcontroller")
+	firewallNetworks := viper.GetStringSlice("external-networks")
 	machineType := viper.GetString("machinetype")
 	machineImageAndVersion := viper.GetString("machineimage")
 	purpose := viper.GetString("purpose")
@@ -701,10 +704,11 @@ func updateCluster(args []string) error {
 
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	current, err := cloud.Cluster.FindCluster(findRequest, nil)
+	resp, err := cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
+	current := resp.Payload
 
 	healthtimeout := viper.GetDuration("healthtimeout")
 	draintimeout := viper.GetDuration("draintimeout")
@@ -715,7 +719,7 @@ func updateCluster(args []string) error {
 	}
 
 	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" || healthtimeout != 0 || draintimeout != 0 {
-		workers := current.Payload.Workers
+		workers := current.Workers
 
 		var worker *models.V1Worker
 		if workergroupname != "" {
@@ -760,7 +764,7 @@ func updateCluster(args []string) error {
 		}
 
 		mcmMigrated := false
-		for _, feature := range current.Payload.ControlPlaneFeatureGates {
+		for _, feature := range current.ControlPlaneFeatureGates {
 			if feature == "machineControllerManagerOOT" {
 				mcmMigrated = true
 				break
@@ -784,21 +788,35 @@ func updateCluster(args []string) error {
 		cur.Workers = append(cur.Workers, workers...)
 	}
 
+	updateCausesDowntime := false
 	if firewallImage != "" {
+		if current.FirewallImage != nil && *current.FirewallImage != firewallImage {
+			updateCausesDowntime = true
+		}
 		cur.FirewallImage = &firewallImage
 	}
 	if firewallType != "" {
+		if current.FirewallSize != nil && *current.FirewallSize != firewallType {
+			updateCausesDowntime = true
+		}
 		cur.FirewallSize = &firewallType
 	}
 	if firewallController != "" {
 		cur.FirewallControllerVersion = &firewallController
 	}
+	if len(firewallNetworks) > 0 {
+		if !sets.NewString(firewallNetworks...).Equal(sets.NewString(current.AdditionalNetworks...)) {
+			updateCausesDowntime = true
+		}
+		cur.AdditionalNetworks = firewallNetworks
+	}
+
 	if purpose != "" {
 		cur.Purpose = &purpose
 	}
 
 	if len(addLabels) > 0 || len(removeLabels) > 0 {
-		labelMap := current.Payload.Labels
+		labelMap := current.Labels
 
 		for _, l := range removeLabels {
 			parts := strings.SplitN(l, "=", 2)
@@ -829,6 +847,14 @@ func updateCluster(args []string) error {
 	cur.Kubernetes = k8s
 
 	cur.EgressRules = makeEgressRules(egress)
+
+	if updateCausesDowntime && !viper.GetBool("yes-i-really-mean-it") {
+		fmt.Println("This cluster update will cause downtime.")
+		err = helper.Prompt("Are you sure? (y/n)", "y")
+		if err != nil {
+			return err
+		}
+	}
 
 	request.SetBody(cur)
 	shoot, err := cloud.Cluster.UpdateCluster(request, nil)
