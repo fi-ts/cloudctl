@@ -850,7 +850,7 @@ func updateCluster(args []string) error {
 
 	if updateCausesDowntime && !viper.GetBool("yes-i-really-mean-it") {
 		fmt.Println("This cluster update will cause downtime.")
-		err = helper.Prompt("Are you sure? (y)", "y")
+		err = helper.Prompt("Are you sure? (y/n)", "y")
 		if err != nil {
 			return err
 		}
