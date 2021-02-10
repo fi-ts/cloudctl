@@ -14,7 +14,7 @@ type (
 )
 
 func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
-	p.wideHeader = []string{"ID", "Name", "Partition", "Tenant", "Project", "Replica", "Version", "Status"}
+	p.wideHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Replica", "Version", "Status"}
 	p.shortHeader = p.wideHeader
 
 	for _, pg := range data {
@@ -22,9 +22,9 @@ func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
 		if pg.ID != nil {
 			id = *pg.ID
 		}
-		name := ""
+		description := ""
 		if pg.Name != nil {
-			id = *pg.Name
+			description = *pg.Name
 		}
 		partition := ""
 		if pg.PartitionID != nil {
@@ -42,8 +42,16 @@ func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
 		if pg.Status != nil {
 			status = pg.Status.Description
 		}
+		cpu := ""
+		buffer := ""
+		storage := ""
+		if pg.Size != nil {
+			cpu = pg.Size.CPU
+			buffer = pg.Size.SharedBuffer
+			storage = pg.Size.StorageSize
+		}
 		replica := fmt.Sprintf("%d", pg.NumberOfInstances)
-		wide := []string{id, name, partition, tenant, project, replica, pg.Version, status}
+		wide := []string{id, description, partition, tenant, project, cpu, buffer, storage, replica, pg.Version, status}
 		short := wide
 
 		p.addWideData(wide, pg)

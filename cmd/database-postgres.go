@@ -8,6 +8,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -70,6 +71,55 @@ func init() {
 	postgresCmd.AddCommand(postgresDeleteCmd)
 	postgresCmd.AddCommand(postgresUpdateCmd)
 
+	// Create
+	postgresCreateCmd.Flags().StringP("description", "", "", "description of the database")
+	postgresCreateCmd.Flags().StringP("tenant", "", "", "tenant of the database, requires on-behalf rights [optional]")
+	postgresCreateCmd.Flags().StringP("project", "", "", "project of the database")
+	postgresCreateCmd.Flags().StringP("partition", "", "", "partition where the database should be created")
+	postgresCreateCmd.Flags().IntP("instances", "", 1, "instances of the database")
+	postgresCreateCmd.Flags().StringP("version", "", "12", "version of the database") // FIXME add possible values
+	postgresCreateCmd.Flags().StringSliceP("sources", "", []string{"0.0.0.0/0"}, "networks which should be allowed to connect")
+	postgresCreateCmd.Flags().StringP("cpu", "", "500m", "cpus for the database")
+	postgresCreateCmd.Flags().StringP("buffer", "", "500m", "shared buffer for the database")
+	postgresCreateCmd.Flags().StringP("storage", "", "10Gi", "storage for the database")
+	// TODO Maintenance
+	err := postgresCreateCmd.MarkFlagRequired("project")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = postgresCreateCmd.MarkFlagRequired("partition")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	err = postgresCreateCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return projectListCompletion()
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	err = postgresCreateCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return partitionListCompletion()
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = postgresCreateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		versions := []string{
+			"11",
+			"11.10",
+			"12",
+			"12.5",
+			"13",
+			"13.1",
+		}
+		return versions, cobra.ShellCompDirectiveDefault
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	// List
 	postgresListCmd.Flags().StringP("id", "", "", "postgres id to filter [optional]")
 	postgresListCmd.Flags().StringP("name", "", "", "name to filter [optional]")
 	postgresListCmd.Flags().StringP("tenant", "", "", "tenant to filter [optional]")
@@ -79,7 +129,7 @@ func init() {
 	postgresUpdateCmd.Flags().StringP("name", "", "restored-pv", "name of the PersistentPostgres")
 	postgresUpdateCmd.Flags().StringP("namespace", "", "default", "namespace for the PersistentPostgres")
 
-	err := postgresListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = postgresListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return projectListCompletion()
 	})
 	if err != nil {
@@ -94,7 +144,41 @@ func init() {
 	}
 }
 func postgresCreate() error {
-	return nil
+	desc := viper.GetString("description")
+	tenant := viper.GetString("tenant")
+	project := viper.GetString("project")
+	partition := viper.GetString("partition")
+	instances := viper.GetInt32("instances")
+	version := viper.GetString("version")
+	sources := viper.GetStringSlice("sources")
+	cpu := viper.GetString("cpu")
+	buffer := viper.GetString("buffer")
+	storage := viper.GetString("storage")
+	pcr := &models.V1PostgresCreateRequest{
+		Description:       desc,
+		Tenant:            tenant,
+		ProjectID:         project,
+		PartitionID:       partition,
+		NumberOfInstances: instances,
+		Version:           version,
+		Size: &models.V1Size{
+			CPU:          cpu,
+			SharedBuffer: buffer,
+			StorageSize:  storage,
+		},
+		AccessList: &models.V1AccessList{
+			SourceRanges: sources,
+		},
+	}
+	request := database.NewCreatePostgresParams()
+	request.SetBody(pcr)
+
+	response, err := cloud.Database.CreatePostgres(request, nil)
+	if err != nil {
+		return err
+	}
+
+	return printer.Print(response.Payload)
 }
 func postgresApply(args []string) error {
 	return nil
