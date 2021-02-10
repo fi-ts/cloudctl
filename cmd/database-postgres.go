@@ -3,10 +3,12 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/fi-ts/cloud-go/api/client/database"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
+	"github.com/go-openapi/strfmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -82,6 +84,9 @@ func init() {
 	postgresCreateCmd.Flags().StringP("cpu", "", "500m", "cpus for the database")
 	postgresCreateCmd.Flags().StringP("buffer", "", "500m", "shared buffer for the database")
 	postgresCreateCmd.Flags().StringP("storage", "", "10Gi", "storage for the database")
+	postgresCreateCmd.Flags().StringP("maintenance-weekday", "", "Sun", "weekday of the automatic maintenance [optional]")
+	postgresCreateCmd.Flags().StringP("maintenance-start", "", "22:30:00 +0000", "start time of the automatic maintenance [optional]")
+	postgresCreateCmd.Flags().StringP("maintenance-end", "", "23:30:00 +0000", "end time of the automatic maintenance [optional]")
 	// TODO Maintenance
 	err := postgresCreateCmd.MarkFlagRequired("project")
 	if err != nil {
@@ -121,13 +126,13 @@ func init() {
 	}
 	// List
 	postgresListCmd.Flags().StringP("id", "", "", "postgres id to filter [optional]")
-	postgresListCmd.Flags().StringP("name", "", "", "name to filter [optional]")
+	postgresListCmd.Flags().StringP("description", "", "", "description to filter [optional]")
 	postgresListCmd.Flags().StringP("tenant", "", "", "tenant to filter [optional]")
 	postgresListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
 	postgresListCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
 
-	postgresUpdateCmd.Flags().StringP("name", "", "restored-pv", "name of the PersistentPostgres")
-	postgresUpdateCmd.Flags().StringP("namespace", "", "default", "namespace for the PersistentPostgres")
+	// postgresUpdateCmd.Flags().StringP("name", "", "restored-pv", "name of the PersistentPostgres")
+	// postgresUpdateCmd.Flags().StringP("namespace", "", "default", "namespace for the PersistentPostgres")
 
 	err = postgresListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return projectListCompletion()
@@ -154,6 +159,9 @@ func postgresCreate() error {
 	cpu := viper.GetString("cpu")
 	buffer := viper.GetString("buffer")
 	storage := viper.GetString("storage")
+	mweekday := viper.GetString("maintenance-weekday")
+	ms := viper.GetString("maintenance-start")
+	me := viper.GetString("maintenance-end")
 	pcr := &models.V1PostgresCreateRequest{
 		Description:       desc,
 		Tenant:            tenant,
@@ -168,6 +176,13 @@ func postgresCreate() error {
 		},
 		AccessList: &models.V1AccessList{
 			SourceRanges: sources,
+		},
+		Maintenance: &models.V1MaintenanceWindow{
+			Weekday: parseWeekday(mweekday),
+			TimeWindow: &models.V1TimeWindow{
+				Start: strfmt.DateTime(parseTime(ms)),
+				End:   strfmt.DateTime(parseTime(me)),
+			},
 		},
 	}
 	request := database.NewCreatePostgresParams()
@@ -188,7 +203,7 @@ func postgresFind() error {
 		params := database.NewFindPostgresParams()
 		ifr := &models.V1PostgresFindRequest{
 			ID:          helper.ViperString("id"),
-			Name:        helper.ViperString("name"),
+			Description: helper.ViperString("description"),
 			Tenant:      helper.ViperString("tenant"),
 			ProjectID:   helper.ViperString("project"),
 			PartitionID: helper.ViperString("partition"),
@@ -238,20 +253,41 @@ func getPostgresFromArgs(args []string) (*models.V1PostgresResponse, error) {
 	}
 
 	id := args[0]
-	params := database.NewFindPostgresParams()
-	ifr := &models.V1PostgresFindRequest{
-		ID: &id,
-	}
-	params.SetBody(ifr)
-	resp, err := cloud.Database.FindPostgres(params, nil)
+	params := database.NewGetPostgresParams().WithID(id)
+	resp, err := cloud.Database.GetPostgres(params, nil)
 	if err != nil {
 		return nil, err
 	}
-	if len(resp.Payload) < 1 {
-		return nil, fmt.Errorf("no postgres for id:%s found", id)
+	return resp.Payload, nil
+}
+
+func parseWeekday(weekday string) int32 {
+	switch weekday {
+	case "Sun", "SUN", "sun":
+		return 0
+	case "Mon", "MON", "mon":
+		return 1
+	case "Tue", "TUE", "tue":
+		return 2
+	case "Wed", "WED", "wed":
+		return 3
+	case "Thu", "THU", "thu":
+		return 4
+	case "Fri", "FRI", "fri":
+		return 5
+	case "Sat", "SAT", "sat":
+		return 6
+	case "All", "ALL", "all":
+		return 7
+	default:
+		return 0
 	}
-	if len(resp.Payload) > 1 {
-		return nil, fmt.Errorf("more than one postgres for id:%s found", id)
+}
+
+func parseTime(t string) time.Time {
+	result, err := time.Parse("15:04:05 -0700", t)
+	if err != nil {
+		return time.Date(0, 0, 0, 23, 0, 0, 0, time.UTC)
 	}
-	return resp.Payload[0], nil
+	return result
 }

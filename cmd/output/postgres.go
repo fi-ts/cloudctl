@@ -23,8 +23,8 @@ func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
 			id = *pg.ID
 		}
 		description := ""
-		if pg.Name != nil {
-			description = *pg.Name
+		if pg.Description != nil {
+			description = *pg.Description
 		}
 		partition := ""
 		if pg.PartitionID != nil {
