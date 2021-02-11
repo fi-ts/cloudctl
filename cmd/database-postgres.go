@@ -11,6 +11,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -31,11 +32,18 @@ var (
 		Use:   "apply",
 		Short: "apply postgres",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return postgresApply(args)
+			return postgresApply()
 		},
 		PreRun: bindPFlags,
 	}
-
+	postgresEditCmd = &cobra.Command{
+		Use:   "edit",
+		Short: "edit postgres",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return postgresEdit(args)
+		},
+		PreRun: bindPFlags,
+	}
 	postgresListCmd = &cobra.Command{
 		Use:     "list",
 		Short:   "list postgres",
@@ -69,6 +77,7 @@ func init() {
 
 	postgresCmd.AddCommand(postgresCreateCmd)
 	postgresCmd.AddCommand(postgresApplyCmd)
+	postgresCmd.AddCommand(postgresEditCmd)
 	postgresCmd.AddCommand(postgresListCmd)
 	postgresCmd.AddCommand(postgresDeleteCmd)
 	postgresCmd.AddCommand(postgresDescribeCmd)
@@ -151,6 +160,18 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
+	postgresApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
+	Example postgres update:
+
+	# cloudctl postgres describe postgres1 -o yaml > postgres1.yaml
+	# vi postgres1.yaml
+	## either via stdin
+	# cat postgres1.yaml | cloudctl postgres apply -f -
+	## or via file
+	# cloudctl postgres apply -f postgres1.yaml
+	`)
+
 }
 func postgresCreate() error {
 	desc := viper.GetString("description")
@@ -212,9 +233,107 @@ func postgresCreate() error {
 
 	return printer.Print(response.Payload)
 }
-func postgresApply(args []string) error {
-	return nil
+func postgresApply() error {
+	var pars []models.V1PostgresCreateRequest
+	var par models.V1PostgresCreateRequest
+	err := helper.ReadFrom(viper.GetString("file"), &par, func(data interface{}) {
+		doc := data.(*models.V1PostgresCreateRequest)
+		pars = append(pars, *doc)
+		// the request needs to be renewed as otherwise the pointers in the request struct will
+		// always point to same last value in the multi-document loop
+		par = models.V1PostgresCreateRequest{}
+	})
+	if err != nil {
+		return err
+	}
+	response := []*models.V1PostgresResponse{}
+	for i, par := range pars {
+		params := database.NewGetPostgresParams().WithID(*par.ID)
+		resp, err := cloud.Database.GetPostgres(params, nil)
+		if err != nil {
+			return err
+		}
+		if resp.Payload == nil {
+			// no postgres found, create it
+			request := database.NewCreatePostgresParams()
+			request.SetBody(&par)
+
+			createdPG, err := cloud.Database.CreatePostgres(request, nil)
+			if err != nil {
+				return err
+			}
+			response = append(response, createdPG.Payload)
+			continue
+		}
+		if resp.Payload.ID != nil {
+			// existing postgres, update
+			request := database.NewUpdatePostgresParams()
+			request.SetBody(&pars[i])
+
+			updatedPG, err := cloud.Database.UpdatePostgres(request, nil)
+			if err != nil {
+				return err
+			}
+			response = append(response, updatedPG.Payload)
+			continue
+		}
+	}
+	return printer.Print(response)
 }
+
+func postgresEdit(args []string) error {
+	id, err := postgresID("edit", args)
+	if err != nil {
+		return err
+	}
+
+	getFunc := func(id string) ([]byte, error) {
+		params := database.NewGetPostgresParams().WithID(id)
+		resp, err := cloud.Database.GetPostgres(params, nil)
+		if err != nil {
+			return nil, err
+		}
+		content, err := yaml.Marshal(resp.Payload)
+		if err != nil {
+			return nil, err
+		}
+		return content, nil
+	}
+	updateFunc := func(filename string) error {
+		purs, err := readPostgresUpdateRequests(filename)
+		if err != nil {
+			return err
+		}
+		if len(purs) != 1 {
+			return fmt.Errorf("postgres update error more or less than one postgres given:%d", len(purs))
+		}
+		pup := database.NewUpdatePostgresParams()
+		pup.Body = &purs[0]
+		uresp, err := cloud.Database.UpdatePostgres(pup, nil)
+		if err != nil {
+			return err
+		}
+		return printer.Print(uresp.Payload)
+	}
+	return helper.Edit(id, getFunc, updateFunc)
+}
+
+func readPostgresUpdateRequests(filename string) ([]models.V1PostgresCreateRequest, error) {
+	var pcrs []models.V1PostgresCreateRequest
+	var pcr models.V1PostgresCreateRequest
+	err := helper.ReadFrom(filename, &pcr, func(data interface{}) {
+		doc := data.(*models.V1PostgresCreateRequest)
+		pcrs = append(pcrs, *doc)
+	})
+	if err != nil {
+		return pcrs, err
+	}
+	if len(pcrs) != 1 {
+		return pcrs, fmt.Errorf("postgres update error more or less than one postgres given:%d", len(pcrs))
+	}
+	return pcrs, nil
+}
+
 func postgresFind() error {
 	if helper.AtLeastOneViperStringFlagGiven("postgresid", "project", "partition") {
 		params := database.NewFindPostgresParams()
@@ -274,6 +393,16 @@ func getPostgresFromArgs(args []string) (*models.V1PostgresResponse, error) {
 		return nil, err
 	}
 	return resp.Payload, nil
+}
+
+func postgresID(verb string, args []string) (string, error) {
+	if len(args) == 0 {
+		return "", fmt.Errorf("postgres %s requires postgresID as argument", verb)
+	}
+	if len(args) == 1 {
+		return args[0], nil
+	}
+	return "", fmt.Errorf("postgres %s requires exactly one postgresID as argument", verb)
 }
 
 func parseWeekday(weekday string) int32 {
