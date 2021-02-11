@@ -54,11 +54,11 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	postgresUpdateCmd = &cobra.Command{
-		Use:   "update <postgres>",
-		Short: "update a postgres",
+	postgresDescribeCmd = &cobra.Command{
+		Use:   "describe <postgres>",
+		Short: "describe a postgres",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return postgresUpdate(args)
+			return postgresDescribe(args)
 		},
 		PreRun: bindPFlags,
 	}
@@ -71,7 +71,7 @@ func init() {
 	postgresCmd.AddCommand(postgresApplyCmd)
 	postgresCmd.AddCommand(postgresListCmd)
 	postgresCmd.AddCommand(postgresDeleteCmd)
-	postgresCmd.AddCommand(postgresUpdateCmd)
+	postgresCmd.AddCommand(postgresDescribeCmd)
 
 	// Create
 	postgresCreateCmd.Flags().StringP("description", "", "", "description of the database")
@@ -87,6 +87,10 @@ func init() {
 	postgresCreateCmd.Flags().StringP("maintenance-weekday", "", "Sun", "weekday of the automatic maintenance [optional]")
 	postgresCreateCmd.Flags().StringP("maintenance-start", "", "22:30:00 +0000", "start time of the automatic maintenance [optional]")
 	postgresCreateCmd.Flags().StringP("maintenance-end", "", "23:30:00 +0000", "end time of the automatic maintenance [optional]")
+
+	postgresCreateCmd.Flags().StringP("s3-url", "", "", "s3-url to backup to [optional]")
+	postgresCreateCmd.Flags().StringP("s3-accesskey", "", "", "s3-accesskey to backup to [optional]")
+	postgresCreateCmd.Flags().StringP("s3-secretkey", "", "", "s3-secretkey to backup to [optional]")
 	// TODO Maintenance
 	err := postgresCreateCmd.MarkFlagRequired("project")
 	if err != nil {
@@ -162,6 +166,18 @@ func postgresCreate() error {
 	mweekday := viper.GetString("maintenance-weekday")
 	ms := viper.GetString("maintenance-start")
 	me := viper.GetString("maintenance-end")
+	s3URL := viper.GetString("s3-url")
+	s3Accesskey := viper.GetString("s3-accesskey")
+	s3Secretkey := viper.GetString("s3-secretkey")
+	var backup models.V1Backup
+	if s3URL != "" && s3Accesskey != "" && s3Secretkey != "" {
+		backup = models.V1Backup{
+			S3BucketURL: s3URL,
+			Accesskey:   s3Accesskey,
+			Secretkey:   s3Secretkey,
+		}
+	}
+
 	pcr := &models.V1PostgresCreateRequest{
 		Description:       desc,
 		Tenant:            tenant,
@@ -184,6 +200,7 @@ func postgresCreate() error {
 				End:   strfmt.DateTime(parseTime(me)),
 			},
 		},
+		Backup: &backup,
 	}
 	request := database.NewCreatePostgresParams()
 	request.SetBody(pcr)
@@ -227,8 +244,7 @@ func postgresDelete(args []string) error {
 	if err != nil {
 		return err
 	}
-	params := &database.DeletePostgresParams{}
-	params.SetID(*pg.ID)
+	params := database.NewDeletePostgresParams().WithID(*pg.ID)
 	resp, err := cloud.Database.DeletePostgres(params, nil)
 	if err != nil {
 		return err
@@ -237,16 +253,15 @@ func postgresDelete(args []string) error {
 	return printer.Print(resp.Payload)
 }
 
-func postgresUpdate(args []string) error {
-	// postgres, err := getPostgresFromArgs(args)
-	// if err != nil {
-	// 	return err
-	// }
-	// name := viper.GetString("name")
-	// namespace := viper.GetString("namespace")
+func postgresDescribe(args []string) error {
+	postgres, err := getPostgresFromArgs(args)
+	if err != nil {
+		return err
+	}
 
-	return nil
+	return printer.Print(postgres)
 }
+
 func getPostgresFromArgs(args []string) (*models.V1PostgresResponse, error) {
 	if len(args) < 1 {
 		return nil, fmt.Errorf("no postgres id given")
@@ -280,6 +295,7 @@ func parseWeekday(weekday string) int32 {
 	case "All", "ALL", "all":
 		return 7
 	default:
+		fmt.Printf("error parsing weekday:%s", weekday)
 		return 0
 	}
 }
@@ -287,6 +303,7 @@ func parseWeekday(weekday string) int32 {
 func parseTime(t string) time.Time {
 	result, err := time.Parse("15:04:05 -0700", t)
 	if err != nil {
+		fmt.Printf("error parsing time:%v", err)
 		return time.Date(0, 0, 0, 23, 0, 0, 0, time.UTC)
 	}
 	return result
