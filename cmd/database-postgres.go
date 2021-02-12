@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/fi-ts/cloud-go/api/client/database"
@@ -363,6 +364,21 @@ func postgresDelete(args []string) error {
 	if err != nil {
 		return err
 	}
+
+	printer.Print(pg)
+	idParts := strings.Split(*pg.ID, "-")
+	firstPartOfPostgresID := idParts[0]
+	lastPartOfPostgresID := idParts[len(idParts)-1]
+	fmt.Println("Please answer some security questions to delete this postgres database")
+	err = helper.Prompt("first part of ID:", firstPartOfPostgresID)
+	if err != nil {
+		return err
+	}
+	err = helper.Prompt("last part of ID:", lastPartOfPostgresID)
+	if err != nil {
+		return err
+	}
+
 	params := database.NewDeletePostgresParams().WithID(*pg.ID)
 	resp, err := cloud.Database.DeletePostgres(params, nil)
 	if err != nil {
