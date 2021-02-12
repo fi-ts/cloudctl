@@ -418,9 +418,16 @@ func postgresConnectionString(args []string) error {
 	if err != nil {
 		return err
 	}
+	ip := "localhost"
+	port := int32(5432)
+	if postgres.Status.Socket != nil {
+		ip = postgres.Status.Socket.IP
+		port = postgres.Status.Socket.Port
+	}
+
 	if resp.Payload.User != nil && len(resp.Payload.User) > 0 {
 		for _, user := range resp.Payload.User {
-			fmt.Printf("jdbc:postgresql://%s:%s/dbname?user=%s&password=%s&ssl=true\n", "todo-ip", "todo-port", *user.Username, *user.Password)
+			fmt.Printf("jdbc:postgresql://%s:%d/dbname?user=%s&password=%s&ssl=true\n", ip, port, *user.Username, *user.Password)
 		}
 	}
 	return nil
