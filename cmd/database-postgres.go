@@ -71,6 +71,14 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+	postgresConnectionStringtCmd = &cobra.Command{
+		Use:   "connectionstring <postgres>",
+		Short: "return the connectionstring for a postgres",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return postgresConnectionString(args)
+		},
+		PreRun: bindPFlags,
+	}
 )
 
 func init() {
@@ -82,6 +90,7 @@ func init() {
 	postgresCmd.AddCommand(postgresListCmd)
 	postgresCmd.AddCommand(postgresDeleteCmd)
 	postgresCmd.AddCommand(postgresDescribeCmd)
+	postgresCmd.AddCommand(postgresConnectionStringtCmd)
 
 	// Create
 	postgresCreateCmd.Flags().StringP("description", "", "", "description of the database")
@@ -195,8 +204,10 @@ func postgresCreate() error {
 	if s3URL != "" && s3Accesskey != "" && s3Secretkey != "" {
 		backup = models.V1Backup{
 			S3BucketURL: s3URL,
-			Accesskey:   s3Accesskey,
-			Secretkey:   s3Secretkey,
+			Secret: &models.V1BackupSecret{
+				Accesskey: s3Accesskey,
+				Secretkey: s3Secretkey,
+			},
 		}
 	}
 
@@ -396,7 +407,24 @@ func postgresDescribe(args []string) error {
 
 	return printer.Print(postgres)
 }
+func postgresConnectionString(args []string) error {
+	postgres, err := getPostgresFromArgs(args)
+	if err != nil {
+		return err
+	}
 
+	params := database.NewGetPostgresSecretsParams().WithID(*postgres.ID)
+	resp, err := cloud.Database.GetPostgresSecrets(params, nil)
+	if err != nil {
+		return err
+	}
+	if resp.Payload.User != nil && len(resp.Payload.User) > 0 {
+		for _, user := range resp.Payload.User {
+			fmt.Printf("jdbc:postgresql://%s:%s/dbname?user=%s&password=%s&ssl=true\n", "todo-ip", "todo-port", *user.Username, *user.Password)
+		}
+	}
+	return nil
+}
 func getPostgresFromArgs(args []string) (*models.V1PostgresResponse, error) {
 	if len(args) < 1 {
 		return nil, fmt.Errorf("no postgres id given")

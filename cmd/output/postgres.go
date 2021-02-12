@@ -2,8 +2,10 @@ package output
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/fi-ts/cloud-go/api/models"
+	"github.com/fi-ts/cloudctl/cmd/helper"
 )
 
 type (
@@ -14,7 +16,7 @@ type (
 )
 
 func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
-	p.wideHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Replica", "Version", "Status"}
+	p.wideHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Replica", "Version", "Age", "Status"}
 	p.shortHeader = p.wideHeader
 
 	for _, pg := range data {
@@ -38,6 +40,10 @@ func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
 		if pg.Tenant != nil {
 			tenant = *pg.Tenant
 		}
+		age := ""
+		if pg.CreationTimestamp != nil {
+			age = helper.HumanizeDuration(time.Since(time.Time(*pg.CreationTimestamp)))
+		}
 		status := ""
 		if pg.Status != nil {
 			status = pg.Status.Description
@@ -51,7 +57,7 @@ func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
 			storage = pg.Size.StorageSize
 		}
 		replica := fmt.Sprintf("%d", pg.NumberOfInstances)
-		wide := []string{id, description, partition, tenant, project, cpu, buffer, storage, replica, pg.Version, status}
+		wide := []string{id, description, partition, tenant, project, cpu, buffer, storage, replica, pg.Version, age, status}
 		short := wide
 
 		p.addWideData(wide, pg)
