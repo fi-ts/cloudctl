@@ -335,7 +335,7 @@ func readPostgresUpdateRequests(filename string) ([]models.V1PostgresCreateReque
 }
 
 func postgresFind() error {
-	if helper.AtLeastOneViperStringFlagGiven("postgresid", "project", "partition") {
+	if helper.AtLeastOneViperStringFlagGiven("id", "description", "tenant", "project", "partition") {
 		params := database.NewFindPostgresParams()
 		ifr := &models.V1PostgresFindRequest{
 			ID:          helper.ViperString("id"),
