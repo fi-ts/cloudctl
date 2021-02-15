@@ -96,7 +96,10 @@ func (p PostgresPartitionsTablePrinter) Print(data models.V1PostgresPartitionsRe
 	p.shortHeader = p.wideHeader
 
 	for name, pg := range data {
-		tenants := []string{"any"}
+		tenants := []string{}
+		if len(pg.AllowedTenants) == 0 {
+			tenants = []string{"any"}
+		}
 		for k := range pg.AllowedTenants {
 			tenants = append(tenants, k)
 		}
