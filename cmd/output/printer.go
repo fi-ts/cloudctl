@@ -240,6 +240,10 @@ func (t TablePrinter) Print(data interface{}) error {
 		S3TablePrinter{t}.Print(d)
 	case []*models.V1VolumeResponse:
 		VolumeTablePrinter{t}.Print(d)
+	case models.V1PostgresPartitionsResponse:
+		PostgresPartitionsTablePrinter{t}.Print(d)
+	case []*models.V1PostgresVersion:
+		PostgresVersionsTablePrinter{t}.Print(d)
 	case *models.V1PostgresResponse:
 		PostgresTablePrinter{t}.Print([]*models.V1PostgresResponse{d})
 	case []*models.V1PostgresResponse:

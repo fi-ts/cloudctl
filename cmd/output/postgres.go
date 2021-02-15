@@ -2,6 +2,7 @@ package output
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/fi-ts/cloud-go/api/models"
@@ -11,6 +12,13 @@ import (
 type (
 	// PostgresTablePrinter prints postgres databases in a table
 	PostgresTablePrinter struct {
+		TablePrinter
+	}
+
+	PostgresVersionsTablePrinter struct {
+		TablePrinter
+	}
+	PostgresPartitionsTablePrinter struct {
 		TablePrinter
 	}
 )
@@ -58,6 +66,41 @@ func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
 		}
 		replica := fmt.Sprintf("%d", pg.NumberOfInstances)
 		wide := []string{id, description, partition, tenant, project, cpu, buffer, storage, replica, pg.Version, age, status}
+		short := wide
+
+		p.addWideData(wide, pg)
+		p.addShortData(short, pg)
+	}
+	p.render()
+}
+func (p PostgresVersionsTablePrinter) Print(data []*models.V1PostgresVersion) {
+	p.wideHeader = []string{"Version", "ExpirationDate"}
+	p.shortHeader = p.wideHeader
+
+	for _, pg := range data {
+
+		exp := ""
+		if pg.ExpirationDate != nil {
+			exp = pg.ExpirationDate.String()
+		}
+		wide := []string{*pg.Version, exp}
+		short := wide
+
+		p.addWideData(wide, pg)
+		p.addShortData(short, pg)
+	}
+	p.render()
+}
+func (p PostgresPartitionsTablePrinter) Print(data models.V1PostgresPartitionsResponse) {
+	p.wideHeader = []string{"Name", "AllowedTenants"}
+	p.shortHeader = p.wideHeader
+
+	for name, pg := range data {
+		tenants := []string{}
+		for k := range pg.AllowedTenants {
+			tenants = append(tenants, k)
+		}
+		wide := []string{name, strings.Join(tenants, ",")}
 		short := wide
 
 		p.addWideData(wide, pg)

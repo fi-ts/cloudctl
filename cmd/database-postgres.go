@@ -79,6 +79,22 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+	postgresVersionsCmd = &cobra.Command{
+		Use:   "version",
+		Short: "describe all postgres versions",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return postgresVersions()
+		},
+		PreRun: bindPFlags,
+	}
+	postgresPartitionsCmd = &cobra.Command{
+		Use:   "partition",
+		Short: "describe all partitions where postgres might be deployed",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return postgresPartitions()
+		},
+		PreRun: bindPFlags,
+	}
 )
 
 func init() {
@@ -90,6 +106,8 @@ func init() {
 	postgresCmd.AddCommand(postgresListCmd)
 	postgresCmd.AddCommand(postgresDeleteCmd)
 	postgresCmd.AddCommand(postgresDescribeCmd)
+	postgresCmd.AddCommand(postgresVersionsCmd)
+	postgresCmd.AddCommand(postgresPartitionsCmd)
 	postgresCmd.AddCommand(postgresConnectionStringtCmd)
 
 	// Create
@@ -423,6 +441,25 @@ func postgresConnectionString(args []string) error {
 		}
 	}
 	return nil
+}
+
+func postgresVersions() error {
+	params := database.NewGetPostgresVersionsParams()
+	resp, err := cloud.Database.GetPostgresVersions(params, nil)
+	if err != nil {
+		return err
+	}
+
+	return printer.Print(resp.Payload)
+}
+func postgresPartitions() error {
+	params := database.NewGetPostgresPartitionsParams()
+	resp, err := cloud.Database.GetPostgresPartitions(params, nil)
+	if err != nil {
+		return err
+	}
+
+	return printer.Print(resp.Payload)
 }
 func getPostgresFromArgs(args []string) (*models.V1PostgresResponse, error) {
 	if len(args) < 1 {
