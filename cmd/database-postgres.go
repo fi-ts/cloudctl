@@ -128,21 +128,13 @@ func init() {
 	}
 
 	err = postgresCreateCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return partitionListCompletion()
+		return postgresListPartitionsCompletion()
 	})
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 	err = postgresCreateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		versions := []string{
-			"11",
-			"11.10",
-			"12",
-			"12.5",
-			"13",
-			"13.1",
-		}
-		return versions, cobra.ShellCompDirectiveDefault
+		return postgresListVersionsCompletion()
 	})
 	if err != nil {
 		log.Fatal(err.Error())

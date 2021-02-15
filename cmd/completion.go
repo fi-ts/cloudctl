@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/fi-ts/cloud-go/api/client/cluster"
+	"github.com/fi-ts/cloud-go/api/client/database"
 	"github.com/fi-ts/cloud-go/api/client/project"
 	"github.com/fi-ts/cloud-go/api/client/s3"
 	"github.com/spf13/cobra"
@@ -201,6 +202,31 @@ func s3ListPartitionsCompletion() ([]string, cobra.ShellCompDirective) {
 	var names []string
 	for _, p := range response.Payload {
 		names = append(names, *p.ID)
+	}
+	return names, cobra.ShellCompDirectiveDefault
+}
+func postgresListPartitionsCompletion() ([]string, cobra.ShellCompDirective) {
+	request := database.NewGetPostgresPartitionsParams()
+	response, err := cloud.Database.GetPostgresPartitions(request, nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for name := range response.Payload {
+		names = append(names, name)
+	}
+	return names, cobra.ShellCompDirectiveDefault
+}
+
+func postgresListVersionsCompletion() ([]string, cobra.ShellCompDirective) {
+	request := database.NewGetPostgresVersionsParams()
+	response, err := cloud.Database.GetPostgresVersions(request, nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for _, v := range response.Payload {
+		names = append(names, *v.Version)
 	}
 	return names, cobra.ShellCompDirectiveDefault
 }
