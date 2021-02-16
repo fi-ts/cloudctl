@@ -387,6 +387,9 @@ func postgresDelete(args []string) error {
 	}
 
 	printer.Print(pg)
+	if pg.Backup != nil && pg.Backup.S3BucketURL != "" {
+		fmt.Printf("the existing backup at:%s is not deleted\n", pg.Backup.S3BucketURL)
+	}
 	idParts := strings.Split(*pg.ID, "-")
 	firstPartOfPostgresID := idParts[0]
 	lastPartOfPostgresID := idParts[len(idParts)-1]
