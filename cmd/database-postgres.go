@@ -128,8 +128,11 @@ func init() {
 	postgresCreateCmd.Flags().StringP("s3-url", "", "", "s3-url to backup to [optional]")
 	postgresCreateCmd.Flags().StringP("s3-accesskey", "", "", "s3-accesskey to backup to [optional]")
 	postgresCreateCmd.Flags().StringP("s3-secretkey", "", "", "s3-secretkey to backup to [optional]")
-	// TODO Maintenance
-	err := postgresCreateCmd.MarkFlagRequired("project")
+	err := postgresCreateCmd.MarkFlagRequired("description")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = postgresCreateCmd.MarkFlagRequired("project")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -438,9 +441,9 @@ func postgresConnectionString(args []string) error {
 		port = postgres.Status.Socket.Port
 	}
 
-	if resp.Payload.User != nil && len(resp.Payload.User) > 0 {
-		for _, user := range resp.Payload.User {
-			fmt.Printf("jdbc:postgresql://%s:%d/dbname?user=%s&password=%s&ssl=true\n", ip, port, *user.Username, *user.Password)
+	if resp.Payload.UserSecret != nil && len(resp.Payload.UserSecret) > 0 {
+		for _, user := range resp.Payload.UserSecret {
+			fmt.Printf("jdbc:postgresql://%s:%d/dbname?user=%s&password=%s&ssl=true\n", ip, port, user.Username, user.Password)
 		}
 	}
 	return nil

@@ -226,7 +226,7 @@ func postgresListVersionsCompletion() ([]string, cobra.ShellCompDirective) {
 	}
 	var names []string
 	for _, v := range response.Payload {
-		names = append(names, *v.Version)
+		names = append(names, v.Version)
 	}
 	return names, cobra.ShellCompDirectiveDefault
 }
