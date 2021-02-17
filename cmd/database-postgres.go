@@ -441,10 +441,17 @@ func postgresConnectionString(args []string) error {
 		port = postgres.Status.Socket.Port
 	}
 
+	userpassword := make(map[string]string)
 	if resp.Payload.UserSecret != nil && len(resp.Payload.UserSecret) > 0 {
 		for _, user := range resp.Payload.UserSecret {
-			fmt.Printf("jdbc:postgresql://%s:%d/dbname?user=%s&password=%s&ssl=true\n", ip, port, user.Username, user.Password)
+			userpassword[user.Username] = user.Password
 		}
+	}
+	if len(userpassword) == 0 {
+		userpassword["unknown"] = "unknown"
+	}
+	for user, password := range userpassword {
+		fmt.Printf("jdbc:postgresql://%s:%d/dbname?user=%s&password=%s&ssl=true\n", ip, port, user, password)
 	}
 	return nil
 }
