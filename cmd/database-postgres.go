@@ -117,14 +117,14 @@ func init() {
 	postgresCreateCmd.Flags().StringP("partition", "", "", "partition where the database should be created")
 	postgresCreateCmd.Flags().IntP("instances", "", 1, "instances of the database")
 	postgresCreateCmd.Flags().StringP("version", "", "12", "version of the database") // FIXME add possible values
-	postgresCreateCmd.Flags().StringSliceP("sources", "", []string{"0.0.0.0/0"}, "networks which should be allowed to connect")
+	postgresCreateCmd.Flags().StringSliceP("sources", "", []string{"0.0.0.0/0"}, "networks which should be allowed to connect in CIDR notation")
+	postgresCreateCmd.Flags().StringSliceP("labels", "", []string{}, "labels to add to that postgres database")
 	postgresCreateCmd.Flags().StringP("cpu", "", "500m", "cpus for the database")
 	postgresCreateCmd.Flags().StringP("buffer", "", "500m", "shared buffer for the database")
 	postgresCreateCmd.Flags().StringP("storage", "", "10Gi", "storage for the database")
 	postgresCreateCmd.Flags().StringP("maintenance-weekday", "", "Sun", "weekday of the automatic maintenance [optional]")
 	postgresCreateCmd.Flags().StringP("maintenance-start", "", "22:30:00 +0000", "start time of the automatic maintenance [optional]")
 	postgresCreateCmd.Flags().StringP("maintenance-end", "", "23:30:00 +0000", "end time of the automatic maintenance [optional]")
-
 	postgresCreateCmd.Flags().StringP("s3-url", "", "", "s3-url to backup to [optional]")
 	postgresCreateCmd.Flags().StringP("s3-accesskey", "", "", "s3-accesskey to backup to [optional]")
 	postgresCreateCmd.Flags().StringP("s3-secretkey", "", "", "s3-secretkey to backup to [optional]")
@@ -195,6 +195,14 @@ func init() {
 	# cloudctl postgres apply -f postgres1.yaml
 	`)
 
+	postgresConnectionStringtCmd.Flags().StringP("type", "", "jdbc", "the type of the connectionstring to create, can be one of psql|jdbc")
+	err = postgresConnectionStringtCmd.RegisterFlagCompletionFunc("type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"jdbc", "psql"}, cobra.ShellCompDirectiveDefault
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 }
 func postgresCreate() error {
 	desc := viper.GetString("description")
@@ -204,6 +212,7 @@ func postgresCreate() error {
 	instances := viper.GetInt32("instances")
 	version := viper.GetString("version")
 	sources := viper.GetStringSlice("sources")
+	labels := viper.GetStringSlice("labels")
 	cpu := viper.GetString("cpu")
 	buffer := viper.GetString("buffer")
 	storage := viper.GetString("storage")
@@ -223,7 +232,10 @@ func postgresCreate() error {
 			},
 		}
 	}
-
+	labelMap, err := helper.LabelsToMap(labels)
+	if err != nil {
+		return err
+	}
 	pcr := &models.V1PostgresCreateRequest{
 		Description:       desc,
 		Tenant:            tenant,
@@ -247,6 +259,7 @@ func postgresCreate() error {
 			},
 		},
 		Backup: &backup,
+		Labels: labelMap,
 	}
 	request := database.NewCreatePostgresParams()
 	request.SetBody(pcr)
@@ -424,6 +437,8 @@ func postgresDescribe(args []string) error {
 	return printer.Print(postgres)
 }
 func postgresConnectionString(args []string) error {
+	t := viper.GetString("type")
+
 	postgres, err := getPostgresFromArgs(args)
 	if err != nil {
 		return err
@@ -451,7 +466,14 @@ func postgresConnectionString(args []string) error {
 		userpassword["unknown"] = "unknown"
 	}
 	for user, password := range userpassword {
-		fmt.Printf("jdbc:postgresql://%s:%d/dbname?user=%s&password=%s&ssl=true\n", ip, port, user, password)
+		switch t {
+		case "jdbc":
+			fmt.Printf("jdbc:postgresql://%s:%d/postgres?user=%s&password=%s&ssl=true\n", ip, port, user, password)
+		case "psql":
+			fmt.Printf("PGPASSWORD=%s psql --host=%s --port=%d --username=%s\n", password, ip, port, user)
+		default:
+			return fmt.Errorf("unknown connectionstring type:%s", t)
+		}
 	}
 	return nil
 }

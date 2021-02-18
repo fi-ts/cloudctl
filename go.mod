@@ -6,10 +6,9 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.10.0
-	github.com/fi-ts/cloud-go v0.12.2-0.20210217074929-4403ff60ed8b
+	github.com/fi-ts/cloud-go v0.12.2-0.20210218071953-9451b352f610
 	github.com/gardener/gardener v1.10.2
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-openapi/runtime v0.19.26 // indirect
 	github.com/go-openapi/strfmt v0.20.0
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/jinzhu/now v1.1.1

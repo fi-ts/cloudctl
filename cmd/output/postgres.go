@@ -24,8 +24,8 @@ type (
 )
 
 func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
-	p.wideHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Replica", "Version", "Age", "Status"}
-	p.shortHeader = p.wideHeader
+	p.shortHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Replica", "Version", "Age", "Status"}
+	p.wideHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Replica", "Version", "Address", "Age", "Status", "Labels"}
 
 	for _, pg := range data {
 		id := ""
@@ -48,10 +48,7 @@ func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
 		if pg.Tenant != nil {
 			tenant = *pg.Tenant
 		}
-		age := ""
-		if pg.CreationTimestamp != nil {
-			age = helper.HumanizeDuration(time.Since(time.Time(*pg.CreationTimestamp)))
-		}
+		age := helper.HumanizeDuration(time.Since(time.Time(pg.CreationTimestamp)))
 		status := ""
 		if pg.Status != nil {
 			status = pg.Status.Description
@@ -64,9 +61,19 @@ func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
 			buffer = pg.Size.SharedBuffer
 			storage = pg.Size.StorageSize
 		}
+		address := ""
+		if pg.Status.Socket != nil {
+			address = fmt.Sprintf("%s:%d", pg.Status.Socket.IP, pg.Status.Socket.Port)
+		}
+		labels := []string{}
+		for k, v := range pg.Labels {
+			labels = append(labels, k+"="+v)
+		}
+		lbls := strings.Join(labels, "\n")
+
 		replica := fmt.Sprintf("%d", pg.NumberOfInstances)
-		wide := []string{id, description, partition, tenant, project, cpu, buffer, storage, replica, pg.Version, age, status}
-		short := wide
+		short := []string{id, description, partition, tenant, project, cpu, buffer, storage, replica, pg.Version, age, status}
+		wide := []string{id, description, partition, tenant, project, cpu, buffer, storage, replica, pg.Version, address, age, status, lbls}
 
 		p.addWideData(wide, pg)
 		p.addShortData(short, pg)
