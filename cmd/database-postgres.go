@@ -95,10 +95,42 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+	postgresBackupCmd = &cobra.Command{
+		Use:   "backup",
+		Short: "manage postgres backup",
+		Long:  "list/find/delete postgres backup",
+	}
+	postgresBackupCreateCmd = &cobra.Command{
+		Use:   "create",
+		Short: "create backup",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return postgresBackupCreate()
+		},
+		PreRun: bindPFlags,
+	}
+	postgresBackupListCmd = &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "list backup",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return postgresBackupGet(args)
+		},
+		PreRun: bindPFlags,
+	}
+	postgresBackupDeleteCmd = &cobra.Command{
+		Use:     "delete <backup>",
+		Aliases: []string{"rm", "destroy", "remove", "delete"},
+		Short:   "delete a backup",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return postgresBackupDelete(args)
+		},
+		PreRun: bindPFlags,
+	}
 )
 
 func init() {
 	rootCmd.AddCommand(postgresCmd)
+	postgresCmd.AddCommand(postgresBackupCmd)
 
 	postgresCmd.AddCommand(postgresCreateCmd)
 	postgresCmd.AddCommand(postgresApplyCmd)
@@ -109,6 +141,10 @@ func init() {
 	postgresCmd.AddCommand(postgresVersionsCmd)
 	postgresCmd.AddCommand(postgresPartitionsCmd)
 	postgresCmd.AddCommand(postgresConnectionStringtCmd)
+
+	postgresBackupCmd.AddCommand(postgresBackupCreateCmd)
+	postgresBackupCmd.AddCommand(postgresBackupListCmd)
+	postgresBackupCmd.AddCommand(postgresBackupDeleteCmd)
 
 	// Create
 	postgresCreateCmd.Flags().StringP("description", "", "", "description of the database")
@@ -125,9 +161,6 @@ func init() {
 	postgresCreateCmd.Flags().StringP("maintenance-weekday", "", "Sun", "weekday of the automatic maintenance [optional]")
 	postgresCreateCmd.Flags().StringP("maintenance-start", "", "22:30:00 +0000", "start time of the automatic maintenance [optional]")
 	postgresCreateCmd.Flags().StringP("maintenance-end", "", "23:30:00 +0000", "end time of the automatic maintenance [optional]")
-	postgresCreateCmd.Flags().StringP("s3-url", "", "", "s3-url to backup to [optional]")
-	postgresCreateCmd.Flags().StringP("s3-accesskey", "", "", "s3-accesskey to backup to [optional]")
-	postgresCreateCmd.Flags().StringP("s3-secretkey", "", "", "s3-secretkey to backup to [optional]")
 	err := postgresCreateCmd.MarkFlagRequired("description")
 	if err != nil {
 		log.Fatal(err.Error())
@@ -195,10 +228,22 @@ func init() {
 	# cloudctl postgres apply -f postgres1.yaml
 	`)
 
-	postgresConnectionStringtCmd.Flags().StringP("type", "", "jdbc", "the type of the connectionstring to create, can be one of psql|jdbc")
+	postgresConnectionStringtCmd.Flags().StringP("type", "", "psql", "the type of the connectionstring to create, can be one of psql|jdbc")
 	err = postgresConnectionStringtCmd.RegisterFlagCompletionFunc("type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"jdbc", "psql"}, cobra.ShellCompDirectiveDefault
 	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	postgresBackupCreateCmd.Flags().StringP("project", "", "", "project of the database backup")
+	postgresBackupCreateCmd.Flags().StringP("schedule", "", "", "backup schedule")
+	postgresBackupCreateCmd.Flags().Int32P("retention", "", int32(10), "backup retention days")
+	postgresBackupCreateCmd.Flags().StringP("s3-endpoint", "", "", "s3 endpooint to backup to")
+	postgresBackupCreateCmd.Flags().StringP("s3-bucketname", "", "", "s3 bucketname to backup to")
+	postgresBackupCreateCmd.Flags().StringP("s3-accesskey", "", "", "s3-accesskey")
+	postgresBackupCreateCmd.Flags().StringP("s3-secretkey", "", "", "s3-secretkey")
+	err = postgresBackupCreateCmd.MarkFlagRequired("project")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -219,19 +264,7 @@ func postgresCreate() error {
 	mweekday := viper.GetString("maintenance-weekday")
 	ms := viper.GetString("maintenance-start")
 	me := viper.GetString("maintenance-end")
-	s3URL := viper.GetString("s3-url")
-	s3Accesskey := viper.GetString("s3-accesskey")
-	s3Secretkey := viper.GetString("s3-secretkey")
-	var backup models.V1Backup
-	if s3URL != "" && s3Accesskey != "" && s3Secretkey != "" {
-		backup = models.V1Backup{
-			S3BucketURL: s3URL,
-			Secret: &models.V1BackupSecret{
-				Accesskey: s3Accesskey,
-				Secretkey: s3Secretkey,
-			},
-		}
-	}
+
 	labelMap, err := helper.LabelsToMap(labels)
 	if err != nil {
 		return err
@@ -258,7 +291,6 @@ func postgresCreate() error {
 				End:   strfmt.DateTime(parseTime(me)),
 			},
 		},
-		Backup: &backup,
 		Labels: labelMap,
 	}
 	request := database.NewCreatePostgresParams()
@@ -403,9 +435,7 @@ func postgresDelete(args []string) error {
 	}
 
 	printer.Print(pg)
-	if pg.Backup != nil && pg.Backup.S3BucketURL != "" {
-		fmt.Printf("the existing backup at:%s is not deleted\n", pg.Backup.S3BucketURL)
-	}
+
 	idParts := strings.Split(*pg.ID, "-")
 	firstPartOfPostgresID := idParts[0]
 	lastPartOfPostgresID := idParts[len(idParts)-1]
@@ -476,6 +506,85 @@ func postgresConnectionString(args []string) error {
 		}
 	}
 	return nil
+}
+
+func postgresBackupCreate() error {
+	project := viper.GetString("project")
+	schedule := viper.GetString("schedule")
+	retention := viper.GetInt32("retention")
+	s3Endpoint := viper.GetString("s3-endpoint")
+	s3BucketName := viper.GetString("s3-bucketname")
+	s3Accesskey := viper.GetString("s3-accesskey")
+	s3Secretkey := viper.GetString("s3-secretkey")
+
+	bcr := &models.V1Backup{
+		ProjectID:    project,
+		Schedule:     schedule,
+		Retention:    retention,
+		S3Endpoint:   s3Endpoint,
+		S3BucketName: s3BucketName,
+		Secret: &models.V1BackupSecret{
+			Accesskey: s3Accesskey,
+			Secretkey: s3Secretkey,
+		},
+	}
+	request := database.NewCreatePostgresBackupParams()
+	request.SetBody(bcr)
+
+	response, err := cloud.Database.CreatePostgresBackup(request, nil)
+	if err != nil {
+		return err
+	}
+
+	return printer.Print(response.Payload)
+}
+
+func postgresBackupGet(args []string) error {
+	if len(args) == 0 {
+		request := database.NewListPostgresBackupsParams()
+		resp, err := cloud.Database.ListPostgresBackups(request, nil)
+		if err != nil {
+			return err
+		}
+		return printer.Print(resp.Payload)
+	}
+
+	if len(args) > 0 {
+		request := database.NewGetPostgresBackupsParams().WithID(args[0])
+		resp, err := cloud.Database.GetPostgresBackups(request, nil)
+		if err != nil {
+			return err
+		}
+		return printer.Print(resp.Payload)
+	}
+	return fmt.Errorf("only backup id allowed")
+}
+func postgresBackupDelete(args []string) error {
+	if len(args) != 1 {
+		return fmt.Errorf("missing backup id")
+	}
+	id := args[0]
+
+	idParts := strings.Split(id, "-")
+	firstPartOfID := idParts[0]
+	lastPartOfID := idParts[len(idParts)-1]
+	fmt.Println("Please answer some security questions to delete this postgres database backup")
+	err := helper.Prompt("first part of ID:", firstPartOfID)
+	if err != nil {
+		return err
+	}
+	err = helper.Prompt("last part of ID:", lastPartOfID)
+	if err != nil {
+		return err
+	}
+
+	request := database.NewDeletePostgresBackupParams().WithID(id)
+	resp, err := cloud.Database.DeletePostgresBackup(request, nil)
+	if err != nil {
+		return err
+	}
+	return printer.Print(resp.Payload)
+
 }
 
 func postgresVersions() error {

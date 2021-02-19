@@ -21,6 +21,10 @@ type (
 	PostgresPartitionsTablePrinter struct {
 		TablePrinter
 	}
+
+	PostgresBackupsTablePrinter struct {
+		TablePrinter
+	}
 )
 
 func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
@@ -112,6 +116,19 @@ func (p PostgresPartitionsTablePrinter) Print(data models.V1PostgresPartitionsRe
 
 		p.addWideData(wide, pg)
 		p.addShortData(short, pg)
+	}
+	p.render()
+}
+func (p PostgresBackupsTablePrinter) Print(data []*models.V1Backup) {
+	p.wideHeader = []string{"Project", "Schedule", "Retention", "S3"}
+	p.shortHeader = p.wideHeader
+
+	for _, b := range data {
+		wide := []string{b.ProjectID, b.Schedule, fmt.Sprintf("%d", b.Retention), b.S3Endpoint + "/" + b.S3BucketName}
+		short := wide
+
+		p.addWideData(wide, b)
+		p.addShortData(short, b)
 	}
 	p.render()
 }
