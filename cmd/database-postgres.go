@@ -96,13 +96,13 @@ var (
 		PreRun: bindPFlags,
 	}
 	postgresBackupCmd = &cobra.Command{
-		Use:   "backup",
-		Short: "manage postgres backup",
-		Long:  "list/find/delete postgres backup",
+		Use:   "backup-config",
+		Short: "manage postgres backup configuration",
+		Long:  "list/find/delete postgres backup configuration",
 	}
 	postgresBackupCreateCmd = &cobra.Command{
 		Use:   "create",
-		Short: "create backup",
+		Short: "create backup configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return postgresBackupCreate()
 		},
@@ -110,7 +110,7 @@ var (
 	}
 	postgresBackupUpdateCmd = &cobra.Command{
 		Use:   "update",
-		Short: "update backup",
+		Short: "update backup configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return postgresBackupUpdate()
 		},
@@ -119,16 +119,16 @@ var (
 	postgresBackupListCmd = &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
-		Short:   "list backup",
+		Short:   "list backup configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return postgresBackupGet(args)
 		},
 		PreRun: bindPFlags,
 	}
 	postgresBackupDeleteCmd = &cobra.Command{
-		Use:     "delete <backup>",
+		Use:     "delete <backup-config>",
 		Aliases: []string{"rm", "destroy", "remove", "delete"},
-		Short:   "delete a backup",
+		Short:   "delete a backup configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return postgresBackupDelete(args)
 		},
