@@ -108,6 +108,14 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+	postgresBackupUpdateCmd = &cobra.Command{
+		Use:   "update",
+		Short: "update backup",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return postgresBackupUpdate()
+		},
+		PreRun: bindPFlags,
+	}
 	postgresBackupListCmd = &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
@@ -143,6 +151,7 @@ func init() {
 	postgresCmd.AddCommand(postgresConnectionStringtCmd)
 
 	postgresBackupCmd.AddCommand(postgresBackupCreateCmd)
+	postgresBackupCmd.AddCommand(postgresBackupUpdateCmd)
 	postgresBackupCmd.AddCommand(postgresBackupListCmd)
 	postgresBackupCmd.AddCommand(postgresBackupDeleteCmd)
 
@@ -237,7 +246,7 @@ func init() {
 	}
 
 	postgresBackupCreateCmd.Flags().StringP("project", "", "", "project of the database backup")
-	postgresBackupCreateCmd.Flags().StringP("schedule", "", "", "backup schedule")
+	postgresBackupCreateCmd.Flags().StringP("schedule", "", "", "backup schedule in cron syntax")
 	postgresBackupCreateCmd.Flags().Int32P("retention", "", int32(10), "backup retention days")
 	postgresBackupCreateCmd.Flags().StringP("s3-endpoint", "", "", "s3 endpooint to backup to")
 	postgresBackupCreateCmd.Flags().StringP("s3-bucketname", "", "", "s3 bucketname to backup to")
@@ -271,6 +280,18 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	postgresBackupUpdateCmd.Flags().StringP("project", "", "", "project of the database backup")
+	postgresBackupUpdateCmd.Flags().StringP("schedule", "", "", "backup schedule in cron syntax [optional]")
+	postgresBackupUpdateCmd.Flags().Int32P("retention", "", int32(10), "backup retention days [optional]")
+	postgresBackupUpdateCmd.Flags().StringP("s3-endpoint", "", "", "s3 endpooint to backup to [optional]")
+	postgresBackupUpdateCmd.Flags().StringP("s3-bucketname", "", "", "s3 bucketname to backup to [optional]")
+	postgresBackupUpdateCmd.Flags().StringP("s3-accesskey", "", "", "s3-accesskey [optional]")
+	postgresBackupUpdateCmd.Flags().StringP("s3-secretkey", "", "", "s3-secretkey [optional]")
+	err = postgresBackupUpdateCmd.MarkFlagRequired("project")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 }
 func postgresCreate() error {
 	desc := viper.GetString("description")
@@ -326,6 +347,7 @@ func postgresCreate() error {
 
 	return printer.Print(response.Payload)
 }
+
 func postgresApply() error {
 	var pars []models.V1PostgresCreateRequest
 	var par models.V1PostgresCreateRequest
@@ -555,6 +577,57 @@ func postgresBackupCreate() error {
 	request.SetBody(bcr)
 
 	response, err := cloud.Database.CreatePostgresBackup(request, nil)
+	if err != nil {
+		return err
+	}
+
+	return printer.Print(response.Payload)
+}
+func postgresBackupUpdate() error {
+	project := viper.GetString("project")
+
+	request := database.NewGetPostgresBackupsParams().WithID(project)
+	resp, err := cloud.Database.GetPostgresBackups(request, nil)
+	if err != nil {
+		return err
+	}
+	if resp == nil || resp.Payload == nil {
+		return fmt.Errorf("given backup %s does not exist", project)
+	}
+
+	schedule := viper.GetString("schedule")
+	retention := viper.GetInt32("retention")
+	s3Endpoint := viper.GetString("s3-endpoint")
+	s3BucketName := viper.GetString("s3-bucketname")
+	s3Accesskey := viper.GetString("s3-accesskey")
+	s3Secretkey := viper.GetString("s3-secretkey")
+
+	bur := &models.V1Backup{
+		ProjectID: project,
+	}
+	if schedule != "" {
+		bur.Schedule = schedule
+	}
+	if retention != 0 {
+		bur.Retention = retention
+	}
+	if s3Endpoint != "" {
+		bur.S3Endpoint = s3Endpoint
+	}
+	if s3BucketName != "" {
+		bur.S3BucketName = s3BucketName
+	}
+	if s3Accesskey != "" && s3Secretkey != "" {
+		bur.Secret = &models.V1BackupSecret{
+			Accesskey: s3Accesskey,
+			Secretkey: s3Secretkey,
+		}
+	}
+
+	req := database.NewUpdatePostgresBackupParams()
+	req.SetBody(bur)
+
+	response, err := cloud.Database.UpdatePostgresBackup(req, nil)
 	if err != nil {
 		return err
 	}
