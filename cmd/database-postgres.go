@@ -247,7 +247,30 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-
+	err = postgresBackupCreateCmd.MarkFlagRequired("project")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = postgresBackupCreateCmd.MarkFlagRequired("schedule")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = postgresBackupCreateCmd.MarkFlagRequired("retention")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = postgresBackupCreateCmd.MarkFlagRequired("s3-endpoint")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = postgresBackupCreateCmd.MarkFlagRequired("s3-accesskey")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = postgresBackupCreateCmd.MarkFlagRequired("s3-secretkey")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 }
 func postgresCreate() error {
 	desc := viper.GetString("description")
