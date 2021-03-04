@@ -9,7 +9,6 @@ import (
 	"github.com/fi-ts/cloud-go/api/client/database"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
-	"github.com/go-openapi/strfmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
@@ -167,9 +166,8 @@ func init() {
 	postgresCreateCmd.Flags().StringP("cpu", "", "500m", "cpus for the database")
 	postgresCreateCmd.Flags().StringP("buffer", "", "500m", "shared buffer for the database")
 	postgresCreateCmd.Flags().StringP("storage", "", "10Gi", "storage for the database")
-	postgresCreateCmd.Flags().StringP("maintenance-weekday", "", "Sun", "weekday of the automatic maintenance [optional]")
-	postgresCreateCmd.Flags().StringP("maintenance-start", "", "22:30:00 +0000", "start time of the automatic maintenance [optional]")
-	postgresCreateCmd.Flags().StringP("maintenance-end", "", "23:30:00 +0000", "end time of the automatic maintenance [optional]")
+	postgresCreateCmd.Flags().StringP("backup", "", "", "backup to use")
+	postgresCreateCmd.Flags().StringSliceP("maintenance", "", []string{"Sun:22:00-23:00"}, "time specification of the automatic maintenance in the form Weekday:HH:MM-HH-MM [optional]")
 	err := postgresCreateCmd.MarkFlagRequired("description")
 	if err != nil {
 		log.Fatal(err.Error())
@@ -245,14 +243,15 @@ func init() {
 		log.Fatal(err.Error())
 	}
 
+	postgresBackupCreateCmd.Flags().StringP("name", "", "", "name of the database backup")
 	postgresBackupCreateCmd.Flags().StringP("project", "", "", "project of the database backup")
-	postgresBackupCreateCmd.Flags().StringP("schedule", "", "", "backup schedule in cron syntax")
+	postgresBackupCreateCmd.Flags().StringP("schedule", "", "30 00 * * *", "backup schedule in cron syntax")
 	postgresBackupCreateCmd.Flags().Int32P("retention", "", int32(10), "backup retention days")
 	postgresBackupCreateCmd.Flags().StringP("s3-endpoint", "", "", "s3 endpooint to backup to")
 	postgresBackupCreateCmd.Flags().StringP("s3-bucketname", "", "", "s3 bucketname to backup to")
 	postgresBackupCreateCmd.Flags().StringP("s3-accesskey", "", "", "s3-accesskey")
 	postgresBackupCreateCmd.Flags().StringP("s3-secretkey", "", "", "s3-secretkey")
-	err = postgresBackupCreateCmd.MarkFlagRequired("project")
+	err = postgresBackupCreateCmd.MarkFlagRequired("name")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -261,10 +260,6 @@ func init() {
 		log.Fatal(err.Error())
 	}
 	err = postgresBackupCreateCmd.MarkFlagRequired("schedule")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = postgresBackupCreateCmd.MarkFlagRequired("retention")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -280,14 +275,14 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	postgresBackupUpdateCmd.Flags().StringP("project", "", "", "project of the database backup")
+	postgresBackupUpdateCmd.Flags().StringP("id", "", "", "id of the database backup")
 	postgresBackupUpdateCmd.Flags().StringP("schedule", "", "", "backup schedule in cron syntax [optional]")
 	postgresBackupUpdateCmd.Flags().Int32P("retention", "", int32(10), "backup retention days [optional]")
 	postgresBackupUpdateCmd.Flags().StringP("s3-endpoint", "", "", "s3 endpooint to backup to [optional]")
 	postgresBackupUpdateCmd.Flags().StringP("s3-bucketname", "", "", "s3 bucketname to backup to [optional]")
 	postgresBackupUpdateCmd.Flags().StringP("s3-accesskey", "", "", "s3-accesskey [optional]")
 	postgresBackupUpdateCmd.Flags().StringP("s3-secretkey", "", "", "s3-secretkey [optional]")
-	err = postgresBackupUpdateCmd.MarkFlagRequired("project")
+	err = postgresBackupUpdateCmd.MarkFlagRequired("id")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -304,10 +299,9 @@ func postgresCreate() error {
 	labels := viper.GetStringSlice("labels")
 	cpu := viper.GetString("cpu")
 	buffer := viper.GetString("buffer")
+	backup := viper.GetString("backup")
 	storage := viper.GetString("storage")
-	mweekday := viper.GetString("maintenance-weekday")
-	ms := viper.GetString("maintenance-start")
-	me := viper.GetString("maintenance-end")
+	maintenance := viper.GetStringSlice("maintenance")
 
 	labelMap, err := helper.LabelsToMap(labels)
 	if err != nil {
@@ -320,6 +314,7 @@ func postgresCreate() error {
 		PartitionID:       partition,
 		NumberOfInstances: instances,
 		Version:           version,
+		Backup:            backup,
 		Size: &models.V1Size{
 			CPU:          cpu,
 			SharedBuffer: buffer,
@@ -328,14 +323,8 @@ func postgresCreate() error {
 		AccessList: &models.V1AccessList{
 			SourceRanges: sources,
 		},
-		Maintenance: &models.V1MaintenanceWindow{
-			Weekday: parseWeekday(mweekday),
-			TimeWindow: &models.V1TimeWindow{
-				Start: strfmt.DateTime(parseTime(ms)),
-				End:   strfmt.DateTime(parseTime(me)),
-			},
-		},
-		Labels: labelMap,
+		Maintenance: maintenance,
+		Labels:      labelMap,
 	}
 	request := database.NewCreatePostgresParams()
 	request.SetBody(pcr)
@@ -554,6 +543,7 @@ func postgresConnectionString(args []string) error {
 }
 
 func postgresBackupCreate() error {
+	name := viper.GetString("name")
 	project := viper.GetString("project")
 	schedule := viper.GetString("schedule")
 	retention := viper.GetInt32("retention")
@@ -562,7 +552,8 @@ func postgresBackupCreate() error {
 	s3Accesskey := viper.GetString("s3-accesskey")
 	s3Secretkey := viper.GetString("s3-secretkey")
 
-	bcr := &models.V1Backup{
+	bcr := &models.V1BackupCreateRequest{
+		Name:         name,
 		ProjectID:    project,
 		Schedule:     schedule,
 		Retention:    retention,
@@ -584,15 +575,15 @@ func postgresBackupCreate() error {
 	return printer.Print(response.Payload)
 }
 func postgresBackupUpdate() error {
-	project := viper.GetString("project")
+	id := viper.GetString("id")
 
-	request := database.NewGetPostgresBackupsParams().WithID(project)
+	request := database.NewGetPostgresBackupsParams().WithID(id)
 	resp, err := cloud.Database.GetPostgresBackups(request, nil)
 	if err != nil {
 		return err
 	}
 	if resp == nil || resp.Payload == nil {
-		return fmt.Errorf("given backup %s does not exist", project)
+		return fmt.Errorf("given backup %s does not exist", id)
 	}
 
 	schedule := viper.GetString("schedule")
@@ -602,8 +593,8 @@ func postgresBackupUpdate() error {
 	s3Accesskey := viper.GetString("s3-accesskey")
 	s3Secretkey := viper.GetString("s3-secretkey")
 
-	bur := &models.V1Backup{
-		ProjectID: project,
+	bur := &models.V1BackupUpdateRequest{
+		ID: id,
 	}
 	if schedule != "" {
 		bur.Schedule = schedule

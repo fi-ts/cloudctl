@@ -248,10 +248,10 @@ func (t TablePrinter) Print(data interface{}) error {
 		PostgresTablePrinter{t}.Print([]*models.V1PostgresResponse{d})
 	case []*models.V1PostgresResponse:
 		PostgresTablePrinter{t}.Print(d)
-	case []*models.V1Backup:
+	case []*models.V1BackupResponse:
 		PostgresBackupsTablePrinter{t}.Print(d)
-	case *models.V1Backup:
-		PostgresBackupsTablePrinter{t}.Print([]*models.V1Backup{d})
+	case *models.V1BackupResponse:
+		PostgresBackupsTablePrinter{t}.Print([]*models.V1BackupResponse{d})
 	case []*models.V1S3PartitionResponse:
 		if t.order == "" {
 			t.order = "id"

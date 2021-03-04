@@ -28,30 +28,20 @@ type (
 )
 
 func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
-	p.shortHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Replica", "Version", "Age", "Status"}
-	p.wideHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Replica", "Version", "Address", "Age", "Status", "Labels"}
+	p.shortHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Backup", "Replica", "Version", "Age", "Status"}
+	p.wideHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Backup", "Replica", "Version", "Address", "Age", "Status", "Maintenance", "Labels"}
 
 	for _, pg := range data {
 		id := ""
 		if pg.ID != nil {
 			id = *pg.ID
 		}
-		description := ""
-		if pg.Description != nil {
-			description = *pg.Description
-		}
-		partition := ""
-		if pg.PartitionID != nil {
-			partition = *pg.PartitionID
-		}
-		project := ""
-		if pg.ProjectID != nil {
-			project = *pg.ProjectID
-		}
-		tenant := ""
-		if pg.Tenant != nil {
-			tenant = *pg.Tenant
-		}
+		description := pg.Description
+		partition := pg.Partition
+		project := pg.Project
+		tenant := pg.Tenant
+		backup := pg.Backup
+
 		age := helper.HumanizeDuration(time.Since(time.Time(pg.CreationTimestamp)))
 		status := ""
 		if pg.Status != nil {
@@ -74,10 +64,11 @@ func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
 			labels = append(labels, k+"="+v)
 		}
 		lbls := strings.Join(labels, "\n")
+		maint := strings.Join(pg.Maintenance, "\n")
 
 		replica := fmt.Sprintf("%d", pg.NumberOfInstances)
-		short := []string{id, description, partition, tenant, project, cpu, buffer, storage, replica, pg.Version, age, status}
-		wide := []string{id, description, partition, tenant, project, cpu, buffer, storage, replica, pg.Version, address, age, status, lbls}
+		short := []string{id, description, partition, tenant, project, cpu, buffer, storage, backup, replica, pg.Version, age, status}
+		wide := []string{id, description, partition, tenant, project, cpu, buffer, storage, backup, replica, pg.Version, address, age, status, maint, lbls}
 
 		p.addWideData(wide, pg)
 		p.addShortData(short, pg)
@@ -119,12 +110,12 @@ func (p PostgresPartitionsTablePrinter) Print(data models.V1PostgresPartitionsRe
 	}
 	p.render()
 }
-func (p PostgresBackupsTablePrinter) Print(data []*models.V1Backup) {
-	p.wideHeader = []string{"Project", "Schedule", "Retention", "S3"}
+func (p PostgresBackupsTablePrinter) Print(data []*models.V1BackupResponse) {
+	p.wideHeader = []string{"ID", "Name", "Project", "Schedule", "Retention", "S3"}
 	p.shortHeader = p.wideHeader
 
 	for _, b := range data {
-		wide := []string{b.ProjectID, b.Schedule, fmt.Sprintf("%d", b.Retention), b.S3Endpoint + "/" + b.S3BucketName}
+		wide := []string{*b.ID, b.Name, b.ProjectID, b.Schedule, fmt.Sprintf("%d", b.Retention), b.S3Endpoint + "/" + b.S3BucketName}
 		short := wide
 
 		p.addWideData(wide, b)
