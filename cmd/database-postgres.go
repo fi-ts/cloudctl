@@ -498,7 +498,12 @@ func postgresDescribe(args []string) error {
 		return err
 	}
 
-	return printer.Print(postgres)
+	printer.Print(postgres)
+
+	// FIXME this is a ugly hack to reset the printer and have a new header.
+	initPrinter()
+	fmt.Println("\nBackups:")
+	return printer.Print(postgres.Backups)
 }
 func postgresConnectionString(args []string) error {
 	t := viper.GetString("type")

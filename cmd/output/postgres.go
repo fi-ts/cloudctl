@@ -25,6 +25,9 @@ type (
 	PostgresBackupsTablePrinter struct {
 		TablePrinter
 	}
+	PostgresBackupEntryTablePrinter struct {
+		TablePrinter
+	}
 )
 
 func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
@@ -116,6 +119,19 @@ func (p PostgresBackupsTablePrinter) Print(data []*models.V1BackupResponse) {
 
 	for _, b := range data {
 		wide := []string{*b.ID, b.Name, b.ProjectID, b.Schedule, fmt.Sprintf("%d", b.Retention), b.S3Endpoint + "/" + b.S3BucketName}
+		short := wide
+
+		p.addWideData(wide, b)
+		p.addShortData(short, b)
+	}
+	p.render()
+}
+func (p PostgresBackupEntryTablePrinter) Print(data []*models.V1BackupEntry) {
+	p.wideHeader = []string{"Date", "Size", "Name"}
+	p.shortHeader = p.wideHeader
+
+	for _, b := range data {
+		wide := []string{b.Timestamp.String(), helper.HumanizeSize(*b.Size), *b.Name}
 		short := wide
 
 		p.addWideData(wide, b)

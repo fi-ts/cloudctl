@@ -252,6 +252,8 @@ func (t TablePrinter) Print(data interface{}) error {
 		PostgresBackupsTablePrinter{t}.Print(d)
 	case *models.V1BackupResponse:
 		PostgresBackupsTablePrinter{t}.Print([]*models.V1BackupResponse{d})
+	case []*models.V1BackupEntry:
+		PostgresBackupEntryTablePrinter{t}.Print(d)
 	case []*models.V1S3PartitionResponse:
 		if t.order == "" {
 			t.order = "id"

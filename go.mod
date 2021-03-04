@@ -6,7 +6,7 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.10.0
-	github.com/fi-ts/cloud-go v0.12.2-0.20210304071631-39e91b44dfc0
+	github.com/fi-ts/cloud-go v0.12.2-0.20210304170805-a575e383b14c
 	github.com/gardener/gardener v1.12.9
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-openapi/strfmt v0.20.0
@@ -15,7 +15,7 @@ require (
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/metal-stack/metal-lib v0.6.9
 	github.com/metal-stack/updater v1.1.1
-	github.com/metal-stack/v v1.0.2
+	github.com/metal-stack/v v1.0.3
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/pkg/errors v0.9.1
