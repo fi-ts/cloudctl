@@ -103,7 +103,15 @@ var (
 		Use:   "create",
 		Short: "create backup configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return postgresBackupCreate()
+			return postgresBackupCreate(false)
+		},
+		PreRun: bindPFlags,
+	}
+	postgresBackupAutoCreateCmd = &cobra.Command{
+		Use:   "auto-create",
+		Short: "auto create backup configuration",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return postgresBackupCreate(true)
 		},
 		PreRun: bindPFlags,
 	}
@@ -150,6 +158,7 @@ func init() {
 	postgresCmd.AddCommand(postgresConnectionStringtCmd)
 
 	postgresBackupCmd.AddCommand(postgresBackupCreateCmd)
+	postgresBackupCmd.AddCommand(postgresBackupAutoCreateCmd)
 	postgresBackupCmd.AddCommand(postgresBackupUpdateCmd)
 	postgresBackupCmd.AddCommand(postgresBackupListCmd)
 	postgresBackupCmd.AddCommand(postgresBackupDeleteCmd)
@@ -247,6 +256,8 @@ func init() {
 	postgresBackupCreateCmd.Flags().StringP("project", "", "", "project of the database backup")
 	postgresBackupCreateCmd.Flags().StringP("schedule", "", "30 00 * * *", "backup schedule in cron syntax")
 	postgresBackupCreateCmd.Flags().Int32P("retention", "", int32(10), "backup retention days")
+	postgresBackupCreateCmd.Flags().BoolP("autocreate", "", false, "automatically create s3 backup bucket")
+	postgresBackupCreateCmd.Flags().StringP("partition", "", "", "if autocreate is set to true, use this partition to create the backup bucket")
 	postgresBackupCreateCmd.Flags().StringP("s3-endpoint", "", "", "s3 endpooint to backup to")
 	postgresBackupCreateCmd.Flags().StringP("s3-bucketname", "", "", "s3 bucketname to backup to")
 	postgresBackupCreateCmd.Flags().StringP("s3-accesskey", "", "", "s3-accesskey")
@@ -275,6 +286,33 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
+	postgresBackupAutoCreateCmd.Flags().StringP("name", "", "", "name of the database backup")
+	postgresBackupAutoCreateCmd.Flags().StringP("project", "", "", "project of the database backup")
+	postgresBackupAutoCreateCmd.Flags().StringP("schedule", "", "30 00 * * *", "backup schedule in cron syntax")
+	postgresBackupAutoCreateCmd.Flags().Int32P("retention", "", int32(10), "backup retention days")
+	postgresBackupAutoCreateCmd.Flags().StringP("partition", "", "", "use this partition to create the backup bucket")
+	err = postgresBackupAutoCreateCmd.MarkFlagRequired("name")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = postgresBackupAutoCreateCmd.MarkFlagRequired("project")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = postgresBackupAutoCreateCmd.MarkFlagRequired("schedule")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = postgresBackupAutoCreateCmd.MarkFlagRequired("retention")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = postgresBackupAutoCreateCmd.MarkFlagRequired("partition")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 	postgresBackupUpdateCmd.Flags().StringP("id", "", "", "id of the database backup")
 	postgresBackupUpdateCmd.Flags().StringP("schedule", "", "", "backup schedule in cron syntax [optional]")
 	postgresBackupUpdateCmd.Flags().Int32P("retention", "", int32(10), "backup retention days [optional]")
@@ -547,27 +585,33 @@ func postgresConnectionString(args []string) error {
 	return nil
 }
 
-func postgresBackupCreate() error {
+func postgresBackupCreate(autocreate bool) error {
 	name := viper.GetString("name")
 	project := viper.GetString("project")
 	schedule := viper.GetString("schedule")
 	retention := viper.GetInt32("retention")
+	partition := viper.GetString("partition")
 	s3Endpoint := viper.GetString("s3-endpoint")
 	s3BucketName := viper.GetString("s3-bucketname")
 	s3Accesskey := viper.GetString("s3-accesskey")
 	s3Secretkey := viper.GetString("s3-secretkey")
 
 	bcr := &models.V1BackupCreateRequest{
-		Name:         name,
-		ProjectID:    project,
-		Schedule:     schedule,
-		Retention:    retention,
-		S3Endpoint:   s3Endpoint,
-		S3BucketName: s3BucketName,
-		Secret: &models.V1BackupSecret{
+		Name:      name,
+		ProjectID: project,
+		Schedule:  schedule,
+		Retention: retention,
+	}
+	if autocreate {
+		bcr.Autocreate = true
+		bcr.Partition = partition
+	} else {
+		bcr.S3Endpoint = s3Endpoint
+		bcr.S3BucketName = s3BucketName
+		bcr.Secret = &models.V1BackupSecret{
 			Accesskey: s3Accesskey,
 			Secretkey: s3Secretkey,
-		},
+		}
 	}
 	request := database.NewCreatePostgresBackupParams()
 	request.SetBody(bcr)
