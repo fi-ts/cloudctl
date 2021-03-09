@@ -150,7 +150,6 @@ func ipStatic(args []string) error {
 	iur := &models.V1IPUpdateRequest{
 		Ipaddress: &ipAddress,
 		Type:      "static",
-		Tags:      []string{},
 	}
 	if helper.ViperString("name") != nil {
 		iur.Name = *helper.ViperString("name")
