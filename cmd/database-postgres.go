@@ -53,6 +53,15 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+	postgresListBackupsCmd = &cobra.Command{
+		Use:     "list-backups",
+		Short:   "list postgres backups",
+		Aliases: []string{"ls"},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return postgresListBackups(args)
+		},
+		PreRun: bindPFlags,
+	}
 	postgresDeleteCmd = &cobra.Command{
 		Use:     "delete <postgres>",
 		Aliases: []string{"rm", "destroy", "remove", "delete"},
@@ -151,6 +160,7 @@ func init() {
 	postgresCmd.AddCommand(postgresApplyCmd)
 	postgresCmd.AddCommand(postgresEditCmd)
 	postgresCmd.AddCommand(postgresListCmd)
+	postgresCmd.AddCommand(postgresListBackupsCmd)
 	postgresCmd.AddCommand(postgresDeleteCmd)
 	postgresCmd.AddCommand(postgresDescribeCmd)
 	postgresCmd.AddCommand(postgresVersionsCmd)
@@ -534,13 +544,23 @@ func postgresDescribe(args []string) error {
 		return err
 	}
 
-	printer.Print(postgres)
-
-	// FIXME this is a ugly hack to reset the printer and have a new header.
-	initPrinter()
-	fmt.Println("\nBackups:")
-	return printer.Print(postgres.Backups)
+	return printer.Print(postgres)
 }
+
+func postgresListBackups(args []string) error {
+	if len(args) < 1 {
+		return fmt.Errorf("no postgres id given")
+	}
+
+	id := args[0]
+	params := database.NewGetPostgresBackupsParams().WithID(id)
+	resp, err := cloud.Database.GetPostgresBackups(params, nil)
+	if err != nil {
+		return err
+	}
+	return printer.Print(resp.Payload)
+}
+
 func postgresConnectionString(args []string) error {
 	t := viper.GetString("type")
 
