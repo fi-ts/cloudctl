@@ -316,10 +316,6 @@ func init() {
 	postgresBackupUpdateCmd.Flags().StringP("id", "", "", "id of the database backup")
 	postgresBackupUpdateCmd.Flags().StringP("schedule", "", "", "backup schedule in cron syntax [optional]")
 	postgresBackupUpdateCmd.Flags().Int32P("retention", "", int32(10), "backup retention days [optional]")
-	postgresBackupUpdateCmd.Flags().StringP("s3-endpoint", "", "", "s3 endpooint to backup to [optional]")
-	postgresBackupUpdateCmd.Flags().StringP("s3-bucketname", "", "", "s3 bucketname to backup to [optional]")
-	postgresBackupUpdateCmd.Flags().StringP("s3-accesskey", "", "", "s3-accesskey [optional]")
-	postgresBackupUpdateCmd.Flags().StringP("s3-secretkey", "", "", "s3-secretkey [optional]")
 	err = postgresBackupUpdateCmd.MarkFlagRequired("id")
 	if err != nil {
 		log.Fatal(err.Error())
@@ -637,10 +633,6 @@ func postgresBackupUpdate() error {
 
 	schedule := viper.GetString("schedule")
 	retention := viper.GetInt32("retention")
-	s3Endpoint := viper.GetString("s3-endpoint")
-	s3BucketName := viper.GetString("s3-bucketname")
-	s3Accesskey := viper.GetString("s3-accesskey")
-	s3Secretkey := viper.GetString("s3-secretkey")
 
 	bur := &models.V1BackupUpdateRequest{
 		ID: id,
@@ -650,18 +642,6 @@ func postgresBackupUpdate() error {
 	}
 	if retention != 0 {
 		bur.Retention = retention
-	}
-	if s3Endpoint != "" {
-		bur.S3Endpoint = s3Endpoint
-	}
-	if s3BucketName != "" {
-		bur.S3BucketName = s3BucketName
-	}
-	if s3Accesskey != "" && s3Secretkey != "" {
-		bur.Secret = &models.V1BackupSecret{
-			Accesskey: s3Accesskey,
-			Secretkey: s3Secretkey,
-		}
 	}
 
 	req := database.NewUpdatePostgresBackupParams()

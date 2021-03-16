@@ -339,7 +339,7 @@ func (s IPBillingTablePrinter) Print(data *models.V1IPUsageResponse) {
 
 // Print a volume usage as table
 func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResponse) {
-	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Start", "End", "Device", "In (Gi)", "Out (Gi)", "Total (Gi)", "Lifetime", "Warnings"}
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Device", "In (Gi)", "Out (Gi)", "Total (Gi)", "Lifetime", "Warnings"}
 	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "Device", "In (Gi)", "Out (Gi)", "Total (Gi)", "Lifetime"}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {
@@ -375,14 +375,6 @@ func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResp
 		if u.Clustername != nil {
 			clusterName = *u.Clustername
 		}
-		var start string
-		if u.Start != nil {
-			start = u.Start.String()
-		}
-		var end string
-		if u.End != nil {
-			end = u.End.String()
-		}
 		var device string
 		if u.Device != nil {
 			device = *u.Device
@@ -416,8 +408,6 @@ func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResp
 			partition,
 			clusterID,
 			clusterName,
-			start,
-			end,
 			device,
 			in,
 			out,

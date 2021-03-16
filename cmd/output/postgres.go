@@ -114,11 +114,15 @@ func (p PostgresPartitionsTablePrinter) Print(data models.V1PostgresPartitionsRe
 	p.render()
 }
 func (p PostgresBackupsTablePrinter) Print(data []*models.V1BackupResponse) {
-	p.wideHeader = []string{"ID", "Name", "Project", "Schedule", "Retention", "S3"}
+	p.wideHeader = []string{"ID", "Name", "Project", "Schedule", "Retention", "S3", "CreatedBy"}
 	p.shortHeader = p.wideHeader
 
 	for _, b := range data {
-		wide := []string{*b.ID, b.Name, b.ProjectID, b.Schedule, fmt.Sprintf("%d", b.Retention), b.S3Endpoint + "/" + b.S3BucketName}
+		createdBy := ""
+		if b.CreatedBy != nil {
+			createdBy = *b.CreatedBy
+		}
+		wide := []string{*b.ID, b.Name, b.ProjectID, b.Schedule, fmt.Sprintf("%d", b.Retention), b.S3Endpoint + "/" + b.S3BucketName, createdBy}
 		short := wide
 
 		p.addWideData(wide, b)
