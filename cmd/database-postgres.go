@@ -259,9 +259,11 @@ func init() {
 	postgresBackupCreateCmd.Flags().BoolP("autocreate", "", false, "automatically create s3 backup bucket")
 	postgresBackupCreateCmd.Flags().StringP("partition", "", "", "if autocreate is set to true, use this partition to create the backup bucket")
 	postgresBackupCreateCmd.Flags().StringP("s3-endpoint", "", "", "s3 endpooint to backup to")
+	postgresBackupCreateCmd.Flags().StringP("s3-region", "", "", "s3 region to backup to [optional]")
 	postgresBackupCreateCmd.Flags().StringP("s3-bucketname", "", "", "s3 bucketname to backup to")
 	postgresBackupCreateCmd.Flags().StringP("s3-accesskey", "", "", "s3-accesskey")
 	postgresBackupCreateCmd.Flags().StringP("s3-secretkey", "", "", "s3-secretkey")
+	postgresBackupCreateCmd.Flags().StringP("s3-encryptionkey", "", "", "s3 encryption key, enables sse (server side encryption) if given [optional]")
 	err = postgresBackupCreateCmd.MarkFlagRequired("name")
 	if err != nil {
 		log.Fatal(err.Error())
@@ -588,9 +590,11 @@ func postgresBackupCreate(autocreate bool) error {
 	retention := viper.GetInt32("retention")
 	partition := viper.GetString("partition")
 	s3Endpoint := viper.GetString("s3-endpoint")
+	s3Region := viper.GetString("s3-region")
 	s3BucketName := viper.GetString("s3-bucketname")
 	s3Accesskey := viper.GetString("s3-accesskey")
 	s3Secretkey := viper.GetString("s3-secretkey")
+	s3Encryptionkey := viper.GetString("s3-encryptionkey")
 
 	bcr := &models.V1BackupCreateRequest{
 		Name:      name,
@@ -604,9 +608,15 @@ func postgresBackupCreate(autocreate bool) error {
 	} else {
 		bcr.S3Endpoint = s3Endpoint
 		bcr.S3BucketName = s3BucketName
+		if s3Region != "" {
+			bcr.S3Region = s3Region
+		}
 		bcr.Secret = &models.V1BackupSecret{
 			Accesskey: s3Accesskey,
 			Secretkey: s3Secretkey,
+		}
+		if s3Encryptionkey != "" {
+			bcr.Secret.S3encryptionkey = s3Encryptionkey
 		}
 	}
 	request := database.NewCreatePostgresBackupParams()
