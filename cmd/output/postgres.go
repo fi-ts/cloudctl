@@ -133,7 +133,7 @@ func (p PostgresBackupsTablePrinter) Print(data []*models.V1BackupResponse) {
 func (p PostgresBackupEntryTablePrinter) Print(data []*models.V1BackupEntry) {
 	p.wideHeader = []string{"Date", "Size", "Name"}
 	p.shortHeader = p.wideHeader
-
+	p.Order(data)
 	for _, b := range data {
 		wide := []string{b.Timestamp.String(), helper.HumanizeSize(*b.Size), *b.Name}
 		short := wide
