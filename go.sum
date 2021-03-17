@@ -212,6 +212,8 @@ github.com/fi-ts/cloud-go v0.12.2-0.20210316065134-a64f6958a5d7 h1:pnxjVWFPblNR+
 github.com/fi-ts/cloud-go v0.12.2-0.20210316065134-a64f6958a5d7/go.mod h1:+kQ+yWP74fSWhi0wNE1AyAgKAIwTtbnqWbq0/FP1yO0=
 github.com/fi-ts/cloud-go v0.12.2-0.20210316161912-3da711c0eb4c h1:SrKPgleFLxbBzlEJnClayysuQbGmsl+nG19sSvkx920=
 github.com/fi-ts/cloud-go v0.12.2-0.20210316161912-3da711c0eb4c/go.mod h1:+kQ+yWP74fSWhi0wNE1AyAgKAIwTtbnqWbq0/FP1yO0=
+github.com/fi-ts/cloud-go v0.12.2-0.20210317082909-3b43c2ddfab8 h1:/cJdjcTvlevbKMseWg+ltyEJulYy38mXuZLGy/ey4B4=
+github.com/fi-ts/cloud-go v0.12.2-0.20210317082909-3b43c2ddfab8/go.mod h1:+kQ+yWP74fSWhi0wNE1AyAgKAIwTtbnqWbq0/FP1yO0=
 github.com/frankban/quicktest v1.5.0/go.mod h1:jaStnuzAqU1AJdCO0l53JDCJrVDKcS03DbaAcR7Ks/o=
 github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=

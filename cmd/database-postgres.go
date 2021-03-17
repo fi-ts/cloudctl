@@ -221,7 +221,6 @@ func init() {
 
 	// Create
 	postgresCreateCmd.Flags().StringP("description", "", "", "description of the database")
-	postgresCreateCmd.Flags().StringP("tenant", "", "", "tenant of the database, requires on-behalf rights [optional]")
 	postgresCreateCmd.Flags().StringP("project", "", "", "project of the database")
 	postgresCreateCmd.Flags().StringP("partition", "", "", "partition where the database should be created")
 	postgresCreateCmd.Flags().IntP("instances", "", 1, "instances of the database")
@@ -382,7 +381,6 @@ func init() {
 }
 func postgresCreate() error {
 	desc := viper.GetString("description")
-	tenant := viper.GetString("tenant")
 	project := viper.GetString("project")
 	partition := viper.GetString("partition")
 	instances := viper.GetInt32("instances")
@@ -401,7 +399,6 @@ func postgresCreate() error {
 	}
 	pcr := &models.V1PostgresCreateRequest{
 		Description:       desc,
-		Tenant:            tenant,
 		ProjectID:         project,
 		PartitionID:       partition,
 		NumberOfInstances: instances,
