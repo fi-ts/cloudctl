@@ -84,7 +84,10 @@ func (p PostgresVersionsTablePrinter) Print(data []*models.V1PostgresVersion) {
 
 	for _, pg := range data {
 
-		exp := pg.ExpirationDate.String()
+		exp := "never"
+		if !time.Time(pg.ExpirationDate).IsZero() {
+			exp = pg.ExpirationDate.String()
+		}
 		wide := []string{pg.Version, exp}
 		short := wide
 
