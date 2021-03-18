@@ -264,7 +264,7 @@ func (s *ClusterBillingTablePrinter) Order(data []*models.V1ClusterUsage) {
 					if *A.Partition != *B.Partition {
 						return false
 					}
-				case "cluster":
+				case "name":
 					if A.Clustername == nil {
 						return true
 					}
@@ -275,6 +275,130 @@ func (s *ClusterBillingTablePrinter) Order(data []*models.V1ClusterUsage) {
 						return true
 					}
 					if *A.Clustername != *B.Clustername {
+						return false
+					}
+				case "id":
+					if A.Clusterid == nil {
+						return true
+					}
+					if B.Clusterid == nil {
+						return false
+					}
+					if *A.Clusterid < *B.Clusterid {
+						return true
+					}
+					if *A.Clusterid != *B.Clusterid {
+						return false
+					}
+				case "lifetime":
+					if A.Lifetime == nil {
+						return true
+					}
+					if B.Lifetime == nil {
+						return false
+					}
+					aseconds := int64(*A.Lifetime)
+					bseconds := int64(*B.Lifetime)
+					if aseconds < bseconds {
+						return true
+					}
+					if aseconds != bseconds {
+						return false
+					}
+				}
+			}
+
+			return false
+		})
+	}
+}
+
+// Order s3Usage
+func (s *S3BillingTablePrinter) Order(data []*models.V1S3Usage) {
+	cols := strings.Split(s.order, ",")
+	if len(cols) > 0 {
+		sort.SliceStable(data, func(i, j int) bool {
+			A := data[i]
+			B := data[j]
+			for _, order := range cols {
+				order = strings.ToLower(order)
+				switch order {
+				case "tenant":
+					if A.Tenant == nil {
+						return true
+					}
+					if B.Tenant == nil {
+						return false
+					}
+					if *A.Tenant < *B.Tenant {
+						return true
+					}
+					if *A.Tenant != *B.Tenant {
+						return false
+					}
+				case "project":
+					if A.Projectname == nil {
+						return true
+					}
+					if B.Projectname == nil {
+						return false
+					}
+					if *A.Projectname < *B.Projectname {
+						return true
+					}
+					if *A.Projectname != *B.Projectname {
+						return false
+					}
+				case "partition":
+					if A.Partition == nil {
+						return true
+					}
+					if B.Partition == nil {
+						return false
+					}
+					if *A.Partition < *B.Partition {
+						return true
+					}
+					if *A.Partition != *B.Partition {
+						return false
+					}
+				case "user":
+					if A.User == nil {
+						return true
+					}
+					if B.User == nil {
+						return false
+					}
+					if *A.User < *B.User {
+						return true
+					}
+					if *A.User != *B.User {
+						return false
+					}
+				case "bucket":
+					if A.Bucketname == nil {
+						return true
+					}
+					if B.Bucketname == nil {
+						return false
+					}
+					if *A.Bucketname < *B.Bucketname {
+						return true
+					}
+					if *A.Bucketname != *B.Bucketname {
+						return false
+					}
+				case "bucket_id":
+					if A.Bucketid == nil {
+						return true
+					}
+					if B.Bucketid == nil {
+						return false
+					}
+					if *A.Bucketid < *B.Bucketid {
+						return true
+					}
+					if *A.Bucketid != *B.Bucketid {
 						return false
 					}
 				case "lifetime":
@@ -629,104 +753,6 @@ func (s *NetworkTrafficBillingTablePrinter) Order(data []*models.V1NetworkUsage)
 	}
 }
 
-// Order s3Usage
-func (s *S3BillingTablePrinter) Order(data []*models.V1S3Usage) {
-	cols := strings.Split(s.order, ",")
-	if len(cols) > 0 {
-		sort.SliceStable(data, func(i, j int) bool {
-			A := data[i]
-			B := data[j]
-			for _, order := range cols {
-				order = strings.ToLower(order)
-				switch order {
-				case "tenant":
-					if A.Tenant == nil {
-						return true
-					}
-					if B.Tenant == nil {
-						return false
-					}
-					if *A.Tenant < *B.Tenant {
-						return true
-					}
-					if *A.Tenant != *B.Tenant {
-						return false
-					}
-				case "project":
-					if A.Projectname == nil {
-						return true
-					}
-					if B.Projectname == nil {
-						return false
-					}
-					if *A.Projectname < *B.Projectname {
-						return true
-					}
-					if *A.Projectname != *B.Projectname {
-						return false
-					}
-				case "partition":
-					if A.Partition == nil {
-						return true
-					}
-					if B.Partition == nil {
-						return false
-					}
-					if *A.Partition < *B.Partition {
-						return true
-					}
-					if *A.Partition != *B.Partition {
-						return false
-					}
-				case "user":
-					if A.User == nil {
-						return true
-					}
-					if B.User == nil {
-						return false
-					}
-					if *A.User < *B.User {
-						return true
-					}
-					if *A.User != *B.User {
-						return false
-					}
-				case "bucket":
-					if A.Bucketname == nil {
-						return true
-					}
-					if B.Bucketname == nil {
-						return false
-					}
-					if *A.Bucketname < *B.Bucketname {
-						return true
-					}
-					if *A.Bucketname != *B.Bucketname {
-						return false
-					}
-				case "lifetime":
-					if A.Lifetime == nil {
-						return true
-					}
-					if B.Lifetime == nil {
-						return false
-					}
-					aseconds := int64(*A.Lifetime)
-					bseconds := int64(*B.Lifetime)
-					if aseconds < bseconds {
-						return true
-					}
-					if aseconds != bseconds {
-						return false
-					}
-				}
-			}
-
-			return false
-		})
-	}
-}
-
 // Order volumeUsage
 func (s *VolumeBillingTablePrinter) Order(data []*models.V1VolumeUsage) {
 	cols := strings.Split(s.order, ",")
@@ -787,6 +813,19 @@ func (s *VolumeBillingTablePrinter) Order(data []*models.V1VolumeUsage) {
 						return true
 					}
 					if *A.Clustername != *B.Clustername {
+						return false
+					}
+				case "name":
+					if A.Name == nil {
+						return true
+					}
+					if B.Name == nil {
+						return false
+					}
+					if *A.Name < *B.Name {
+						return true
+					}
+					if *A.Name != *B.Name {
 						return false
 					}
 				case "lifetime":
