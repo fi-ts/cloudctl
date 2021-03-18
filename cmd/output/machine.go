@@ -71,7 +71,7 @@ func (m MachineTablePrinter) Print(data []*models.ModelsV1MachineResponse) {
 			age = humanizeDuration(time.Since(created))
 		}
 		lastEvent := ""
-		lastEventTime, err := time.Parse(format, *machine.Events.LastEventTime)
+		lastEventTime, err := time.Parse(format, machine.Events.LastEventTime)
 		if err != nil {
 			fmt.Printf("unable to parse lastevent time:%s", err)
 			os.Exit(1)

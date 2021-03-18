@@ -375,14 +375,6 @@ func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResp
 		if u.Clustername != nil {
 			clusterName = *u.Clustername
 		}
-		var start string
-		if u.Start != nil {
-			start = u.Start.String()
-		}
-		var end string
-		if u.End != nil {
-			end = u.End.String()
-		}
 		var device string
 		if u.Device != nil {
 			device = *u.Device
@@ -416,8 +408,6 @@ func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResp
 			partition,
 			clusterID,
 			clusterName,
-			start,
-			end,
 			device,
 			in,
 			out,
