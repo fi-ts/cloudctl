@@ -60,7 +60,7 @@ var zshCompletionCmd = &cobra.Command{
 
 To configure your Z shell (with oh-my-zshell framework) to load completions for each session run
 
-echo -e '#compdef _cloudctl cloudctl\n. <(cloudctl zsh-completion)' > $ZSH/completions/_cloudctl
+echo -e '#compdef _cloudctl cloudctl\n. <(cloudctl completion zsh)' > $ZSH/completions/_cloudctl
 rm -f ~/.zcompdump*
 `,
 	Run: func(cmd *cobra.Command, args []string) {
