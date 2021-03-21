@@ -219,6 +219,9 @@ func (t TablePrinter) Print(data interface{}) error {
 		}
 		ContainerBillingTablePrinter{t}.Print(d)
 	case *models.V1ClusterUsageResponse:
+		if t.order == "" {
+			t.order = "tenant,project,partition,name,id"
+		}
 		ClusterBillingTablePrinter{t}.Print(d)
 	case *models.V1IPUsageResponse:
 		if t.order == "" {
@@ -231,8 +234,14 @@ func (t TablePrinter) Print(data interface{}) error {
 		}
 		NetworkTrafficBillingTablePrinter{t}.Print(d)
 	case *models.V1S3UsageResponse:
+		if t.order == "" {
+			t.order = "tenant,project,partition,user,bucket,bucket_id"
+		}
 		S3BillingTablePrinter{t}.Print(d)
 	case *models.V1VolumeUsageResponse:
+		if t.order == "" {
+			t.order = "tenant,project,partition,cluster,name"
+		}
 		VolumeBillingTablePrinter{t}.Print(d)
 	case []*models.ModelsV1MachineResponse:
 		MachineTablePrinter{t}.Print(d)
