@@ -20,7 +20,7 @@ func (p TenantTablePrinter) Print(tenants []*models.V1TenantResponse) {
 	p.wideHeader = []string{"ID", "Name", "Description", "Clusters", "Machines", "IPs", "Labels", "Annotations"}
 	p.shortHeader = p.wideHeader
 	for _, tenantResponse := range tenants {
-		tenant := tenantResponse.Tenant
+		tenant := tenantResponse
 		clusterQuota := ""
 		machineQuota := ""
 		ipQuota := ""

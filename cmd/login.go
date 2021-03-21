@@ -45,8 +45,6 @@ var loginCmd = &cobra.Command{
 			Debug:        viper.GetBool("debug"),
 		}
 
-		fmt.Println()
-
 		return auth.OIDCFlow(config)
 	},
 	PreRun: bindPFlags,
