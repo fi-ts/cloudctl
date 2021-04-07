@@ -124,10 +124,10 @@ func tenantApply() error {
 		if err != nil {
 			return err
 		}
-		if t.Payload.Tenant == nil {
+		if t.Payload == nil {
 			return fmt.Errorf("Only tenant update is supported")
 		}
-		if t.Payload.Tenant.Meta != nil {
+		if t.Payload.Meta != nil {
 			params := tenant.NewUpdateTenantParams()
 			params.SetBody(&models.V1TenantUpdateRequest{Tenant: &tars[i]})
 			resp, err := cloud.Tenant.UpdateTenant(params, nil)
@@ -154,7 +154,7 @@ func tenantEdit(args []string) error {
 		if err != nil {
 			return nil, fmt.Errorf("tenant describe error:%w", err)
 		}
-		content, err := yaml.Marshal(resp.Payload.Tenant)
+		content, err := yaml.Marshal(resp.Payload)
 		if err != nil {
 			return nil, err
 		}
