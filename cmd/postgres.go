@@ -682,10 +682,10 @@ func postgresBackupCreate(autocreate bool) error {
 			bcr.Secret.S3encryptionkey = s3Encryptionkey
 		}
 	}
-	request := database.NewCreatePostgresBackupParams()
+	request := database.NewCreatePostgresBackupConfigParams()
 	request.SetBody(bcr)
 
-	response, err := cloud.Database.CreatePostgresBackup(request, nil)
+	response, err := cloud.Database.CreatePostgresBackupConfig(request, nil)
 	if err != nil {
 		return err
 	}
@@ -717,10 +717,10 @@ func postgresBackupUpdate() error {
 		bur.Retention = retention
 	}
 
-	req := database.NewUpdatePostgresBackupParams()
+	req := database.NewUpdatePostgresBackupConfigParams()
 	req.SetBody(bur)
 
-	response, err := cloud.Database.UpdatePostgresBackup(req, nil)
+	response, err := cloud.Database.UpdatePostgresBackupConfig(req, nil)
 	if err != nil {
 		return err
 	}
@@ -730,8 +730,8 @@ func postgresBackupUpdate() error {
 
 func postgresBackupGet(args []string) error {
 	if len(args) == 0 {
-		request := database.NewListPostgresBackupsParams()
-		resp, err := cloud.Database.ListPostgresBackups(request, nil)
+		request := database.NewListPostgresBackupConfigsParams()
+		resp, err := cloud.Database.ListPostgresBackupConfigs(request, nil)
 		if err != nil {
 			return err
 		}
@@ -767,8 +767,8 @@ func postgresBackupDelete(args []string) error {
 		return err
 	}
 
-	request := database.NewDeletePostgresBackupParams().WithID(id)
-	resp, err := cloud.Database.DeletePostgresBackup(request, nil)
+	request := database.NewDeletePostgresBackupConfigParams().WithID(id)
+	resp, err := cloud.Database.DeletePostgresBackupConfig(request, nil)
 	if err != nil {
 		return err
 	}
