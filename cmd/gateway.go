@@ -78,7 +78,7 @@ func gatewayCreate() error {
 
 	resp, err := cloud.Gateway.CreateGateway(params, nil)
 	if err != nil {
-		return fmt.Errorf("failed to create a gateway with the params: %w", err)
+		return fmt.Errorf("failed to create gateway: %w", err)
 	}
 	return output.YAMLPrinter{}.Print(resp.Payload)
 }
@@ -117,7 +117,7 @@ func parsePipe(unparsed string) (*models.V1PipeSpec, error) {
 		return nil, fmt.Errorf("failed to convert `%s` to pointer to int64: %w", ss[2], err)
 	}
 	pipe.Port = port
-	pipe.Remote = ptr(ss[2])
+	pipe.Remote = ptr(strings.TrimPrefix(unparsed, ss[0]+":"+ss[1]+":"))
 	return pipe, nil
 }
 
