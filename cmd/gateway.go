@@ -12,7 +12,6 @@ import (
 	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 	"k8s.io/utils/pointer"
 )
 
@@ -31,7 +30,7 @@ var (
 		PreRun: bindPFlags,
 	}
 	server = &models.V1PeerSpec{
-		Endpoint:  "cloudgateway-cluster-int-classic-services.default.svc.cluster.local:8765",
+		Endpoint:  "cloudgateway-reverse-cluster-int-classic-services.default.svc.cluster.local:8765",
 		Name:      ptr("server"),
 		PublicKey: ptr("2o3hItYcvPrcmDMog6rOhmdzZd6PH+QIZtCvZnVrslU="),
 	}
@@ -55,40 +54,26 @@ func init() {
 }
 
 func gatewayCreate() error {
-	params := gateway.NewCreateGatewayParams()
+	params := gateway.NewHandleCreateRequestParams()
 
 	parsed, err := parseFlagPipes()
 	if err != nil {
 		return fmt.Errorf("failed to parse flag `pipes`: %w", err)
-	}
-	privateKey, publicKey, err := newKeyPair()
-	if err != nil {
-		return fmt.Errorf("failed to create a new wireguard key pair: %w", err)
 	}
 
 	params.SetBody(&models.V1GatewayCreateRequest{
 		Name:       ptr(viper.GetString("name")),
 		Pipes:      parsed,
 		Peers:      []*models.V1PeerSpec{server},
-		PrivateKey: ptr(privateKey),
 		ProjectUID: ptr(viper.GetString("project")),
-		PublicKey:  ptr(publicKey),
 		Type:       ptr("client"),
 	})
 
-	resp, err := cloud.Gateway.CreateGateway(params, nil)
+	resp, err := cloud.Gateway.HandleCreateRequest(params, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create gateway: %w", err)
 	}
 	return output.YAMLPrinter{}.Print(resp.Payload)
-}
-
-func newKeyPair() (string, string, error) {
-	key, err := wgtypes.GeneratePrivateKey()
-	if err != nil {
-		return "", "", fmt.Errorf("failed to generate a private key: %w", err)
-	}
-	return key.String(), key.PublicKey().String(), nil
 }
 
 func parseFlagPipes() ([]*models.V1PipeSpec, error) {
