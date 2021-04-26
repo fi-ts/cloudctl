@@ -29,11 +29,6 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	server = &models.V1PeerSpec{
-		Endpoint:  "cloudgateway-reverse-cluster-int-classic-services.default.svc.cluster.local:8765",
-		Name:      ptr("server"),
-		PublicKey: ptr("2o3hItYcvPrcmDMog6rOhmdzZd6PH+QIZtCvZnVrslU="),
-	}
 )
 
 func init() {
@@ -64,7 +59,7 @@ func gatewayCreate() error {
 	params.SetBody(&models.V1GatewayCreateRequest{
 		Name:       ptr(viper.GetString("name")),
 		Pipes:      parsed,
-		Peers:      []*models.V1PeerSpec{server},
+		Peers:      []*models.V1PeerSpec{},
 		ProjectUID: ptr(viper.GetString("project")),
 		Type:       ptr("client"),
 	})
