@@ -31,7 +31,7 @@ curl cloudgateway-my-gw-nginx:8082
 ## Update
 
 ```bash
-DEBUG=1 bin/cloudctl gateway create --project=my-project --name=my-gw --pipes=nginx:8088:reverse-echoserver.client:80
+DEBUG=1 bin/cloudctl gateway update --project=my-project --name=my-gw --pipes=nginx:8088:reverse-echoserver.client:80
 
 kubectl exec $(kubectl get pod -o jsonpath="{.items[0].metadata.name}") -- curl localhost:8088
 
