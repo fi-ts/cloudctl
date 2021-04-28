@@ -17,9 +17,10 @@ import (
 
 var (
 	gatewayCmd = &cobra.Command{
-		Use:   "gateway",
-		Short: "manages gateways",
-		Long:  "Manage gateways which enable access to services in another cluster",
+		Use:     "gateway",
+		Aliases: []string{"gw"},
+		Short:   "manages gateways",
+		Long:    "Manage gateways which enable access to services in another cluster",
 	}
 	gatewayCreateCmd = &cobra.Command{
 		Use:   "create",
@@ -44,7 +45,7 @@ var (
 		Short: "describe a gateway",
 		Long:  "Describe a gateway",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return gatewayDescribe(args)
+			return gatewayDescribe()
 		},
 		PreRun: bindPFlags,
 	}
@@ -101,7 +102,11 @@ func init() {
 	}
 	gatewayCmd.AddCommand(gatewayDeleteCmd)
 
-	gatewayDescribeCmd.Flags().Bool("remoteservices", true, "remote services")
+	gatewayDescribeCmd.Flags().String("name", "", "Name of the gateway")
+	gatewayDescribeCmd.Flags().String("project", "default", "Project-UID which the gateway belongs to")
+	if err := gatewayDescribeCmd.MarkFlagRequired("name"); err != nil {
+		log.Fatal(err)
+	}
 	gatewayCmd.AddCommand(gatewayDescribeCmd)
 }
 
@@ -116,7 +121,7 @@ func gatewayCreate() error {
 	params.SetBody(&models.V1GatewayCreateRequest{
 		Name:  ptr(viper.GetString("name")),
 		Pipes: parsed,
-		Peers: []*models.V1PeerSpec{&models.V1PeerSpec{
+		Peers: []*models.V1PeerSpec{{
 			Name:      ptr(""),
 			PublicKey: ptr(""),
 		}},
@@ -155,7 +160,7 @@ func gatewayUpdate() error {
 	params.SetBody(&models.V1GatewayUpdateRequest{
 		Name:  ptr(viper.GetString("name")),
 		Pipes: parsed,
-		Peers: []*models.V1PeerSpec{&models.V1PeerSpec{
+		Peers: []*models.V1PeerSpec{{
 			Name:      ptr(""),
 			PublicKey: ptr(""),
 		}},
@@ -170,8 +175,15 @@ func gatewayUpdate() error {
 	return output.YAMLPrinter{}.Print(resp.Payload)
 }
 
-func gatewayDescribe(args []string) error {
-	resp, err := cloud.Gateway.Describe(gateway.NewDescribeParams(), nil)
+func gatewayDescribe() error {
+	params := gateway.NewDescribeParams()
+
+	params.SetBody(&models.V1GatewayDescribeRequest{
+		Name:       ptr(viper.GetString("name")),
+		ProjectUID: ptr(viper.GetString("project")),
+	})
+
+	resp, err := cloud.Gateway.Describe(params, nil)
 	if err != nil {
 		return fmt.Errorf("failed to describe a gateway: %w", err)
 	}

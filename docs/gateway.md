@@ -1,5 +1,12 @@
 # Gateway
 
+## Describe
+
+```bash
+# Describe gateway server
+DEBUG=1 bin/cloudctl gateway describe --name server
+```
+
 ## Create
 
 ```bash
@@ -31,14 +38,20 @@ curl cloudgateway-my-gw-nginx:8082
 ## Update
 
 ```bash
-DEBUG=1 bin/cloudctl gateway update --project=my-project --name=my-gw --pipes=nginx:8088:reverse-echoserver.client:80
+DEBUG=1 bin/cloudctl gateway update --project=my-project --name=my-gw --pipes=echoserver:8088:reverse-echoserver.client:80
 
 kubectl exec $(kubectl get pod -o jsonpath="{.items[0].metadata.name}") -- curl localhost:8088
 
-kubectl port-forward svc/cloudgateway-my-gw-nginx 8088:8088 &
+kubectl port-forward svc/cloudgateway-my-gw-echoserver 8088:8088 &
 curl localhost:8088
 
 sudo -E kubefwd svc
 # In another terminal
-curl cloudgateway-my-gw-nginx:8088
+curl cloudgateway-my-gw-echoserver:8088
+```
+
+## Delete
+
+```
+DEBUG=1 bin/cloudctl gateway delete --project=my-project --name=my-gw
 ```
