@@ -40,8 +40,8 @@ func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
 			id = *pg.ID
 		}
 		description := pg.Description
-		partition := pg.Partition
-		project := pg.Project
+		partitionID := pg.PartitionID
+		projectID := pg.ProjectID
 		tenant := pg.Tenant
 		backup := pg.Backup
 
@@ -70,8 +70,8 @@ func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
 		maint := strings.Join(pg.Maintenance, "\n")
 
 		replica := fmt.Sprintf("%d", pg.NumberOfInstances)
-		short := []string{id, description, partition, tenant, project, cpu, buffer, storage, backup, replica, pg.Version, age, status}
-		wide := []string{id, description, partition, tenant, project, cpu, buffer, storage, backup, replica, pg.Version, address, age, status, maint, lbls}
+		short := []string{id, description, partitionID, tenant, projectID, cpu, buffer, storage, backup, replica, pg.Version, age, status}
+		wide := []string{id, description, partitionID, tenant, projectID, cpu, buffer, storage, backup, replica, pg.Version, address, age, status, maint, lbls}
 
 		p.addWideData(wide, pg)
 		p.addShortData(short, pg)

@@ -230,7 +230,7 @@ func init() {
 	postgresCreateCmd.Flags().StringP("cpu", "", "500m", "cpus for the database")
 	postgresCreateCmd.Flags().StringP("buffer", "", "500m", "shared buffer for the database")
 	postgresCreateCmd.Flags().StringP("storage", "", "10Gi", "storage for the database")
-	postgresCreateCmd.Flags().StringP("backup", "", "", "backup to use")
+	postgresCreateCmd.Flags().StringP("backup-config", "", "", "backup to use")
 	postgresCreateCmd.Flags().StringSliceP("maintenance", "", []string{"Sun:22:00-23:00"}, "time specification of the automatic maintenance in the form Weekday:HH:MM-HH-MM [optional]")
 	err := postgresCreateCmd.MarkFlagRequired("description")
 	if err != nil {
@@ -389,7 +389,7 @@ func postgresCreate() error {
 	labels := viper.GetStringSlice("labels")
 	cpu := viper.GetString("cpu")
 	buffer := viper.GetString("buffer")
-	backup := viper.GetString("backup")
+	backupConfig := viper.GetString("backup-config")
 	storage := viper.GetString("storage")
 	maintenance := viper.GetStringSlice("maintenance")
 
@@ -403,7 +403,7 @@ func postgresCreate() error {
 		PartitionID:       partition,
 		NumberOfInstances: instances,
 		Version:           version,
-		Backup:            backup,
+		Backup:            backupConfig,
 		Size: &models.V1Size{
 			CPU:          cpu,
 			SharedBuffer: buffer,
@@ -427,41 +427,52 @@ func postgresCreate() error {
 }
 
 func postgresApply() error {
-	var pars []models.V1PostgresCreateRequest
-	var par models.V1PostgresCreateRequest
-	err := helper.ReadFrom(viper.GetString("file"), &par, func(data interface{}) {
-		doc := data.(*models.V1PostgresCreateRequest)
-		pars = append(pars, *doc)
+	// var pcrs []models.V1PostgresCreateRequest
+	// var pcr models.V1PostgresCreateRequest
+
+	var purs []models.V1PostgresUpdateRequest
+	var pur models.V1PostgresUpdateRequest
+
+	err := helper.ReadFrom(viper.GetString("file"), &pur, func(data interface{}) {
+		// TODO create request
+		// cdoc := data.(*models.V1PostgresCreateRequest)
+		// pcrs = append(pcrs, *cdoc)
+		// // the request needs to be renewed as otherwise the pointers in the request struct will
+		// // always point to same last value in the multi-document loop
+		// pcr = models.V1PostgresCreateRequest{}
+
+		udoc := data.(*models.V1PostgresUpdateRequest)
+		purs = append(purs, *udoc)
 		// the request needs to be renewed as otherwise the pointers in the request struct will
 		// always point to same last value in the multi-document loop
-		par = models.V1PostgresCreateRequest{}
+		pur = models.V1PostgresUpdateRequest{}
 	})
 	if err != nil {
 		return err
 	}
 	response := []*models.V1PostgresResponse{}
-	for i, par := range pars {
+	for i, par := range purs {
+		// if par.ID == nil {
+		// 	// no postgres found, create it
+		// 	request := database.NewCreatePostgresParams()
+		// 	request.SetBody(&pcr)
+
+		// 	createdPG, err := cloud.Database.CreatePostgres(request, nil)
+		// 	if err != nil {
+		// 		return err
+		// 	}
+		// 	response = append(response, createdPG.Payload)
+		// 	continue
+		// }
 		params := database.NewGetPostgresParams().WithID(*par.ID)
 		resp, err := cloud.Database.GetPostgres(params, nil)
 		if err != nil {
 			return err
 		}
-		if resp.Payload == nil {
-			// no postgres found, create it
-			request := database.NewCreatePostgresParams()
-			request.SetBody(&par)
-
-			createdPG, err := cloud.Database.CreatePostgres(request, nil)
-			if err != nil {
-				return err
-			}
-			response = append(response, createdPG.Payload)
-			continue
-		}
 		if resp.Payload.ID != nil {
 			// existing postgres, update
 			request := database.NewUpdatePostgresParams()
-			request.SetBody(&pars[i])
+			request.SetBody(&purs[i])
 
 			updatedPG, err := cloud.Database.UpdatePostgres(request, nil)
 			if err != nil {
@@ -511,11 +522,11 @@ func postgresEdit(args []string) error {
 	return helper.Edit(id, getFunc, updateFunc)
 }
 
-func readPostgresUpdateRequests(filename string) ([]models.V1PostgresCreateRequest, error) {
-	var pcrs []models.V1PostgresCreateRequest
+func readPostgresUpdateRequests(filename string) ([]models.V1PostgresUpdateRequest, error) {
+	var pcrs []models.V1PostgresUpdateRequest
 	var pcr models.V1PostgresCreateRequest
 	err := helper.ReadFrom(filename, &pcr, func(data interface{}) {
-		doc := data.(*models.V1PostgresCreateRequest)
+		doc := data.(*models.V1PostgresUpdateRequest)
 		pcrs = append(pcrs, *doc)
 	})
 	if err != nil {
