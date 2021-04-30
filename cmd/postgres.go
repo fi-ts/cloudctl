@@ -427,43 +427,43 @@ func postgresCreate() error {
 }
 
 func postgresApply() error {
-	// var pcrs []models.V1PostgresCreateRequest
-	// var pcr models.V1PostgresCreateRequest
+	var pcrs []models.V1PostgresCreateRequest
+	var pcr models.V1PostgresCreateRequest
 
 	var purs []models.V1PostgresUpdateRequest
 	var pur models.V1PostgresUpdateRequest
 
 	err := helper.ReadFrom(viper.GetString("file"), &pur, func(data interface{}) {
-		// TODO create request
-		// cdoc := data.(*models.V1PostgresCreateRequest)
-		// pcrs = append(pcrs, *cdoc)
-		// // the request needs to be renewed as otherwise the pointers in the request struct will
-		// // always point to same last value in the multi-document loop
-		// pcr = models.V1PostgresCreateRequest{}
-
-		udoc := data.(*models.V1PostgresUpdateRequest)
-		purs = append(purs, *udoc)
-		// the request needs to be renewed as otherwise the pointers in the request struct will
-		// always point to same last value in the multi-document loop
-		pur = models.V1PostgresUpdateRequest{}
+		udoc, ok := data.(*models.V1PostgresUpdateRequest)
+		if ok {
+			purs = append(purs, *udoc)
+			// the request needs to be renewed as otherwise the pointers in the request struct will
+			// always point to same last value in the multi-document loop
+			pur = models.V1PostgresUpdateRequest{}
+		}
 	})
+	if err != nil {
+		return err
+	}
+
+	err = helper.ReadFrom(viper.GetString("file"), &pcr, func(data interface{}) {
+		cdoc, ok := data.(*models.V1PostgresCreateRequest)
+		if ok {
+			pcrs = append(pcrs, *cdoc)
+			// the request needs to be renewed as otherwise the pointers in the request struct will
+			// always point to same last value in the multi-document loop
+			pcr = models.V1PostgresCreateRequest{}
+		}
+	})
+
 	if err != nil {
 		return err
 	}
 	response := []*models.V1PostgresResponse{}
 	for i, par := range purs {
-		// if par.ID == nil {
-		// 	// no postgres found, create it
-		// 	request := database.NewCreatePostgresParams()
-		// 	request.SetBody(&pcr)
-
-		// 	createdPG, err := cloud.Database.CreatePostgres(request, nil)
-		// 	if err != nil {
-		// 		return err
-		// 	}
-		// 	response = append(response, createdPG.Payload)
-		// 	continue
-		// }
+		if par.ID == nil {
+			continue
+		}
 		params := database.NewGetPostgresParams().WithID(*par.ID)
 		resp, err := cloud.Database.GetPostgres(params, nil)
 		if err != nil {
@@ -481,6 +481,21 @@ func postgresApply() error {
 			response = append(response, updatedPG.Payload)
 			continue
 		}
+	}
+	for i, par := range pcrs {
+		if par.ID != nil {
+			continue
+		}
+		// no postgres found, create it
+		request := database.NewCreatePostgresParams()
+		request.SetBody(&pcrs[i])
+
+		createdPG, err := cloud.Database.CreatePostgres(request, nil)
+		if err != nil {
+			return err
+		}
+		response = append(response, createdPG.Payload)
+		continue
 	}
 	return printer.Print(response)
 }
