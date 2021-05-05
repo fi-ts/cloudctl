@@ -116,7 +116,7 @@ func (p PostgresPartitionsTablePrinter) Print(data models.V1PostgresPartitionsRe
 	}
 	p.render()
 }
-func (p PostgresBackupsTablePrinter) Print(data []*models.V1BackupResponse) {
+func (p PostgresBackupsTablePrinter) Print(data []*models.V1PostgresBackupConfigResponse) {
 	p.wideHeader = []string{"ID", "Name", "Project", "Schedule", "Retention", "S3", "CreatedBy"}
 	p.shortHeader = p.wideHeader
 
@@ -133,7 +133,7 @@ func (p PostgresBackupsTablePrinter) Print(data []*models.V1BackupResponse) {
 	}
 	p.render()
 }
-func (p PostgresBackupEntryTablePrinter) Print(data []*models.V1BackupEntry) {
+func (p PostgresBackupEntryTablePrinter) Print(data []*models.V1PostgresBackupEntry) {
 	p.wideHeader = []string{"Date", "Size", "Name"}
 	p.shortHeader = p.wideHeader
 	p.Order(data)

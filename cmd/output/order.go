@@ -921,7 +921,7 @@ func (m S3PartitionTablePrinter) Order(data []*models.V1S3PartitionResponse) {
 }
 
 // Order postgres backups partitions
-func (p PostgresBackupEntryTablePrinter) Order(data []*models.V1BackupEntry) {
+func (p PostgresBackupEntryTablePrinter) Order(data []*models.V1PostgresBackupEntry) {
 	cols := strings.Split(p.order, ",")
 	if len(cols) > 0 {
 		sort.SliceStable(data, func(i, j int) bool {

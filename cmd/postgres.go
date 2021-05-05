@@ -685,7 +685,7 @@ func postgresBackupCreate(autocreate bool) error {
 	s3Secretkey := viper.GetString("s3-secretkey")
 	s3Encryptionkey := viper.GetString("s3-encryptionkey")
 
-	bcr := &models.V1BackupCreateRequest{
+	bcr := &models.V1PostgresBackupConfigCreateRequest{
 		Name:      name,
 		ProjectID: project,
 		Schedule:  schedule,
@@ -700,7 +700,7 @@ func postgresBackupCreate(autocreate bool) error {
 		if s3Region != "" {
 			bcr.S3Region = s3Region
 		}
-		bcr.Secret = &models.V1BackupSecret{
+		bcr.Secret = &models.V1PostgresBackupSecret{
 			Accesskey: s3Accesskey,
 			Secretkey: s3Secretkey,
 		}
@@ -733,7 +733,7 @@ func postgresBackupUpdate() error {
 	schedule := viper.GetString("schedule")
 	retention := viper.GetInt32("retention")
 
-	bur := &models.V1BackupUpdateRequest{
+	bur := &models.V1PostgresBackupConfigUpdateRequest{
 		ID: id,
 	}
 	if schedule != "" {
