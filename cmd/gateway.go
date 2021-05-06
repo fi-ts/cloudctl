@@ -16,13 +16,27 @@ import (
 )
 
 var (
-	gatewayCmd = &cobra.Command{
+	gwCmd = &cobra.Command{
 		Use:     "gateway",
 		Aliases: []string{"gw"},
 		Short:   "manages gateways",
 		Long:    "Manage gateways which enable access to services in another cluster",
 	}
-	gatewayCreateCmd = &cobra.Command{
+	gwClientCmd = &cobra.Command{
+		Use:   "client",
+		Short: "manages gateway clients",
+		Long:  "Manage gateway clients which constitute half of gateway pairs",
+	}
+	gwClientAddPipesCmd = &cobra.Command{
+		Use:   "add-pipes",
+		Short: "add pipes to a gateway",
+		Long:  "add pipes to a gateway",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return gatewayAddPipes()
+		},
+		PreRun: bindPFlags,
+	}
+	gwClientCreateCmd = &cobra.Command{
 		Use:   "create",
 		Short: "creates a gateway",
 		Long:  "Create a new gateway",
@@ -31,7 +45,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	gatewayDeleteCmd = &cobra.Command{
+	gwClientDeleteCmd = &cobra.Command{
 		Use:   "delete",
 		Short: "deletes a gateway",
 		Long:  "Delete a gateway",
@@ -40,7 +54,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	gatewayDescribeCmd = &cobra.Command{
+	gwClientDescribeCmd = &cobra.Command{
 		Use:   "describe",
 		Short: "describe a gateway",
 		Long:  "Describe a gateway",
@@ -49,65 +63,58 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	gatewayUpdateCmd = &cobra.Command{
-		Use:   "update",
-		Short: "updates a gateway",
-		Long:  "Update a gateway",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return gatewayUpdate()
-		},
-		PreRun: bindPFlags,
-	}
 )
 
 func init() {
-	gatewayCreateCmd.Flags().String("name", "", "Name of the gateway")
-	gatewayCreateCmd.Flags().String("clients", "", "Name of the gateway clients")
-	gatewayCreateCmd.Flags().String("project", "", "Project-UID which the gateway belongs to")
-	gatewayCreateCmd.Flags().String("pipes", "", "Comma-separated-list of pipes (e.g. PIPE_1,PIPE_2). Pipe has format SVC_NAME_1:CLIENT_POD_PORT_1:REMOTE_SVC_ENDPOINT_1.")
-	if err := gatewayCreateCmd.MarkFlagRequired("name"); err != nil {
-		log.Fatal(err)
-	}
-	if err := gatewayCreateCmd.MarkFlagRequired("project"); err != nil {
-		log.Fatal(err)
-	}
-	if err := gatewayCreateCmd.MarkFlagRequired("pipes"); err != nil {
-		log.Fatal(err)
-	}
-	gatewayCmd.AddCommand(gatewayCreateCmd)
+	gwCmd.AddCommand(gwClientCmd)
 
-	gatewayUpdateCmd.Flags().String("name", "", "Name of the gateway")
-	gatewayUpdateCmd.Flags().String("clients", "", "Name of the gateway clients")
-	gatewayUpdateCmd.Flags().String("project", "", "Project-UID which the gateway belongs to")
-	gatewayUpdateCmd.Flags().String("pipes", "", "Comma-separated-list of pipes (e.g. PIPE_1,PIPE_2). Pipe has format SVC_NAME_1:CLIENT_POD_PORT_1:REMOTE_SVC_ENDPOINT_1.")
-	if err := gatewayUpdateCmd.MarkFlagRequired("name"); err != nil {
+	gwClientCreateCmd.Flags().String("name", "", "Name of the gateway")
+	gwClientCreateCmd.Flags().String("clients", "", "Name of the gateway clients")
+	gwClientCreateCmd.Flags().String("project", "", "Project-UID which the gateway belongs to")
+	gwClientCreateCmd.Flags().String("pipes", "", "Comma-separated-list of pipes (e.g. PIPE_1,PIPE_2). Pipe has format SVC_NAME_1:CLIENT_POD_PORT_1:REMOTE_SVC_ENDPOINT_1.")
+	if err := gwClientCreateCmd.MarkFlagRequired("name"); err != nil {
 		log.Fatal(err)
 	}
-	if err := gatewayUpdateCmd.MarkFlagRequired("project"); err != nil {
+	if err := gwClientCreateCmd.MarkFlagRequired("project"); err != nil {
 		log.Fatal(err)
 	}
-	if err := gatewayUpdateCmd.MarkFlagRequired("pipes"); err != nil {
+	if err := gwClientCreateCmd.MarkFlagRequired("pipes"); err != nil {
 		log.Fatal(err)
 	}
-	gatewayCmd.AddCommand(gatewayUpdateCmd)
+	gwClientCmd.AddCommand(gwClientCreateCmd)
 
-	gatewayDeleteCmd.Flags().String("name", "", "Name of the gateway")
-	gatewayDeleteCmd.Flags().String("clients", "", "Name of the gateway clients")
-	gatewayDeleteCmd.Flags().String("project", "", "Project-UID which the gateway belongs to")
-	if err := gatewayDeleteCmd.MarkFlagRequired("name"); err != nil {
+	gwClientAddPipesCmd.Flags().String("name", "", "Name of the gateway")
+	gwClientAddPipesCmd.Flags().String("clients", "", "Name of the gateway clients")
+	gwClientAddPipesCmd.Flags().String("project", "", "Project-UID which the gateway belongs to")
+	gwClientAddPipesCmd.Flags().String("pipes", "", "Comma-separated-list of pipes (e.g. PIPE_1,PIPE_2). Pipe has format SVC_NAME_1:CLIENT_POD_PORT_1:REMOTE_SVC_ENDPOINT_1.")
+	if err := gwClientAddPipesCmd.MarkFlagRequired("name"); err != nil {
 		log.Fatal(err)
 	}
-	if err := gatewayDeleteCmd.MarkFlagRequired("project"); err != nil {
+	if err := gwClientAddPipesCmd.MarkFlagRequired("project"); err != nil {
 		log.Fatal(err)
 	}
-	gatewayCmd.AddCommand(gatewayDeleteCmd)
+	if err := gwClientAddPipesCmd.MarkFlagRequired("pipes"); err != nil {
+		log.Fatal(err)
+	}
+	gwClientCmd.AddCommand(gwClientAddPipesCmd)
 
-	gatewayDescribeCmd.Flags().String("name", "", "Name of the gateway")
-	gatewayDescribeCmd.Flags().String("project", "default", "Project-UID which the gateway belongs to")
-	if err := gatewayDescribeCmd.MarkFlagRequired("name"); err != nil {
+	gwClientDeleteCmd.Flags().String("name", "", "Name of the gateway")
+	gwClientDeleteCmd.Flags().String("clients", "", "Name of the gateway clients")
+	gwClientDeleteCmd.Flags().String("project", "", "Project-UID which the gateway belongs to")
+	if err := gwClientDeleteCmd.MarkFlagRequired("name"); err != nil {
 		log.Fatal(err)
 	}
-	gatewayCmd.AddCommand(gatewayDescribeCmd)
+	if err := gwClientDeleteCmd.MarkFlagRequired("project"); err != nil {
+		log.Fatal(err)
+	}
+	gwClientCmd.AddCommand(gwClientDeleteCmd)
+
+	gwClientDescribeCmd.Flags().String("name", "", "Name of the gateway")
+	gwClientDescribeCmd.Flags().String("project", "default", "Project-UID which the gateway belongs to")
+	if err := gwClientDescribeCmd.MarkFlagRequired("name"); err != nil {
+		log.Fatal(err)
+	}
+	gwClientCmd.AddCommand(gwClientDescribeCmd)
 }
 
 func gatewayCreate() error {
@@ -149,15 +156,15 @@ func gatewayDelete() error {
 	return output.YAMLPrinter{}.Print(resp.Payload)
 }
 
-func gatewayUpdate() error {
-	params := gateway.NewUpdateParams()
+func gatewayAddPipes() error {
+	params := gateway.NewAddPipesParams()
 
 	parsed, err := parseFlagPipes()
 	if err != nil {
 		return fmt.Errorf("failed to parse flag `pipes`: %w", err)
 	}
 
-	params.SetBody(&models.V1GatewayUpdateRequest{
+	params.SetBody(&models.V1GatewayAddPipesRequest{
 		Name:  ptr(viper.GetString("name")),
 		Pipes: parsed,
 		Peers: []*models.V1PeerSpec{{
@@ -168,9 +175,9 @@ func gatewayUpdate() error {
 		Type:       ptr("client"),
 	})
 
-	resp, err := cloud.Gateway.Update(params, nil)
+	resp, err := cloud.Gateway.AddPipes(params, nil)
 	if err != nil {
-		return fmt.Errorf("failed to update gateway: %w", err)
+		return fmt.Errorf("failed to add pipes to the gateway: %w", err)
 	}
 	return output.YAMLPrinter{}.Print(resp.Payload)
 }

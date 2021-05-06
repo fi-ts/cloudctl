@@ -88,7 +88,7 @@ func init() {
 	rootCmd.AddCommand(tenantCmd)
 	rootCmd.AddCommand(contextCmd)
 	rootCmd.AddCommand(s3Cmd)
-	rootCmd.AddCommand(gatewayCmd)
+	rootCmd.AddCommand(gwCmd)
 
 	rootCmd.AddCommand(completionCmd)
 	completionCmd.AddCommand(bashCompletionCmd)

@@ -1,16 +1,19 @@
 # Gateway
 
-## Describe
+## server
+
+### Describe
 
 ```bash
 # Describe gateway server
-DEBUG=1 bin/cloudctl gateway describe --name server
+DEBUG=1 bin/cloudctl gateway server describe --name server
 ```
 
-## Create
+
+### Create
 
 ```bash
-DEBUG=1 bin/cloudctl gateway create --project=my-project --name=my-gw --pipes=nginx:8082:reverse-cluster-int-nginx:8082
+DEBUG=1 bin/cloudctl gateway client create --project=my-project --name=my-gw --pipes=nginx:8082:reverse-cluster-int-nginx:8082
 
 # Change context to gateway client cluster's context (kind-kind2 in this case) by `kubectx`
 kubectl ctx kind-kind2
@@ -35,10 +38,10 @@ curl cloudgateway-my-gw-nginx:8082
 
 ```
 
-## Update
+### Add Pipes
 
 ```bash
-DEBUG=1 bin/cloudctl gateway update --project=my-project --name=my-gw --pipes=echoserver:8088:reverse-echoserver.client:80
+DEBUG=1 bin/cloudctl gateway client add-pipes --project=my-project --name=my-gw --pipes=echoserver:8088:reverse-echoserver.client:80
 
 kubectl exec $(kubectl get pod -o jsonpath="{.items[0].metadata.name}") -- curl localhost:8088
 
@@ -50,8 +53,14 @@ sudo -E kubefwd svc
 curl cloudgateway-my-gw-echoserver:8088
 ```
 
-## Delete
+### Delete
 
 ```
-DEBUG=1 bin/cloudctl gateway delete --project=my-project --name=my-gw
+DEBUG=1 bin/cloudctl gateway client delete --project=my-project --name=my-gw
+```
+
+### List
+
+```
+DEBUG=1 bin/cloudctl gateway client list
 ```
