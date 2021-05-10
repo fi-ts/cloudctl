@@ -9,6 +9,7 @@
 DEBUG=1 bin/cloudctl gateway server describe --name server
 ```
 
+## Client
 
 ### Create
 
@@ -55,12 +56,12 @@ curl cloudgateway-my-gw-echoserver:8088
 
 ### Delete
 
-```
+```bash
 DEBUG=1 bin/cloudctl gateway client delete --project=my-project --name=my-gw
 ```
 
 ### List
 
-```
+```bash
 DEBUG=1 bin/cloudctl gateway client list
 ```
