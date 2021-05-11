@@ -404,7 +404,7 @@ func postgresCreate() error {
 		NumberOfInstances: instances,
 		Version:           version,
 		Backup:            backupConfig,
-		Size: &models.V1Size{
+		Size: &models.V1PostgresSize{
 			CPU:          cpu,
 			SharedBuffer: buffer,
 			StorageSize:  storage,
@@ -482,10 +482,8 @@ func postgresApply() error {
 			continue
 		}
 	}
-	for i, par := range pcrs {
-		if par.ID != nil {
-			continue
-		}
+	for i := range pcrs {
+
 		// no postgres found, create it
 		request := database.NewCreatePostgresParams()
 		request.SetBody(&pcrs[i])
@@ -557,11 +555,11 @@ func postgresFind() error {
 	if helper.AtLeastOneViperStringFlagGiven("id", "description", "tenant", "project", "partition") {
 		params := database.NewFindPostgresParams()
 		ifr := &models.V1PostgresFindRequest{
-			ID:          helper.ViperString("id"),
-			Description: helper.ViperString("description"),
-			Tenant:      helper.ViperString("tenant"),
-			ProjectID:   helper.ViperString("project"),
-			PartitionID: helper.ViperString("partition"),
+			ID:          *helper.ViperString("id"),
+			Description: *helper.ViperString("description"),
+			Tenant:      *helper.ViperString("tenant"),
+			ProjectID:   *helper.ViperString("project"),
+			PartitionID: *helper.ViperString("partition"),
 		}
 		params.SetBody(ifr)
 		resp, err := cloud.Database.FindPostgres(params, nil)
