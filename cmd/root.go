@@ -153,7 +153,7 @@ func initConfig() {
 	}
 
 	var err error
-	cloud, err = cloudgo.NewClient(driverURL, apiToken, hmac, cloudgo.AuthType("Metal-Admin"))
+	cloud, err = cloudgo.NewClient(driverURL, apiToken, hmac)
 	if err != nil {
 		log.Fatalf("error initializing cloud-api client: %v", err)
 	}
