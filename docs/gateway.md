@@ -1,67 +1,67 @@
 # Gateway
 
-## server
+## Server
 
-### Describe
+### Admin
 
 ```bash
-# Describe gateway server
-DEBUG=1 bin/cloudctl gateway server describe --name server
+# `add` adds the pipe to the server. If the server doesn't exist, create it.
+# <pipes> == <pipe1,pipe2,...>, pipe1 == service-name:client-side-service-port:server-side-service-endpoint
+$ cloudctl gw server add --project <project-uid> --name <server-name> --pipes <pipes>
+
+# or use id
+# <id> == <project-uid>--<server-name>
+$ cloudctl gw server add <id> --pipes <pipes>
+
+# `rm-pipes` removes the pipes from the server
+$ cloudctl gw server rm-pipes <id> --pipes <pipes>
+
+# `delete` deletes the server
+$ cloudctl gw server delete <id>
+```
+
+### All Users
+
+```bash
+$ cloudctl gw server list
+ID            Service           Pipe
+<server-id-a> <service-name-a0> <pipe-a0>
+              <service-name-a1> <pipe-a1>
+<server-id-b> <service-name-b0> <pipe-b0>
+              <service-name-b1> <pipe-b1>
+
+$ cloudctl gw server describe <id>
+Service           Pipe
+<service-name-a0> <pipe-a0>
+<service-name-a1> <pipe-a1>
 ```
 
 ## Client
 
-### Create
-
 ```bash
-DEBUG=1 bin/cloudctl gateway client create --project=my-project --name=my-gw --pipes=nginx:8082:reverse-cluster-int-nginx:8082
+# `add` enables the client to access the server's service. If the client doesn't exist, create it.
+# <service-names> == service-name-1,service-name-2,...
+$ cloudctl gw client create --project <project-uid> --name <client-name> --server-id <server-id> --services <service-names>
 
-# Change context to gateway client cluster's context (kind-kind2 in this case) by `kubectx`
-kubectl ctx kind-kind2
+# or use id
+# <id> == <project-uid>--<client-name>
+$ cloudctl gw client create <id> --server-id <server-id> --services <service-names>
 
-# Change namespace to the gateway client instance's namespace (my-project in this case) by `kubens`
-kubectl ns my-project
+$ cloudctl gw client list
+Name          Service           Endpoint
+<client-id-a> <service-name-a0> <service-local-endpoint-a0>
+              <service-name-a1> <service-local-endpoint-a1>
+<client-id-b> <service-name-b0> <service-local-endpoint-b0>
+              <service-name-b1> <service-local-endpoint-b1>
 
-# Fetch the gateway client instance (my-gw in this case)
-kubectl get instance my-gw -o yaml
+$ cloudctl gw client describe <id>
+Service           Endpoint
+<service-name-a0> <service-local-endpoint-a0>
+<service-name-a1> <service-local-endpoint-a1>
 
-# See the pipe in action
-kubectl exec $(kubectl get pod -o jsonpath="{.items[0].metadata.name}") -- curl localhost:8082
+# `rm-svc` removes the service from the client
+$ cloudctl gw client rm-svc <id> --service <service-name>
 
-# See the pipe in action via service
-kubectl port-forward svc/cloudgateway-my-gw-nginx 8082:8082 &
-curl localhost:8082
-
-# See the pipe in action via `kubefwd`
-sudo -E kubefwd svc
-# In another terminal
-curl cloudgateway-my-gw-nginx:8082
-
-```
-
-### Add Pipes
-
-```bash
-DEBUG=1 bin/cloudctl gateway client add-pipes --project=my-project --name=my-gw --pipes=echoserver:8088:reverse-echoserver.client:80
-
-kubectl exec $(kubectl get pod -o jsonpath="{.items[0].metadata.name}") -- curl localhost:8088
-
-kubectl port-forward svc/cloudgateway-my-gw-echoserver 8088:8088 &
-curl localhost:8088
-
-sudo -E kubefwd svc
-# In another terminal
-curl cloudgateway-my-gw-echoserver:8088
-```
-
-### Delete
-
-```bash
-DEBUG=1 bin/cloudctl gateway client delete --project=my-project --name=my-gw
-```
-
-### List
-
-```bash
-DEBUG=1 bin/cloudctl gateway client list
+# `delete` deletes the client
+$ cloudctl gw client delete <id>
 ```
