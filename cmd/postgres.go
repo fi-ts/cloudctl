@@ -227,8 +227,8 @@ func init() {
 	postgresCreateCmd.Flags().StringSliceP("sources", "", []string{"0.0.0.0/0"}, "networks which should be allowed to connect in CIDR notation")
 	postgresCreateCmd.Flags().StringSliceP("labels", "", []string{}, "labels to add to that postgres database")
 	postgresCreateCmd.Flags().StringP("cpu", "", "500m", "cpus for the database")
-	postgresCreateCmd.Flags().StringP("buffer", "", "500m", "shared buffer for the database")
-	postgresCreateCmd.Flags().StringP("storage", "", "10Gi", "storage for the database")
+	postgresCreateCmd.Flags().StringP("buffer", "", "64Mi", "shared buffer for the database")
+	postgresCreateCmd.Flags().StringP("storage", "", "10G", "storage for the database")
 	postgresCreateCmd.Flags().StringP("backup-config", "", "", "backup to use")
 	postgresCreateCmd.Flags().StringSliceP("maintenance", "", []string{"Sun:22:00-23:00"}, "time specification of the automatic maintenance in the form Weekday:HH:MM-HH-MM [optional]")
 	err := postgresCreateCmd.MarkFlagRequired("description")
@@ -306,7 +306,7 @@ func init() {
 	postgresBackupCreateCmd.Flags().StringP("name", "", "", "name of the database backup")
 	postgresBackupCreateCmd.Flags().StringP("project", "", "", "project of the database backup")
 	postgresBackupCreateCmd.Flags().StringP("schedule", "", "30 00 * * *", "backup schedule in cron syntax")
-	postgresBackupCreateCmd.Flags().Int32P("retention", "", int32(10), "backup retention days")
+	postgresBackupCreateCmd.Flags().Int32P("retention", "", int32(10), "number of backups per postgres to retain")
 	postgresBackupCreateCmd.Flags().BoolP("autocreate", "", false, "automatically create s3 backup bucket")
 	postgresBackupCreateCmd.Flags().StringP("partition", "", "", "if autocreate is set to true, use this partition to create the backup bucket")
 	postgresBackupCreateCmd.Flags().StringP("s3-endpoint", "", "", "s3 endpooint to backup to")
@@ -339,7 +339,7 @@ func init() {
 	postgresBackupAutoCreateCmd.Flags().StringP("name", "", "", "name of the database backup")
 	postgresBackupAutoCreateCmd.Flags().StringP("project", "", "", "project of the database backup")
 	postgresBackupAutoCreateCmd.Flags().StringP("schedule", "", "30 00 * * *", "backup schedule in cron syntax")
-	postgresBackupAutoCreateCmd.Flags().Int32P("retention", "", int32(10), "backup retention days")
+	postgresBackupAutoCreateCmd.Flags().Int32P("retention", "", int32(10), "number of backups per postgres to retain")
 	postgresBackupAutoCreateCmd.Flags().StringP("partition", "", "", "use this partition to create the backup bucket")
 	err = postgresBackupAutoCreateCmd.MarkFlagRequired("name")
 	if err != nil {
@@ -356,7 +356,7 @@ func init() {
 
 	postgresBackupUpdateCmd.Flags().StringP("id", "", "", "id of the database backup")
 	postgresBackupUpdateCmd.Flags().StringP("schedule", "", "", "backup schedule in cron syntax [optional]")
-	postgresBackupUpdateCmd.Flags().Int32P("retention", "", int32(10), "backup retention days [optional]")
+	postgresBackupUpdateCmd.Flags().Int32P("retention", "", int32(0), "number of backups per postgres to retain [optional]")
 	err = postgresBackupUpdateCmd.MarkFlagRequired("id")
 	if err != nil {
 		log.Fatal(err.Error())
@@ -703,8 +703,8 @@ func postgresBackupCreate(autocreate bool) error {
 func postgresBackupUpdate() error {
 	id := viper.GetString("id")
 
-	request := database.NewGetPostgresBackupsParams().WithID(id)
-	resp, err := cloud.Database.GetPostgresBackups(request, nil)
+	request := database.NewGetBackupConfigParams().WithID(id)
+	resp, err := cloud.Database.GetBackupConfig(request, nil)
 	if err != nil {
 		return err
 	}
