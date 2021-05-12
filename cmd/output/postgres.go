@@ -31,8 +31,8 @@ type (
 )
 
 func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
-	p.shortHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Backup", "Replica", "Version", "Age", "Status"}
-	p.wideHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Backup", "Replica", "Version", "Address", "Age", "Status", "Maintenance", "Labels"}
+	p.shortHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Backup-Config", "Replica", "Version", "Age", "Status"}
+	p.wideHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Backup-Config", "Replica", "Version", "Address", "Age", "Status", "Maintenance", "Labels"}
 
 	for _, pg := range data {
 		id := ""
