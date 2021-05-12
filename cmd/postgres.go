@@ -34,21 +34,21 @@ dc1             any
 
 2. Create a backup-config with retention count and schedule
 
-# cloudctl postgres backup-config auto-create --name daily-for-one-week --project <your-project-id> --partition dc1 --retention 7 --schedule "* * * * *"
+# cloudctl postgres backup-config auto-create --name daily-for-one-week --project <your-project-id> --partition dc1 --retention 7 --schedule "45 3 * * 0"
 ID                                      NAME                    PROJECT                                 SCHEDULE        RETENTION       S3                                                              CREATEDBY
-3094421c-ee11-4155-b4d9-7fdac116c0ff    daily-for-one-week      b621eb99-4888-4911-93fc-95854fc030e8    * * * * *       7               https://s3.test-01-fra-equ01.metal-pod.dev/backup-3094421c      <Achim Muster>[achim.muster@example.com]
+3094421c-ee11-4155-b4d9-7fdac116c0ff    daily-for-one-week      b621eb99-4888-4911-93fc-95854fc030e8    45 3 * * *       7               https://s3.dev.example/backup-3094421c      <Achim Muster>[achim.muster@example.com]
 
 3. Create a postgres database
 
-# cloudctl postgres create --description accounting-db-test --project <your-project-id> --partition dc1 --backup <backup-id-from-above>
-ID                                      DESCRIPTION             PARTITION       TENANT  PROJECT                                 CPU     BUFFER  STORAGE BACKUP                                  REPLICA VERSION AGE     STATUS
-890b1601-6cc3-46cd-86a6-d4479bc1528d    accounting-db-test      nbg-w8101       fits    b621eb99-4888-4911-93fc-95854fc030e8    500m    500m    10Gi    3094421c-ee11-4155-b4d9-7fdac116c0ff    1       12      0s
+# cloudctl postgres create --description accounting-db-test --project <your-project-id> --partition dc1 --backup-config <backup-config-id-from-above>
+ID                                      DESCRIPTION             PARTITION       TENANT  PROJECT                                 CPU     BUFFER  STORAGE BACKUP-CONFIG                           REPLICA VERSION AGE     STATUS
+890b1601-6cc3-46cd-86a6-d4479bc1528d    accounting-db-test      dc1             fits    b621eb99-4888-4911-93fc-95854fc030e8    500m    500m    10Gi    3094421c-ee11-4155-b4d9-7fdac116c0ff    1       12      0s
 
 4. Check if it is running with
 
 # cloudctl postgres ls --description accounting-db-test
-ID                                      DESCRIPTION             PARTITION       TENANT  PROJECT                                 CPU     BUFFER  STORAGE BACKUP                                  REPLICA VERSION AGE     STATUS
-890b1601-6cc3-46cd-86a6-d4479bc1528d    accounting-db-test      nbg-w8101       fits    b621eb99-4888-4911-93fc-95854fc030e8    500m    500m    10Gi    3094421c-ee11-4155-b4d9-7fdac116c0ff    1       12      1m 21s  Running
+ID                                      DESCRIPTION             PARTITION       TENANT  PROJECT                                 CPU     BUFFER  STORAGE BACKUP-CONFIG                           REPLICA VERSION AGE     STATUS
+890b1601-6cc3-46cd-86a6-d4479bc1528d    accounting-db-test      dc1             fits    b621eb99-4888-4911-93fc-95854fc030e8    500m    500m    10Gi    3094421c-ee11-4155-b4d9-7fdac116c0ff    1       12      1m 21s  Running
 
 5. Connect to the database
 
@@ -63,7 +63,7 @@ Type "help" for help.
 
 postgres=#
 
-6. You can create more database, all using the same backup-config
+6. You can create more databases, all using the same backup-config
 `,
 	}
 	postgresCreateCmd = &cobra.Command{
@@ -100,9 +100,8 @@ postgres=#
 		PreRun: bindPFlags,
 	}
 	postgresListBackupsCmd = &cobra.Command{
-		Use:     "list-backups",
-		Short:   "list postgres backups",
-		Aliases: []string{"ls"},
+		Use:   "list-backups",
+		Short: "list postgres backups",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return postgresListBackups(args)
 		},
@@ -125,7 +124,7 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
-	postgresConnectionStringtCmd = &cobra.Command{
+	postgresConnectionStringCmd = &cobra.Command{
 		Use:   "connectionstring <postgres>",
 		Short: "return the connectionstring for a postgres",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -211,7 +210,7 @@ func init() {
 	postgresCmd.AddCommand(postgresDescribeCmd)
 	postgresCmd.AddCommand(postgresVersionsCmd)
 	postgresCmd.AddCommand(postgresPartitionsCmd)
-	postgresCmd.AddCommand(postgresConnectionStringtCmd)
+	postgresCmd.AddCommand(postgresConnectionStringCmd)
 
 	postgresBackupCmd.AddCommand(postgresBackupCreateCmd)
 	postgresBackupCmd.AddCommand(postgresBackupAutoCreateCmd)
@@ -271,9 +270,6 @@ func init() {
 	postgresListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
 	postgresListCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
 
-	// postgresUpdateCmd.Flags().StringP("name", "", "restored-pv", "name of the PersistentPostgres")
-	// postgresUpdateCmd.Flags().StringP("namespace", "", "default", "namespace for the PersistentPostgres")
-
 	err = postgresListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return projectListCompletion()
 	})
@@ -299,8 +295,8 @@ func init() {
 	# cloudctl postgres apply -f postgres1.yaml
 	`)
 
-	postgresConnectionStringtCmd.Flags().StringP("type", "", "psql", "the type of the connectionstring to create, can be one of psql|jdbc")
-	err = postgresConnectionStringtCmd.RegisterFlagCompletionFunc("type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	postgresConnectionStringCmd.Flags().StringP("type", "", "psql", "the type of the connectionstring to create, can be one of psql|jdbc")
+	err = postgresConnectionStringCmd.RegisterFlagCompletionFunc("type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"jdbc", "psql"}, cobra.ShellCompDirectiveDefault
 	})
 	if err != nil {
@@ -327,10 +323,6 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = postgresBackupCreateCmd.MarkFlagRequired("schedule")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
 	err = postgresBackupCreateCmd.MarkFlagRequired("s3-endpoint")
 	if err != nil {
 		log.Fatal(err.Error())
@@ -354,14 +346,6 @@ func init() {
 		log.Fatal(err.Error())
 	}
 	err = postgresBackupAutoCreateCmd.MarkFlagRequired("project")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = postgresBackupAutoCreateCmd.MarkFlagRequired("schedule")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = postgresBackupAutoCreateCmd.MarkFlagRequired("retention")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -753,7 +737,7 @@ func postgresBackupUpdate() error {
 }
 
 func postgresBackupGet(args []string) error {
-	if len(args) == 0 {
+	if len(args) <= 0 {
 		request := database.NewListPostgresBackupConfigsParams()
 		resp, err := cloud.Database.ListPostgresBackupConfigs(request, nil)
 		if err != nil {
@@ -762,27 +746,32 @@ func postgresBackupGet(args []string) error {
 		return printer.Print(resp.Payload)
 	}
 
-	if len(args) > 0 {
-		request := database.NewGetPostgresBackupsParams().WithID(args[0])
-		resp, err := cloud.Database.GetPostgresBackups(request, nil)
-		if err != nil {
-			return err
-		}
-		return printer.Print(resp.Payload)
+	request := database.NewGetPostgresBackupsParams().WithID(args[0])
+	resp, err := cloud.Database.GetPostgresBackups(request, nil)
+	if err != nil {
+		return err
 	}
-	return fmt.Errorf("only backup id allowed")
+	return printer.Print(resp.Payload)
 }
 func postgresBackupDelete(args []string) error {
-	if len(args) != 1 {
+	if len(args) < 1 {
 		return fmt.Errorf("missing backup id")
 	}
+	if len(args) > 1 {
+		return fmt.Errorf("only a single backup id is supported")
+	}
 	id := args[0]
+
+	err := postgresBackupGet(args)
+	if err != nil {
+		return err
+	}
 
 	idParts := strings.Split(id, "-")
 	firstPartOfID := idParts[0]
 	lastPartOfID := idParts[len(idParts)-1]
 	fmt.Println("Please answer some security questions to delete this postgres database backup")
-	err := helper.Prompt("first part of ID:", firstPartOfID)
+	err = helper.Prompt("first part of ID:", firstPartOfID)
 	if err != nil {
 		return err
 	}
