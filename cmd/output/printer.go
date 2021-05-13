@@ -256,6 +256,8 @@ func (t TablePrinter) Print(data interface{}) error {
 		S3PartitionTablePrinter{t}.Print(d)
 	case *api.Contexts:
 		ContextPrinter{t}.Print(d)
+	case ShootSummaryResponse:
+		ShootSummaryTablePrinter{t}.Print(d)
 	default:
 		return fmt.Errorf("unknown table printer for type: %T", d)
 	}

@@ -14,6 +14,7 @@ import (
 type (
 	ShootIssuesResponse  *models.V1ClusterResponse
 	ShootIssuesResponses []*models.V1ClusterResponse
+	ShootSummaryResponse []*models.V1ClusterResponse
 	// ShootTablePrinter print a Shoot Cluster in a Table
 	ShootTablePrinter struct {
 		TablePrinter
@@ -31,6 +32,9 @@ type (
 	}
 
 	ShootLastOperationTablePrinter struct {
+		TablePrinter
+	}
+	ShootSummaryTablePrinter struct {
 		TablePrinter
 	}
 )
@@ -135,6 +139,64 @@ func (s ShootIssuesTablePrinter) Print(data []*models.V1ClusterResponse) {
 		fmt.Println("\nIssues:")
 		printStringSlice(issues)
 	}
+}
+
+// Print Shoot Summary as table
+func (s ShootSummaryTablePrinter) Print(data ShootSummaryResponse) {
+	type summary struct {
+		versions map[string]int
+		progress map[string]int
+		tenants  map[string]int
+	}
+	type summaries map[string]summary
+	sums := summaries{}
+
+	for _, shoot := range data {
+		part := *shoot.PartitionID
+		sum, ok := sums[part]
+		if !ok {
+			sum = summary{
+				versions: make(map[string]int),
+				progress: make(map[string]int),
+				tenants:  make(map[string]int),
+			}
+			sums[part] = sum
+		}
+
+		sum.progress[fmt.Sprintf("%d%%", *shoot.Status.LastOperation.Progress)] += 1
+		sum.tenants[*shoot.Tenant] += 1
+		sum.versions[*shoot.Kubernetes.Version] += 1
+	}
+
+	s.shortHeader = []string{"Partition", "Tenant", "Version", "Progress"}
+	s.wideHeader = s.shortHeader
+
+	for part, sum := range sums {
+		fmt.Printf("%s: %v\n", part, sum)
+		progresses := []string{}
+		for progress, count := range sum.progress {
+			progresses = append(progresses, fmt.Sprintf("%s %d", progress, count))
+		}
+		versions := []string{}
+		for version, count := range sum.versions {
+			versions = append(versions, fmt.Sprintf("%s %d", version, count))
+		}
+		tenants := []string{}
+		for tenant, count := range sum.tenants {
+			tenants = append(tenants, fmt.Sprintf("%s %d", tenant, count))
+		}
+		wide := []string{
+			part,
+			strings.Join(tenants, "\n"),
+			strings.Join(versions, "\n"),
+			strings.Join(progresses, "\n"),
+		}
+		short := wide
+		s.addWideData(wide, data)
+		s.addShortData(short, data)
+
+	}
+	s.render()
 }
 
 func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []string, []string) {

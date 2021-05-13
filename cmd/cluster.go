@@ -209,6 +209,14 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+	clusterSummaryCmd = &cobra.Command{
+		Use:   "summary",
+		Short: "cluster summary view",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterSummary()
+		},
+		PreRun: bindPFlags,
+	}
 )
 
 func init() {
@@ -365,6 +373,7 @@ func init() {
 	clusterCmd.AddCommand(clusterMachineCmd)
 	clusterCmd.AddCommand(clusterLogsCmd)
 	clusterCmd.AddCommand(clusterIssuesCmd)
+	clusterCmd.AddCommand(clusterSummaryCmd)
 }
 
 func clusterCreate() error {
@@ -974,6 +983,16 @@ func clusterIssues(args []string) error {
 		return err
 	}
 	return printer.Print(output.ShootIssuesResponse(shoot.Payload))
+}
+
+func clusterSummary() error {
+	boolFalse := true
+	request := cluster.NewListClustersParams().WithReturnMachines(&boolFalse)
+	shoots, err := cloud.Cluster.ListClusters(request, nil)
+	if err != nil {
+		return err
+	}
+	return printer.Print(output.ShootSummaryResponse(shoots.Payload))
 }
 
 func clusterMachines(args []string) error {
