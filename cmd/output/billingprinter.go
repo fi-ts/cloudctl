@@ -339,7 +339,7 @@ func (s IPBillingTablePrinter) Print(data *models.V1IPUsageResponse) {
 
 // Print a volume usage as table
 func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResponse) {
-	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Start", "End", "Device", "In (Gi)", "Out (Gi)", "Total (Gi)", "Lifetime", "Warnings"}
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Device", "In (Gi)", "Out (Gi)", "Total (Gi)", "Lifetime", "Warnings"}
 	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "Device", "In (Gi)", "Out (Gi)", "Total (Gi)", "Lifetime"}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {

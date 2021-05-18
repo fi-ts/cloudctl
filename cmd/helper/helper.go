@@ -52,6 +52,20 @@ func HumanizeDuration(duration time.Duration) string {
 	return strings.Join(parts, " ")
 }
 
+func HumanizeSize(b int64) string {
+	const unit = 1000
+	if b < unit {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := int64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB",
+		float64(b)/float64(div), "kMGTPE"[exp])
+}
+
 // Prompt the user to given compare text
 func Prompt(msg, compare string) error {
 	fmt.Print(msg + " ")
@@ -142,4 +156,16 @@ func Edit(id string, getFunc func(id string) ([]byte, error), updateFunc func(fi
 		return err
 	}
 	return updateFunc(tmpfile.Name())
+}
+
+func LabelsToMap(labels []string) (map[string]string, error) {
+	labelMap := make(map[string]string)
+	for _, l := range labels {
+		parts := strings.SplitN(l, "=", 2)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("provided labels must be in the form <key>=<value>, found: %s", l)
+		}
+		labelMap[parts[0]] = parts[1]
+	}
+	return labelMap, nil
 }

@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fi-ts/cloud-go/api/models"
 )
@@ -910,6 +911,38 @@ func (m S3PartitionTablePrinter) Order(data []*models.V1S3PartitionResponse) {
 						return true
 					}
 					if *A.ID != *B.ID {
+						return false
+					}
+				}
+			}
+			return false
+		})
+	}
+}
+
+// Order postgres backups partitions
+func (p PostgresBackupEntryTablePrinter) Order(data []*models.V1PostgresBackupEntry) {
+	cols := strings.Split(p.order, ",")
+	if len(cols) > 0 {
+		sort.SliceStable(data, func(i, j int) bool {
+			A := data[i]
+			B := data[j]
+			for _, order := range cols {
+				order = strings.ToLower(order)
+				switch order {
+				case "date":
+					if A.Timestamp == nil {
+						return true
+					}
+					if B.Timestamp == nil {
+						return false
+					}
+					atime := time.Time(*A.Timestamp)
+					btime := time.Time(*B.Timestamp)
+					if atime.Before(btime) {
+						return true
+					}
+					if !atime.Equal(btime) {
 						return false
 					}
 				}

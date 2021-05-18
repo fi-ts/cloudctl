@@ -442,13 +442,9 @@ func clusterCreate() error {
 		}
 	}
 
-	labelMap := make(map[string]string)
-	for _, l := range labels {
-		parts := strings.SplitN(l, "=", 2)
-		if len(parts) != 2 {
-			log.Fatalf("provided labels must be in the form <key>=<value>, found: %s", l)
-		}
-		labelMap[parts[0]] = parts[1]
+	labelMap, err := helper.LabelsToMap(labels)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	switch cri {
