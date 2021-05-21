@@ -13,8 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/metal-stack/metal-lib/auth"
-	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/fi-ts/cloud-go/api/client/cluster"
@@ -583,36 +581,7 @@ func clusterKubeconfig(args []string) error {
 		return fmt.Errorf("active user %s has no oidc authProvider, check config", authContext.User)
 	}
 
-	cfg := make(map[interface{}]interface{})
-	err = yaml.Unmarshal([]byte(kubeconfigContent), cfg)
-	if err != nil {
-		return err
-	}
-	// identify clustername
-	clusterNames, err := auth.GetClusterNames(cfg)
-	if err != nil {
-		return err
-	}
-	if len(clusterNames) != 1 {
-		return fmt.Errorf("expected one cluster in config, got %d", len(clusterNames))
-	}
-
-	userName := authContext.User
-	clusterName := clusterNames[0]
-	contextName := fmt.Sprintf("%s@%s", userName, clusterName)
-
-	// merge with current user credentials
-	err = auth.AddUser(cfg, *authContext)
-	if err != nil {
-		return err
-	}
-	err = auth.AddContext(cfg, contextName, clusterName, userName)
-	if err != nil {
-		return err
-	}
-	auth.SetCurrentContext(cfg, contextName)
-
-	mergedKubeconfig, err := yaml.Marshal(cfg)
+	mergedKubeconfig, err := helper.EnrichKubeconfigTpl(kubeconfigContent, authContext)
 	if err != nil {
 		return err
 	}
