@@ -47,6 +47,9 @@ $ cloudctl gw client create --project <project-uid> --name <client-name> --serve
 # <id> == <project-uid>--<client-name>
 $ cloudctl gw client create <id> --server-id <server-id> --services <service-names>
 
+# `add-svc` adds the service to the client
+$ cloudctl gw client patch <id> --service <service-name>
+
 $ cloudctl gw client list
 Name          Service           Endpoint
 <client-id-a> <service-name-a0> <service-local-endpoint-a0>

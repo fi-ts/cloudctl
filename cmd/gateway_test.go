@@ -32,7 +32,7 @@ func Test_parsePipe(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parsePipe(tt.args.unparsed)
+			got, err := parsePipeSpec(tt.args.unparsed)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("parsePipe() error = %v, wantErr %v", err, tt.wantErr)
 				return
