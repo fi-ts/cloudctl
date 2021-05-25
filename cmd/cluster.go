@@ -309,6 +309,8 @@ func init() {
 	clusterUpdateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
 	clusterUpdateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced.")
 	clusterUpdateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted.")
+	clusterUpdateCmd.Flags().String("maxsurge", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers created during a update of the cluster.")
+	clusterUpdateCmd.Flags().String("maxunavailable", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
 
 	clusterUpdateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return versionListCompletion()
@@ -698,6 +700,8 @@ func updateCluster(args []string) error {
 	addLabels := viper.GetStringSlice("addlabels")
 	removeLabels := viper.GetStringSlice("removelabels")
 	egress := viper.GetStringSlice("egress")
+	maxsurge := viper.GetString("maxsurge")
+	maxunavailable := viper.GetString("maxunavailable")
 
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
@@ -715,7 +719,7 @@ func updateCluster(args []string) error {
 		ID: &ci,
 	}
 
-	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" || healthtimeout != 0 || draintimeout != 0 {
+	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" || healthtimeout != 0 || draintimeout != 0 || maxsurge != "" || maxunavailable != "" {
 		workers := current.Workers
 
 		var worker *models.V1Worker
@@ -780,6 +784,14 @@ func updateCluster(args []string) error {
 				log.Fatal("custom draintimeout requires feature: machineControllerManagerOOT")
 			}
 			worker.DrainTimeout = int64(draintimeout)
+		}
+
+		if maxsurge != "" {
+			worker.MaxSurge = &maxsurge
+		}
+
+		if maxunavailable != "" {
+			worker.MaxUnavailable = &maxunavailable
 		}
 
 		cur.Workers = append(cur.Workers, workers...)
