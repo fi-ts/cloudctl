@@ -104,9 +104,8 @@ func volumeDelete(args []string) error {
 	if err != nil {
 		return err
 	}
-	params := &volume.DeleteVolumeParams{}
-	params.SetID(*vol.VolumeID)
-	resp, err := cloud.Volume.DeleteVolume(params, nil)
+
+	resp, err := cloud.Volume.DeleteVolume(volume.NewDeleteVolumeParams().WithID(*vol.VolumeID), nil)
 	if err != nil {
 		return err
 	}
