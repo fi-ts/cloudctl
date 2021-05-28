@@ -173,6 +173,10 @@ func (p VolumeClusterInfoTablePrinter) Print(data []*models.V1StorageClusterInfo
 
 	for _, info := range data {
 
+		if info == nil {
+			continue
+		}
+
 		partition := strValue(info.Partition)
 		health := strValue(info.Health.State)
 		numdegradedvolumes := int64Value(info.Health.NumDegradedVolumes)
@@ -180,8 +184,11 @@ func (p VolumeClusterInfoTablePrinter) Print(data []*models.V1StorageClusterInfo
 		numreadonlyvolumes := int64Value(info.Health.NumReadOnlyVolumes)
 		numinactivenodes := int64Value(info.Health.NumInactiveNodes)
 
-		ratio := *info.Statistics.CompressionRatio
-		compressionratio := fmt.Sprintf("%d%%", int(100.0*(1-ratio)))
+		compressionratio := ""
+		if info.Statistics != nil && info.Statistics.CompressionRatio != nil {
+			ratio := *info.Statistics.CompressionRatio
+			compressionratio = fmt.Sprintf("%d%%", int(100.0*(1-ratio)))
+		}
 		effectivephysicalstorage := helper.HumanizeSize(int64Value(info.Statistics.EffectivePhysicalStorage))
 		freephysicalstorage := helper.HumanizeSize(int64Value(info.Statistics.FreePhysicalStorage))
 		physicalusedstorage := helper.HumanizeSize(int64Value(info.Statistics.PhysicalUsedStorage))
@@ -194,9 +201,13 @@ func (p VolumeClusterInfoTablePrinter) Print(data []*models.V1StorageClusterInfo
 		managedphysicalstorage := helper.HumanizeSize(int64Value(info.Statistics.ManagedPhysicalStorage))
 		// physicalusedstorageincludingparity := helper.HumanizeSize(int64Value(info.Statistics.PhysicalUsedStorageIncludingParity))
 
+		version := "n/a"
+		if info.MinVersionInCluster != nil {
+			version = *info.MinVersionInCluster
+		}
 		wide := []string{
 			partition,
-			*info.MinVersionInCluster,
+			version,
 			health,
 			fmt.Sprintf("%d", numinactivenodes),
 			fmt.Sprintf("%d/%d/%d", numdegradedvolumes, numnotavailablevolumes, numreadonlyvolumes),
