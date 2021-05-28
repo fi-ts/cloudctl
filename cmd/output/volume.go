@@ -168,24 +168,43 @@ func VolumeManifest(v models.V1VolumeResponse, name, namespace string) error {
 }
 
 func (p VolumeClusterInfoTablePrinter) Print(data []*models.V1StorageClusterInfo) {
-	p.wideHeader = []string{"Partition", "Health", "Available", "Free", "Used"}
+	p.wideHeader = []string{"Partition", "Version", "Health", "Nodes NA", "Volumes D/NA/RO", "physical installed/managed", "physical Effective/Free/Used", "Logical Total/Used", "estimated logical Free/Logical", "Compression"}
 	p.shortHeader = p.wideHeader
 
 	for _, info := range data {
 
 		partition := strValue(info.Partition)
 		health := strValue(info.Health.State)
+		numdegradedvolumes := int64Value(info.Health.NumDegradedVolumes)
+		numnotavailablevolumes := int64Value(info.Health.NumNotAvailableVolumes)
+		numreadonlyvolumes := int64Value(info.Health.NumReadOnlyVolumes)
+		numinactivenodes := int64Value(info.Health.NumInactiveNodes)
 
-		available := helper.HumanizeSize(int64Value(info.Statistics.EffectivePhysicalStorage))
-		free := helper.HumanizeSize(int64Value(info.Statistics.EstimatedFreeLogicalStorage))
-		used := helper.HumanizeSize(int64Value(info.Statistics.PhysicalUsedStorage))
+		ratio := *info.Statistics.CompressionRatio
+		compressionratio := fmt.Sprintf("%d%%", int(100.0*(1-ratio)))
+		effectivephysicalstorage := helper.HumanizeSize(int64Value(info.Statistics.EffectivePhysicalStorage))
+		freephysicalstorage := helper.HumanizeSize(int64Value(info.Statistics.FreePhysicalStorage))
+		physicalusedstorage := helper.HumanizeSize(int64Value(info.Statistics.PhysicalUsedStorage))
+
+		estimatedfreelogicalstorage := helper.HumanizeSize(int64Value(info.Statistics.EstimatedFreeLogicalStorage))
+		estimatedlogicalstorage := helper.HumanizeSize(int64Value(info.Statistics.EstimatedLogicalStorage))
+		logicalstorage := helper.HumanizeSize(int64Value(info.Statistics.LogicalStorage))
+		logicalusedstorage := helper.HumanizeSize(int64Value(info.Statistics.LogicalUsedStorage))
+		installedphysicalstorage := helper.HumanizeSize(int64Value(info.Statistics.InstalledPhysicalStorage))
+		managedphysicalstorage := helper.HumanizeSize(int64Value(info.Statistics.ManagedPhysicalStorage))
+		// physicalusedstorageincludingparity := helper.HumanizeSize(int64Value(info.Statistics.PhysicalUsedStorageIncludingParity))
 
 		wide := []string{
 			partition,
+			*info.MinVersionInCluster,
 			health,
-			available,
-			free,
-			used,
+			fmt.Sprintf("%d", numinactivenodes),
+			fmt.Sprintf("%d/%d/%d", numdegradedvolumes, numnotavailablevolumes, numreadonlyvolumes),
+			installedphysicalstorage + "/" + managedphysicalstorage,
+			effectivephysicalstorage + "/" + freephysicalstorage + "/" + physicalusedstorage,
+			logicalstorage + "/" + logicalusedstorage,
+			estimatedfreelogicalstorage + "/" + estimatedlogicalstorage,
+			compressionratio,
 		}
 		short := wide
 
