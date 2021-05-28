@@ -894,18 +894,10 @@ func (s *PostgresBillingTablePrinter) Order(data []*models.V1PostgresUsage) {
 					if B.Postgresid == nil {
 						return false
 					}
-					idA := net.ParseIP(*A.Postgresid)
-					if idA == nil {
+					if *A.Postgresid < *B.Postgresid {
 						return true
 					}
-					idB := net.ParseIP(*B.Postgresid)
-					if idB == nil {
-						return false
-					}
-					if bytes.Compare(idA, idB) < 0 {
-						return true
-					}
-					if !idA.Equal(idB) {
+					if *A.Postgresid != *B.Postgresid {
 						return false
 					}
 
