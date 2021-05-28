@@ -41,14 +41,14 @@ ID                                      NAME                    PROJECT         
 3. Create a postgres database
 
 # cloudctl postgres create --description accounting-db-test --project <your-project-id> --partition dc1 --backup-config <backup-config-id-from-above>
-ID                                      DESCRIPTION             PARTITION       TENANT  PROJECT                                 CPU     BUFFER  STORAGE BACKUP-CONFIG                           REPLICA VERSION AGE     STATUS
-890b1601-6cc3-46cd-86a6-d4479bc1528d    accounting-db-test      dc1             fits    b621eb99-4888-4911-93fc-95854fc030e8    500m    500m    10Gi    3094421c-ee11-4155-b4d9-7fdac116c0ff    1       12      0s
+ID                                      DESCRIPTION             PARTITION       TENANT  PROJECT                                 CPU     BUFFER  STORAGE BACKUP-CONFIG                           REPLICAS VERSION AGE     STATUS
+890b1601-6cc3-46cd-86a6-d4479bc1528d    accounting-db-test      dc1             fits    b621eb99-4888-4911-93fc-95854fc030e8    500m    500m    10Gi    3094421c-ee11-4155-b4d9-7fdac116c0ff    1        12      0s
 
 4. Check if it is running with
 
 # cloudctl postgres ls --description accounting-db-test
-ID                                      DESCRIPTION             PARTITION       TENANT  PROJECT                                 CPU     BUFFER  STORAGE BACKUP-CONFIG                           REPLICA VERSION AGE     STATUS
-890b1601-6cc3-46cd-86a6-d4479bc1528d    accounting-db-test      dc1             fits    b621eb99-4888-4911-93fc-95854fc030e8    500m    500m    10Gi    3094421c-ee11-4155-b4d9-7fdac116c0ff    1       12      1m 21s  Running
+ID                                      DESCRIPTION             PARTITION       TENANT  PROJECT                                 CPU     BUFFER  STORAGE BACKUP-CONFIG                           REPLICAS VERSION AGE     STATUS
+890b1601-6cc3-46cd-86a6-d4479bc1528d    accounting-db-test      dc1             fits    b621eb99-4888-4911-93fc-95854fc030e8    500m    500m    10Gi    3094421c-ee11-4155-b4d9-7fdac116c0ff    1        12      1m 21s  Running
 
 5. Connect to the database
 
@@ -222,7 +222,7 @@ func init() {
 	postgresCreateCmd.Flags().StringP("description", "", "", "description of the database")
 	postgresCreateCmd.Flags().StringP("project", "", "", "project of the database")
 	postgresCreateCmd.Flags().StringP("partition", "", "", "partition where the database should be created")
-	postgresCreateCmd.Flags().IntP("instances", "", 1, "instances of the database")
+	postgresCreateCmd.Flags().IntP("replicas", "", 1, "replicas of the database")
 	postgresCreateCmd.Flags().StringP("version", "", "12", "version of the database") // FIXME add possible values
 	postgresCreateCmd.Flags().StringSliceP("sources", "", []string{"0.0.0.0/0"}, "networks which should be allowed to connect in CIDR notation")
 	postgresCreateCmd.Flags().StringSliceP("labels", "", []string{}, "labels to add to that postgres database")
@@ -367,7 +367,7 @@ func postgresCreate() error {
 	desc := viper.GetString("description")
 	project := viper.GetString("project")
 	partition := viper.GetString("partition")
-	instances := viper.GetInt32("instances")
+	replicas := viper.GetInt32("replicas")
 	version := viper.GetString("version")
 	sources := viper.GetStringSlice("sources")
 	labels := viper.GetStringSlice("labels")
@@ -385,7 +385,7 @@ func postgresCreate() error {
 		Description:       desc,
 		ProjectID:         project,
 		PartitionID:       partition,
-		NumberOfInstances: instances,
+		NumberOfInstances: replicas,
 		Version:           version,
 		Backup:            backupConfig,
 		Size: &models.V1PostgresSize{

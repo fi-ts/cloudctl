@@ -31,8 +31,8 @@ type (
 )
 
 func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
-	p.shortHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Backup-Config", "Replica", "Version", "Age", "Status"}
-	p.wideHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Backup-Config", "Replica", "Version", "Address", "Age", "Status", "Maintenance", "Labels"}
+	p.shortHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Backup-Config", "Replicas", "Version", "Age", "Status"}
+	p.wideHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Backup-Config", "Replicas", "Version", "Address", "Age", "Status", "Maintenance", "Labels"}
 
 	for _, pg := range data {
 		id := ""
@@ -69,9 +69,9 @@ func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
 		lbls := strings.Join(labels, "\n")
 		maint := strings.Join(pg.Maintenance, "\n")
 
-		replica := fmt.Sprintf("%d", pg.NumberOfInstances)
-		short := []string{id, description, partitionID, tenant, projectID, cpu, buffer, storage, backup, replica, pg.Version, age, status}
-		wide := []string{id, description, partitionID, tenant, projectID, cpu, buffer, storage, backup, replica, pg.Version, address, age, status, maint, lbls}
+		replicas := fmt.Sprintf("%d", pg.NumberOfInstances)
+		short := []string{id, description, partitionID, tenant, projectID, cpu, buffer, storage, backup, replicas, pg.Version, age, status}
+		wide := []string{id, description, partitionID, tenant, projectID, cpu, buffer, storage, backup, replicas, pg.Version, address, age, status, maint, lbls}
 
 		p.addWideData(wide, pg)
 		p.addShortData(short, pg)
