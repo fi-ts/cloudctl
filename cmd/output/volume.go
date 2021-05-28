@@ -173,7 +173,7 @@ func (p VolumeClusterInfoTablePrinter) Print(data []*models.V1StorageClusterInfo
 
 	for _, info := range data {
 
-		if info == nil {
+		if info == nil || info.Statistics == nil {
 			continue
 		}
 
