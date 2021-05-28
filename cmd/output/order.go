@@ -851,6 +851,91 @@ func (s *VolumeBillingTablePrinter) Order(data []*models.V1VolumeUsage) {
 	}
 }
 
+// Order ipUsage
+func (s *PostgresBillingTablePrinter) Order(data []*models.V1PostgresUsage) {
+	cols := strings.Split(s.order, ",")
+	if len(cols) > 0 {
+		sort.SliceStable(data, func(i, j int) bool {
+			A := data[i]
+			B := data[j]
+			for _, order := range cols {
+				order = strings.ToLower(order)
+				switch order {
+				case "tenant":
+					if A.Tenant == nil {
+						return true
+					}
+					if B.Tenant == nil {
+						return false
+					}
+					if *A.Tenant < *B.Tenant {
+						return true
+					}
+					if *A.Tenant != *B.Tenant {
+						return false
+					}
+				case "project":
+					if A.Projectid == nil {
+						return true
+					}
+					if B.Projectid == nil {
+						return false
+					}
+					if *A.Projectid < *B.Projectid {
+						return true
+					}
+					if *A.Projectid != *B.Projectid {
+						return false
+					}
+				case "id":
+					if A.Postgresid == nil {
+						return true
+					}
+					if B.Postgresid == nil {
+						return false
+					}
+					idA := net.ParseIP(*A.Postgresid)
+					if idA == nil {
+						return true
+					}
+					idB := net.ParseIP(*B.Postgresid)
+					if idB == nil {
+						return false
+					}
+					if bytes.Compare(idA, idB) < 0 {
+						return true
+					}
+					if !idA.Equal(idB) {
+						return false
+					}
+
+				// TODO CPU
+				// TODO Memory
+				// TODO Storage
+
+				case "lifetime":
+					if A.Lifetime == nil {
+						return true
+					}
+					if B.Lifetime == nil {
+						return false
+					}
+					aseconds := int64(*A.Lifetime)
+					bseconds := int64(*B.Lifetime)
+					if aseconds < bseconds {
+						return true
+					}
+					if aseconds != bseconds {
+						return false
+					}
+				}
+			}
+
+			return false
+		})
+	}
+}
+
 // Order machines
 func (m MachineTablePrinter) Order(data []*models.ModelsV1MachineResponse) {
 	cols := strings.Split(m.order, ",")

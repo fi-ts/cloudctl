@@ -36,6 +36,10 @@ type (
 	VolumeBillingTablePrinter struct {
 		TablePrinter
 	}
+	// PostgresBillingTablePrinter print bills in a Table
+	PostgresBillingTablePrinter struct {
+		TablePrinter
+	}
 )
 
 // Print a cluster usage as table
@@ -709,6 +713,83 @@ func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageRespons
 		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)),
 		humanizeCPU(*data.Accumulatedusage.Cpuseconds) + cpuCosts(*data.Accumulatedusage.Cpuseconds),
 		humanizeMemory(*data.Accumulatedusage.Memoryseconds) + memoryCosts(*data.Accumulatedusage.Memoryseconds),
+	}
+	shortFooter := make([]string, len(s.shortHeader)-len(footer))
+	wideFooter := make([]string, len(s.wideHeader)-len(footer))
+	s.addWideData(append(wideFooter, footer...), data)
+
+	s.addShortData(append(shortFooter, footer...), data)
+	s.render()
+}
+
+// Print a postgres usage as table
+func (s PostgresBillingTablePrinter) Print(data *models.V1PostgresUsageResponse) {
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Postgres", "Start", "End", "Lifetime", "Warnings"}
+	s.shortHeader = []string{"Tenant", "ProjectID", "Postgres", "Start", "End", "Lifetime"}
+	s.Order(data.Usage)
+	for _, u := range data.Usage {
+		var from string
+		if data.From != nil {
+			from = data.From.String()
+		}
+		var to string
+		if !time.Time(data.To).IsZero() {
+			to = data.To.String()
+		}
+		var tenant string
+		if u.Tenant != nil {
+			tenant = *u.Tenant
+		}
+		var projectID string
+		if u.Projectid != nil {
+			projectID = *u.Projectid
+		}
+		var postgres string
+		if u.Postgresid != nil {
+			postgres = *u.Postgresid
+		}
+		var start string
+		if u.Postgresstart != nil {
+			start = u.Postgresstart.String()
+		}
+		var end string
+		if u.Postgresend != nil {
+			end = u.Postgresend.String()
+		}
+		var lifetime time.Duration
+		if u.Lifetime != nil {
+			lifetime = time.Duration(*u.Lifetime)
+		}
+		var warnings string
+		if u.Warnings != nil {
+			warnings = strings.Join(u.Warnings, ", ")
+		}
+		wide := []string{
+			tenant,
+			from,
+			to,
+			projectID,
+			postgres,
+			start,
+			end,
+			humanizeDuration(lifetime),
+			warnings,
+		}
+		short := []string{
+			tenant,
+			projectID,
+			postgres,
+			start,
+			end,
+			humanizeDuration(lifetime),
+		}
+
+		s.addWideData(wide, data)
+		s.addShortData(short, data)
+	}
+
+	footer := []string{"Total",
+		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)),
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
 	wideFooter := make([]string, len(s.wideHeader)-len(footer))
