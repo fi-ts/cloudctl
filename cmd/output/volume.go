@@ -7,6 +7,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/fi-ts/cloud-go/api/models"
+	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/ghodss/yaml"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,6 +16,9 @@ import (
 type (
 	// VolumeTablePrinter prints volumes in a table
 	VolumeTablePrinter struct {
+		TablePrinter
+	}
+	VolumeClusterInfoTablePrinter struct {
 		TablePrinter
 	}
 )
@@ -161,4 +165,62 @@ func VolumeManifest(v models.V1VolumeResponse, name, namespace string) error {
 
 	fmt.Printf("%s\n", string(y))
 	return nil
+}
+
+func (p VolumeClusterInfoTablePrinter) Print(data []*models.V1StorageClusterInfo) {
+	p.wideHeader = []string{"Partition", "Version", "Health", "Nodes NA", "Volumes D/NA/RO", "physical installed/managed", "physical Effective/Free/Used", "Logical Total/Used", "estimated logical Free/Logical", "Compression"}
+	p.shortHeader = p.wideHeader
+
+	for _, info := range data {
+
+		if info == nil || info.Statistics == nil {
+			continue
+		}
+
+		partition := strValue(info.Partition)
+		health := strValue(info.Health.State)
+		numdegradedvolumes := int64Value(info.Health.NumDegradedVolumes)
+		numnotavailablevolumes := int64Value(info.Health.NumNotAvailableVolumes)
+		numreadonlyvolumes := int64Value(info.Health.NumReadOnlyVolumes)
+		numinactivenodes := int64Value(info.Health.NumInactiveNodes)
+
+		compressionratio := ""
+		if info.Statistics != nil && info.Statistics.CompressionRatio != nil {
+			ratio := *info.Statistics.CompressionRatio
+			compressionratio = fmt.Sprintf("%d%%", int(100.0*(1-ratio)))
+		}
+		effectivephysicalstorage := helper.HumanizeSize(int64Value(info.Statistics.EffectivePhysicalStorage))
+		freephysicalstorage := helper.HumanizeSize(int64Value(info.Statistics.FreePhysicalStorage))
+		physicalusedstorage := helper.HumanizeSize(int64Value(info.Statistics.PhysicalUsedStorage))
+
+		estimatedfreelogicalstorage := helper.HumanizeSize(int64Value(info.Statistics.EstimatedFreeLogicalStorage))
+		estimatedlogicalstorage := helper.HumanizeSize(int64Value(info.Statistics.EstimatedLogicalStorage))
+		logicalstorage := helper.HumanizeSize(int64Value(info.Statistics.LogicalStorage))
+		logicalusedstorage := helper.HumanizeSize(int64Value(info.Statistics.LogicalUsedStorage))
+		installedphysicalstorage := helper.HumanizeSize(int64Value(info.Statistics.InstalledPhysicalStorage))
+		managedphysicalstorage := helper.HumanizeSize(int64Value(info.Statistics.ManagedPhysicalStorage))
+		// physicalusedstorageincludingparity := helper.HumanizeSize(int64Value(info.Statistics.PhysicalUsedStorageIncludingParity))
+
+		version := "n/a"
+		if info.MinVersionInCluster != nil {
+			version = *info.MinVersionInCluster
+		}
+		wide := []string{
+			partition,
+			version,
+			health,
+			fmt.Sprintf("%d", numinactivenodes),
+			fmt.Sprintf("%d/%d/%d", numdegradedvolumes, numnotavailablevolumes, numreadonlyvolumes),
+			installedphysicalstorage + "/" + managedphysicalstorage,
+			effectivephysicalstorage + "/" + freephysicalstorage + "/" + physicalusedstorage,
+			logicalstorage + "/" + logicalusedstorage,
+			estimatedfreelogicalstorage + "/" + estimatedlogicalstorage,
+			compressionratio,
+		}
+		short := wide
+
+		p.addWideData(wide, info)
+		p.addShortData(short, info)
+	}
+	p.render()
 }

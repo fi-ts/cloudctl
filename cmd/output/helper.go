@@ -82,6 +82,13 @@ func strValue(strPtr *string) string {
 	return ""
 }
 
+func int64Value(i *int64) int64 {
+	if i != nil {
+		return *i
+	}
+	return 0
+}
+
 func printStringSlice(s []string) {
 	var dashed []string
 	for _, elem := range s {
