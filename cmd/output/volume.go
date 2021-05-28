@@ -166,7 +166,7 @@ func VolumeManifest(v models.V1VolumeResponse, name, namespace string) error {
 	return nil
 }
 
-func (p VolumeClusterInfoTablePrinter) Print(data []models.V1StorageClusterInfo) {
+func (p VolumeClusterInfoTablePrinter) Print(data []*models.V1StorageClusterInfo) {
 	p.wideHeader = []string{"Partition", "Health", "Available", "Free", "Used"}
 	p.shortHeader = p.wideHeader
 
