@@ -113,6 +113,15 @@ func volumeDelete(args []string) error {
 	return printer.Print(resp.Payload)
 }
 
+func clusterStatus() error {
+	params := volume.NewClusterInfoParams()
+	resp, err := cloud.Volume.ClusterInfo(params, nil)
+	if err != nil {
+		return err
+	}
+	return printer.Print(resp.Payload)
+}
+
 func volumeManifest(args []string) error {
 	volume, err := getVolumeFromArgs(args)
 	if err != nil {

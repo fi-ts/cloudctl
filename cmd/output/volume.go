@@ -17,6 +17,9 @@ type (
 	VolumeTablePrinter struct {
 		TablePrinter
 	}
+	VolumeClusterInfoTablePrinter struct {
+		TablePrinter
+	}
 )
 
 // Print an volume as table
@@ -161,4 +164,32 @@ func VolumeManifest(v models.V1VolumeResponse, name, namespace string) error {
 
 	fmt.Printf("%s\n", string(y))
 	return nil
+}
+
+func (p VolumeClusterInfoTablePrinter) Print(data []models.V1StorageClusterInfo) {
+	p.wideHeader = []string{"Partition", "Health", "Available", "Free", "Used"}
+	p.shortHeader = p.wideHeader
+
+	for _, info := range data {
+
+		partition := strValue(info.Partition)
+		health := strValue(info.Health.State)
+
+		available := int64Value(info.Statistics.EffectivePhysicalStorage)
+		free := int64Value(info.Statistics.EstimatedFreeLogicalStorage)
+		used := int64Value(info.Statistics.PhysicalUsedStorage)
+
+		wide := []string{
+			partition,
+			health,
+			fmt.Sprintf("%d", available),
+			fmt.Sprintf("%d", free),
+			fmt.Sprintf("%d", used),
+		}
+		short := wide
+
+		p.addWideData(wide, info)
+		p.addShortData(short, info)
+	}
+	p.render()
 }
