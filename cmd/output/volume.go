@@ -7,6 +7,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/fi-ts/cloud-go/api/models"
+	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/ghodss/yaml"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -175,16 +176,16 @@ func (p VolumeClusterInfoTablePrinter) Print(data []*models.V1StorageClusterInfo
 		partition := strValue(info.Partition)
 		health := strValue(info.Health.State)
 
-		available := int64Value(info.Statistics.EffectivePhysicalStorage)
-		free := int64Value(info.Statistics.EstimatedFreeLogicalStorage)
-		used := int64Value(info.Statistics.PhysicalUsedStorage)
+		available := helper.HumanizeSize(int64Value(info.Statistics.EffectivePhysicalStorage))
+		free := helper.HumanizeSize(int64Value(info.Statistics.EstimatedFreeLogicalStorage))
+		used := helper.HumanizeSize(int64Value(info.Statistics.PhysicalUsedStorage))
 
 		wide := []string{
 			partition,
 			health,
-			fmt.Sprintf("%d", available),
-			fmt.Sprintf("%d", free),
-			fmt.Sprintf("%d", used),
+			available,
+			free,
+			used,
 		}
 		short := wide
 
