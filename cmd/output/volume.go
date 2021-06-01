@@ -168,7 +168,7 @@ func VolumeManifest(v models.V1VolumeResponse, name, namespace string) error {
 }
 
 func (p VolumeClusterInfoTablePrinter) Print(data []*models.V1StorageClusterInfo) {
-	p.wideHeader = []string{"Partition", "Version", "Health", "Nodes NA", "Volumes D/NA/RO", "physical installed/managed", "physical Effective/Free/Used", "Logical Total/Used", "estimated logical Free/Logical", "Compression"}
+	p.wideHeader = []string{"Partition", "Version", "Health", "Nodes NA", "Volumes D/NA/RO", "Physical Installed/Managed", "Physical Effective/Free/Used", "Logical Total/Used", "Logical Estimated/Free", "Compression"}
 	p.shortHeader = p.wideHeader
 
 	for _, info := range data {
