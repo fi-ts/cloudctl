@@ -724,7 +724,7 @@ func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageRespons
 
 // Print a postgres usage as table
 func (s PostgresBillingTablePrinter) Print(data *models.V1PostgresUsageResponse) {
-	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "PostgresID", "Description", "Start", "End", "CPU (1 * s)", "Memory (Gi * h)", "StorageSeconds (Gi * h)", "Lifetime", "Warnings"}
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "PostgresID", "Description", "Start", "End", "CPU (1 * s)", "Memory (Gi * h)", "StorageSeconds (Gi * h)", "Lifetime"}
 	s.shortHeader = []string{"Tenant", "ProjectID", "PostgresID", "Description", "CPU (1 * s)", "Memory (Gi * h)", "StorageSeconds (Gi * h)", "Lifetime"}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {
@@ -776,10 +776,6 @@ func (s PostgresBillingTablePrinter) Print(data *models.V1PostgresUsageResponse)
 		if u.Lifetime != nil {
 			lifetime = time.Duration(*u.Lifetime)
 		}
-		var warnings string
-		if u.Warnings != nil {
-			warnings = strings.Join(u.Warnings, ", ")
-		}
 		wide := []string{
 			tenant,
 			from,
@@ -793,7 +789,6 @@ func (s PostgresBillingTablePrinter) Print(data *models.V1PostgresUsageResponse)
 			memory,
 			storage,
 			humanizeDuration(lifetime),
-			warnings,
 		}
 		short := []string{
 			tenant,
@@ -811,6 +806,9 @@ func (s PostgresBillingTablePrinter) Print(data *models.V1PostgresUsageResponse)
 	}
 
 	footer := []string{"Total",
+		humanizeCPU(*data.Accumulatedusage.Cpuseconds),
+		humanizeMemory(*data.Accumulatedusage.Memoryseconds),
+		humanizeMemory(*data.Accumulatedusage.Storageseconds),
 		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)),
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
