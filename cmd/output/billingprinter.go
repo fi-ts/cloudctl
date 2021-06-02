@@ -724,8 +724,8 @@ func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageRespons
 
 // Print a postgres usage as table
 func (s PostgresBillingTablePrinter) Print(data *models.V1PostgresUsageResponse) {
-	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Postgres", "Start", "End", "Lifetime", "Warnings"}
-	s.shortHeader = []string{"Tenant", "ProjectID", "Postgres", "Start", "End", "Lifetime"}
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "PostgresID", "Description", "Start", "End", "CPU (1 * s)", "Memory (Gi * h)", "StorageSeconds (Gi * h)", "Lifetime", "Warnings"}
+	s.shortHeader = []string{"Tenant", "ProjectID", "PostgresID", "Description", "CPU (1 * s)", "Memory (Gi * h)", "StorageSeconds (Gi * h)", "Lifetime"}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {
 		var from string
@@ -744,9 +744,13 @@ func (s PostgresBillingTablePrinter) Print(data *models.V1PostgresUsageResponse)
 		if u.Projectid != nil {
 			projectID = *u.Projectid
 		}
-		var postgres string
+		var postgresID string
 		if u.Postgresid != nil {
-			postgres = *u.Postgresid
+			postgresID = *u.Postgresid
+		}
+		var postgresDescription string
+		if u.Postgresdescription != nil {
+			postgresDescription = *u.Postgresdescription
 		}
 		var start string
 		if u.Postgresstart != nil {
@@ -755,6 +759,18 @@ func (s PostgresBillingTablePrinter) Print(data *models.V1PostgresUsageResponse)
 		var end string
 		if u.Postgresend != nil {
 			end = u.Postgresend.String()
+		}
+		var cpu string
+		if u.Cpuseconds != nil {
+			cpu = humanizeMemory(*u.Cpuseconds)
+		}
+		var memory string
+		if u.Memoryseconds != nil {
+			memory = humanizeMemory(*u.Memoryseconds)
+		}
+		var storage string
+		if u.Storageseconds != nil {
+			storage = humanizeMemory(*u.Storageseconds)
 		}
 		var lifetime time.Duration
 		if u.Lifetime != nil {
@@ -769,18 +785,24 @@ func (s PostgresBillingTablePrinter) Print(data *models.V1PostgresUsageResponse)
 			from,
 			to,
 			projectID,
-			postgres,
+			postgresID,
+			postgresDescription,
 			start,
 			end,
+			cpu,
+			memory,
+			storage,
 			humanizeDuration(lifetime),
 			warnings,
 		}
 		short := []string{
 			tenant,
 			projectID,
-			postgres,
-			start,
-			end,
+			postgresID,
+			postgresDescription,
+			cpu,
+			memory,
+			storage,
 			humanizeDuration(lifetime),
 		}
 
