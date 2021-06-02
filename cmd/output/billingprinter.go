@@ -762,7 +762,7 @@ func (s PostgresBillingTablePrinter) Print(data *models.V1PostgresUsageResponse)
 		}
 		var cpu string
 		if u.Cpuseconds != nil {
-			cpu = humanizeMemory(*u.Cpuseconds)
+			cpu = humanizeCPU(*u.Cpuseconds)
 		}
 		var memory string
 		if u.Memoryseconds != nil {
