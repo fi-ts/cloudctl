@@ -25,13 +25,17 @@ type (
 
 // Print an volume as table
 func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
-	p.wideHeader = []string{"ID", "Size", "Usage", "Replicas", "StorageClass", "Project", "Tenant", "Partition", "Nodes"}
+	p.wideHeader = []string{"ID", "Name", "Size", "Usage", "Replicas", "StorageClass", "Project", "Tenant", "Partition", "Nodes"}
 	p.shortHeader = p.wideHeader
 
 	for _, vol := range data {
 		volumeID := ""
 		if vol.VolumeID != nil {
 			volumeID = *vol.VolumeID
+		}
+		name := ""
+		if vol.VolumeName != nil {
+			name = *vol.VolumeName
 		}
 		size := ""
 		if vol.Size != nil {
@@ -64,7 +68,7 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 
 		nodes := ConnectedHosts(vol)
 
-		wide := []string{volumeID, size, usage, replica, sc, project, tenant, partition, strings.Join(nodes, "\n")}
+		wide := []string{volumeID, name, size, usage, replica, sc, project, tenant, partition, strings.Join(nodes, "\n")}
 		short := wide
 
 		p.addWideData(wide, vol)
