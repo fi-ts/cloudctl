@@ -19,8 +19,7 @@ const (
 	flagProject                    = "project"
 	clientCreateFlagPipes          = "pipes"
 	clientCreateFlagServer         = "server"
-	clientCreateFlagServerIP       = "server-ip"
-	clientPatchFlagPipes           = "pipes"
+	clientPatchFlagPipesToAdd      = "pipes-to-add"
 	serverCreateFlagLoadBalancerIP = "ip"
 	serverCreateFlagPipes          = "pipes"
 	serverListFlagAllProjects      = "all-projects"
@@ -40,14 +39,14 @@ var (
 		Short: "Manage servers",
 	}
 	serverCreateCmd = &cobra.Command{
-		Use:    "create <projectUID>--<name>",
+		Use:    "create --project <projectUID> <name>",
 		Long:   "Create a server",
 		Short:  "Create a server",
 		RunE:   serverCreate,
 		PreRun: bindPFlags,
 	}
 	serverDescribeCmd = &cobra.Command{
-		Use:    "describe <projectUID>--<name>",
+		Use:    "describe --project <projectUID> <name>",
 		Long:   "Describe a server",
 		Short:  "Describe a server",
 		RunE:   serverDescribe,
@@ -55,74 +54,60 @@ var (
 	}
 	serverListCmd = &cobra.Command{
 		Aliases: []string{"ls"},
-		Use:     "list <projectUID>",
+		Use:     "list --project <projectUID>",
 		Long:    "List servers under a specific project-UID",
 		Short:   "List servers under a specific project-UID",
 		RunE:    serverList,
 		PreRun:  bindPFlags,
 	}
 	serverPatchCmd = &cobra.Command{
-		Use:    "patch <projectUID>--<name>",
+		Use:    "patch --project <projectUID> <name>",
 		Long:   "Patch a server",
 		Short:  "Patch a server",
 		RunE:   serverPatch,
 		PreRun: bindPFlags,
 	}
 	serverDeleteCmd = &cobra.Command{
-		Use:    "delete <projectUID>--<name>",
+		Use:    "delete --project <projectUID> <name>",
 		Long:   "Delete a server",
 		Short:  "Delete a server",
 		RunE:   serverDelete,
 		PreRun: bindPFlags,
 	}
-	// clientCmd = &cobra.Command{
-	// 	Use:   "client",
-	// 	Short: "manages gateway clients",
-	// 	Long:  "Manage gateway clients which constitute half of gateway pairs",
-	// }
-	// gwClientAddPipesCmd = &cobra.Command{
-	// 	Use:   "add-pipes",
-	// 	Short: "add pipes to a gateway",
-	// 	Long:  "add pipes to a gateway",
-	// 	RunE: func(cmd *cobra.Command, args []string) error {
-	// 		return gatewayAddPipes()
-	// 	},
-	// 	PreRun: bindPFlags,
-	// }
 	clientCmd = &cobra.Command{
 		Use:   "client",
 		Short: "Manage clients",
 	}
 	clientCreateCmd = &cobra.Command{
-		Use:    "create <projectUID>--<name>",
+		Use:    "create --project <projectUID> <name>",
 		Long:   "Create a client",
 		Short:  "Create a client",
 		RunE:   clientCreate,
 		PreRun: bindPFlags,
 	}
 	clientDescribeCmd = &cobra.Command{
-		Use:    "describe <projectUID>--<name>",
+		Use:    "describe --project <projectUID> <name>",
 		Short:  "Describe a gateway",
 		Long:   "Describe a gateway",
 		RunE:   clientDescribe,
 		PreRun: bindPFlags,
 	}
 	clientListCmd = &cobra.Command{
-		Use:    "list <projectUID>",
+		Use:    "list --project <projectUID>",
 		Long:   "List clients under a specific project-UID",
 		Short:  "List clients under a specific project-UID",
 		RunE:   clientList,
 		PreRun: bindPFlags,
 	}
 	clientPatchCmd = &cobra.Command{
-		Use:    "patch <projectUID>--<name>",
+		Use:    "patch --project <projectUID> <name>",
 		Long:   "Patch a client",
 		Short:  "Patch a client",
 		RunE:   clientPatch,
 		PreRun: bindPFlags,
 	}
 	clientDeleteCmd = &cobra.Command{
-		Use:    "delete <projectUID>--<name>",
+		Use:    "delete --project <projectUID> <name>",
 		Long:   "Delete a client",
 		Short:  "Delete a client",
 		RunE:   clientDelete,
@@ -194,8 +179,8 @@ func init() {
 	}
 
 	// client patch
-	clientPatchCmd.Flags().String(clientPatchFlagPipes, "", "Comma-separated list of the new pipe names to add, which are chosen from the server's `pipes` spec, e.g. `NEW_PIPE_NAME_1,NEW_PIPE_NAME_2`")
-	if err := clientPatchCmd.MarkFlagRequired(clientPatchFlagPipes); err != nil {
+	clientPatchCmd.Flags().String(clientPatchFlagPipesToAdd, "", "Comma-separated list of the new pipe names to add, which are chosen from the server's `pipes` spec, e.g. `NEW_PIPE_NAME_1,NEW_PIPE_NAME_2`")
+	if err := clientPatchCmd.MarkFlagRequired(clientPatchFlagPipesToAdd); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -211,11 +196,6 @@ func clientCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// parsedPipeNames, err := parseCommaSeparatedString()
-	// if err != nil {
-	// 	return err
-	// }
-
 	params := gateway.NewClientPostParams()
 	params.SetProjectuid(projectUID)
 	params.SetBody(&models.V1GatewayClientPostRequest{
@@ -223,8 +203,6 @@ func clientCreate(cmd *cobra.Command, args []string) error {
 		Name:             &name,
 		ServerProjectUID: serverProjectUID,
 		ServerName:       serverName,
-		// ServerIP:         viper.GetString(clientCreateFlagServerIP),
-		// Pipes:            parsedPipes,
 		PipeNames: viper.GetStringSlice(clientCreateFlagPipes),
 	})
 
@@ -286,7 +264,7 @@ func clientPatch(cmd *cobra.Command, args []string) error {
 	params.SetProjectuid(projectUID)
 	params.SetName(name)
 
-	pipes, err := parseCommaSeparatedString(viper.GetString(clientPatchFlagPipes))
+	pipes, err := parseCommaSeparatedString(viper.GetString(clientPatchFlagPipesToAdd))
 	if err != nil {
 		return fmt.Errorf("parsing the flag `pipes`: %w", err)
 	}

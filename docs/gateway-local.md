@@ -66,9 +66,28 @@ DEBUG=1 bin/cloudctl gateway client delete --project=my-project --name=my-gw
 DEBUG=1 bin/cloudctl gateway client list
 ```
 
-### Pipe's remote endpoint must have the namespace
+## Demo
 
 ```bash
-bin/cloudctl gateway server patch -p cloud-gateway-dev trial-a --pipes-to-add nginx:8080:reverse-cluster-int-nginx.default:8082
+bin/cloudctl gateway server create \
+--project cloud-gateway-server server-a \
+--ip 172.18.255.200 \
+--pipes nginx:8080:reverse-cluster-int-nginx.default:8082 \
+--pipes reverse:8088:reverse-echoserver.client:80 \
+--pipes reverse-ext:8089:reverse-echoserver.client:80
 
+bin/cloudctl gateway server describe --project cloud-gateway-server server-a
+
+bin/cloudctl gateway client create \
+--project cloud-gateway-client client-a \
+--server cloud-gateway-server--server-a \
+--pipes nginx
+
+bin/cloudctl gateway client describe --project cloud-gateway-client client-a
+
+tempo curl cloudgateway-client-a-nginx.cloud-gateway-client-a:8080 -m 5
+
+bin/cloudctl gateway client patch -p cloud-gateway-client client-a --pipes-to-add=reverse
+
+tempo curl cloudgateway-client-a-reverse.cloud-gateway-client:8088
 ```
