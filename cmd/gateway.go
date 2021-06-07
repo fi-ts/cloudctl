@@ -19,6 +19,7 @@ const (
 	flagProject                    = "project"
 	clientCreateFlagPipes          = "pipes"
 	clientCreateFlagServer         = "server"
+	clientListFlagAllProjects      = "all-projects"
 	clientPatchFlagPipesToAdd      = "pipes-to-add"
 	serverCreateFlagLoadBalancerIP = "ip"
 	serverCreateFlagPipes          = "pipes"
@@ -115,20 +116,6 @@ var (
 	}
 )
 
-func defineRequiredFlagProject(cmds ...*cobra.Command) error {
-	for i := range cmds {
-		defineFlagProject(cmds[i])
-		if err := cmds[i].MarkFlagRequired(flagProject); err != nil {
-			log.Fatal(err)
-		}
-	}
-	return nil
-}
-
-func defineFlagProject(cmd *cobra.Command) {
-	cmd.Flags().StringP(flagProject, "p", "", "Project UID of gateway instance")
-}
-
 func init() {
 	gwCmd.AddCommand(serverCmd, clientCmd)
 
@@ -168,18 +155,13 @@ func init() {
 	if err := clientCreateCmd.MarkFlagRequired(clientCreateFlagServer); err != nil {
 		log.Fatal(err)
 	}
-	// clientCreateCmd.Flags().String(clientCreateFlagServerIP, "", "External IP of the server")
-	// if err := clientCreateCmd.MarkFlagRequired(clientCreateFlagServerIP); err != nil {
-	// 	log.Fatal(err)
-	// }
 	clientCreateCmd.Flags().StringSlice(clientCreateFlagPipes, nil, "Pipe names chosen from the server's `pipes` spec, e.g. `PIPE_NAME_1,PIPE_NAME_2`")
-	// clientCreateCmd.Flags().String(clientCreateFlagPipes, "", "Comma-separated list of pipe names chosen from the server's `pipes` spec, e.g. `PIPE_NAME_1,PIPE_NAME_2`")
 	if err := clientCreateCmd.MarkFlagRequired(clientCreateFlagPipes); err != nil {
 		log.Fatal(err)
 	}
 
 	// client patch
-	clientPatchCmd.Flags().String(clientPatchFlagPipesToAdd, "", "Comma-separated list of the new pipe names to add, which are chosen from the server's `pipes` spec, e.g. `NEW_PIPE_NAME_1,NEW_PIPE_NAME_2`")
+	clientPatchCmd.Flags().StringSlice(clientPatchFlagPipesToAdd, nil, "Comma-separated list of the new pipe names to add, which are chosen from the server's `pipes` spec, e.g. `NEW_PIPE_NAME_1,NEW_PIPE_NAME_2`")
 	if err := clientPatchCmd.MarkFlagRequired(clientPatchFlagPipesToAdd); err != nil {
 		log.Fatal(err)
 	}
@@ -203,7 +185,7 @@ func clientCreate(cmd *cobra.Command, args []string) error {
 		Name:             &name,
 		ServerProjectUID: serverProjectUID,
 		ServerName:       serverName,
-		PipeNames: viper.GetStringSlice(clientCreateFlagPipes),
+		PipeNames:        viper.GetStringSlice(clientCreateFlagPipes),
 	})
 
 	resp, err := cloud.Gateway.ClientPost(params, nil)
@@ -246,8 +228,27 @@ func clientDescribe(cmd *cobra.Command, args []string) error {
 }
 
 func clientList(cmd *cobra.Command, args []string) error {
+	if len(args) != 0 {
+		return errors.New("no argument allowed")
+	}
+
+	project := viper.GetString(flagProject)
+	if viper.GetBool(clientListFlagAllProjects) {
+		if project != "" {
+			return errors.New("only one of two flags allowed")
+		}
+		resp, err := cloud.Gateway.ClientListAll(gateway.NewClientListAllParams(), nil)
+		if err != nil {
+			return fmt.Errorf("listing gateway clients: %w", err)
+		}
+		return output.YAMLPrinter{}.Print(resp.Payload)
+	}
+
+	if project == "" {
+		return errors.New("project missing")
+	}
 	params := gateway.NewClientListParams()
-	params.SetProjectuid(args[0])
+	params.SetProjectuid(viper.GetString(flagProject))
 	resp, err := cloud.Gateway.ClientList(params, nil)
 	if err != nil {
 		return fmt.Errorf("failed to list gateway clients: %w", err)
@@ -264,14 +265,10 @@ func clientPatch(cmd *cobra.Command, args []string) error {
 	params.SetProjectuid(projectUID)
 	params.SetName(name)
 
-	pipes, err := parseCommaSeparatedString(viper.GetString(clientPatchFlagPipesToAdd))
-	if err != nil {
-		return fmt.Errorf("parsing the flag `pipes`: %w", err)
-	}
 	req := &models.V1GatewayClientPatchRequest{
 		ProjectUID: &projectUID,
 		Name:       &name,
-		PipeNames:  pipes,
+		PipeNames:  viper.GetStringSlice(clientPatchFlagPipesToAdd),
 	}
 	params.SetBody(req)
 
@@ -398,7 +395,21 @@ func serverPatch(cmd *cobra.Command, args []string) error {
 	return output.YAMLPrinter{}.Print(resp.Payload)
 }
 
-// other helpers
+// helpers
+
+func defineFlagProject(cmd *cobra.Command) {
+	cmd.Flags().StringP(flagProject, "p", "", "Project UID of gateway instance")
+}
+
+func defineRequiredFlagProject(cmds ...*cobra.Command) error {
+	for i := range cmds {
+		defineFlagProject(cmds[i])
+		if err := cmds[i].MarkFlagRequired(flagProject); err != nil {
+			log.Fatal(err)
+		}
+	}
+	return nil
+}
 
 func parseCommaSeparatedString(s string) ([]string, error) {
 	ss := strings.Split(s, ",")
@@ -445,6 +456,17 @@ func parsePipeSpecs(specs []string) ([]*models.V1PipeSpec, error) {
 	return pipes, nil
 }
 
+func projectUIDAndInstanceName(args []string) (string, string, error) {
+	project := viper.GetString(flagProject)
+	if project == "" {
+		return "", "", errors.New("project UID missing")
+	}
+	if len(args) != 1 {
+		return "", "", errors.New("There should be one and only one argument.")
+	}
+	return project, args[0], nil
+}
+
 func ptr(s string) *string {
 	return pointer.StringPtr(s)
 }
@@ -457,15 +479,4 @@ func u16StrToI64Ptr(s string) (*int64, error) {
 	}
 
 	return pointer.Int64Ptr(int64(u16AsU64)), nil
-}
-
-func projectUIDAndInstanceName(args []string) (string, string, error) {
-	project := viper.GetString(flagProject)
-	if project == "" {
-		return "", "", errors.New("project UID missing")
-	}
-	if len(args) != 1 {
-		return "", "", errors.New("There should be one and only one argument.")
-	}
-	return project, args[0], nil
 }
