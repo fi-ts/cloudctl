@@ -256,6 +256,8 @@ func (t TablePrinter) Print(data interface{}) error {
 		VolumeTablePrinter{t}.Print([]*models.V1VolumeResponse{d})
 	case []*models.V1VolumeResponse:
 		VolumeTablePrinter{t}.Print(d)
+	case []*models.V1StorageClusterInfo:
+		VolumeClusterInfoTablePrinter{t}.Print(d)
 	case models.V1PostgresPartitionsResponse:
 		PostgresPartitionsTablePrinter{t}.Print(d)
 	case []*models.V1PostgresVersion:
