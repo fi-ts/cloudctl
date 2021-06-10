@@ -141,6 +141,23 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+	postgresBillingCmd = &cobra.Command{
+		Use:   "postgres",
+		Short: "look at postgres bills",
+		//TODO set costs via env var?
+		Example: `If you want to get the costs in Euro, then set two environment variables with the prices from your contract:
+
+		cloudctl billing postgres
+		`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			err := initBillingOpts()
+			if err != nil {
+				return err
+			}
+			return postgresUsage()
+		},
+		PreRun: bindPFlags,
+	}
 )
 
 func init() {
@@ -152,6 +169,7 @@ func init() {
 	billingCmd.AddCommand(networkTrafficBillingCmd)
 	billingCmd.AddCommand(s3BillingCmd)
 	billingCmd.AddCommand(volumeBillingCmd)
+	billingCmd.AddCommand(postgresBillingCmd)
 
 	billingOpts = &BillingOpts{}
 
@@ -230,6 +248,18 @@ func init() {
 	volumeBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 
 	err = viper.BindPFlags(volumeBillingCmd.Flags())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	postgresBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
+	postgresBillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
+	postgresBillingCmd.Flags().StringVarP(&billingOpts.FromString, "from", "", "", "the start time in the accounting window to look at (optional, defaults to start of the month")
+	postgresBillingCmd.Flags().StringVarP(&billingOpts.ToString, "to", "", "", "the end time in the accounting window to look at (optional, defaults to current system time)")
+	postgresBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
+	postgresBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
+
+	err = viper.BindPFlags(postgresBillingCmd.Flags())
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -540,6 +570,53 @@ func volumeUsageCSV(vur *models.V1VolumeUsageRequest) error {
 	request.SetBody(vur)
 
 	response, err := cloud.Accounting.VolumeUsageCSV(request, nil)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(response.Payload)
+	return nil
+}
+
+func postgresUsage() error {
+	from := strfmt.DateTime(billingOpts.From)
+	cur := models.V1PostgresUsageRequest{
+		From: &from,
+		To:   strfmt.DateTime(billingOpts.To),
+	}
+	if billingOpts.Tenant != "" {
+		cur.Tenant = billingOpts.Tenant
+	}
+	if billingOpts.ProjectID != "" {
+		cur.Projectid = billingOpts.ProjectID
+	}
+	if billingOpts.ClusterID != "" {
+		cur.Clusterid = billingOpts.ClusterID
+	}
+
+	if billingOpts.CSV {
+		return postgresUsageCSV(&cur)
+	}
+	return postgresUsageJSON(&cur)
+}
+
+func postgresUsageJSON(cur *models.V1PostgresUsageRequest) error {
+	request := accounting.NewPostgresUsageParams()
+	request.SetBody(cur)
+
+	response, err := cloud.Accounting.PostgresUsage(request, nil)
+	if err != nil {
+		return err
+	}
+
+	return printer.Print(response.Payload)
+}
+
+func postgresUsageCSV(cur *models.V1PostgresUsageRequest) error {
+	request := accounting.NewPostgresUsageCSVParams()
+	request.SetBody(cur)
+
+	response, err := cloud.Accounting.PostgresUsageCSV(request, nil)
 	if err != nil {
 		return err
 	}

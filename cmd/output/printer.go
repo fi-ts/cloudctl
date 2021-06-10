@@ -243,6 +243,11 @@ func (t TablePrinter) Print(data interface{}) error {
 			t.order = "tenant,project,partition,cluster,name"
 		}
 		VolumeBillingTablePrinter{t}.Print(d)
+	case *models.V1PostgresUsageResponse:
+		if t.order == "" {
+			t.order = "tenant,project,id"
+		}
+		PostgresBillingTablePrinter{t}.Print(d)
 	case []*models.ModelsV1MachineResponse:
 		MachineTablePrinter{t}.Print(d)
 	case []*models.V1S3Response:
