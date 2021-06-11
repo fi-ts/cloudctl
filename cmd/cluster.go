@@ -776,7 +776,6 @@ func updateCluster(args []string) error {
 		auto := viper.GetBool("autoupdate-machineimages")
 		cur.Maintenance.AutoUpdate.MachineImage = &auto
 	}
-	fmt.Printf("%v\n", cur.Maintenance.AutoUpdate)
 
 	updateCausesDowntime := false
 	if firewallImage != "" {
