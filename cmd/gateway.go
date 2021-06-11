@@ -17,14 +17,13 @@ import (
 
 const (
 	flagProject                    = "project"
+	flagAllProjects                = "all-projects"
 	clientCreateFlagPipes          = "pipes"
 	clientCreateFlagServer         = "server"
-	clientListFlagAllProjects      = "all-projects"
-	clientPatchFlagPipesToAdd      = "pipes-to-add"
+	clientUpdateFlagPipesToAdd     = "pipes-to-add"
 	serverCreateFlagLoadBalancerIP = "ip"
 	serverCreateFlagPipes          = "pipes"
-	serverListFlagAllProjects      = "all-projects"
-	serverPatchFlagPipesToAdd      = "pipes-to-add"
+	serverUpdateFlagPipesToAdd     = "pipes-to-add"
 )
 
 var (
@@ -34,6 +33,45 @@ var (
 		Short:   "Manage gateways",
 		Long:    "Manage gateways which enable access to services in another cluster",
 		PreRun:  bindPFlags,
+	}
+	clientCmd = &cobra.Command{
+		Use:   "client",
+		Short: "Manage clients",
+	}
+	clientCreateCmd = &cobra.Command{
+		Use:    "create --project <projectUID> <name>",
+		Long:   "Create a client",
+		Short:  "Create a client",
+		RunE:   clientCreate,
+		PreRun: bindPFlags,
+	}
+	clientDeleteCmd = &cobra.Command{
+		Use:    "delete --project <projectUID> <name>",
+		Long:   "Delete a client",
+		Short:  "Delete a client",
+		RunE:   clientDelete,
+		PreRun: bindPFlags,
+	}
+	clientDescribeCmd = &cobra.Command{
+		Use:    "describe --project <projectUID> <name>",
+		Short:  "Describe a gateway",
+		Long:   "Describe a gateway",
+		RunE:   clientDescribe,
+		PreRun: bindPFlags,
+	}
+	clientListCmd = &cobra.Command{
+		Use:    "list --project <projectUID>",
+		Long:   "List clients under a specific project-UID",
+		Short:  "List clients under a specific project-UID",
+		RunE:   clientList,
+		PreRun: bindPFlags,
+	}
+	clientUpdateCmd = &cobra.Command{
+		Use:    "update --project <projectUID> <name>",
+		Long:   "Update a client",
+		Short:  "Update a client",
+		RunE:   clientUpdate,
+		PreRun: bindPFlags,
 	}
 	serverCmd = &cobra.Command{
 		Use:   "server",
@@ -53,6 +91,13 @@ var (
 		RunE:   serverDescribe,
 		PreRun: bindPFlags,
 	}
+	serverDeleteCmd = &cobra.Command{
+		Use:    "delete --project <projectUID> <name>",
+		Long:   "Delete a server",
+		Short:  "Delete a server",
+		RunE:   serverDelete,
+		PreRun: bindPFlags,
+	}
 	serverListCmd = &cobra.Command{
 		Aliases: []string{"ls"},
 		Use:     "list --project <projectUID>",
@@ -61,110 +106,47 @@ var (
 		RunE:    serverList,
 		PreRun:  bindPFlags,
 	}
-	serverPatchCmd = &cobra.Command{
-		Use:    "patch --project <projectUID> <name>",
-		Long:   "Patch a server",
-		Short:  "Patch a server",
-		RunE:   serverPatch,
+	serverUpdateCmd = &cobra.Command{
+		Use:    "update --project <projectUID> <name>",
+		Long:   "Update a server",
+		Short:  "Update a server",
+		RunE:   serverUpdate,
 		PreRun: bindPFlags,
 	}
-	serverDeleteCmd = &cobra.Command{
-		Use:    "delete --project <projectUID> <name>",
-		Long:   "Delete a server",
-		Short:  "Delete a server",
-		RunE:   serverDelete,
-		PreRun: bindPFlags,
-	}
-	clientCmd = &cobra.Command{
-		Use:   "client",
-		Short: "Manage clients",
-	}
-	clientCreateCmd = &cobra.Command{
-		Use:    "create --project <projectUID> <name>",
-		Long:   "Create a client",
-		Short:  "Create a client",
-		RunE:   clientCreate,
-		PreRun: bindPFlags,
-	}
-	clientDescribeCmd = &cobra.Command{
-		Use:    "describe --project <projectUID> <name>",
-		Short:  "Describe a gateway",
-		Long:   "Describe a gateway",
-		RunE:   clientDescribe,
-		PreRun: bindPFlags,
-	}
-	clientListCmd = &cobra.Command{
-		Use:    "list --project <projectUID>",
-		Long:   "List clients under a specific project-UID",
-		Short:  "List clients under a specific project-UID",
-		RunE:   clientList,
-		PreRun: bindPFlags,
-	}
-	clientPatchCmd = &cobra.Command{
-		Use:    "patch --project <projectUID> <name>",
-		Long:   "Patch a client",
-		Short:  "Patch a client",
-		RunE:   clientPatch,
-		PreRun: bindPFlags,
-	}
-	clientDeleteCmd = &cobra.Command{
-		Use:    "delete --project <projectUID> <name>",
-		Long:   "Delete a client",
-		Short:  "Delete a client",
-		RunE:   clientDelete,
-		PreRun: bindPFlags,
-	}
+	singleClientCmds = []*cobra.Command{clientCreateCmd, clientDescribeCmd, clientUpdateCmd, clientDeleteCmd}
+	singleServerCmds = []*cobra.Command{serverCreateCmd, serverDescribeCmd, serverUpdateCmd, serverDeleteCmd}
+	listCmds         = []*cobra.Command{clientListCmd, serverListCmd}
 )
 
 func init() {
 	gwCmd.AddCommand(serverCmd, clientCmd)
-
-	// Add subcommands to gateway server command
-	singleServerCmds := []*cobra.Command{serverCreateCmd, serverDescribeCmd, serverPatchCmd, serverDeleteCmd}
+	clientCmd.AddCommand(append(singleClientCmds, clientListCmd)...)
 	serverCmd.AddCommand(append(singleServerCmds, serverListCmd)...)
 
-	// Add subcommands to gateway client command
-	singleClientCmds := []*cobra.Command{clientCreateCmd, clientDescribeCmd, clientPatchCmd, clientDeleteCmd}
-	clientCmd.AddCommand(append(singleClientCmds, clientListCmd)...)
+	// all single instance commands
+	must(defineRequiredFlagProject(append(singleClientCmds, singleServerCmds...)))
 
-	// Define the required `project` flag for single instance commands
-	singleInstanceCmds := append(singleServerCmds, singleClientCmds...)
-	if err := defineRequiredFlagProject(singleInstanceCmds...); err != nil {
-		log.Fatal(err)
+	// multiple instance commands
+	for i := range listCmds {
+		defineFlagProjectMIC(listCmds[i])
 	}
 
-	// Define not-required `project` flag for commands returning a slice because of the possibility of `--all-projects` flag
-	defineFlagProject(serverListCmd)
-	defineFlagProject(clientListCmd)
-	serverListCmd.Flags().BoolP(serverListFlagAllProjects, "A", false, "Servers of all projects")
-	clientListCmd.Flags().BoolP(serverListFlagAllProjects, "A", false, "Servers of all projects")
+	clientCreateCmd.Flags().String(clientCreateFlagServer, "", "UID of the peer server of the client")
+	must(clientCreateCmd.MarkFlagRequired(clientCreateFlagServer))
+
+	clientCreateCmd.Flags().StringSlice(clientCreateFlagPipes, nil, "Pipe names chosen from the server's `pipes` spec, e.g. `PIPE_NAME_1,PIPE_NAME_2`")
+	must(clientCreateCmd.MarkFlagRequired(clientCreateFlagPipes))
+
+	clientUpdateCmd.Flags().StringSlice(clientUpdateFlagPipesToAdd, nil, "Comma-separated list of the new pipe names to add, which are chosen from the server's `pipes` spec, e.g. `NEW_PIPE_NAME_1,NEW_PIPE_NAME_2`")
+	must(clientUpdateCmd.MarkFlagRequired(clientUpdateFlagPipesToAdd))
 
 	serverCreateCmd.Flags().String(serverCreateFlagLoadBalancerIP, "", "IP of the load balancer of the gateway server.")
-	if err := serverCreateCmd.MarkFlagRequired(serverCreateFlagLoadBalancerIP); err != nil {
-		log.Fatal(err)
-	}
+	must(serverCreateCmd.MarkFlagRequired(serverCreateFlagLoadBalancerIP))
+
 	serverCreateCmd.Flags().StringSlice(serverCreateFlagPipes, nil, "Pipes of the gateway server, e.g. PIPE_1,PIPE_2. Each pipe has format SVC_NAME:CLIENT_POD_PORT:REMOTE_SVC_ENDPOINT.")
 
-	serverPatchCmd.Flags().StringSlice(serverPatchFlagPipesToAdd, nil, "New pipes to add to the gateway server, e.g. PIPE_1,PIPE_2. Each pipe has format SVC_NAME:CLIENT_POD_PORT:REMOTE_SVC_ENDPOINT.")
-	if err := serverPatchCmd.MarkFlagRequired(serverPatchFlagPipesToAdd); err != nil {
-		log.Fatal(err)
-	}
-
-	// client create
-	clientCreateCmd.Flags().String(clientCreateFlagServer, "", "UID of the peer server of the client")
-	if err := clientCreateCmd.MarkFlagRequired(clientCreateFlagServer); err != nil {
-		log.Fatal(err)
-	}
-	clientCreateCmd.Flags().StringSlice(clientCreateFlagPipes, nil, "Pipe names chosen from the server's `pipes` spec, e.g. `PIPE_NAME_1,PIPE_NAME_2`")
-	if err := clientCreateCmd.MarkFlagRequired(clientCreateFlagPipes); err != nil {
-		log.Fatal(err)
-	}
-
-	// client patch
-	clientPatchCmd.Flags().StringSlice(clientPatchFlagPipesToAdd, nil, "Comma-separated list of the new pipe names to add, which are chosen from the server's `pipes` spec, e.g. `NEW_PIPE_NAME_1,NEW_PIPE_NAME_2`")
-	if err := clientPatchCmd.MarkFlagRequired(clientPatchFlagPipesToAdd); err != nil {
-		log.Fatal(err)
-	}
+	serverUpdateCmd.Flags().StringSlice(serverUpdateFlagPipesToAdd, nil, "New pipes to add to the gateway server, e.g. PIPE_1,PIPE_2. Each pipe has format SVC_NAME:CLIENT_POD_PORT:REMOTE_SVC_ENDPOINT.")
+	must(serverUpdateCmd.MarkFlagRequired(serverUpdateFlagPipesToAdd))
 }
 
 func clientCreate(cmd *cobra.Command, args []string) error {
@@ -233,7 +215,7 @@ func clientList(cmd *cobra.Command, args []string) error {
 	}
 
 	project := viper.GetString(flagProject)
-	if viper.GetBool(clientListFlagAllProjects) {
+	if viper.GetBool(flagAllProjects) {
 		if project != "" {
 			return errors.New("only one of two flags allowed")
 		}
@@ -256,7 +238,7 @@ func clientList(cmd *cobra.Command, args []string) error {
 	return output.YAMLPrinter{}.Print(resp.Payload)
 }
 
-func clientPatch(cmd *cobra.Command, args []string) error {
+func clientUpdate(cmd *cobra.Command, args []string) error {
 	projectUID, name, err := projectUIDAndInstanceName(args)
 	if err != nil {
 		return err
@@ -268,7 +250,7 @@ func clientPatch(cmd *cobra.Command, args []string) error {
 	req := &models.V1GatewayClientPatchRequest{
 		ProjectUID: &projectUID,
 		Name:       &name,
-		PipeNames:  viper.GetStringSlice(clientPatchFlagPipesToAdd),
+		PipeNames:  viper.GetStringSlice(clientUpdateFlagPipesToAdd),
 	}
 	params.SetBody(req)
 
@@ -345,7 +327,7 @@ func serverList(cmd *cobra.Command, args []string) error {
 	}
 
 	project := viper.GetString(flagProject)
-	if viper.GetBool(serverListFlagAllProjects) {
+	if viper.GetBool(flagAllProjects) {
 		if project != "" {
 			return errors.New("only one of two flags allowed")
 		}
@@ -368,7 +350,7 @@ func serverList(cmd *cobra.Command, args []string) error {
 	return output.YAMLPrinter{}.Print(resp.Payload)
 }
 
-func serverPatch(cmd *cobra.Command, args []string) error {
+func serverUpdate(cmd *cobra.Command, args []string) error {
 	projectUID, name, err := projectUIDAndInstanceName(args)
 	if err != nil {
 		return err
@@ -377,7 +359,7 @@ func serverPatch(cmd *cobra.Command, args []string) error {
 	params.SetProjectuid(projectUID)
 	params.SetName(name)
 
-	parsedPipes, err := parsePipeSpecs(viper.GetStringSlice(serverPatchFlagPipesToAdd))
+	parsedPipes, err := parsePipeSpecs(viper.GetStringSlice(serverUpdateFlagPipesToAdd))
 	if err != nil {
 		return fmt.Errorf("failed to parse flag `pipes`: %w", err)
 	}
@@ -395,28 +377,33 @@ func serverPatch(cmd *cobra.Command, args []string) error {
 	return output.YAMLPrinter{}.Print(resp.Payload)
 }
 
-// helpers
+/* other than handlers */
 
-func defineFlagProject(cmd *cobra.Command) {
-	cmd.Flags().StringP(flagProject, "p", "", "Project UID of gateway instance")
+func defineFlagProject(c *cobra.Command) {
+	c.Flags().String(flagProject, "", "Project UID of gateway instance")
 }
 
-func defineRequiredFlagProject(cmds ...*cobra.Command) error {
-	for i := range cmds {
-		defineFlagProject(cmds[i])
-		if err := cmds[i].MarkFlagRequired(flagProject); err != nil {
+// MIC := multiple-instance-command
+func defineFlagProjectMIC(c *cobra.Command) {
+	// `--project` or `--all-projects`
+	defineFlagProject(c)
+	c.Flags().BoolP(flagAllProjects, "A", false, "Instances of all projects")
+}
+
+func defineRequiredFlagProject(cc []*cobra.Command) error {
+	for i := range cc {
+		defineFlagProject(cc[i])
+		if err := cc[i].MarkFlagRequired(flagProject); err != nil {
 			log.Fatal(err)
 		}
 	}
 	return nil
 }
 
-func parseCommaSeparatedString(s string) ([]string, error) {
-	ss := strings.Split(s, ",")
-	if len(ss) == 0 {
-		return nil, fmt.Errorf("failed to parse %s", s)
+func must(err error) {
+	if err != nil {
+		log.Fatal(err)
 	}
-	return ss, nil
 }
 
 func parseInstanceID(id string) (string, string, error) {
