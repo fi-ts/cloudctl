@@ -681,8 +681,13 @@ func updateCluster(args []string) error {
 
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
-		ID:          &ci,
-		Maintenance: &models.V1Maintenance{},
+		ID: &ci,
+		Maintenance: &models.V1Maintenance{
+			AutoUpdate: &models.V1MaintenanceAutoUpdate{
+				KubernetesVersion: current.Maintenance.AutoUpdate.KubernetesVersion,
+				MachineImage:      current.Maintenance.AutoUpdate.MachineImage,
+			},
+		},
 	}
 
 	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" || healthtimeout != 0 || draintimeout != 0 || maxsurge != "" || maxunavailable != "" {
@@ -763,14 +768,15 @@ func updateCluster(args []string) error {
 		cur.Workers = append(cur.Workers, workers...)
 	}
 
-	autoUpdates := &models.V1MaintenanceAutoUpdate{}
 	if viper.IsSet("autoupdate-kubernetes") {
-		autoUpdates.KubernetesVersion = viper.GetBool("autoupdate-kubernetes")
+		auto := viper.GetBool("autoupdate-kubernetes")
+		cur.Maintenance.AutoUpdate.KubernetesVersion = &auto
 	}
 	if viper.IsSet("autoupdate-machineimages") {
-		autoUpdates.MachineImage = viper.GetBool("autoupdate-machineimages")
+		auto := viper.GetBool("autoupdate-machineimages")
+		cur.Maintenance.AutoUpdate.MachineImage = &auto
 	}
-	cur.Maintenance.AutoUpdate = autoUpdates
+	fmt.Printf("%v\n", cur.Maintenance.AutoUpdate)
 
 	updateCausesDowntime := false
 	if firewallImage != "" {
