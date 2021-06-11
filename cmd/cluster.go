@@ -309,6 +309,8 @@ func init() {
 	clusterUpdateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted.")
 	clusterUpdateCmd.Flags().String("maxsurge", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers created during a update of the cluster.")
 	clusterUpdateCmd.Flags().String("maxunavailable", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
+	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster")
+	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
 
 	clusterUpdateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return versionListCompletion()
@@ -396,8 +398,6 @@ func clusterCreate() error {
 	// FIXME helper and validation
 	networks := viper.GetStringSlice("external-networks")
 	egress := viper.GetStringSlice("egress")
-	autoUpdateKubernetes := false
-	autoUpdateMachineImage := false
 	maintenanceBegin := "220000+0100"
 	maintenanceEnd := "233000+0100"
 
@@ -480,10 +480,6 @@ func clusterCreate() error {
 			Version:                   &version,
 		},
 		Maintenance: &models.V1Maintenance{
-			AutoUpdate: &models.V1MaintenanceAutoUpdate{
-				KubernetesVersion: &autoUpdateKubernetes,
-				MachineImage:      &autoUpdateMachineImage,
-			},
 			TimeWindow: &models.V1MaintenanceTimeWindow{
 				Begin: &maintenanceBegin,
 				End:   &maintenanceEnd,
@@ -685,7 +681,8 @@ func updateCluster(args []string) error {
 
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
-		ID: &ci,
+		ID:          &ci,
+		Maintenance: &models.V1Maintenance{},
 	}
 
 	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" || healthtimeout != 0 || draintimeout != 0 || maxsurge != "" || maxunavailable != "" {
@@ -765,6 +762,15 @@ func updateCluster(args []string) error {
 
 		cur.Workers = append(cur.Workers, workers...)
 	}
+
+	autoUpdates := &models.V1MaintenanceAutoUpdate{}
+	if viper.IsSet("autoupdate-kubernetes") {
+		autoUpdates.KubernetesVersion = viper.GetBool("autoupdate-kubernetes")
+	}
+	if viper.IsSet("autoupdate-machineimages") {
+		autoUpdates.MachineImage = viper.GetBool("autoupdate-machineimages")
+	}
+	cur.Maintenance.AutoUpdate = autoUpdates
 
 	updateCausesDowntime := false
 	if firewallImage != "" {
