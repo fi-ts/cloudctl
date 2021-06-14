@@ -113,43 +113,14 @@ var (
 		RunE:   serverUpdate,
 		PreRun: bindPFlags,
 	}
-	singleClientCmds = []*cobra.Command{clientCreateCmd, clientDescribeCmd, clientUpdateCmd, clientDeleteCmd}
-	singleServerCmds = []*cobra.Command{serverCreateCmd, serverDescribeCmd, serverUpdateCmd, serverDeleteCmd}
+	singleClientCmds  = []*cobra.Command{clientCreateCmd, clientDescribeCmd, clientUpdateCmd, clientDeleteCmd}
+	singleServerCmds  = []*cobra.Command{serverCreateCmd, serverDescribeCmd, serverUpdateCmd, serverDeleteCmd}
+	multiInstanceCmds = []*cobra.Command{clientListCmd, serverListCmd}
 )
 
 func init() {
-	gwCmd.AddCommand(serverCmd, clientCmd)
-	clientCmd.AddCommand(append(singleClientCmds, clientListCmd)...)
-	serverCmd.AddCommand(append(singleServerCmds, serverListCmd)...)
-
-	// single instance commands
-	singleInstanceCmds := append(singleClientCmds, singleServerCmds...)
-	for i := range singleInstanceCmds {
-		defineRequiredFlagProject(singleInstanceCmds[i])
-	}
-
-	// multiple instance commands
-	listCmds := []*cobra.Command{clientListCmd, serverListCmd}
-	for i := range listCmds {
-		defineFlagProjectMIC(listCmds[i])
-	}
-
-	clientCreateCmd.Flags().String(clientCreateFlagServer, "", "UID of the peer server of the client")
-	must(clientCreateCmd.MarkFlagRequired(clientCreateFlagServer))
-
-	clientCreateCmd.Flags().StringSlice(clientCreateFlagPipes, nil, "Pipe names chosen from the server's `pipes` spec, e.g. `PIPE_NAME_1,PIPE_NAME_2`")
-	must(clientCreateCmd.MarkFlagRequired(clientCreateFlagPipes))
-
-	clientUpdateCmd.Flags().StringSlice(clientUpdateFlagPipesToAdd, nil, "Comma-separated list of the new pipe names to add, which are chosen from the server's `pipes` spec, e.g. `NEW_PIPE_NAME_1,NEW_PIPE_NAME_2`")
-	must(clientUpdateCmd.MarkFlagRequired(clientUpdateFlagPipesToAdd))
-
-	serverCreateCmd.Flags().String(serverCreateFlagLoadBalancerIP, "", "IP of the load balancer of the gateway server.")
-	must(serverCreateCmd.MarkFlagRequired(serverCreateFlagLoadBalancerIP))
-
-	serverCreateCmd.Flags().StringSlice(serverCreateFlagPipes, nil, "Pipes of the gateway server, e.g. PIPE_1,PIPE_2. Each pipe has format SVC_NAME:CLIENT_POD_PORT:REMOTE_SVC_ENDPOINT.")
-
-	serverUpdateCmd.Flags().StringSlice(serverUpdateFlagPipesToAdd, nil, "New pipes to add to the gateway server, e.g. PIPE_1,PIPE_2. Each pipe has format SVC_NAME:CLIENT_POD_PORT:REMOTE_SVC_ENDPOINT.")
-	must(serverUpdateCmd.MarkFlagRequired(serverUpdateFlagPipesToAdd))
+	buildCmdTree()
+	defineCmdFlag()
 }
 
 func clientCreate(cmd *cobra.Command, args []string) error {
@@ -381,6 +352,42 @@ func serverUpdate(cmd *cobra.Command, args []string) error {
 }
 
 /* other than handlers */
+
+func buildCmdTree() {
+	gwCmd.AddCommand(serverCmd, clientCmd)
+	clientCmd.AddCommand(append(singleClientCmds, clientListCmd)...)
+	serverCmd.AddCommand(append(singleServerCmds, serverListCmd)...)
+}
+
+func defineCmdFlag() {
+	// single instance commands
+	singleInstanceCmds := append(singleClientCmds, singleServerCmds...)
+	for i := range singleInstanceCmds {
+		defineRequiredFlagProject(singleInstanceCmds[i])
+	}
+
+	// multiple instance commands
+	for i := range multiInstanceCmds {
+		defineFlagProjectMIC(multiInstanceCmds[i])
+	}
+
+	clientCreateCmd.Flags().String(clientCreateFlagServer, "", "UID of the peer server of the client")
+	must(clientCreateCmd.MarkFlagRequired(clientCreateFlagServer))
+
+	clientCreateCmd.Flags().StringSlice(clientCreateFlagPipes, nil, "Pipe names chosen from the server's `pipes` spec, e.g. `PIPE_NAME_1,PIPE_NAME_2`")
+	must(clientCreateCmd.MarkFlagRequired(clientCreateFlagPipes))
+
+	clientUpdateCmd.Flags().StringSlice(clientUpdateFlagPipesToAdd, nil, "Comma-separated list of the new pipe names to add, which are chosen from the server's `pipes` spec, e.g. `NEW_PIPE_NAME_1,NEW_PIPE_NAME_2`")
+	must(clientUpdateCmd.MarkFlagRequired(clientUpdateFlagPipesToAdd))
+
+	serverCreateCmd.Flags().String(serverCreateFlagLoadBalancerIP, "", "IP of the load balancer of the gateway server.")
+	must(serverCreateCmd.MarkFlagRequired(serverCreateFlagLoadBalancerIP))
+
+	serverCreateCmd.Flags().StringSlice(serverCreateFlagPipes, nil, "Pipes of the gateway server, e.g. PIPE_1,PIPE_2. Each pipe has format SVC_NAME:CLIENT_POD_PORT:REMOTE_SVC_ENDPOINT.")
+
+	serverUpdateCmd.Flags().StringSlice(serverUpdateFlagPipesToAdd, nil, "New pipes to add to the gateway server, e.g. PIPE_1,PIPE_2. Each pipe has format SVC_NAME:CLIENT_POD_PORT:REMOTE_SVC_ENDPOINT.")
+	must(serverUpdateCmd.MarkFlagRequired(serverUpdateFlagPipesToAdd))
+}
 
 func defineFlagProject(c *cobra.Command) {
 	c.Flags().String(flagProject, "", "Project UID of gateway instance")
