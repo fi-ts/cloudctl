@@ -115,7 +115,6 @@ var (
 	}
 	singleClientCmds = []*cobra.Command{clientCreateCmd, clientDescribeCmd, clientUpdateCmd, clientDeleteCmd}
 	singleServerCmds = []*cobra.Command{serverCreateCmd, serverDescribeCmd, serverUpdateCmd, serverDeleteCmd}
-	listCmds         = []*cobra.Command{clientListCmd, serverListCmd}
 )
 
 func init() {
@@ -123,10 +122,14 @@ func init() {
 	clientCmd.AddCommand(append(singleClientCmds, clientListCmd)...)
 	serverCmd.AddCommand(append(singleServerCmds, serverListCmd)...)
 
-	// all single instance commands
-	must(defineRequiredFlagProject(append(singleClientCmds, singleServerCmds...)))
+	// single instance commands
+	singleInstanceCmds := append(singleClientCmds, singleServerCmds...)
+	for i := range singleInstanceCmds {
+		defineRequiredFlagProject(singleInstanceCmds[i])
+	}
 
 	// multiple instance commands
+	listCmds := []*cobra.Command{clientListCmd, serverListCmd}
 	for i := range listCmds {
 		defineFlagProjectMIC(listCmds[i])
 	}
@@ -390,13 +393,9 @@ func defineFlagProjectMIC(c *cobra.Command) {
 	c.Flags().BoolP(flagAllProjects, "A", false, "Instances of all projects")
 }
 
-func defineRequiredFlagProject(cc []*cobra.Command) error {
-	for i := range cc {
-		defineFlagProject(cc[i])
-		if err := cc[i].MarkFlagRequired(flagProject); err != nil {
-			log.Fatal(err)
-		}
-	}
+func defineRequiredFlagProject(c *cobra.Command) error {
+	defineFlagProject(c)
+	must(c.MarkFlagRequired(flagProject))
 	return nil
 }
 
