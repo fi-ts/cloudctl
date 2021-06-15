@@ -13,8 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/metal-stack/metal-lib/auth"
-	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/fi-ts/cloud-go/api/client/cluster"
@@ -309,6 +307,10 @@ func init() {
 	clusterUpdateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
 	clusterUpdateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced.")
 	clusterUpdateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted.")
+	clusterUpdateCmd.Flags().String("maxsurge", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers created during a update of the cluster.")
+	clusterUpdateCmd.Flags().String("maxunavailable", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
+	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster")
+	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
 
 	clusterUpdateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return versionListCompletion()
@@ -396,8 +398,6 @@ func clusterCreate() error {
 	// FIXME helper and validation
 	networks := viper.GetStringSlice("external-networks")
 	egress := viper.GetStringSlice("egress")
-	autoUpdateKubernetes := false
-	autoUpdateMachineImage := false
 	maintenanceBegin := "220000+0100"
 	maintenanceEnd := "233000+0100"
 
@@ -442,13 +442,9 @@ func clusterCreate() error {
 		}
 	}
 
-	labelMap := make(map[string]string)
-	for _, l := range labels {
-		parts := strings.SplitN(l, "=", 2)
-		if len(parts) != 2 {
-			log.Fatalf("provided labels must be in the form <key>=<value>, found: %s", l)
-		}
-		labelMap[parts[0]] = parts[1]
+	labelMap, err := helper.LabelsToMap(labels)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	switch cri {
@@ -484,10 +480,6 @@ func clusterCreate() error {
 			Version:                   &version,
 		},
 		Maintenance: &models.V1Maintenance{
-			AutoUpdate: &models.V1MaintenanceAutoUpdate{
-				KubernetesVersion: &autoUpdateKubernetes,
-				MachineImage:      &autoUpdateMachineImage,
-			},
 			TimeWindow: &models.V1MaintenanceTimeWindow{
 				Begin: &maintenanceBegin,
 				End:   &maintenanceEnd,
@@ -587,36 +579,7 @@ func clusterKubeconfig(args []string) error {
 		return fmt.Errorf("active user %s has no oidc authProvider, check config", authContext.User)
 	}
 
-	cfg := make(map[interface{}]interface{})
-	err = yaml.Unmarshal([]byte(kubeconfigContent), cfg)
-	if err != nil {
-		return err
-	}
-	// identify clustername
-	clusterNames, err := auth.GetClusterNames(cfg)
-	if err != nil {
-		return err
-	}
-	if len(clusterNames) != 1 {
-		return fmt.Errorf("expected one cluster in config, got %d", len(clusterNames))
-	}
-
-	userName := authContext.User
-	clusterName := clusterNames[0]
-	contextName := fmt.Sprintf("%s@%s", userName, clusterName)
-
-	// merge with current user credentials
-	err = auth.AddUser(cfg, *authContext)
-	if err != nil {
-		return err
-	}
-	err = auth.AddContext(cfg, contextName, clusterName, userName)
-	if err != nil {
-		return err
-	}
-	auth.SetCurrentContext(cfg, contextName)
-
-	mergedKubeconfig, err := yaml.Marshal(cfg)
+	mergedKubeconfig, err := helper.EnrichKubeconfigTpl(kubeconfigContent, authContext)
 	if err != nil {
 		return err
 	}
@@ -702,6 +665,8 @@ func updateCluster(args []string) error {
 	addLabels := viper.GetStringSlice("addlabels")
 	removeLabels := viper.GetStringSlice("removelabels")
 	egress := viper.GetStringSlice("egress")
+	maxsurge := viper.GetString("maxsurge")
+	maxunavailable := viper.GetString("maxunavailable")
 
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
@@ -717,9 +682,15 @@ func updateCluster(args []string) error {
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
 		ID: &ci,
+		Maintenance: &models.V1Maintenance{
+			AutoUpdate: &models.V1MaintenanceAutoUpdate{
+				KubernetesVersion: current.Maintenance.AutoUpdate.KubernetesVersion,
+				MachineImage:      current.Maintenance.AutoUpdate.MachineImage,
+			},
+		},
 	}
 
-	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" || healthtimeout != 0 || draintimeout != 0 {
+	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" || healthtimeout != 0 || draintimeout != 0 || maxsurge != "" || maxunavailable != "" {
 		workers := current.Workers
 
 		var worker *models.V1Worker
@@ -786,7 +757,24 @@ func updateCluster(args []string) error {
 			worker.DrainTimeout = int64(draintimeout)
 		}
 
+		if maxsurge != "" {
+			worker.MaxSurge = &maxsurge
+		}
+
+		if maxunavailable != "" {
+			worker.MaxUnavailable = &maxunavailable
+		}
+
 		cur.Workers = append(cur.Workers, workers...)
+	}
+
+	if viper.IsSet("autoupdate-kubernetes") {
+		auto := viper.GetBool("autoupdate-kubernetes")
+		cur.Maintenance.AutoUpdate.KubernetesVersion = &auto
+	}
+	if viper.IsSet("autoupdate-machineimages") {
+		auto := viper.GetBool("autoupdate-machineimages")
+		cur.Maintenance.AutoUpdate.MachineImage = &auto
 	}
 
 	updateCausesDowntime := false

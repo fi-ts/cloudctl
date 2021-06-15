@@ -46,6 +46,14 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+	volumeClusterInfoCmd = &cobra.Command{
+		Use:   "clusterinfo",
+		Short: "show storage cluster infos",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return volumeClusterInfo()
+		},
+		PreRun: bindPFlags,
+	}
 )
 
 func init() {
@@ -54,6 +62,7 @@ func init() {
 	volumeCmd.AddCommand(volumeListCmd)
 	volumeCmd.AddCommand(volumeDeleteCmd)
 	volumeCmd.AddCommand(volumeManifestCmd)
+	volumeCmd.AddCommand(volumeClusterInfoCmd)
 
 	volumeListCmd.Flags().StringP("volumeid", "", "", "volumeid to filter [optional]")
 	volumeListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
@@ -104,13 +113,21 @@ func volumeDelete(args []string) error {
 	if err != nil {
 		return err
 	}
-	params := &volume.DeleteVolumeParams{}
-	params.SetID(*vol.VolumeID)
-	resp, err := cloud.Volume.DeleteVolume(params, nil)
+
+	resp, err := cloud.Volume.DeleteVolume(volume.NewDeleteVolumeParams().WithID(*vol.VolumeID), nil)
 	if err != nil {
 		return err
 	}
 
+	return printer.Print(resp.Payload)
+}
+
+func volumeClusterInfo() error {
+	params := volume.NewClusterInfoParams()
+	resp, err := cloud.Volume.ClusterInfo(params, nil)
+	if err != nil {
+		return err
+	}
 	return printer.Print(resp.Payload)
 }
 

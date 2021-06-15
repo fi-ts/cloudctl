@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fi-ts/cloud-go/api/models"
 )
@@ -850,6 +851,83 @@ func (s *VolumeBillingTablePrinter) Order(data []*models.V1VolumeUsage) {
 	}
 }
 
+// Order ipUsage
+func (s *PostgresBillingTablePrinter) Order(data []*models.V1PostgresUsage) {
+	cols := strings.Split(s.order, ",")
+	if len(cols) > 0 {
+		sort.SliceStable(data, func(i, j int) bool {
+			A := data[i]
+			B := data[j]
+			for _, order := range cols {
+				order = strings.ToLower(order)
+				switch order {
+				case "tenant":
+					if A.Tenant == nil {
+						return true
+					}
+					if B.Tenant == nil {
+						return false
+					}
+					if *A.Tenant < *B.Tenant {
+						return true
+					}
+					if *A.Tenant != *B.Tenant {
+						return false
+					}
+				case "project":
+					if A.Projectid == nil {
+						return true
+					}
+					if B.Projectid == nil {
+						return false
+					}
+					if *A.Projectid < *B.Projectid {
+						return true
+					}
+					if *A.Projectid != *B.Projectid {
+						return false
+					}
+				case "id":
+					if A.Postgresid == nil {
+						return true
+					}
+					if B.Postgresid == nil {
+						return false
+					}
+					if *A.Postgresid < *B.Postgresid {
+						return true
+					}
+					if *A.Postgresid != *B.Postgresid {
+						return false
+					}
+
+				// TODO CPU
+				// TODO Memory
+				// TODO Storage
+
+				case "lifetime":
+					if A.Lifetime == nil {
+						return true
+					}
+					if B.Lifetime == nil {
+						return false
+					}
+					aseconds := int64(*A.Lifetime)
+					bseconds := int64(*B.Lifetime)
+					if aseconds < bseconds {
+						return true
+					}
+					if aseconds != bseconds {
+						return false
+					}
+				}
+			}
+
+			return false
+		})
+	}
+}
+
 // Order machines
 func (m MachineTablePrinter) Order(data []*models.ModelsV1MachineResponse) {
 	cols := strings.Split(m.order, ",")
@@ -910,6 +988,38 @@ func (m S3PartitionTablePrinter) Order(data []*models.V1S3PartitionResponse) {
 						return true
 					}
 					if *A.ID != *B.ID {
+						return false
+					}
+				}
+			}
+			return false
+		})
+	}
+}
+
+// Order postgres backups partitions
+func (p PostgresBackupEntryTablePrinter) Order(data []*models.V1PostgresBackupEntry) {
+	cols := strings.Split(p.order, ",")
+	if len(cols) > 0 {
+		sort.SliceStable(data, func(i, j int) bool {
+			A := data[i]
+			B := data[j]
+			for _, order := range cols {
+				order = strings.ToLower(order)
+				switch order {
+				case "date":
+					if A.Timestamp == nil {
+						return true
+					}
+					if B.Timestamp == nil {
+						return false
+					}
+					atime := time.Time(*A.Timestamp)
+					btime := time.Time(*B.Timestamp)
+					if atime.Before(btime) {
+						return true
+					}
+					if !atime.Equal(btime) {
 						return false
 					}
 				}

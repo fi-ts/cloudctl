@@ -125,7 +125,7 @@ func tenantApply() error {
 			return err
 		}
 		if t.Payload == nil {
-			return fmt.Errorf("Only tenant update is supported")
+			return fmt.Errorf("only tenant update is supported")
 		}
 		if t.Payload.Meta != nil {
 			params := tenant.NewUpdateTenantParams()

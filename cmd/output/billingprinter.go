@@ -36,6 +36,10 @@ type (
 	VolumeBillingTablePrinter struct {
 		TablePrinter
 	}
+	// PostgresBillingTablePrinter print bills in a Table
+	PostgresBillingTablePrinter struct {
+		TablePrinter
+	}
 )
 
 // Print a cluster usage as table
@@ -339,7 +343,7 @@ func (s IPBillingTablePrinter) Print(data *models.V1IPUsageResponse) {
 
 // Print a volume usage as table
 func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResponse) {
-	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Start", "End", "Device", "In (Gi)", "Out (Gi)", "Total (Gi)", "Lifetime", "Warnings"}
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Device", "In (Gi)", "Out (Gi)", "Total (Gi)", "Lifetime", "Warnings"}
 	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "Device", "In (Gi)", "Out (Gi)", "Total (Gi)", "Lifetime"}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {
@@ -709,6 +713,103 @@ func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageRespons
 		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)),
 		humanizeCPU(*data.Accumulatedusage.Cpuseconds) + cpuCosts(*data.Accumulatedusage.Cpuseconds),
 		humanizeMemory(*data.Accumulatedusage.Memoryseconds) + memoryCosts(*data.Accumulatedusage.Memoryseconds),
+	}
+	shortFooter := make([]string, len(s.shortHeader)-len(footer))
+	wideFooter := make([]string, len(s.wideHeader)-len(footer))
+	s.addWideData(append(wideFooter, footer...), data)
+
+	s.addShortData(append(shortFooter, footer...), data)
+	s.render()
+}
+
+// Print a postgres usage as table
+func (s PostgresBillingTablePrinter) Print(data *models.V1PostgresUsageResponse) {
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "PostgresID", "Description", "Start", "End", "CPU (1 * s)", "Memory (Gi * h)", "StorageSeconds (Gi * h)", "Lifetime"}
+	s.shortHeader = []string{"Tenant", "ProjectID", "PostgresID", "Description", "CPU (1 * s)", "Memory (Gi * h)", "StorageSeconds (Gi * h)", "Lifetime"}
+	s.Order(data.Usage)
+	for _, u := range data.Usage {
+		var from string
+		if data.From != nil {
+			from = data.From.String()
+		}
+		var to string
+		if !time.Time(data.To).IsZero() {
+			to = data.To.String()
+		}
+		var tenant string
+		if u.Tenant != nil {
+			tenant = *u.Tenant
+		}
+		var projectID string
+		if u.Projectid != nil {
+			projectID = *u.Projectid
+		}
+		var postgresID string
+		if u.Postgresid != nil {
+			postgresID = *u.Postgresid
+		}
+		var postgresDescription string
+		if u.Postgresdescription != nil {
+			postgresDescription = *u.Postgresdescription
+		}
+		var start string
+		if u.Postgresstart != nil {
+			start = u.Postgresstart.String()
+		}
+		var end string
+		if u.Postgresend != nil {
+			end = u.Postgresend.String()
+		}
+		var cpu string
+		if u.Cpuseconds != nil {
+			cpu = humanizeCPU(*u.Cpuseconds)
+		}
+		var memory string
+		if u.Memoryseconds != nil {
+			memory = humanizeMemory(*u.Memoryseconds)
+		}
+		var storage string
+		if u.Storageseconds != nil {
+			storage = humanizeMemory(*u.Storageseconds)
+		}
+		var lifetime time.Duration
+		if u.Lifetime != nil {
+			lifetime = time.Duration(*u.Lifetime)
+		}
+		wide := []string{
+			tenant,
+			from,
+			to,
+			projectID,
+			postgresID,
+			postgresDescription,
+			start,
+			end,
+			cpu,
+			memory,
+			storage,
+			humanizeDuration(lifetime),
+		}
+		short := []string{
+			tenant,
+			projectID,
+			postgresID,
+			postgresDescription,
+			cpu,
+			memory,
+			storage,
+			humanizeDuration(lifetime),
+		}
+
+		s.addWideData(wide, data)
+		s.addShortData(short, data)
+	}
+
+	footer := []string{"Total",
+		humanizeCPU(*data.Accumulatedusage.Cpuseconds),
+		humanizeMemory(*data.Accumulatedusage.Memoryseconds),
+		humanizeMemory(*data.Accumulatedusage.Storageseconds),
+		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)),
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
 	wideFooter := make([]string, len(s.wideHeader)-len(footer))

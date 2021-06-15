@@ -243,12 +243,38 @@ func (t TablePrinter) Print(data interface{}) error {
 			t.order = "tenant,project,partition,cluster,name"
 		}
 		VolumeBillingTablePrinter{t}.Print(d)
+	case *models.V1PostgresUsageResponse:
+		if t.order == "" {
+			t.order = "tenant,project,id"
+		}
+		PostgresBillingTablePrinter{t}.Print(d)
 	case []*models.ModelsV1MachineResponse:
 		MachineTablePrinter{t}.Print(d)
 	case []*models.V1S3Response:
 		S3TablePrinter{t}.Print(d)
+	case *models.V1VolumeResponse:
+		VolumeTablePrinter{t}.Print([]*models.V1VolumeResponse{d})
 	case []*models.V1VolumeResponse:
 		VolumeTablePrinter{t}.Print(d)
+	case []*models.V1StorageClusterInfo:
+		VolumeClusterInfoTablePrinter{t}.Print(d)
+	case models.V1PostgresPartitionsResponse:
+		PostgresPartitionsTablePrinter{t}.Print(d)
+	case []*models.V1PostgresVersion:
+		PostgresVersionsTablePrinter{t}.Print(d)
+	case *models.V1PostgresResponse:
+		PostgresTablePrinter{t}.Print([]*models.V1PostgresResponse{d})
+	case []*models.V1PostgresResponse:
+		PostgresTablePrinter{t}.Print(d)
+	case []*models.V1PostgresBackupConfigResponse:
+		PostgresBackupsTablePrinter{t}.Print(d)
+	case *models.V1PostgresBackupConfigResponse:
+		PostgresBackupsTablePrinter{t}.Print([]*models.V1PostgresBackupConfigResponse{d})
+	case []*models.V1PostgresBackupEntry:
+		if t.order == "" {
+			t.order = "date"
+		}
+		PostgresBackupEntryTablePrinter{t}.Print(d)
 	case []*models.V1S3PartitionResponse:
 		if t.order == "" {
 			t.order = "id"
