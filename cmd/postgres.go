@@ -538,13 +538,28 @@ func readPostgresUpdateRequests(filename string) ([]models.V1PostgresUpdateReque
 func postgresFind() error {
 	if helper.AtLeastOneViperStringFlagGiven("id", "description", "tenant", "project", "partition") {
 		params := database.NewFindPostgresParams()
-		ifr := &models.V1PostgresFindRequest{
-			ID:          *helper.ViperString("id"),
-			Description: *helper.ViperString("description"),
-			Tenant:      *helper.ViperString("tenant"),
-			ProjectID:   *helper.ViperString("project"),
-			PartitionID: *helper.ViperString("partition"),
+		ifr := &models.V1PostgresFindRequest{}
+		id := helper.ViperString("id")
+		if id != nil {
+			ifr.ID = *id
 		}
+		description := helper.ViperString("description")
+		if description != nil {
+			ifr.Description = *description
+		}
+		tenant := helper.ViperString("tenant")
+		if tenant != nil {
+			ifr.Tenant = *tenant
+		}
+		projectID := helper.ViperString("project")
+		if projectID != nil {
+			ifr.ProjectID = *projectID
+		}
+		partitionID := helper.ViperString("partition")
+		if partitionID != nil {
+			ifr.PartitionID = *partitionID
+		}
+
 		params.SetBody(ifr)
 		resp, err := cloud.Database.FindPostgres(params, nil)
 		if err != nil {
