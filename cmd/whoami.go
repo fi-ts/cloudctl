@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/metal-stack/metal-lib/jwt/sec"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"time"
 )
 
 var whoamiCmd = &cobra.Command{

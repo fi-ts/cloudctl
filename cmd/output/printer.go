@@ -282,6 +282,8 @@ func (t TablePrinter) Print(data interface{}) error {
 		S3PartitionTablePrinter{t}.Print(d)
 	case *api.Contexts:
 		ContextPrinter{t}.Print(d)
+	case api.Version:
+		YAMLPrinter{}.Print(d)
 	default:
 		return fmt.Errorf("unknown table printer for type: %T", d)
 	}
@@ -308,7 +310,7 @@ func (y YAMLPrinter) Print(data interface{}) error {
 	if err != nil {
 		return fmt.Errorf("unable to marshal to yaml:%w", err)
 	}
-	fmt.Printf("%s\n", string(yml))
+	fmt.Printf("%s", string(yml))
 	return nil
 }
 

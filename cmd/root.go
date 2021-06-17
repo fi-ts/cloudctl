@@ -13,7 +13,6 @@ import (
 	"github.com/fi-ts/cloud-go/api/client"
 	output "github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/fi-ts/cloudctl/pkg/api"
-	"github.com/metal-stack/v"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -41,10 +40,9 @@ var (
 	}
 
 	rootCmd = &cobra.Command{
-		Use:     programName,
-		Short:   "a cli to manage cloud entities.",
-		Long:    "with cloudctl you can manage kubernetes cluster, view networks et.al.",
-		Version: v.V.String(),
+		Use:   programName,
+		Short: "a cli to manage cloud entities.",
+		Long:  "with cloudctl you can manage kubernetes cluster, view networks et.al.",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			initPrinter()
 		},
@@ -88,6 +86,7 @@ func init() {
 	rootCmd.AddCommand(tenantCmd)
 	rootCmd.AddCommand(contextCmd)
 	rootCmd.AddCommand(s3Cmd)
+	rootCmd.AddCommand(versionCmd)
 
 	rootCmd.AddCommand(completionCmd)
 	completionCmd.AddCommand(bashCompletionCmd)
