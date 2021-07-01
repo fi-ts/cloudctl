@@ -520,19 +520,19 @@ func postgresEdit(args []string) error {
 }
 
 func readPostgresUpdateRequests(filename string) ([]models.V1PostgresUpdateRequest, error) {
-	var pcrs []models.V1PostgresUpdateRequest
-	var pcr models.V1PostgresCreateRequest
-	err := helper.ReadFrom(filename, &pcr, func(data interface{}) {
+	var purs []models.V1PostgresUpdateRequest
+	var pur models.V1PostgresUpdateRequest
+	err := helper.ReadFrom(filename, &pur, func(data interface{}) {
 		doc := data.(*models.V1PostgresUpdateRequest)
-		pcrs = append(pcrs, *doc)
+		purs = append(purs, *doc)
 	})
 	if err != nil {
-		return pcrs, err
+		return purs, err
 	}
-	if len(pcrs) != 1 {
-		return pcrs, fmt.Errorf("postgres update error more or less than one postgres given:%d", len(pcrs))
+	if len(purs) != 1 {
+		return purs, fmt.Errorf("postgres update error more or less than one postgres given:%d", len(purs))
 	}
-	return pcrs, nil
+	return purs, nil
 }
 
 func postgresFind() error {
