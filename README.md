@@ -96,7 +96,7 @@ contexts:
     client_id: r0waAqvzP01DcmoxnyLZqwHU1babjv4h
     client_secret: l4kw3UmkuSXtfO3saZvJZXHPf89k9cBs
   dev:
-    url: https://api.metal-pod.dev/cloud
+    url: https://api.metal-stack.dev/cloud
     issuer_url: https://dex.test.fi-ts.io/dex
     client_id: auth-go-cli
     client_secret: AuGx99dsxS1hcHAtc9VfcmV1
@@ -444,7 +444,7 @@ To list the available S3 partitions in your control plane, issue the following c
 ```bash
 $ cloudctl s3 partitions
 NAME        ENDPOINT
-fel-wps101  https://s3.test-01-fel-wps101.metal-pod.dev
+fel-wps101  https://s3.test-01-fel-wps101.metal-stack.dev
 ```
 
 In this case, the partition `fel-wps101` offers S3 storage. You can now create an S3 user to get storage access:
@@ -454,7 +454,7 @@ $ cloudctl s3 create --id my-user --project dc565451-3864-4355-bef5-080a9d0e4068
 accesskey: 3ZA4D7NFT1K6UB1N2ON1
 name: My User
 email: null
-endpoint: https://s3.test-01-fel-wps101.metal-pod.dev
+endpoint: https://s3.test-01-fel-wps101.metal-stack.dev
 maxbuckets: 1000
 id: my-user
 partition: fel-wps101
@@ -472,7 +472,7 @@ $ cloudctl s3 describe --name test --partition fel-wps101
 accesskey: 3ZA4D7NFT1K6UB1N2ON1
 name: My User
 email: null
-endpoint: https://s3.test-01-fel-wps101.metal-pod.dev
+endpoint: https://s3.test-01-fel-wps101.metal-stack.dev
 maxbuckets: 1000
 id: my-user
 partition: fel-wps101
@@ -485,7 +485,7 @@ Or if you want to delete the user again, run the delete command:
 
 ```bash
 $ cloudctl s3 delete --name test --partition fel-wps101
-endpoint: https://s3.test-01-fel-wps101.metal-pod.dev
+endpoint: https://s3.test-01-fel-wps101.metal-stack.dev
 id: my-user
 partition: fel-wps101
 project: dc565451-3864-4355-bef5-080a9d0e4068
