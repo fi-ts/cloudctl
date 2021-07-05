@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"os"
 	"os/exec"
@@ -134,7 +133,7 @@ func Edit(id string, getFunc func(id string) ([]byte, error), updateFunc func(fi
 		editor = "vi"
 	}
 
-	tmpfile, err := ioutil.TempFile("", "cloudctl*.yaml")
+	tmpfile, err := os.CreateTemp("", "cloudctl*.yaml")
 	if err != nil {
 		return err
 	}
@@ -143,7 +142,7 @@ func Edit(id string, getFunc func(id string) ([]byte, error), updateFunc func(fi
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(tmpfile.Name(), content, os.ModePerm)
+	err = os.WriteFile(tmpfile.Name(), content, os.ModePerm)
 	if err != nil {
 		return err
 	}

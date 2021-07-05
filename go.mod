@@ -16,7 +16,6 @@ require (
 	github.com/metal-stack/metal-lib v0.8.0
 	github.com/metal-stack/updater v1.1.2
 	github.com/metal-stack/v v1.0.3
-	github.com/mitchellh/go-homedir v1.1.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.2.1

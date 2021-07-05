@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/fi-ts/cloudctl/pkg/api"
 	"github.com/spf13/cobra"
@@ -137,7 +137,7 @@ func mustDefaultContext() api.Context {
 func getContexts() (*api.Contexts, error) {
 	var ctxs api.Contexts
 	cfgFile := viper.GetViper().ConfigFileUsed()
-	c, err := ioutil.ReadFile(cfgFile)
+	c, err := os.ReadFile(cfgFile)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read config, please create a config.yaml in either: /etc/cloudctl/, $HOME/.cloudctl/ or in the current directory, see cloudctl ctx -h for examples")
 	}
@@ -152,5 +152,5 @@ func writeContexts(ctxs *api.Contexts) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(cfgFile, c, 0644)
+	return os.WriteFile(cfgFile, c, 0644)
 }
