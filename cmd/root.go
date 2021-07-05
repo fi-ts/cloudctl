@@ -88,10 +88,6 @@ func init() {
 	rootCmd.AddCommand(s3Cmd)
 	rootCmd.AddCommand(versionCmd)
 
-	rootCmd.AddCommand(completionCmd)
-	completionCmd.AddCommand(bashCompletionCmd)
-	completionCmd.AddCommand(zshCompletionCmd)
-
 	err := viper.BindPFlags(rootCmd.PersistentFlags())
 	if err != nil {
 		log.Fatalf("error setup root cmd:%v", err)
