@@ -1,76 +1,12 @@
 package cmd
 
 import (
-	"log"
-	"os"
-
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/fi-ts/cloud-go/api/client/database"
 	"github.com/fi-ts/cloud-go/api/client/project"
 	"github.com/fi-ts/cloud-go/api/client/s3"
 	"github.com/spf13/cobra"
 )
-
-// toplevel completion remains for compatibility
-var completionCmd = &cobra.Command{
-	Use:   "completion",
-	Short: "Generates bash completion scripts",
-	Long: `To load completion run
-
-. <(cloudctl completion)
-
-To configure your bash shell to load completions for each session add to your bashrc
-
-# ~/.bashrc or ~/.profile
-. <(cloudctl completion)
-`,
-	Run: func(cmd *cobra.Command, args []string) {
-		err := rootCmd.GenBashCompletion(os.Stdout)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-	},
-}
-
-var bashCompletionCmd = &cobra.Command{
-	Use:   "bash",
-	Short: "Generates bash completion scripts",
-	Long: `To load completion run
-
-. <(cloudctl completion)
-
-To configure your bash shell to load completions for each session add to your bashrc
-
-# ~/.bashrc or ~/.profile
-. <(cloudctl completion bash)
-`,
-	Run: func(cmd *cobra.Command, args []string) {
-		err := rootCmd.GenBashCompletion(os.Stdout)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-	},
-}
-
-var zshCompletionCmd = &cobra.Command{
-	Use:   "zsh",
-	Short: "Generates Z shell completion scripts",
-	Long: `To load completion run
-
-. <(cloudctl completion zsh)
-
-To configure your Z shell (with oh-my-zshell framework) to load completions for each session run
-
-echo -e '#compdef _cloudctl cloudctl\n. <(cloudctl completion zsh)' > $ZSH/completions/_cloudctl
-rm -f ~/.zcompdump*
-`,
-	Run: func(cmd *cobra.Command, args []string) {
-		err := rootCmd.GenZshCompletion(os.Stdout)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-	},
-}
 
 func contextListCompletion() ([]string, cobra.ShellCompDirective) {
 	ctxs, err := getContexts()
