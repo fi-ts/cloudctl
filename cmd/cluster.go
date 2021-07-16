@@ -193,10 +193,24 @@ var (
 		PreRun: bindPFlags,
 	}
 	clusterMachineResetCmd = &cobra.Command{
-		Use:   "powerreset <clusterid>",
+		Use:   "reset <clusterid>",
 		Short: "hard power reset of a machine/firewall of the cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterMachineReset(args, true)
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return clusterListCompletion()
+		},
+		PreRun: bindPFlags,
+	}
+	clusterMachineCycleCmd = &cobra.Command{
+		Use:   "cycle <clusterid>",
+		Short: "soft power cycle of a machine/firewall of the cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterMachineCycle(args, true)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) != 0 {
@@ -376,6 +390,12 @@ func init() {
 		// FIXME howto implement flag based completion for a already given clusterid
 		return clusterMachineListCompletion("123")
 	})
+	clusterMachineCycleCmd.Flags().String("machineid", "", "machine to reset.")
+	clusterMachineCycleCmd.MarkFlagRequired("machineid")
+	clusterMachineCycleCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		// FIXME howto implement flag based completion for a already given clusterid
+		return clusterMachineListCompletion("123")
+	})
 	clusterMachineReinstallCmd.Flags().String("machineid", "", "machine to reinstall.")
 	clusterMachineReinstallCmd.MarkFlagRequired("machineid")
 	clusterMachineReinstallCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -386,6 +406,7 @@ func init() {
 	clusterMachineCmd.AddCommand(clusterMachineSSHCmd)
 	clusterMachineCmd.AddCommand(clusterMachineConsoleCmd)
 	clusterMachineCmd.AddCommand(clusterMachineResetCmd)
+	clusterMachineCmd.AddCommand(clusterMachineCycleCmd)
 	clusterMachineCmd.AddCommand(clusterMachineReinstallCmd)
 
 	clusterReconcileCmd.Flags().Bool("retry", false, "Executes a cluster \"retry\" operation instead of regular \"reconcile\".")
@@ -1099,7 +1120,7 @@ func clusterInputs() error {
 }
 
 func clusterMachineReset(args []string, console bool) error {
-	cid, err := clusterID("powerreset", args)
+	cid, err := clusterID("reset", args)
 	if err != nil {
 		return err
 	}
@@ -1123,6 +1144,42 @@ func clusterMachineReset(args []string, console bool) error {
 			request.Body = &models.V1ClusterMachineResetRequest{Machineid: &mid}
 
 			shoot, err := cloud.Cluster.ResetMachine(request, nil)
+			if err != nil {
+				return err
+			}
+			ms := shoot.Payload.Machines
+			ms = append(ms, shoot.Payload.Firewalls...)
+			return printer.Print(ms)
+		}
+	}
+	return fmt.Errorf("machine:%s not found in cluster:%s", mid, cid)
+}
+
+func clusterMachineCycle(args []string, console bool) error {
+	cid, err := clusterID("reset", args)
+	if err != nil {
+		return err
+	}
+	mid := viper.GetString("machineid")
+
+	findRequest := cluster.NewFindClusterParams()
+	findRequest.SetID(cid)
+	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
+	if err != nil {
+		return err
+	}
+
+	request := cluster.NewCycleMachineParams()
+	request.SetID(cid)
+
+	ms := shoot.Payload.Machines
+	ms = append(ms, shoot.Payload.Firewalls...)
+	for _, m := range ms {
+		if *m.ID == mid {
+
+			request.Body = &models.V1ClusterMachineCycleRequest{Machineid: &mid}
+
+			shoot, err := cloud.Cluster.CycleMachine(request, nil)
 			if err != nil {
 				return err
 			}
