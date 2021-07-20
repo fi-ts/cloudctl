@@ -12,7 +12,7 @@ type (
 )
 
 // Print a model in yaml format
-func (p ContextPrinter) Print(data *api.Contexts) error {
+func (p ContextPrinter) Print(data *api.Contexts) {
 	for name, c := range data.Contexts {
 		if name == data.CurrentContext {
 			name = name + " [*]"
@@ -22,5 +22,4 @@ func (p ContextPrinter) Print(data *api.Contexts) error {
 	}
 	p.shortHeader = []string{"Name", "URL", "DEX"}
 	p.render()
-	return nil
 }

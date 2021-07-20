@@ -11,7 +11,7 @@ import (
 	"github.com/jinzhu/now"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gopkg.in/go-playground/validator.v9"
+	"github.com/go-playground/validator/v10"
 )
 
 type BillingOpts struct {

@@ -283,7 +283,7 @@ func (t TablePrinter) Print(data interface{}) error {
 	case *api.Contexts:
 		ContextPrinter{t}.Print(d)
 	case api.Version:
-		YAMLPrinter{}.Print(d)
+		return YAMLPrinter{}.Print(d)
 	default:
 		return fmt.Errorf("unknown table printer for type: %T", d)
 	}

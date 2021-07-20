@@ -129,6 +129,22 @@ func firewallImageListCompletion() ([]string, cobra.ShellCompDirective) {
 	return sc.Payload.FirewallImages, cobra.ShellCompDirectiveDefault
 }
 
+func firewallControllerVersionListCompletion() ([]string, cobra.ShellCompDirective) {
+	request := cluster.NewListConstraintsParams()
+	sc, err := cloud.Cluster.ListConstraints(request, nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	fwcvs := []string{}
+	for _, v := range sc.Payload.FirewallControllerVersions {
+		if v.Version == nil {
+			continue
+		}
+		fwcvs = append(fwcvs, *v.Version)
+	}
+	return fwcvs, cobra.ShellCompDirectiveDefault
+}
+
 func s3ListPartitionsCompletion() ([]string, cobra.ShellCompDirective) {
 	request := s3.NewLists3partitionsParams()
 	response, err := cloud.S3.Lists3partitions(request, nil)
