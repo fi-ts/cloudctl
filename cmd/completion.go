@@ -135,7 +135,7 @@ func firewallControllerVersionListCompletion() ([]string, cobra.ShellCompDirecti
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
-	fwcvs := []string{}
+	fwcvs := []string{"auto"}
 	for _, v := range sc.Payload.FirewallControllerVersions {
 		if v.Version == nil {
 			continue
