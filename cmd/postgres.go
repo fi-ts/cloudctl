@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"time"
 
 	"github.com/fi-ts/cloud-go/api/client/database"
 	"github.com/fi-ts/cloud-go/api/models"
@@ -844,37 +843,4 @@ func postgresID(verb string, args []string) (string, error) {
 		return args[0], nil
 	}
 	return "", fmt.Errorf("postgres %s requires exactly one postgresID as argument", verb)
-}
-
-func parseWeekday(weekday string) int32 {
-	switch weekday {
-	case "Sun", "SUN", "sun":
-		return 0
-	case "Mon", "MON", "mon":
-		return 1
-	case "Tue", "TUE", "tue":
-		return 2
-	case "Wed", "WED", "wed":
-		return 3
-	case "Thu", "THU", "thu":
-		return 4
-	case "Fri", "FRI", "fri":
-		return 5
-	case "Sat", "SAT", "sat":
-		return 6
-	case "All", "ALL", "all":
-		return 7
-	default:
-		fmt.Printf("error parsing weekday:%s", weekday)
-		return 0
-	}
-}
-
-func parseTime(t string) time.Time {
-	result, err := time.Parse("15:04:05 -0700", t)
-	if err != nil {
-		fmt.Printf("error parsing time:%v", err)
-		return time.Date(0, 0, 0, 23, 0, 0, 0, time.UTC)
-	}
-	return result
 }

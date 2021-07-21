@@ -39,7 +39,7 @@ var (
 		Use:   "allocate <ip>",
 		Short: "allocate a static IP address for your project that can be used for your cluster's service type load balancer",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return ipAllocate(args)
+			return ipAllocate()
 		},
 		PreRun: bindPFlags,
 	}
@@ -174,7 +174,7 @@ func ipStatic(args []string) error {
 	return printer.Print(resp.Payload)
 }
 
-func ipAllocate(args []string) error {
+func ipAllocate() error {
 	params := ip.NewAllocateIPParams()
 	iar := &models.V1IPAllocateRequest{
 		Name:        *helper.ViperString("name"),
