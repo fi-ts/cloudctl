@@ -1132,33 +1132,19 @@ func clusterMachineReset(args []string, console bool) error {
 	}
 	mid := viper.GetString("machineid")
 
-	findRequest := cluster.NewFindClusterParams()
-	findRequest.SetID(cid)
-	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
+	request := cluster.NewResetMachineParams()
+	request.SetID(cid)
+	request.Body = &models.V1ClusterMachineResetRequest{Machineid: &mid}
+
+	shoot, err := cloud.Cluster.ResetMachine(request, nil)
 	if err != nil {
 		return err
 	}
 
-	request := cluster.NewResetMachineParams()
-	request.SetID(cid)
-
 	ms := shoot.Payload.Machines
 	ms = append(ms, shoot.Payload.Firewalls...)
-	for _, m := range ms {
-		if *m.ID == mid {
 
-			request.Body = &models.V1ClusterMachineResetRequest{Machineid: &mid}
-
-			shoot, err := cloud.Cluster.ResetMachine(request, nil)
-			if err != nil {
-				return err
-			}
-			ms := shoot.Payload.Machines
-			ms = append(ms, shoot.Payload.Firewalls...)
-			return printer.Print(ms)
-		}
-	}
-	return fmt.Errorf("machine:%s not found in cluster:%s", mid, cid)
+	return printer.Print(ms)
 }
 
 func clusterMachineCycle(args []string, console bool) error {
@@ -1168,33 +1154,19 @@ func clusterMachineCycle(args []string, console bool) error {
 	}
 	mid := viper.GetString("machineid")
 
-	findRequest := cluster.NewFindClusterParams()
-	findRequest.SetID(cid)
-	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
+	request := cluster.NewCycleMachineParams()
+	request.SetID(cid)
+	request.Body = &models.V1ClusterMachineCycleRequest{Machineid: &mid}
+
+	shoot, err := cloud.Cluster.CycleMachine(request, nil)
 	if err != nil {
 		return err
 	}
 
-	request := cluster.NewCycleMachineParams()
-	request.SetID(cid)
-
 	ms := shoot.Payload.Machines
 	ms = append(ms, shoot.Payload.Firewalls...)
-	for _, m := range ms {
-		if *m.ID == mid {
 
-			request.Body = &models.V1ClusterMachineCycleRequest{Machineid: &mid}
-
-			shoot, err := cloud.Cluster.CycleMachine(request, nil)
-			if err != nil {
-				return err
-			}
-			ms := shoot.Payload.Machines
-			ms = append(ms, shoot.Payload.Firewalls...)
-			return printer.Print(ms)
-		}
-	}
-	return fmt.Errorf("machine:%s not found in cluster:%s", mid, cid)
+	return printer.Print(ms)
 }
 
 func clusterMachineReinstall(args []string, console bool) error {
@@ -1204,33 +1176,19 @@ func clusterMachineReinstall(args []string, console bool) error {
 	}
 	mid := viper.GetString("machineid")
 
-	findRequest := cluster.NewFindClusterParams()
-	findRequest.SetID(cid)
-	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
+	request := cluster.NewReinstallMachineParams()
+	request.SetID(cid)
+	request.Body = &models.V1ClusterMachineReinstallRequest{Machineid: &mid}
+
+	shoot, err := cloud.Cluster.ReinstallMachine(request, nil)
 	if err != nil {
 		return err
 	}
 
-	request := cluster.NewReinstallMachineParams()
-	request.SetID(cid)
-
 	ms := shoot.Payload.Machines
 	ms = append(ms, shoot.Payload.Firewalls...)
-	for _, m := range ms {
-		if *m.ID == mid {
 
-			request.Body = &models.V1ClusterMachineReinstallRequest{Machineid: &mid}
-
-			shoot, err := cloud.Cluster.ReinstallMachine(request, nil)
-			if err != nil {
-				return err
-			}
-			ms := shoot.Payload.Machines
-			ms = append(ms, shoot.Payload.Firewalls...)
-			return printer.Print(ms)
-		}
-	}
-	return fmt.Errorf("machine:%s not found in cluster:%s", mid, cid)
+	return printer.Print(ms)
 }
 
 func clusterMachineSSH(args []string, console bool) error {
