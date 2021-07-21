@@ -39,7 +39,7 @@ var (
 		Aliases: []string{"rm", "delete"},
 		Short:   "delete an s3 user",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return s3Delete(args)
+			return s3Delete()
 		},
 		PreRun: bindPFlags,
 	}
@@ -65,7 +65,7 @@ var (
 		Use:   "add-key",
 		Short: "adds a key for an s3 user",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return s3AddKey(args)
+			return s3AddKey()
 		},
 		PreRun: bindPFlags,
 	}
@@ -73,7 +73,7 @@ var (
 		Use:   "remove-key",
 		Short: "remove a key for an s3 user",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return s3RemoveKey(args)
+			return s3RemoveKey()
 		},
 		PreRun: bindPFlags,
 	}
@@ -304,7 +304,7 @@ func s3Create() error {
 	return output.YAMLPrinter{}.Print(response.Payload)
 }
 
-func s3Delete(args []string) error {
+func s3Delete() error {
 	tenant := viper.GetString("tenant")
 	id := viper.GetString("id")
 	partition := viper.GetString("partition")
@@ -330,7 +330,7 @@ func s3Delete(args []string) error {
 	return output.YAMLPrinter{}.Print(response.Payload)
 }
 
-func s3AddKey(args []string) error {
+func s3AddKey() error {
 	tenant := viper.GetString("tenant")
 	id := viper.GetString("id")
 	partition := viper.GetString("partition")
@@ -362,7 +362,7 @@ func s3AddKey(args []string) error {
 	return output.YAMLPrinter{}.Print(response.Payload)
 }
 
-func s3RemoveKey(args []string) error {
+func s3RemoveKey() error {
 	tenant := viper.GetString("tenant")
 	id := viper.GetString("id")
 	partition := viper.GetString("partition")

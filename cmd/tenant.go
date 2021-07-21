@@ -22,7 +22,7 @@ var (
 		Short:   "lists tenants",
 		Aliases: []string{"ls"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return tenantList(args)
+			return tenantList()
 		},
 		PreRun: bindPFlags,
 	}
@@ -94,7 +94,7 @@ func tenantDescribe(args []string) error {
 	return printer.Print(resp.Payload)
 }
 
-func tenantList(args []string) error {
+func tenantList() error {
 	request := tenant.NewListTenantsParams()
 	resp, err := cloud.Tenant.ListTenants(request, nil)
 	if err != nil {
