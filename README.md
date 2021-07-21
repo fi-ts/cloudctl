@@ -91,34 +91,29 @@ First you need to create a file in your home directory:
 current: prod
 contexts:
   prod:
-    url: https://api.fits.cloud/cloud
-    issuer_url: https://dex.fi-ts.io/dex
-    client_id: r0waAqvzP01DcmoxnyLZqwHU1babjv4h
-    client_secret: l4kw3UmkuSXtfO3saZvJZXHPf89k9cBs
-  dev:
-    url: https://api.metal-pod.dev/cloud
-    issuer_url: https://dex.test.fi-ts.io/dex
-    client_id: auth-go-cli
-    client_secret: AuGx99dsxS1hcHAtc9VfcmV1
+    url: https://api.somedomain.example/cloud
+    issuer_url: https://dex.somedomain.example
+    client_id: my-client-id
+    client_secret: my-secret
 ```
 
 Optional you can specify `issuer_type: generic` if you use other issuers as Dex, e.g. Keycloak (this will request scopes `openid,profile,email`):
-```bash
+```yaml
 contexts:
   prod:
-    url: https://api.fits.cloud/cloud
-    issuer_url: https://keycloak.somedomain.io
+    url: https://api.somedomain.example/cloud
+    issuer_url: https://keycloak.somedomain.example
     issuer_type: generic
     client_id: my-client-id
     client_secret: my-secret
 ```
 
 If you must specify special scopes for your issuer, you can use `custom_scopes`: 
-```bash
+```yaml
 contexts:
   prod:
-    url: https://api.fits.cloud/cloud
-    issuer_url: https://keycloak.somedomain.io
+    url: https://api.somedomain.example/cloud
+    issuer_url: https://keycloak.somedomain.example
     custom_scopes: roles,openid,profile,email
     client_id: my-client-id
     client_secret: my-secret
@@ -179,13 +174,13 @@ cloudctl cluster create \
   --maxsize 2
 
 UID                                   NAME     VERSION  PARTITION  DOMAIN                               OPERATION  PROGRESS          APISERVER  CONTROL  NODES  SYSTEM  SIZE   AGE
-1d8636d7-dadb-11e9-9e70-8ebea97dd3a9  banking  1.14.3   nbg-w8101  banking.pd25ml.cluster.metal-pod.io  Succeeded  0% [Create]                                          2/2    1m
+1d8636d7-dadb-11e9-9e70-8ebea97dd3a9  banking  1.14.3   nbg-w8101  banking.pd25ml.cluster.somedomain.example  Succeeded  0% [Create]                                          2/2    1m
 
 after ~7min:
 
 cloudctl cluster ls
 UID                                   NAME     VERSION  PARTITION  DOMAIN                               OPERATION  PROGRESS          APISERVER  CONTROL  NODES  SYSTEM  SIZE   AGE
-1d8636d7-dadb-11e9-9e70-8ebea97dd3a9  banking  1.14.3   nbg-w8101  banking.pd25ml.cluster.metal-pod.io  Succeeded  100% [Reconcile]  True       True     True   True    2/2  9m
+1d8636d7-dadb-11e9-9e70-8ebea97dd3a9  banking  1.14.3   nbg-w8101  banking.pd25ml.cluster.somedomain.example  Succeeded  100% [Reconcile]  True       True     True   True    2/2  9m
 ```
 
 Remember the cluster UID for further references.
@@ -221,14 +216,14 @@ cloudctl cluster inputs
               - internet
               - mpls-fits
               - ...
-        stg-kkw701:
+        nbg-w8101:
             networks:
               - internet
               - mpls-fits
               - ...
     partitions:
       - fel-wps101
-      - stg-kkw701
+      - nbg-w8101
 ```
 
 ### Download Kubeconfig
@@ -251,7 +246,7 @@ The first question asks you for the first part of the clusterID. If you clusterI
 ```bash
 cloudctl cluster rm <cluster UID>
   UID                                   TENANT  PROJECT                               NAME        VERSION  PARTITION  OPERATION   PROGRESS      API   CONTROL  NODES  SYSTEM  SIZE  AGE
-  9b86273a-0ab1-11ea-8057-9ad8c07d0e04  fits    b5e24862-3cc2-4145-bfa4-ae4af102f965  s3-cluster  1.14.3   fra-equ01  Processing  63% [Delete]  True  False    True   False   1/1   17m 22s
+  9b86273a-0ab1-11ea-8057-9ad8c07d0e04  fits    b5e24862-3cc2-4145-bfa4-ae4af102f965  s3-cluster  1.14.3   nbg-w8101  Processing  63% [Delete]  True  False    True   False   1/1   17m 22s
 Please answer some security questions to delete this cluster
 first part of clusterID:9b86273a
 Clustername:s3-cluster
@@ -444,7 +439,7 @@ To list the available S3 partitions in your control plane, issue the following c
 ```bash
 $ cloudctl s3 partitions
 NAME        ENDPOINT
-fel-wps101  https://s3.test-01-fel-wps101.metal-pod.dev
+fel-wps101  https://s3.test-01-fel-wps101.somedomain.example
 ```
 
 In this case, the partition `fel-wps101` offers S3 storage. You can now create an S3 user to get storage access:
@@ -454,7 +449,7 @@ $ cloudctl s3 create --id my-user --project dc565451-3864-4355-bef5-080a9d0e4068
 accesskey: 3ZA4D7NFT1K6UB1N2ON1
 name: My User
 email: null
-endpoint: https://s3.test-01-fel-wps101.metal-pod.dev
+endpoint: https://s3.test-01-fel-wps101.somedomain.example
 maxbuckets: 1000
 id: my-user
 partition: fel-wps101
@@ -472,7 +467,7 @@ $ cloudctl s3 describe --name test --partition fel-wps101
 accesskey: 3ZA4D7NFT1K6UB1N2ON1
 name: My User
 email: null
-endpoint: https://s3.test-01-fel-wps101.metal-pod.dev
+endpoint: https://s3.test-01-fel-wps101.somedomain.example
 maxbuckets: 1000
 id: my-user
 partition: fel-wps101
@@ -485,7 +480,7 @@ Or if you want to delete the user again, run the delete command:
 
 ```bash
 $ cloudctl s3 delete --name test --partition fel-wps101
-endpoint: https://s3.test-01-fel-wps101.metal-pod.dev
+endpoint: https://s3.test-01-fel-wps101.somedomain.example
 id: my-user
 partition: fel-wps101
 project: dc565451-3864-4355-bef5-080a9d0e4068
@@ -498,7 +493,7 @@ the command: `cloudctl s3 describe --for-client minio|s3cmd` will echo the requi
 
 ```bash
 $ cloudctl s3 describe --for-client minio --id test --partition=fel-wps101 --project=4fe217b4-3b3d-413e-87fc-fb89054cc70c
-mc config host add test https://s3.test-01-fel-wps101.fits.cloud <your access key> <your secret key>
+mc config host add test https://s3.test-01-fel-wps101.somedomain.example <your access key> <your secret key>
 
 $ mc mb test/testbucket
 Bucket created successfully `test/testbucket`.
@@ -520,9 +515,9 @@ $ cloudctl s3 describe --for-client s3cmd --id test --partition=fel-wps101 --pro
 cat << EOF > ${HOME}/.s3cfg
 [default]
 access_key = 45F3GU4DYSSN958I0HI8
-host_base = https://s3.prod-01-fel-wps101.fits.cloud
-host_bucket = https://s3.prod-01-fel-wps101.fits.cloud
-secret_key = OOg11VYMgCgjMFCSTUk41RaD5wgDKeRh6EyS6bxR
+host_base = https://s3.test-01-fel-wps101.somedomain.example
+host_bucket = https://s3.test-01-fel-wps101.somedomain.example
+secret_key = vee0Pa2ahgaec5Eitaucheedaij3oot9ahh2aeWe
 EOF
 
 s3cmd la
