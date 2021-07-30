@@ -403,6 +403,7 @@ func init() {
 		return clusterMachineListCompletion("123")
 	})
 	clusterMachineReinstallCmd.Flags().String("machineid", "", "machine to reinstall.")
+	clusterMachineReinstallCmd.Flags().String("machineimage", "", "image to reinstall (optional).")
 	clusterMachineReinstallCmd.MarkFlagRequired("machineid")
 	clusterMachineReinstallCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		// FIXME howto implement flag based completion for a already given clusterid
@@ -1175,10 +1176,14 @@ func clusterMachineReinstall(args []string, console bool) error {
 		return err
 	}
 	mid := viper.GetString("machineid")
+	img := viper.GetString("machineimage")
 
 	request := cluster.NewReinstallMachineParams()
 	request.SetID(cid)
 	request.Body = &models.V1ClusterMachineReinstallRequest{Machineid: &mid}
+	if img != "" {
+		request.Body.Imageid = img
+	}
 
 	shoot, err := cloud.Cluster.ReinstallMachine(request, nil)
 	if err != nil {
