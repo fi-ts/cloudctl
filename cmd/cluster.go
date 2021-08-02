@@ -273,6 +273,8 @@ func init() {
 	clusterCreateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster.")
 	clusterCreateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced. [optional]")
 	clusterCreateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. [optional]")
+	clusterCreateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster [optional]")
+	clusterCreateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes! [optional]")
 
 	err := clusterCreateCmd.MarkFlagRequired("name")
 	if err != nil {
@@ -353,8 +355,8 @@ func init() {
 	clusterUpdateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted.")
 	clusterUpdateCmd.Flags().String("maxsurge", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers created during a update of the cluster.")
 	clusterUpdateCmd.Flags().String("maxunavailable", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
-	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster")
-	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
+	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "set automatic updates of the kubernetes patch version of the cluster")
+	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "set automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
 
 	clusterUpdateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return versionListCompletion()
@@ -460,6 +462,9 @@ func clusterCreate() error {
 	healthtimeout := viper.GetDuration("healthtimeout")
 	draintimeout := viper.GetDuration("draintimeout")
 
+	autoupdateKubernetes := viper.GetBool("autoupdate-kubernetes")
+	autoupdateMachines := viper.GetBool("autoupdate-machinimages")
+
 	allowprivileged := viper.GetBool("allowprivileged")
 
 	labels := viper.GetStringSlice("labels")
@@ -552,6 +557,10 @@ func clusterCreate() error {
 			TimeWindow: &models.V1MaintenanceTimeWindow{
 				Begin: &maintenanceBegin,
 				End:   &maintenanceEnd,
+			},
+			AutoUpdate: &models.V1MaintenanceAutoUpdate{
+				KubernetesVersion: &autoupdateKubernetes,
+				MachineImage:      &autoupdateMachines,
 			},
 		},
 		AdditionalNetworks: networks,
