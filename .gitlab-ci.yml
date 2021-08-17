@@ -7,6 +7,7 @@ before_script:
 binary:
   script:
     - make platforms
+    - strip bin/cloudctl-linux-amd64
     - bin/cloudctl-linux-amd64 update dump bin/cloudctl-linux-amd64 > version-linux-amd64.json
     - bin/cloudctl-linux-amd64 update dump bin/cloudctl-windows-amd64 > version-windows-amd64.json
     - bin/cloudctl-linux-amd64 update dump bin/cloudctl-darwin-amd64 > version-darwin-amd64.json
@@ -24,6 +25,7 @@ binary:
 binary-with-slug:
   script:
     - make platforms
+    - strip bin/cloudctl-linux-amd64
     - bin/cloudctl-linux-amd64 update dump bin/cloudctl-linux-amd64 > version-linux-amd64.json
     - bin/cloudctl-linux-amd64 update dump bin/cloudctl-windows-amd64 > version-windows-amd64.json
     - bin/cloudctl-linux-amd64 update dump bin/cloudctl-darwin-amd64 > version-darwin-amd64.json
