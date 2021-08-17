@@ -296,7 +296,7 @@ func init() {
 
 	postgresConnectionStringCmd.Flags().StringP("type", "", "psql", "the type of the connectionstring to create, can be one of psql|jdbc")
 	err = postgresConnectionStringCmd.RegisterFlagCompletionFunc("type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"jdbc", "psql"}, cobra.ShellCompDirectiveDefault
+		return []string{"jdbc", "psql"}, cobra.ShellCompDirectiveNoFileComp
 	})
 	if err != nil {
 		log.Fatal(err.Error())

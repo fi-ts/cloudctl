@@ -17,7 +17,7 @@ func contextListCompletion() ([]string, cobra.ShellCompDirective) {
 	for name := range ctxs.Contexts {
 		names = append(names, name)
 	}
-	return names, cobra.ShellCompDirectiveDefault
+	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
 func clusterListCompletion() ([]string, cobra.ShellCompDirective) {
@@ -28,12 +28,16 @@ func clusterListCompletion() ([]string, cobra.ShellCompDirective) {
 	}
 	var names []string
 	for _, c := range response.Payload {
-		names = append(names, *c.ID)
+		names = append(names, *c.ID+"\t"+*c.Name)
 	}
-	return names, cobra.ShellCompDirectiveDefault
+	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
-func clusterMachineListCompletion(clusterID string) ([]string, cobra.ShellCompDirective) {
+func clusterMachineListCompletion(clusterIDs []string, includeMachines bool) ([]string, cobra.ShellCompDirective) {
+	if len(clusterIDs) != 1 {
+		return []string{"no clusterid given"}, cobra.ShellCompDirectiveNoFileComp
+	}
+	clusterID := clusterIDs[0]
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(clusterID)
 	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
@@ -41,10 +45,15 @@ func clusterMachineListCompletion(clusterID string) ([]string, cobra.ShellCompDi
 		return nil, cobra.ShellCompDirectiveError
 	}
 	var machines []string
-	for _, m := range shoot.Payload.Machines {
-		machines = append(machines, *m.ID)
+	for _, m := range shoot.Payload.Firewalls {
+		machines = append(machines, *m.ID+"\t"+*m.Allocation.Hostname)
 	}
-	return machines, cobra.ShellCompDirectiveDefault
+	if includeMachines {
+		for _, m := range shoot.Payload.Machines {
+			machines = append(machines, *m.ID+"\t"+*m.Allocation.Hostname)
+		}
+	}
+	return machines, cobra.ShellCompDirectiveNoFileComp
 }
 
 func projectListCompletion() ([]string, cobra.ShellCompDirective) {
@@ -55,9 +64,9 @@ func projectListCompletion() ([]string, cobra.ShellCompDirective) {
 	}
 	var names []string
 	for _, p := range response.Payload.Projects {
-		names = append(names, p.Meta.ID)
+		names = append(names, p.Meta.ID+"\t"+p.TenantID+"/"+p.Name)
 	}
-	return names, cobra.ShellCompDirectiveDefault
+	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
 func partitionListCompletion() ([]string, cobra.ShellCompDirective) {
@@ -67,7 +76,7 @@ func partitionListCompletion() ([]string, cobra.ShellCompDirective) {
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	return sc.Payload.Partitions, cobra.ShellCompDirectiveDefault
+	return sc.Payload.Partitions, cobra.ShellCompDirectiveNoFileComp
 }
 
 func networkListCompletion() ([]string, cobra.ShellCompDirective) {
@@ -77,7 +86,7 @@ func networkListCompletion() ([]string, cobra.ShellCompDirective) {
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	return sc.Payload.Networks, cobra.ShellCompDirectiveDefault
+	return sc.Payload.Networks, cobra.ShellCompDirectiveNoFileComp
 }
 func versionListCompletion() ([]string, cobra.ShellCompDirective) {
 	request := cluster.NewListConstraintsParams()
@@ -85,7 +94,7 @@ func versionListCompletion() ([]string, cobra.ShellCompDirective) {
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
-	return sc.Payload.KubernetesVersions, cobra.ShellCompDirectiveDefault
+	return sc.Payload.KubernetesVersions, cobra.ShellCompDirectiveNoFileComp
 }
 
 func machineTypeListCompletion() ([]string, cobra.ShellCompDirective) {
@@ -94,7 +103,7 @@ func machineTypeListCompletion() ([]string, cobra.ShellCompDirective) {
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
-	return sc.Payload.MachineTypes, cobra.ShellCompDirectiveDefault
+	return sc.Payload.MachineTypes, cobra.ShellCompDirectiveNoFileComp
 }
 
 func machineImageListCompletion() ([]string, cobra.ShellCompDirective) {
@@ -108,7 +117,7 @@ func machineImageListCompletion() ([]string, cobra.ShellCompDirective) {
 		name := *t.Name + "-" + *t.Version
 		names = append(names, name)
 	}
-	return names, cobra.ShellCompDirectiveDefault
+	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
 func firewallTypeListCompletion() ([]string, cobra.ShellCompDirective) {
@@ -117,7 +126,7 @@ func firewallTypeListCompletion() ([]string, cobra.ShellCompDirective) {
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
-	return sc.Payload.FirewallTypes, cobra.ShellCompDirectiveDefault
+	return sc.Payload.FirewallTypes, cobra.ShellCompDirectiveNoFileComp
 }
 
 func firewallImageListCompletion() ([]string, cobra.ShellCompDirective) {
@@ -126,7 +135,7 @@ func firewallImageListCompletion() ([]string, cobra.ShellCompDirective) {
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
-	return sc.Payload.FirewallImages, cobra.ShellCompDirectiveDefault
+	return sc.Payload.FirewallImages, cobra.ShellCompDirectiveNoFileComp
 }
 
 func firewallControllerVersionListCompletion() ([]string, cobra.ShellCompDirective) {
@@ -142,7 +151,7 @@ func firewallControllerVersionListCompletion() ([]string, cobra.ShellCompDirecti
 		}
 		fwcvs = append(fwcvs, *v.Version)
 	}
-	return fwcvs, cobra.ShellCompDirectiveDefault
+	return fwcvs, cobra.ShellCompDirectiveNoFileComp
 }
 
 func s3ListPartitionsCompletion() ([]string, cobra.ShellCompDirective) {
@@ -155,7 +164,7 @@ func s3ListPartitionsCompletion() ([]string, cobra.ShellCompDirective) {
 	for _, p := range response.Payload {
 		names = append(names, *p.ID)
 	}
-	return names, cobra.ShellCompDirectiveDefault
+	return names, cobra.ShellCompDirectiveNoFileComp
 }
 func postgresListPartitionsCompletion() ([]string, cobra.ShellCompDirective) {
 	request := database.NewGetPostgresPartitionsParams()
@@ -167,7 +176,7 @@ func postgresListPartitionsCompletion() ([]string, cobra.ShellCompDirective) {
 	for name := range response.Payload {
 		names = append(names, name)
 	}
-	return names, cobra.ShellCompDirectiveDefault
+	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
 func postgresListVersionsCompletion() ([]string, cobra.ShellCompDirective) {
@@ -180,5 +189,5 @@ func postgresListVersionsCompletion() ([]string, cobra.ShellCompDirective) {
 	for _, v := range response.Payload {
 		names = append(names, v.Version)
 	}
-	return names, cobra.ShellCompDirectiveDefault
+	return names, cobra.ShellCompDirectiveNoFileComp
 }
