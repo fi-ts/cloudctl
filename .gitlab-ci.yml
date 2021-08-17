@@ -1,9 +1,6 @@
 ---
 image: metalstack/builder:latest
 
-before_script:
-    - mc config host add fits https://blobstore.fi-ts.io $BLOB_ACCESS_KEY "${BLOB_SECRET_KEY}"
-
 binary:
   script:
     - make platforms
@@ -11,14 +8,6 @@ binary:
     - bin/cloudctl-linux-amd64 update dump bin/cloudctl-linux-amd64 > version-linux-amd64.json
     - bin/cloudctl-linux-amd64 update dump bin/cloudctl-windows-amd64 > version-windows-amd64.json
     - bin/cloudctl-linux-amd64 update dump bin/cloudctl-darwin-amd64 > version-darwin-amd64.json
-    # compatibility
-    - mc cp bin/cloudctl-linux-amd64 fits/cloud-native/cloudctl/cloudctl
-    - mc cp bin/cloudctl-linux-amd64 fits/cloud-native/cloudctl/
-    - mc cp bin/cloudctl-windows-amd64 fits/cloud-native/cloudctl/
-    - mc cp bin/cloudctl-darwin-amd64 fits/cloud-native/cloudctl/
-    - mc cp version-linux-amd64.json fits/cloud-native/cloudctl/
-    - mc cp version-windows-amd64.json fits/cloud-native/cloudctl/
-    - mc cp version-darwin-amd64.json fits/cloud-native/cloudctl/
   only:
     - master
 
@@ -29,14 +18,6 @@ binary-with-slug:
     - bin/cloudctl-linux-amd64 update dump bin/cloudctl-linux-amd64 > version-linux-amd64.json
     - bin/cloudctl-linux-amd64 update dump bin/cloudctl-windows-amd64 > version-windows-amd64.json
     - bin/cloudctl-linux-amd64 update dump bin/cloudctl-darwin-amd64 > version-darwin-amd64.json
-    # compatibility
-    - mc cp bin/cloudctl-linux-amd64 fits/cloud-native/cloudctl/${CI_COMMIT_REF_NAME}/cloudctl
-    - mc cp bin/cloudctl-linux-amd64 fits/cloud-native/cloudctl/${CI_COMMIT_REF_NAME}
-    - mc cp bin/cloudctl-windows-amd64 fits/cloud-native/cloudctl/${CI_COMMIT_REF_NAME}
-    - mc cp bin/cloudctl-darwin-amd64 fits/cloud-native/cloudctl/${CI_COMMIT_REF_NAME}
-    - mc cp version-linux-amd64.json fits/cloud-native/cloudctl/${CI_COMMIT_REF_NAME}
-    - mc cp version-windows-amd64.json fits/cloud-native/cloudctl/${CI_COMMIT_REF_NAME}
-    - mc cp version-darwin-amd64.json fits/cloud-native/cloudctl/${CI_COMMIT_REF_NAME}
   only:
     - tags
 
