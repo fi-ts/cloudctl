@@ -314,10 +314,10 @@ func init() {
 		return firewallControllerVersionListCompletion()
 	})
 	clusterCreateCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"production", "development", "evaluation"}, cobra.ShellCompDirectiveDefault
+		return []string{"production", "development", "evaluation"}, cobra.ShellCompDirectiveNoFileComp
 	})
 	clusterCreateCmd.RegisterFlagCompletionFunc("cri", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"docker", "containerd"}, cobra.ShellCompDirectiveDefault
+		return []string{"docker", "containerd"}, cobra.ShellCompDirectiveNoFileComp
 	})
 
 	// Cluster list --------------------------------------------------------------------
@@ -375,39 +375,34 @@ func init() {
 		return machineImageListCompletion()
 	})
 	clusterUpdateCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"production", "development", "evaluation"}, cobra.ShellCompDirectiveDefault
+		return []string{"production", "development", "evaluation"}, cobra.ShellCompDirectiveNoFileComp
 	})
 
 	clusterMachineSSHCmd.Flags().String("machineid", "", "machine to connect to.")
 	clusterMachineSSHCmd.MarkFlagRequired("machineid")
 	clusterMachineSSHCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		// FIXME howto implement flag based completion for a already given clusterid
-		return clusterMachineListCompletion("123")
+		return clusterMachineListCompletion(args, false)
 	})
 	clusterMachineConsoleCmd.Flags().String("machineid", "", "machine to connect to.")
 	clusterMachineConsoleCmd.MarkFlagRequired("machineid")
 	clusterMachineConsoleCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		// FIXME howto implement flag based completion for a already given clusterid
-		return clusterMachineListCompletion("123")
+		return clusterMachineListCompletion(args, true)
 	})
 	clusterMachineResetCmd.Flags().String("machineid", "", "machine to reset.")
 	clusterMachineResetCmd.MarkFlagRequired("machineid")
 	clusterMachineResetCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		// FIXME howto implement flag based completion for a already given clusterid
-		return clusterMachineListCompletion("123")
+		return clusterMachineListCompletion(args, true)
 	})
 	clusterMachineCycleCmd.Flags().String("machineid", "", "machine to reset.")
 	clusterMachineCycleCmd.MarkFlagRequired("machineid")
 	clusterMachineCycleCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		// FIXME howto implement flag based completion for a already given clusterid
-		return clusterMachineListCompletion("123")
+		return clusterMachineListCompletion(args, true)
 	})
 	clusterMachineReinstallCmd.Flags().String("machineid", "", "machine to reinstall.")
 	clusterMachineReinstallCmd.Flags().String("machineimage", "", "image to reinstall (optional).")
 	clusterMachineReinstallCmd.MarkFlagRequired("machineid")
 	clusterMachineReinstallCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		// FIXME howto implement flag based completion for a already given clusterid
-		return clusterMachineListCompletion("123")
+		return clusterMachineListCompletion(args, true)
 	})
 	clusterMachineCmd.AddCommand(clusterMachineListCmd)
 	clusterMachineCmd.AddCommand(clusterMachineSSHCmd)
