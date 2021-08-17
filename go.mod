@@ -10,9 +10,8 @@ require (
 	github.com/gardener/gardener v1.19.3
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-openapi/strfmt v0.20.1
-	github.com/go-playground/validator/v10 v10.7.0
+	github.com/go-playground/validator/v10 v10.9.0
 	github.com/jinzhu/now v1.1.2
-	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/metal-stack/metal-lib v0.8.0
 	github.com/metal-stack/updater v1.1.3
 	github.com/metal-stack/v v1.0.3

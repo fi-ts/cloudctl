@@ -50,7 +50,7 @@ var (
 		PreRun: bindPFlags,
 	}
 	clusterDeleteCmd = &cobra.Command{
-		Use:     "delete <uid>",
+		Use:     "delete <clusterid>",
 		Short:   "delete a cluster",
 		Aliases: []string{"rm"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -65,7 +65,7 @@ var (
 		PreRun: bindPFlags,
 	}
 	clusterDescribeCmd = &cobra.Command{
-		Use:   "describe <uid>",
+		Use:   "describe <clusterid>",
 		Short: "describe a cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterDescribe(args)
@@ -79,7 +79,7 @@ var (
 		PreRun: bindPFlags,
 	}
 	clusterKubeconfigCmd = &cobra.Command{
-		Use:   "kubeconfig <uid>",
+		Use:   "kubeconfig <clusterid>",
 		Short: "get cluster kubeconfig",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterKubeconfig(args)
@@ -94,7 +94,7 @@ var (
 	}
 
 	clusterReconcileCmd = &cobra.Command{
-		Use:   "reconcile <uid>",
+		Use:   "reconcile <clusterid>",
 		Short: "trigger cluster reconciliation",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return reconcileCluster(args)
@@ -108,7 +108,7 @@ var (
 		PreRun: bindPFlags,
 	}
 	clusterUpdateCmd = &cobra.Command{
-		Use:   "update <uid>",
+		Use:   "update <clusterid>",
 		Short: "update a cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return updateCluster(args)
@@ -135,7 +135,7 @@ var (
 		Short:   "list and access machines in the cluster",
 	}
 	clusterMachineListCmd = &cobra.Command{
-		Use:     "ls",
+		Use:     "ls <clusterid>",
 		Aliases: []string{"list"},
 		Short:   "list machines of the cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -150,7 +150,7 @@ var (
 		PreRun: bindPFlags,
 	}
 	clusterIssuesCmd = &cobra.Command{
-		Use:     "issues [<uid>]",
+		Use:     "issues [<clusterid>]",
 		Aliases: []string{"problems", "warnings"},
 		Short:   "lists cluster issues, shows required actions explicitly when id argument is given",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -196,7 +196,7 @@ var (
 		Use:   "reset <clusterid>",
 		Short: "hard power reset of a machine/firewall of the cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterMachineReset(args, true)
+			return clusterMachineReset(args)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) != 0 {
@@ -210,7 +210,7 @@ var (
 		Use:   "cycle <clusterid>",
 		Short: "soft power cycle of a machine/firewall of the cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterMachineCycle(args, true)
+			return clusterMachineCycle(args)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) != 0 {
@@ -224,7 +224,7 @@ var (
 		Use:   "reinstall <clusterid>",
 		Short: "reinstall OS image onto a machine/firewall of the cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterMachineReinstall(args, true)
+			return clusterMachineReinstall(args)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) != 0 {
@@ -235,7 +235,7 @@ var (
 		PreRun: bindPFlags,
 	}
 	clusterLogsCmd = &cobra.Command{
-		Use:   "logs",
+		Use:   "logs <clusterid>",
 		Short: "get logs for the cluster",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterLogs(args)
@@ -1126,7 +1126,7 @@ func clusterInputs() error {
 	return output.YAMLPrinter{}.Print(sc)
 }
 
-func clusterMachineReset(args []string, console bool) error {
+func clusterMachineReset(args []string) error {
 	cid, err := clusterID("reset", args)
 	if err != nil {
 		return err
@@ -1148,7 +1148,7 @@ func clusterMachineReset(args []string, console bool) error {
 	return printer.Print(ms)
 }
 
-func clusterMachineCycle(args []string, console bool) error {
+func clusterMachineCycle(args []string) error {
 	cid, err := clusterID("reset", args)
 	if err != nil {
 		return err
@@ -1170,7 +1170,7 @@ func clusterMachineCycle(args []string, console bool) error {
 	return printer.Print(ms)
 }
 
-func clusterMachineReinstall(args []string, console bool) error {
+func clusterMachineReinstall(args []string) error {
 	cid, err := clusterID("reinstall", args)
 	if err != nil {
 		return err
