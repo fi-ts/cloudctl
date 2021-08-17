@@ -8,7 +8,6 @@ after:
   - mkdir -p result
   # the second latest built container is the builder, which contains the platform binaries
   - docker cp $(docker create $(docker image ls --format '{{ .ID }}' | sed -n 2p)):/work/bin tmp
-  - strip tmp/bin/cloudctl-linux-amd64
   - mv tmp/bin/cloudctl-linux-amd64 result
   - mv tmp/bin/cloudctl-windows-amd64 result
   - mv tmp/bin/cloudctl-darwin-amd64 result
