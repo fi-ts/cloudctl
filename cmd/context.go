@@ -152,5 +152,5 @@ func writeContexts(ctxs *api.Contexts) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(cfgFile, c, 0644)
+	return os.WriteFile(cfgFile, c, 0600)
 }
