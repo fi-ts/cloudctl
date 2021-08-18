@@ -28,12 +28,32 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+	volumeDescribeCmd = &cobra.Command{
+		Use:   "describe <volume>",
+		Short: "describes a volume",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return volumeDescribe(args)
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return volumeListCompletion()
+		},
+		PreRun: bindPFlags,
+	}
 	volumeDeleteCmd = &cobra.Command{
 		Use:     "delete <volume>",
 		Aliases: []string{"rm", "destroy", "remove", "delete"},
 		Short:   "delete a volume",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return volumeDelete(args)
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return volumeListCompletion()
 		},
 		PreRun: bindPFlags,
 	}
@@ -43,6 +63,12 @@ var (
 		Long:  "this is only useful for volumes which are not used in any k8s cluster. With the PersistenVolumeClaim given you can reuse it in a new cluster.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return volumeManifest(args)
+		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return volumeListCompletion()
 		},
 		PreRun: bindPFlags,
 	}
@@ -61,6 +87,7 @@ func init() {
 
 	volumeCmd.AddCommand(volumeListCmd)
 	volumeCmd.AddCommand(volumeDeleteCmd)
+	volumeCmd.AddCommand(volumeDescribeCmd)
 	volumeCmd.AddCommand(volumeManifestCmd)
 	volumeCmd.AddCommand(volumeClusterInfoCmd)
 
@@ -106,6 +133,20 @@ func volumeFind() error {
 		return err
 	}
 	return printer.Print(resp.Payload)
+}
+
+func volumeDescribe(args []string) error {
+	vol, err := getVolumeFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	resp, err := cloud.Volume.GetVolume(volume.NewGetVolumeParams().WithID(*vol.VolumeID), nil)
+	if err != nil {
+		return err
+	}
+
+	return output.YAMLPrinter{}.Print(resp.Payload)
 }
 
 func volumeDelete(args []string) error {

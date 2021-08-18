@@ -5,6 +5,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/client/database"
 	"github.com/fi-ts/cloud-go/api/client/project"
 	"github.com/fi-ts/cloud-go/api/client/s3"
+	"github.com/fi-ts/cloud-go/api/client/volume"
 	"github.com/spf13/cobra"
 )
 
@@ -77,6 +78,23 @@ func partitionListCompletion() ([]string, cobra.ShellCompDirective) {
 	}
 
 	return sc.Payload.Partitions, cobra.ShellCompDirectiveNoFileComp
+}
+
+func volumeListCompletion() ([]string, cobra.ShellCompDirective) {
+	request := volume.NewListVolumesParams()
+	response, err := cloud.Volume.ListVolumes(request, nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+
+	var names []string
+	for _, v := range response.Payload {
+		if v.VolumeID == nil {
+			continue
+		}
+		names = append(names, *v.VolumeID)
+	}
+	return names, cobra.ShellCompDirectiveDefault
 }
 
 func networkListCompletion() ([]string, cobra.ShellCompDirective) {
