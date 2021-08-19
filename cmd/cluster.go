@@ -56,13 +56,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterDelete(args)
 		},
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
-			}
-			return clusterListCompletion()
-		},
-		PreRun: bindPFlags,
+		ValidArgsFunction: clusterListCompletionFunc,
+		PreRun:            bindPFlags,
 	}
 	clusterDescribeCmd = &cobra.Command{
 		Use:   "describe <clusterid>",
@@ -70,13 +65,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterDescribe(args)
 		},
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
-			}
-			return clusterListCompletion()
-		},
-		PreRun: bindPFlags,
+		ValidArgsFunction: clusterListCompletionFunc,
+		PreRun:            bindPFlags,
 	}
 	clusterKubeconfigCmd = &cobra.Command{
 		Use:   "kubeconfig <clusterid>",
@@ -84,13 +74,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterKubeconfig(args)
 		},
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
-			}
-			return clusterListCompletion()
-		},
-		PreRun: bindPFlags,
+		ValidArgsFunction: clusterListCompletionFunc,
+		PreRun:            bindPFlags,
 	}
 
 	clusterReconcileCmd = &cobra.Command{
@@ -99,13 +84,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return reconcileCluster(args)
 		},
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
-			}
-			return clusterListCompletion()
-		},
-		PreRun: bindPFlags,
+		ValidArgsFunction: clusterListCompletionFunc,
+		PreRun:            bindPFlags,
 	}
 	clusterUpdateCmd = &cobra.Command{
 		Use:   "update <clusterid>",
@@ -113,13 +93,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return updateCluster(args)
 		},
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
-			}
-			return clusterListCompletion()
-		},
-		PreRun: bindPFlags,
+		ValidArgsFunction: clusterListCompletionFunc,
+		PreRun:            bindPFlags,
 	}
 	clusterInputsCmd = &cobra.Command{
 		Use:   "inputs",
@@ -141,13 +116,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterMachines(args)
 		},
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
-			}
-			return clusterListCompletion()
-		},
-		PreRun: bindPFlags,
+		ValidArgsFunction: clusterListCompletionFunc,
+		PreRun:            bindPFlags,
 	}
 	clusterIssuesCmd = &cobra.Command{
 		Use:     "issues [<clusterid>]",
@@ -156,13 +126,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterIssues(args)
 		},
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
-			}
-			return clusterListCompletion()
-		},
-		PreRun: bindPFlags,
+		ValidArgsFunction: clusterListCompletionFunc,
+		PreRun:            bindPFlags,
 	}
 	clusterMachineSSHCmd = &cobra.Command{
 		Use:   "ssh <clusterid>",
@@ -170,13 +135,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterMachineSSH(args, false)
 		},
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
-			}
-			return clusterListCompletion()
-		},
-		PreRun: bindPFlags,
+		ValidArgsFunction: clusterListCompletionFunc,
+		PreRun:            bindPFlags,
 	}
 	clusterMachineConsoleCmd = &cobra.Command{
 		Use:   "console <clusterid>",
@@ -184,13 +144,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterMachineSSH(args, true)
 		},
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
-			}
-			return clusterListCompletion()
-		},
-		PreRun: bindPFlags,
+		ValidArgsFunction: clusterListCompletionFunc,
+		PreRun:            bindPFlags,
 	}
 	clusterMachineResetCmd = &cobra.Command{
 		Use:   "reset <clusterid>",
@@ -198,13 +153,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterMachineReset(args)
 		},
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
-			}
-			return clusterListCompletion()
-		},
-		PreRun: bindPFlags,
+		ValidArgsFunction: clusterListCompletionFunc,
+		PreRun:            bindPFlags,
 	}
 	clusterMachineCycleCmd = &cobra.Command{
 		Use:   "cycle <clusterid>",
@@ -212,13 +162,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterMachineCycle(args)
 		},
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
-			}
-			return clusterListCompletion()
-		},
-		PreRun: bindPFlags,
+		ValidArgsFunction: clusterListCompletionFunc,
+		PreRun:            bindPFlags,
 	}
 	clusterMachineReinstallCmd = &cobra.Command{
 		Use:   "reinstall <clusterid>",
@@ -226,13 +171,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterMachineReinstall(args)
 		},
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
-			}
-			return clusterListCompletion()
-		},
-		PreRun: bindPFlags,
+		ValidArgsFunction: clusterListCompletionFunc,
+		PreRun:            bindPFlags,
 	}
 	clusterLogsCmd = &cobra.Command{
 		Use:   "logs <clusterid>",
@@ -240,13 +180,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterLogs(args)
 		},
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
-			}
-			return clusterListCompletion()
-		},
-		PreRun: bindPFlags,
+		ValidArgsFunction: clusterListCompletionFunc,
+		PreRun:            bindPFlags,
 	}
 )
 
