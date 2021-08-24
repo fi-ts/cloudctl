@@ -167,16 +167,6 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 	if expires != nil {
 		issues = append(issues, expires.Error())
 	}
-	mcmMigrated := false
-	for _, feature := range shoot.ControlPlaneFeatureGates {
-		if feature == "machineControllerManagerOOT" {
-			mcmMigrated = true
-			break
-		}
-	}
-	if !mcmMigrated {
-		issues = append(issues, "Cluster requires migration to out-of-tree machine-controller-manager, please enable via shoot spec")
-	}
 
 	if len(issues) > 0 {
 		maintainEmoji = "⚠️"
