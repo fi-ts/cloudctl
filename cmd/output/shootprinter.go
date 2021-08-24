@@ -100,7 +100,7 @@ func (s ShootLastOperationTablePrinter) Print(data *models.V1beta1LastOperation)
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall", "Firewall Controller", "Egress IPs"}
+	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Audit", "Runtime", "Firewall", "Firewall Controller", "Egress IPs"}
 	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
 	s.Order(data)
@@ -205,6 +205,26 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		privileged = fmt.Sprintf("%t", *shoot.Kubernetes.AllowPrivilegedContainers)
 	}
 
+	audit := "Off"
+	if shoot.ControlPlaneFeatureGates != nil {
+		var ca, as bool
+		for _, featureGate := range shoot.ControlPlaneFeatureGates {
+			switch featureGate {
+			case "clusterAudit":
+				ca = true
+			case "auditToSplunk":
+				as = true
+			}
+		}
+		if ca {
+			if as {
+				audit = "On, Splunk"
+			} else {
+				audit = "On"
+			}
+		}
+	}
+
 	runtimes := []string{}
 	autoScaleMin := int32(0)
 	autoScaleMax := int32(0)
@@ -263,6 +283,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		age,
 		purpose,
 		privileged,
+		audit,
 		strings.Join(uniqueStringSlice(runtimes), "\n"),
 		firewallImage,
 		firewallController,
