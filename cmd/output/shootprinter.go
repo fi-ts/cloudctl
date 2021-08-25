@@ -217,11 +217,10 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 			}
 		}
 		if ca {
-			if as {
-				audit = "On, Splunk"
-			} else {
-				audit = "On"
-			}
+			audit = "On"
+		}
+		if as {
+			audit = audit + ",Splunk"
 		}
 	}
 
