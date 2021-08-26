@@ -13,8 +13,10 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/pointer"
 
 	"github.com/fi-ts/cloud-go/api/client/cluster"
+	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
@@ -23,6 +25,9 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	ui "github.com/gizak/termui/v3"
+	"github.com/gizak/termui/v3/widgets"
 )
 
 var (
@@ -182,6 +187,14 @@ var (
 		},
 		ValidArgsFunction: clusterListCompletionFunc,
 		PreRun:            bindPFlags,
+	}
+	clusterOverviewCmd = &cobra.Command{
+		Use:   "overview",
+		Short: "get an overview over all clusters",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterOverview()
+		},
+		PreRun: bindPFlags,
 	}
 )
 
@@ -443,6 +456,22 @@ func init() {
 	clusterIssuesCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterIssuesCmd.Flags().String("tenant", "", "show clusters of given tenant")
 
+	clusterOverviewCmd.Flags().String("partition", "", "show clusters in partition")
+	clusterOverviewCmd.Flags().String("tenant", "", "show clusters of given tenant")
+	clusterOverviewCmd.Flags().Duration("refresh-interval", 3*time.Second, "refresh interval")
+	err = clusterOverviewCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return partitionListCompletion()
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = clusterOverviewCmd.RegisterFlagCompletionFunc("tenant", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return tenantListCompletion()
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
 	clusterCmd.AddCommand(clusterKubeconfigCmd)
@@ -454,6 +483,7 @@ func init() {
 	clusterCmd.AddCommand(clusterMachineCmd)
 	clusterCmd.AddCommand(clusterLogsCmd)
 	clusterCmd.AddCommand(clusterIssuesCmd)
+	clusterCmd.AddCommand(clusterOverviewCmd)
 }
 
 func clusterCreate() error {
@@ -1354,4 +1384,156 @@ func makeEgressRules(egressFlagValue []string) []*models.V1EgressRule {
 		egressRules = append(egressRules, &r)
 	}
 	return egressRules
+}
+
+func clusterOverview() error {
+	if err := ui.Init(); err != nil {
+		return err
+	}
+	defer ui.Close()
+
+	var (
+		tenant    = viper.GetString("tenant")
+		partition = viper.GetString("partition")
+		strDeref  = func(s string) *string {
+			if s == "" {
+				return nil
+			}
+			return &s
+		}
+	)
+
+	clusterHealth := widgets.NewBarChart()
+	clusterHealth.Labels = []string{"Succeeded", "Progressing", "Unhealthy"}
+	clusterHealth.Title = "Cluster Health"
+	clusterHealth.PaddingLeft = 5
+	clusterHealth.SetRect(0, 0, 50, 12)
+	clusterHealth.BarWidth = 5
+	clusterHealth.BarGap = 10
+	clusterHealth.BarColors = []ui.Color{ui.ColorGreen, ui.ColorYellow, ui.ColorRed}
+	clusterHealth.LabelStyles = []ui.Style{ui.NewStyle(ui.ColorBlue)}
+	clusterHealth.NumStyles = []ui.Style{ui.NewStyle(ui.ColorWhite)}
+
+	clusterStatusAPI := widgets.NewGauge()
+	clusterStatusAPI.Title = "API"
+	clusterStatusAPI.SetRect(55, 0, 100, 3)
+	clusterStatusAPI.BarColor = ui.ColorGreen
+	clusterStatusAPI.BorderStyle.Fg = ui.ColorWhite
+	clusterStatusAPI.TitleStyle.Fg = ui.ColorWhite
+
+	clusterStatusControl := widgets.NewGauge()
+	clusterStatusControl.Title = "Control"
+	clusterStatusControl.SetRect(55, 3, 100, 6)
+	clusterStatusControl.BarColor = ui.ColorGreen
+	clusterStatusControl.BorderStyle.Fg = ui.ColorWhite
+	clusterStatusControl.TitleStyle.Fg = ui.ColorWhite
+
+	clusterStatusNodes := widgets.NewGauge()
+	clusterStatusNodes.Title = "Nodes"
+	clusterStatusNodes.SetRect(55, 6, 100, 9)
+	clusterStatusNodes.BarColor = ui.ColorGreen
+	clusterStatusNodes.BorderStyle.Fg = ui.ColorWhite
+	clusterStatusNodes.TitleStyle.Fg = ui.ColorWhite
+
+	clusterStatusSystem := widgets.NewGauge()
+	clusterStatusSystem.Title = "System"
+	clusterStatusSystem.SetRect(55, 9, 100, 12)
+	clusterStatusSystem.BarColor = ui.ColorGreen
+	clusterStatusSystem.BorderStyle.Fg = ui.ColorWhite
+	clusterStatusSystem.TitleStyle.Fg = ui.ColorWhite
+
+	refresh := func() {
+		// provide default values for widgets
+		clusterHealth.Data = []float64{0, 0, 0}
+		clusterStatusAPI.Percent = 0
+		clusterStatusControl.Percent = 0
+		clusterStatusNodes.Percent = 0
+		clusterStatusSystem.Percent = 0
+
+		defer ui.Render(clusterHealth, clusterStatusAPI, clusterStatusControl, clusterStatusNodes, clusterStatusSystem)
+
+		cs, err := cloud.Cluster.FindClusters(cluster.NewFindClustersParams().WithBody(&models.V1ClusterFindRequest{
+			PartitionID: strDeref(partition),
+			Tenant:      strDeref(tenant),
+		}).WithReturnMachines(pointer.BoolPtr(false)), nil)
+		if err != nil {
+			return
+		}
+
+		var (
+			clusters = cs.Payload
+
+			succeeded  int
+			processing int
+			unhealthy  int
+
+			apiOK     int
+			controlOK int
+			nodesOK   int
+			systemOK  int
+		)
+
+		for _, c := range clusters {
+			if c.Status == nil || c.Status.LastOperation == nil || c.Status.LastOperation.State == nil || *c.Status.LastOperation.State == "" {
+				unhealthy++
+				continue
+			}
+
+			switch *c.Status.LastOperation.State {
+			case string(v1beta1.LastOperationStateSucceeded):
+				succeeded++
+			case string(v1beta1.LastOperationStateProcessing):
+				processing++
+			default:
+				unhealthy++
+			}
+
+			for _, condition := range c.Status.Conditions {
+				if condition == nil || condition.Status == nil || condition.Type == nil {
+					continue
+				}
+				status := *condition.Status
+				if status != "True" {
+					continue
+				}
+
+				switch *condition.Type {
+				case string(v1beta1.ShootControlPlaneHealthy):
+					controlOK++
+				case string(v1beta1.ShootEveryNodeReady):
+					nodesOK++
+				case string(v1beta1.ShootSystemComponentsHealthy):
+					systemOK++
+				case string(v1beta1.ShootAPIServerAvailable):
+					apiOK++
+				}
+			}
+		}
+
+		clusterHealth.Data = []float64{float64(succeeded), float64(processing), float64(unhealthy)}
+
+		if len(clusters) > 0 {
+			clusterStatusAPI.Percent = apiOK * 100 / len(clusters)
+			clusterStatusControl.Percent = controlOK * 100 / len(clusters)
+			clusterStatusNodes.Percent = nodesOK * 100 / len(clusters)
+			clusterStatusSystem.Percent = systemOK * 100 / len(clusters)
+		}
+	}
+
+	refresh()
+
+	uiEvents := ui.PollEvents()
+	ticker := time.NewTicker(5 * time.Second)
+
+	for {
+		select {
+		case e := <-uiEvents:
+			switch e.ID {
+			case "q", "<C-c>":
+				return nil
+			}
+		case <-ticker.C:
+			refresh()
+		}
+	}
 }
