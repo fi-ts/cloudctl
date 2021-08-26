@@ -1403,6 +1403,7 @@ func clusterOverview() error {
 		tenant    = viper.GetString("tenant")
 		partition = viper.GetString("partition")
 		purpose   = viper.GetString("purpose")
+		interval  = viper.GetDuration("refresh-interval")
 		strDeref  = func(s string) *string {
 			if s == "" {
 				return nil
@@ -1452,13 +1453,12 @@ func clusterOverview() error {
 
 	refresh := func() {
 		// provide default values for widgets
-		clusterHealth.Data = []float64{0, 0, 0}
 		clusterStatusAPI.Percent = 0
 		clusterStatusControl.Percent = 0
 		clusterStatusNodes.Percent = 0
 		clusterStatusSystem.Percent = 0
 
-		defer ui.Render(clusterHealth, clusterStatusAPI, clusterStatusControl, clusterStatusNodes, clusterStatusSystem)
+		defer ui.Render(clusterStatusAPI, clusterStatusControl, clusterStatusNodes, clusterStatusSystem)
 
 		cs, err := cloud.Cluster.FindClusters(cluster.NewFindClustersParams().WithBody(&models.V1ClusterFindRequest{
 			PartitionID: strDeref(partition),
@@ -1483,7 +1483,7 @@ func clusterOverview() error {
 		)
 
 		for _, c := range clusters {
-			if c.Purpose == nil || *c.Purpose != purpose {
+			if c.Purpose == nil || (purpose != "" && *c.Purpose != purpose) {
 				filteredOut++
 				continue
 			}
@@ -1523,21 +1523,28 @@ func clusterOverview() error {
 			}
 		}
 
-		clusterHealth.Data = []float64{float64(succeeded), float64(processing), float64(unhealthy)}
-
-		if len(clusters)-filteredOut > 0 {
-			amount := len(clusters) - filteredOut
-			clusterStatusAPI.Percent = apiOK * 100 / amount
-			clusterStatusControl.Percent = controlOK * 100 / amount
-			clusterStatusNodes.Percent = nodesOK * 100 / amount
-			clusterStatusSystem.Percent = systemOK * 100 / amount
+		processedClusters := len(clusters) - filteredOut
+		if processedClusters <= 0 {
+			return
 		}
+
+		// for some reason the UI hangs when all values are zero...
+		// so we render this individually
+		if succeeded > 0 || processing > 0 || unhealthy > 0 {
+			clusterHealth.Data = []float64{float64(succeeded), float64(processing), float64(unhealthy)}
+			ui.Render(clusterHealth)
+		}
+
+		clusterStatusAPI.Percent = apiOK * 100 / processedClusters
+		clusterStatusControl.Percent = controlOK * 100 / processedClusters
+		clusterStatusNodes.Percent = nodesOK * 100 / processedClusters
+		clusterStatusSystem.Percent = systemOK * 100 / processedClusters
 	}
 
 	refresh()
 
 	uiEvents := ui.PollEvents()
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(interval)
 
 	for {
 		select {
