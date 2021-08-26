@@ -458,6 +458,7 @@ func init() {
 
 	clusterOverviewCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterOverviewCmd.Flags().String("tenant", "", "show clusters of given tenant")
+	clusterOverviewCmd.Flags().String("purpose", "", "show clusters of given purpose")
 	clusterOverviewCmd.Flags().Duration("refresh-interval", 3*time.Second, "refresh interval")
 	err = clusterOverviewCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return partitionListCompletion()
@@ -467,6 +468,12 @@ func init() {
 	}
 	err = clusterOverviewCmd.RegisterFlagCompletionFunc("tenant", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return tenantListCompletion()
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = clusterOverviewCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"production", "development", "evaluation"}, cobra.ShellCompDirectiveNoFileComp
 	})
 	if err != nil {
 		log.Fatal(err.Error())
@@ -1395,6 +1402,7 @@ func clusterOverview() error {
 	var (
 		tenant    = viper.GetString("tenant")
 		partition = viper.GetString("partition")
+		purpose   = viper.GetString("purpose")
 		strDeref  = func(s string) *string {
 			if s == "" {
 				return nil
@@ -1461,7 +1469,8 @@ func clusterOverview() error {
 		}
 
 		var (
-			clusters = cs.Payload
+			clusters    = cs.Payload
+			filteredOut int
 
 			succeeded  int
 			processing int
@@ -1474,6 +1483,10 @@ func clusterOverview() error {
 		)
 
 		for _, c := range clusters {
+			if c.Purpose == nil || *c.Purpose != purpose {
+				filteredOut++
+				continue
+			}
 			if c.Status == nil || c.Status.LastOperation == nil || c.Status.LastOperation.State == nil || *c.Status.LastOperation.State == "" {
 				unhealthy++
 				continue
@@ -1512,11 +1525,12 @@ func clusterOverview() error {
 
 		clusterHealth.Data = []float64{float64(succeeded), float64(processing), float64(unhealthy)}
 
-		if len(clusters) > 0 {
-			clusterStatusAPI.Percent = apiOK * 100 / len(clusters)
-			clusterStatusControl.Percent = controlOK * 100 / len(clusters)
-			clusterStatusNodes.Percent = nodesOK * 100 / len(clusters)
-			clusterStatusSystem.Percent = systemOK * 100 / len(clusters)
+		if len(clusters)-filteredOut > 0 {
+			amount := len(clusters) - filteredOut
+			clusterStatusAPI.Percent = apiOK * 100 / amount
+			clusterStatusControl.Percent = controlOK * 100 / amount
+			clusterStatusNodes.Percent = nodesOK * 100 / amount
+			clusterStatusSystem.Percent = systemOK * 100 / amount
 		}
 	}
 
