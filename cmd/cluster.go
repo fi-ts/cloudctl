@@ -190,11 +190,11 @@ var (
 		ValidArgsFunction: clusterListCompletionFunc,
 		PreRun:            bindPFlags,
 	}
-	clusterOverviewCmd = &cobra.Command{
-		Use:   "overview",
-		Short: "get an overview over all clusters",
+	clusterDashboardCmd = &cobra.Command{
+		Use:   "dashboard",
+		Short: "visualizes cluster health for many clusters",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterOverview()
+			return clusterDashboard()
 		},
 		PreRun: bindPFlags,
 	}
@@ -458,23 +458,23 @@ func init() {
 	clusterIssuesCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterIssuesCmd.Flags().String("tenant", "", "show clusters of given tenant")
 
-	clusterOverviewCmd.Flags().String("partition", "", "show clusters in partition")
-	clusterOverviewCmd.Flags().String("tenant", "", "show clusters of given tenant")
-	clusterOverviewCmd.Flags().String("purpose", "", "show clusters of given purpose")
-	clusterOverviewCmd.Flags().Duration("refresh-interval", 3*time.Second, "refresh interval")
-	err = clusterOverviewCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	clusterDashboardCmd.Flags().String("partition", "", "show clusters in partition")
+	clusterDashboardCmd.Flags().String("tenant", "", "show clusters of given tenant")
+	clusterDashboardCmd.Flags().String("purpose", "", "show clusters of given purpose")
+	clusterDashboardCmd.Flags().Duration("refresh-interval", 3*time.Second, "refresh interval")
+	err = clusterDashboardCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return partitionListCompletion()
 	})
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterOverviewCmd.RegisterFlagCompletionFunc("tenant", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = clusterDashboardCmd.RegisterFlagCompletionFunc("tenant", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return tenantListCompletion()
 	})
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterOverviewCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = clusterDashboardCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"production", "development", "evaluation"}, cobra.ShellCompDirectiveNoFileComp
 	})
 	if err != nil {
@@ -492,7 +492,7 @@ func init() {
 	clusterCmd.AddCommand(clusterMachineCmd)
 	clusterCmd.AddCommand(clusterLogsCmd)
 	clusterCmd.AddCommand(clusterIssuesCmd)
-	clusterCmd.AddCommand(clusterOverviewCmd)
+	clusterCmd.AddCommand(clusterDashboardCmd)
 }
 
 func clusterCreate() error {
@@ -1395,7 +1395,7 @@ func makeEgressRules(egressFlagValue []string) []*models.V1EgressRule {
 	return egressRules
 }
 
-func clusterOverview() error {
+func clusterDashboard() error {
 	if err := ui.Init(); err != nil {
 		return err
 	}
@@ -1418,7 +1418,7 @@ func clusterOverview() error {
 
 	headerHeight := 5
 	header := widgets.NewParagraph()
-	header.Title = "Cluster Overview"
+	header.Title = "Cluster Dashboard"
 	header.SetRect(0, 0, width-25, headerHeight)
 
 	filters := widgets.NewParagraph()
@@ -1428,7 +1428,7 @@ func clusterOverview() error {
 
 	clusterHealth := widgets.NewBarChart()
 	clusterHealth.Labels = []string{"Succeeded", "Progressing", "Unhealthy"}
-	clusterHealth.Title = "Cluster Health"
+	clusterHealth.Title = "Cluster Operation"
 	clusterHealth.PaddingLeft = 5
 	clusterHealth.SetRect(0, headerHeight, 48, 12+headerHeight)
 	clusterHealth.BarWidth = 5
