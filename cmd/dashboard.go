@@ -24,7 +24,7 @@ import (
 var (
 	dashboardCmd = &cobra.Command{
 		Use:   "dashboard",
-		Short: "view dashboards optimized for operation",
+		Short: "shows a live dashboard optimized for operation",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runDashboard()
 		},
