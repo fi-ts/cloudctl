@@ -1644,11 +1644,20 @@ func clusterOverview() error {
 				return nil
 			case "<Resize>":
 				payload := e.Payload.(ui.Resize)
-				clusterStatusAPI.SetRect(55, headerHeight, payload.Width, 3+headerHeight)
-				clusterStatusControl.SetRect(55, 3+headerHeight, payload.Width, 6+headerHeight)
-				clusterStatusNodes.SetRect(55, 6+headerHeight, payload.Width, 9+headerHeight)
-				clusterStatusSystem.SetRect(55, 9+headerHeight, payload.Width, 12+headerHeight)
+				width := payload.Width
+				height := payload.Height
+				clusterStatusAPI.SetRect(55, headerHeight, width, 3+headerHeight)
+				clusterStatusControl.SetRect(55, 3+headerHeight, width, 6+headerHeight)
+				clusterStatusNodes.SetRect(55, 6+headerHeight, width, 9+headerHeight)
+				clusterStatusSystem.SetRect(55, 9+headerHeight, width, 12+headerHeight)
+				header.SetRect(0, 0, width-25, headerHeight)
+				filters.SetRect(width-25, 0, width, headerHeight)
+				clusterProblems.ColumnWidths = []int{12, width - 12}
+				clusterProblems.SetRect(0, 12+headerHeight, width, 12+headerHeight+12)
+				clusterLastErrors.ColumnWidths = []int{12, width - 12}
+				clusterLastErrors.SetRect(0, 12+headerHeight+12, width, height)
 				ui.Clear()
+				ui.Render(filters)
 				refresh()
 			}
 		case <-ticker.C:
