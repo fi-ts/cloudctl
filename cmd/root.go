@@ -77,6 +77,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolP("yes-i-really-mean-it", "", false, "skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)")
 
 	rootCmd.AddCommand(clusterCmd)
+	rootCmd.AddCommand(dashboardCmd)
 	rootCmd.AddCommand(updateCmd)
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(whoamiCmd)
