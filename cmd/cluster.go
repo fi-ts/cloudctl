@@ -26,6 +26,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"golang.org/x/sync/semaphore"
+
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 )
@@ -1400,11 +1402,13 @@ func clusterOverview() error {
 	defer ui.Close()
 
 	var (
-		tenant    = viper.GetString("tenant")
-		partition = viper.GetString("partition")
-		purpose   = viper.GetString("purpose")
-		interval  = viper.GetDuration("refresh-interval")
-		strDeref  = func(s string) *string {
+		tenant        = viper.GetString("tenant")
+		partition     = viper.GetString("partition")
+		purpose       = viper.GetString("purpose")
+		interval      = viper.GetDuration("refresh-interval")
+		sem           = semaphore.NewWeighted(1)
+		width, height = ui.TerminalDimensions()
+		strDeref      = func(s string) *string {
 			if s == "" {
 				return nil
 			}
@@ -1412,53 +1416,78 @@ func clusterOverview() error {
 		}
 	)
 
+	headerHeight := 5
+	header := widgets.NewParagraph()
+	header.Title = "Cluster Overview"
+	header.SetRect(0, 0, width-25, headerHeight)
+
+	filters := widgets.NewParagraph()
+	filters.Title = "Filters"
+	filters.Text = fmt.Sprintf("Tenant=%s\nPartition=%s\nPurpose=%s", tenant, partition, purpose)
+	filters.SetRect(width-25, 0, width, headerHeight)
+
 	clusterHealth := widgets.NewBarChart()
 	clusterHealth.Labels = []string{"Succeeded", "Progressing", "Unhealthy"}
 	clusterHealth.Title = "Cluster Health"
 	clusterHealth.PaddingLeft = 5
-	clusterHealth.SetRect(0, 0, 50, 12)
+	clusterHealth.SetRect(0, headerHeight, 48, 12+headerHeight)
 	clusterHealth.BarWidth = 5
 	clusterHealth.BarGap = 10
 	clusterHealth.BarColors = []ui.Color{ui.ColorGreen, ui.ColorYellow, ui.ColorRed}
-	clusterHealth.LabelStyles = []ui.Style{ui.NewStyle(ui.ColorBlue)}
+	clusterHealth.LabelStyles = []ui.Style{ui.NewStyle(ui.ColorWhite)}
 	clusterHealth.NumStyles = []ui.Style{ui.NewStyle(ui.ColorWhite)}
 
 	clusterStatusAPI := widgets.NewGauge()
 	clusterStatusAPI.Title = "API"
-	clusterStatusAPI.SetRect(55, 0, 100, 3)
+	clusterStatusAPI.SetRect(50, headerHeight, width, 3+headerHeight)
 	clusterStatusAPI.BarColor = ui.ColorGreen
 	clusterStatusAPI.BorderStyle.Fg = ui.ColorWhite
 	clusterStatusAPI.TitleStyle.Fg = ui.ColorWhite
 
 	clusterStatusControl := widgets.NewGauge()
 	clusterStatusControl.Title = "Control"
-	clusterStatusControl.SetRect(55, 3, 100, 6)
+	clusterStatusControl.SetRect(50, 3+headerHeight, width, 6+headerHeight)
 	clusterStatusControl.BarColor = ui.ColorGreen
 	clusterStatusControl.BorderStyle.Fg = ui.ColorWhite
 	clusterStatusControl.TitleStyle.Fg = ui.ColorWhite
 
 	clusterStatusNodes := widgets.NewGauge()
 	clusterStatusNodes.Title = "Nodes"
-	clusterStatusNodes.SetRect(55, 6, 100, 9)
+	clusterStatusNodes.SetRect(50, 6+headerHeight, width, 9+headerHeight)
 	clusterStatusNodes.BarColor = ui.ColorGreen
 	clusterStatusNodes.BorderStyle.Fg = ui.ColorWhite
 	clusterStatusNodes.TitleStyle.Fg = ui.ColorWhite
 
 	clusterStatusSystem := widgets.NewGauge()
 	clusterStatusSystem.Title = "System"
-	clusterStatusSystem.SetRect(55, 9, 100, 12)
+	clusterStatusSystem.SetRect(50, 9+headerHeight, width, 12+headerHeight)
 	clusterStatusSystem.BarColor = ui.ColorGreen
 	clusterStatusSystem.BorderStyle.Fg = ui.ColorWhite
 	clusterStatusSystem.TitleStyle.Fg = ui.ColorWhite
 
-	refresh := func() {
-		// provide default values for widgets
-		clusterStatusAPI.Percent = 0
-		clusterStatusControl.Percent = 0
-		clusterStatusNodes.Percent = 0
-		clusterStatusSystem.Percent = 0
+	clusterProblems := widgets.NewTable()
+	clusterProblems.Title = "Cluster Problems"
+	clusterProblems.TextStyle = ui.NewStyle(ui.ColorWhite)
+	clusterProblems.TextAlignment = ui.AlignLeft
+	clusterProblems.RowSeparator = false
+	clusterProblems.ColumnWidths = []int{12, width - 12}
+	clusterProblems.SetRect(0, 12+headerHeight, width, 12+headerHeight+12)
 
-		defer ui.Render(clusterStatusAPI, clusterStatusControl, clusterStatusNodes, clusterStatusSystem)
+	clusterLastErrors := widgets.NewTable()
+	clusterLastErrors.Title = "Last Errors"
+	clusterLastErrors.TextStyle = ui.NewStyle(ui.ColorWhite)
+	clusterLastErrors.TextAlignment = ui.AlignLeft
+	clusterLastErrors.RowSeparator = false
+	clusterLastErrors.ColumnWidths = []int{12, width - 12}
+	clusterLastErrors.SetRect(0, 12+headerHeight+12, width, height)
+
+	ui.Render(filters)
+
+	refresh := func() {
+		if !sem.TryAcquire(1) {
+			return
+		}
+		defer sem.Release(1)
 
 		cs, err := cloud.Cluster.FindClusters(cluster.NewFindClustersParams().WithBody(&models.V1ClusterFindRequest{
 			PartitionID: strDeref(partition),
@@ -1466,6 +1495,12 @@ func clusterOverview() error {
 		}).WithReturnMachines(pointer.BoolPtr(false)), nil)
 		if err != nil {
 			return
+		}
+
+		type clusterError struct {
+			ClusterName  string
+			ErrorMessage string
+			Time         time.Time
 		}
 
 		var (
@@ -1480,6 +1515,9 @@ func clusterOverview() error {
 			controlOK int
 			nodesOK   int
 			systemOK  int
+
+			clusterErrors []clusterError
+			lastErrors    []clusterError
 		)
 
 		for _, c := range clusters {
@@ -1505,8 +1543,18 @@ func clusterOverview() error {
 				if condition == nil || condition.Status == nil || condition.Type == nil {
 					continue
 				}
+
 				status := *condition.Status
 				if status != "True" {
+					if c.Name == nil || condition.Message == nil || condition.LastUpdateTime == nil {
+						continue
+					}
+					t, _ := time.Parse(time.RFC3339, *condition.LastUpdateTime)
+					clusterErrors = append(clusterErrors, clusterError{
+						ClusterName:  *c.Name,
+						ErrorMessage: fmt.Sprintf("(%s) %s", *condition.Type, *condition.Message),
+						Time:         t,
+					})
 					continue
 				}
 
@@ -1520,6 +1568,17 @@ func clusterOverview() error {
 				case string(v1beta1.ShootAPIServerAvailable):
 					apiOK++
 				}
+			}
+
+			for _, e := range c.Status.LastErrors {
+				if c.Name == nil || e.Description == nil {
+					continue
+				}
+				lastErrors = append(lastErrors, clusterError{
+					ClusterName:  *c.Name,
+					ErrorMessage: *e.Description,
+					// TODO: Parse time
+				})
 			}
 		}
 
@@ -1535,10 +1594,32 @@ func clusterOverview() error {
 			ui.Render(clusterHealth)
 		}
 
+		sort.Slice(clusterErrors, func(i, j int) bool {
+			return clusterErrors[i].Time.Before(clusterErrors[j].Time)
+		})
+		rows := [][]string{}
+		for _, e := range clusterErrors {
+			rows = append(rows, []string{e.ClusterName, e.ErrorMessage})
+		}
+		clusterProblems.Rows = rows
+		ui.Render(clusterProblems)
+
+		// TODO: Sort by time
+		rows = [][]string{}
+		for _, e := range lastErrors {
+			rows = append(rows, []string{e.ClusterName, e.ErrorMessage})
+		}
+		clusterLastErrors.Rows = rows
+		ui.Render(clusterLastErrors)
+
 		clusterStatusAPI.Percent = apiOK * 100 / processedClusters
 		clusterStatusControl.Percent = controlOK * 100 / processedClusters
 		clusterStatusNodes.Percent = nodesOK * 100 / processedClusters
 		clusterStatusSystem.Percent = systemOK * 100 / processedClusters
+		ui.Render(clusterStatusAPI, clusterStatusControl, clusterStatusNodes, clusterStatusSystem)
+
+		header.Text = fmt.Sprintf("Press q to quit.\nLast Update: %s", time.Now().Format("15:04:05"))
+		ui.Render(header)
 	}
 
 	refresh()
@@ -1552,6 +1633,14 @@ func clusterOverview() error {
 			switch e.ID {
 			case "q", "<C-c>":
 				return nil
+			case "<Resize>":
+				payload := e.Payload.(ui.Resize)
+				clusterStatusAPI.SetRect(55, headerHeight, payload.Width, 3+headerHeight)
+				clusterStatusControl.SetRect(55, 3+headerHeight, payload.Width, 6+headerHeight)
+				clusterStatusNodes.SetRect(55, 6+headerHeight, payload.Width, 9+headerHeight)
+				clusterStatusSystem.SetRect(55, 9+headerHeight, payload.Width, 12+headerHeight)
+				ui.Clear()
+				refresh()
 			}
 		case <-ticker.C:
 			refresh()
