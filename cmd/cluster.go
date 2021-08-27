@@ -1549,7 +1549,10 @@ func clusterOverview() error {
 					if c.Name == nil || condition.Message == nil || condition.LastUpdateTime == nil {
 						continue
 					}
-					t, _ := time.Parse(time.RFC3339, *condition.LastUpdateTime)
+					t, err := time.Parse(time.RFC3339, *condition.LastUpdateTime)
+					if err != nil {
+						continue
+					}
 					clusterErrors = append(clusterErrors, clusterError{
 						ClusterName:  *c.Name,
 						ErrorMessage: fmt.Sprintf("(%s) %s", *condition.Type, *condition.Message),
@@ -1574,10 +1577,14 @@ func clusterOverview() error {
 				if c.Name == nil || e.Description == nil {
 					continue
 				}
+				t, err := time.Parse(time.RFC3339, e.LastUpdateTime)
+				if err != nil {
+					continue
+				}
 				lastErrors = append(lastErrors, clusterError{
 					ClusterName:  *c.Name,
 					ErrorMessage: *e.Description,
-					// TODO: Parse time
+					Time:         t,
 				})
 			}
 		}
@@ -1604,7 +1611,9 @@ func clusterOverview() error {
 		clusterProblems.Rows = rows
 		ui.Render(clusterProblems)
 
-		// TODO: Sort by time
+		sort.Slice(lastErrors, func(i, j int) bool {
+			return lastErrors[i].Time.Before(lastErrors[j].Time)
+		})
 		rows = [][]string{}
 		for _, e := range lastErrors {
 			rows = append(rows, []string{e.ClusterName, e.ErrorMessage})
