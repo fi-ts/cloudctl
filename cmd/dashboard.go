@@ -164,19 +164,21 @@ func runDashboard() error {
 	clusterStatusSystem.SetRect(50, 9+headerHeight, width, 12+headerHeight)
 	clusterStatusSystem.BarColor = ui.ColorGreen
 
+	tableHeights := (height - (headerHeight + 12)) / 2
+
 	clusterProblems := widgets.NewTable()
 	clusterProblems.Title = "Cluster Problems"
 	clusterProblems.TextAlignment = ui.AlignLeft
 	clusterProblems.RowSeparator = false
 	clusterProblems.ColumnWidths = []int{12, width - 12}
-	clusterProblems.SetRect(0, 12+headerHeight, width, 12+headerHeight+12)
+	clusterProblems.SetRect(0, 12+headerHeight, width, 12+headerHeight+tableHeights)
 
 	clusterLastErrors := widgets.NewTable()
 	clusterLastErrors.Title = "Last Errors"
 	clusterLastErrors.TextAlignment = ui.AlignLeft
 	clusterLastErrors.RowSeparator = false
 	clusterLastErrors.ColumnWidths = []int{12, width - 12}
-	clusterLastErrors.SetRect(0, 12+headerHeight+12, width, height)
+	clusterLastErrors.SetRect(0, 12+headerHeight+tableHeights, width, height)
 
 	ui.Render(filters)
 
@@ -388,10 +390,11 @@ func runDashboard() error {
 				clusterStatusSystem.SetRect(55, 9+headerHeight, width, 12+headerHeight)
 				header.SetRect(0, 0, width-25, headerHeight)
 				filters.SetRect(width-25, 0, width, headerHeight)
+				tableHeights := (height - (headerHeight + 12)) / 2
 				clusterProblems.ColumnWidths = []int{12, width - 12}
-				clusterProblems.SetRect(0, 12+headerHeight, width, 12+headerHeight+12)
+				clusterProblems.SetRect(0, 12+headerHeight, width, 12+headerHeight+tableHeights)
 				clusterLastErrors.ColumnWidths = []int{12, width - 12}
-				clusterLastErrors.SetRect(0, 12+headerHeight+12, width, height)
+				clusterLastErrors.SetRect(0, 12+headerHeight+tableHeights, width, height)
 				ui.Clear()
 				ui.Render(filters)
 				refresh()
