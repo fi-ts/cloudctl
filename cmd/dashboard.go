@@ -384,10 +384,10 @@ func runDashboard() error {
 				payload := e.Payload.(ui.Resize)
 				width := payload.Width
 				height := payload.Height
-				clusterStatusAPI.SetRect(55, headerHeight, width, 3+headerHeight)
-				clusterStatusControl.SetRect(55, 3+headerHeight, width, 6+headerHeight)
-				clusterStatusNodes.SetRect(55, 6+headerHeight, width, 9+headerHeight)
-				clusterStatusSystem.SetRect(55, 9+headerHeight, width, 12+headerHeight)
+				clusterStatusAPI.SetRect(50, headerHeight, width, 3+headerHeight)
+				clusterStatusControl.SetRect(50, 3+headerHeight, width, 6+headerHeight)
+				clusterStatusNodes.SetRect(50, 6+headerHeight, width, 9+headerHeight)
+				clusterStatusSystem.SetRect(50, 9+headerHeight, width, 12+headerHeight)
 				header.SetRect(0, 0, width-25, headerHeight)
 				filters.SetRect(width-25, 0, width, headerHeight)
 				tableHeights := (height - (headerHeight + 12)) / 2
