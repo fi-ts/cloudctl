@@ -16,7 +16,11 @@ import (
 	"k8s.io/utils/pointer"
 
 	"github.com/fi-ts/cloud-go/api/client/cluster"
+	"github.com/fi-ts/cloud-go/api/client/health"
+	"github.com/fi-ts/cloud-go/api/client/version"
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/metal-stack/metal-lib/rest"
+	"github.com/metal-stack/v"
 
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
@@ -1489,14 +1493,6 @@ func clusterDashboard() error {
 		}
 		defer sem.Release(1)
 
-		cs, err := cloud.Cluster.FindClusters(cluster.NewFindClustersParams().WithBody(&models.V1ClusterFindRequest{
-			PartitionID: strDeref(partition),
-			Tenant:      strDeref(tenant),
-		}).WithReturnMachines(pointer.BoolPtr(false)), nil)
-		if err != nil {
-			return
-		}
-
 		type clusterError struct {
 			ClusterName  string
 			ErrorMessage string
@@ -1504,7 +1500,7 @@ func clusterDashboard() error {
 		}
 
 		var (
-			clusters    = cs.Payload
+			clusters    []*models.V1ClusterResponse
 			filteredOut int
 
 			succeeded  int
@@ -1516,9 +1512,58 @@ func clusterDashboard() error {
 			nodesOK   int
 			systemOK  int
 
+			err              error
+			apiVersion       = "unknown"
+			apiHealth        = "unknown"
+			apiHealthMessage string
+
 			clusterErrors []clusterError
 			lastErrors    []clusterError
 		)
+
+		defer func() {
+			coloredHealth := apiHealth
+			switch coloredHealth {
+			case rest.HealthStatusHealthy:
+				coloredHealth = "[" + coloredHealth + "](fg:green)"
+			case rest.HealthStatusUnhealthy:
+				coloredHealth = "[" + coloredHealth + fmt.Sprintf("(%s)](fg:red)", apiHealthMessage)
+			default:
+			}
+			versionLine := fmt.Sprintf("cloud-api %s (API Health: %s), cloudctl %s (%s)", apiVersion, coloredHealth, v.Version, v.GitSHA1)
+			fetchInfoLine := fmt.Sprintf("Last Update: %s", time.Now().Format("15:04:05"))
+			if err != nil {
+				fetchInfoLine += fmt.Sprintf(", [Update Error: %s](fg:red)", err)
+			}
+			glossaryLine := "Press q to quit."
+			header.Text = fmt.Sprintf("%s\n%s\n%s", versionLine, fetchInfoLine, glossaryLine)
+			ui.Render(header)
+		}()
+
+		var infoResp *version.InfoOK
+		infoResp, err = cloud.Version.Info(version.NewInfoParams(), nil)
+		if err != nil {
+			return
+		}
+		apiVersion = *infoResp.Payload.Version
+
+		var healthResp *health.HealthOK
+		healthResp, err = cloud.Health.Health(health.NewHealthParams(), nil)
+		if err != nil {
+			return
+		}
+		apiHealth = *healthResp.Payload.Status
+		apiHealthMessage = *healthResp.Payload.Message
+
+		var resp *cluster.FindClustersOK
+		resp, err = cloud.Cluster.FindClusters(cluster.NewFindClustersParams().WithBody(&models.V1ClusterFindRequest{
+			PartitionID: strDeref(partition),
+			Tenant:      strDeref(tenant),
+		}).WithReturnMachines(pointer.BoolPtr(false)), nil)
+		if err != nil {
+			return
+		}
+		clusters = resp.Payload
 
 		for _, c := range clusters {
 			if c.Purpose == nil || (purpose != "" && *c.Purpose != purpose) {
@@ -1626,9 +1671,6 @@ func clusterDashboard() error {
 		clusterStatusNodes.Percent = nodesOK * 100 / processedClusters
 		clusterStatusSystem.Percent = systemOK * 100 / processedClusters
 		ui.Render(clusterStatusAPI, clusterStatusControl, clusterStatusNodes, clusterStatusSystem)
-
-		header.Text = fmt.Sprintf("Press q to quit.\nLast Update: %s", time.Now().Format("15:04:05"))
-		ui.Render(header)
 	}
 
 	refresh()
