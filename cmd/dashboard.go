@@ -78,6 +78,12 @@ func runDashboard() error {
 		}
 	)
 
+	type clusterError struct {
+		ClusterName  string
+		ErrorMessage string
+		Time         time.Time
+	}
+
 	headerHeight := 5
 	header := widgets.NewParagraph()
 	header.Title = "Cluster Dashboard"
@@ -146,16 +152,10 @@ func runDashboard() error {
 	ui.Render(filters)
 
 	refresh := func() {
-		if !sem.TryAcquire(1) {
+		if !sem.TryAcquire(1) { // prevent concurrent updates
 			return
 		}
 		defer sem.Release(1)
-
-		type clusterError struct {
-			ClusterName  string
-			ErrorMessage string
-			Time         time.Time
-		}
 
 		var (
 			clusters    []*models.V1ClusterResponse
@@ -180,20 +180,27 @@ func runDashboard() error {
 		)
 
 		defer func() {
-			coloredHealth := apiHealth
-			switch coloredHealth {
+			var coloredHealth string
+			switch apiHealth {
 			case rest.HealthStatusHealthy:
-				coloredHealth = "[" + coloredHealth + "](fg:green)"
+				coloredHealth = "[" + apiHealth + "](fg:green)"
 			case rest.HealthStatusUnhealthy:
-				coloredHealth = "[" + coloredHealth + fmt.Sprintf("(%s)](fg:red)", apiHealthMessage)
+				if apiHealthMessage != "" {
+					coloredHealth = "[" + apiHealth + fmt.Sprintf(" (%s)](fg:red)", apiHealthMessage)
+				} else {
+					coloredHealth = "[" + apiHealth + "](fg:red)"
+				}
 			default:
+				coloredHealth = apiHealth
 			}
+
 			versionLine := fmt.Sprintf("cloud-api %s (API Health: %s), cloudctl %s (%s)", apiVersion, coloredHealth, v.Version, v.GitSHA1)
 			fetchInfoLine := fmt.Sprintf("Last Update: %s", time.Now().Format("15:04:05"))
 			if err != nil {
 				fetchInfoLine += fmt.Sprintf(", [Update Error: %s](fg:red)", err)
 			}
 			glossaryLine := "Press q to quit."
+
 			header.Text = fmt.Sprintf("%s\n%s\n%s", versionLine, fetchInfoLine, glossaryLine)
 			ui.Render(header)
 		}()
