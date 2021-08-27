@@ -23,50 +23,41 @@ import (
 
 var (
 	dashboardCmd = &cobra.Command{
-		Use:    "dashboard",
-		Short:  "view dashboards optimized for operation",
-		PreRun: bindPFlags,
-	}
-
-	dashboardClusterCmd = &cobra.Command{
-		Use:     "cluster",
-		Aliases: []string{"clusters"},
-		Short:   "visualizes cluster status for many clusters",
+		Use:   "dashboard",
+		Short: "view dashboards optimized for operation",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterDashboard()
+			return runDashboard()
 		},
 		PreRun: bindPFlags,
 	}
 )
 
 func init() {
-	dashboardClusterCmd.Flags().String("partition", "", "show clusters in partition")
-	dashboardClusterCmd.Flags().String("tenant", "", "show clusters of given tenant")
-	dashboardClusterCmd.Flags().String("purpose", "", "show clusters of given purpose")
-	dashboardClusterCmd.Flags().Duration("refresh-interval", 3*time.Second, "refresh interval")
-	err := dashboardClusterCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	dashboardCmd.Flags().String("partition", "", "show clusters in partition")
+	dashboardCmd.Flags().String("tenant", "", "show clusters of given tenant")
+	dashboardCmd.Flags().String("purpose", "", "show clusters of given purpose")
+	dashboardCmd.Flags().Duration("refresh-interval", 3*time.Second, "refresh interval")
+	err := dashboardCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return partitionListCompletion()
 	})
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = dashboardClusterCmd.RegisterFlagCompletionFunc("tenant", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = dashboardCmd.RegisterFlagCompletionFunc("tenant", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return tenantListCompletion()
 	})
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = dashboardClusterCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = dashboardCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"production", "development", "evaluation"}, cobra.ShellCompDirectiveNoFileComp
 	})
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-
-	dashboardCmd.AddCommand(dashboardClusterCmd)
 }
 
-func clusterDashboard() error {
+func runDashboard() error {
 	if err := ui.Init(); err != nil {
 		return err
 	}
