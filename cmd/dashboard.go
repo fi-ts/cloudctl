@@ -9,6 +9,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/fi-ts/cloud-go/api/client/health"
 	"github.com/fi-ts/cloud-go/api/client/version"
+	"github.com/fi-ts/cloud-go/api/client/volume"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	ui "github.com/gizak/termui/v3"
@@ -30,6 +31,8 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+
+	dashboardErr error
 )
 
 func init() {
@@ -99,277 +102,31 @@ func runDashboard() error {
 	}
 	defer ui.Close()
 
-	err := dashboardApplyTheme(viper.GetString("color-theme"))
+	var (
+		interval = viper.GetDuration("refresh-interval")
+		color    = viper.GetString("color-theme")
+
+		width, height = ui.TerminalDimensions()
+
+		mainPanel   = dashboardMain{}
+		clusterPane = dashboardClusterPane{}
+		volumePane  = dashboardVolumePane{}
+	)
+
+	err := dashboardApplyTheme(color)
 	if err != nil {
 		return err
 	}
 
-	var (
-		tenant        = viper.GetString("tenant")
-		partition     = viper.GetString("partition")
-		purpose       = viper.GetString("purpose")
-		interval      = viper.GetDuration("refresh-interval")
-		sem           = semaphore.NewWeighted(1)
-		width, height = ui.TerminalDimensions()
-		strDeref      = func(s string) *string {
-			if s == "" {
-				return nil
-			}
-			return &s
-		}
-	)
+	mainPanel.init(&clusterPane, &volumePane)
+	clusterPane.init()
+	volumePane.init()
 
-	type clusterError struct {
-		ClusterName  string
-		ErrorMessage string
-		Time         time.Time
-	}
+	mainPanel.size(0, 0, width, mainPanel.headerHeight())
+	clusterPane.size(0, mainPanel.headerHeight(), width, height)
+	volumePane.size(0, mainPanel.headerHeight(), width, height)
 
-	headerHeight := 5
-	header := widgets.NewParagraph()
-	header.Title = "Cluster Dashboard"
-	header.SetRect(0, 0, width-25, headerHeight)
-
-	filters := widgets.NewParagraph()
-	filters.Title = "Filters"
-	filters.Text = fmt.Sprintf("Tenant=%s\nPartition=%s\nPurpose=%s", tenant, partition, purpose)
-	filters.SetRect(width-25, 0, width, headerHeight)
-
-	clusterHealth := widgets.NewBarChart()
-	clusterHealth.Labels = []string{"Succeeded", "Progressing", "Unhealthy"}
-	clusterHealth.Title = "Cluster Operation"
-	clusterHealth.PaddingLeft = 5
-	clusterHealth.SetRect(0, headerHeight, 48, 12+headerHeight)
-	clusterHealth.BarWidth = 5
-	clusterHealth.BarGap = 10
-	clusterHealth.BarColors = []ui.Color{ui.ColorGreen, ui.ColorYellow, ui.ColorRed}
-
-	clusterStatusAPI := widgets.NewGauge()
-	clusterStatusAPI.Title = "API"
-	clusterStatusAPI.SetRect(50, headerHeight, width, 3+headerHeight)
-	clusterStatusAPI.BarColor = ui.ColorGreen
-
-	clusterStatusControl := widgets.NewGauge()
-	clusterStatusControl.Title = "Control"
-	clusterStatusControl.SetRect(50, 3+headerHeight, width, 6+headerHeight)
-	clusterStatusControl.BarColor = ui.ColorGreen
-
-	clusterStatusNodes := widgets.NewGauge()
-	clusterStatusNodes.Title = "Nodes"
-	clusterStatusNodes.SetRect(50, 6+headerHeight, width, 9+headerHeight)
-	clusterStatusNodes.BarColor = ui.ColorGreen
-
-	clusterStatusSystem := widgets.NewGauge()
-	clusterStatusSystem.Title = "System"
-	clusterStatusSystem.SetRect(50, 9+headerHeight, width, 12+headerHeight)
-	clusterStatusSystem.BarColor = ui.ColorGreen
-
-	tableHeights := (height - (headerHeight + 12)) / 2
-
-	clusterProblems := widgets.NewTable()
-	clusterProblems.Title = "Cluster Problems"
-	clusterProblems.TextAlignment = ui.AlignLeft
-	clusterProblems.RowSeparator = false
-	clusterProblems.ColumnWidths = []int{12, width - 12}
-	clusterProblems.SetRect(0, 12+headerHeight, width, 12+headerHeight+tableHeights)
-
-	clusterLastErrors := widgets.NewTable()
-	clusterLastErrors.Title = "Last Errors"
-	clusterLastErrors.TextAlignment = ui.AlignLeft
-	clusterLastErrors.RowSeparator = false
-	clusterLastErrors.ColumnWidths = []int{12, width - 12}
-	clusterLastErrors.SetRect(0, 12+headerHeight+tableHeights, width, height)
-
-	ui.Render(filters)
-
-	refresh := func() {
-		if !sem.TryAcquire(1) { // prevent concurrent updates
-			return
-		}
-		defer sem.Release(1)
-
-		var (
-			clusters    []*models.V1ClusterResponse
-			filteredOut int
-
-			succeeded  int
-			processing int
-			unhealthy  int
-
-			apiOK     int
-			controlOK int
-			nodesOK   int
-			systemOK  int
-
-			err              error
-			apiVersion       = "unknown"
-			apiHealth        = "unknown"
-			apiHealthMessage string
-
-			clusterErrors []clusterError
-			lastErrors    []clusterError
-		)
-
-		defer func() {
-			var coloredHealth string
-			switch apiHealth {
-			case rest.HealthStatusHealthy:
-				coloredHealth = "[" + apiHealth + "](fg:green)"
-			case rest.HealthStatusUnhealthy:
-				if apiHealthMessage != "" {
-					coloredHealth = "[" + apiHealth + fmt.Sprintf(" (%s)](fg:red)", apiHealthMessage)
-				} else {
-					coloredHealth = "[" + apiHealth + "](fg:red)"
-				}
-			default:
-				coloredHealth = apiHealth
-			}
-
-			versionLine := fmt.Sprintf("cloud-api %s (API Health: %s), cloudctl %s (%s)", apiVersion, coloredHealth, v.Version, v.GitSHA1)
-			fetchInfoLine := fmt.Sprintf("Last Update: %s", time.Now().Format("15:04:05"))
-			if err != nil {
-				fetchInfoLine += fmt.Sprintf(", [Update Error: %s](fg:red)", err)
-			}
-			glossaryLine := "Press q to quit."
-
-			header.Text = fmt.Sprintf("%s\n%s\n%s", versionLine, fetchInfoLine, glossaryLine)
-			ui.Render(header)
-		}()
-
-		var infoResp *version.InfoOK
-		infoResp, err = cloud.Version.Info(version.NewInfoParams(), nil)
-		if err != nil {
-			return
-		}
-		apiVersion = *infoResp.Payload.Version
-
-		var healthResp *health.HealthOK
-		healthResp, err = cloud.Health.Health(health.NewHealthParams(), nil)
-		if err != nil {
-			return
-		}
-		apiHealth = *healthResp.Payload.Status
-		apiHealthMessage = *healthResp.Payload.Message
-
-		var resp *cluster.FindClustersOK
-		resp, err = cloud.Cluster.FindClusters(cluster.NewFindClustersParams().WithBody(&models.V1ClusterFindRequest{
-			PartitionID: strDeref(partition),
-			Tenant:      strDeref(tenant),
-		}).WithReturnMachines(pointer.BoolPtr(false)), nil)
-		if err != nil {
-			return
-		}
-		clusters = resp.Payload
-
-		for _, c := range clusters {
-			if c.Purpose == nil || (purpose != "" && *c.Purpose != purpose) {
-				filteredOut++
-				continue
-			}
-			if c.Status == nil || c.Status.LastOperation == nil || c.Status.LastOperation.State == nil || *c.Status.LastOperation.State == "" {
-				unhealthy++
-				continue
-			}
-
-			switch *c.Status.LastOperation.State {
-			case string(v1beta1.LastOperationStateSucceeded):
-				succeeded++
-			case string(v1beta1.LastOperationStateProcessing):
-				processing++
-			default:
-				unhealthy++
-			}
-
-			for _, condition := range c.Status.Conditions {
-				if condition == nil || condition.Status == nil || condition.Type == nil {
-					continue
-				}
-
-				status := *condition.Status
-				if status != "True" {
-					if c.Name == nil || condition.Message == nil || condition.LastUpdateTime == nil {
-						continue
-					}
-					t, err := time.Parse(time.RFC3339, *condition.LastUpdateTime)
-					if err != nil {
-						continue
-					}
-					clusterErrors = append(clusterErrors, clusterError{
-						ClusterName:  *c.Name,
-						ErrorMessage: fmt.Sprintf("(%s) %s", *condition.Type, *condition.Message),
-						Time:         t,
-					})
-					continue
-				}
-
-				switch *condition.Type {
-				case string(v1beta1.ShootControlPlaneHealthy):
-					controlOK++
-				case string(v1beta1.ShootEveryNodeReady):
-					nodesOK++
-				case string(v1beta1.ShootSystemComponentsHealthy):
-					systemOK++
-				case string(v1beta1.ShootAPIServerAvailable):
-					apiOK++
-				}
-			}
-
-			for _, e := range c.Status.LastErrors {
-				if c.Name == nil || e.Description == nil {
-					continue
-				}
-				t, err := time.Parse(time.RFC3339, e.LastUpdateTime)
-				if err != nil {
-					continue
-				}
-				lastErrors = append(lastErrors, clusterError{
-					ClusterName:  *c.Name,
-					ErrorMessage: *e.Description,
-					Time:         t,
-				})
-			}
-		}
-
-		processedClusters := len(clusters) - filteredOut
-		if processedClusters <= 0 {
-			return
-		}
-
-		// for some reason the UI hangs when all values are zero...
-		// so we render this individually
-		if succeeded > 0 || processing > 0 || unhealthy > 0 {
-			clusterHealth.Data = []float64{float64(succeeded), float64(processing), float64(unhealthy)}
-			ui.Render(clusterHealth)
-		}
-
-		sort.Slice(clusterErrors, func(i, j int) bool {
-			return clusterErrors[i].Time.Before(clusterErrors[j].Time)
-		})
-		rows := [][]string{}
-		for _, e := range clusterErrors {
-			rows = append(rows, []string{e.ClusterName, e.ErrorMessage})
-		}
-		clusterProblems.Rows = rows
-		ui.Render(clusterProblems)
-
-		sort.Slice(lastErrors, func(i, j int) bool {
-			return lastErrors[i].Time.Before(lastErrors[j].Time)
-		})
-		rows = [][]string{}
-		for _, e := range lastErrors {
-			rows = append(rows, []string{e.ClusterName, e.ErrorMessage})
-		}
-		clusterLastErrors.Rows = rows
-		ui.Render(clusterLastErrors)
-
-		clusterStatusAPI.Percent = apiOK * 100 / processedClusters
-		clusterStatusControl.Percent = controlOK * 100 / processedClusters
-		clusterStatusNodes.Percent = nodesOK * 100 / processedClusters
-		clusterStatusSystem.Percent = systemOK * 100 / processedClusters
-		ui.Render(clusterStatusAPI, clusterStatusControl, clusterStatusNodes, clusterStatusSystem)
-	}
-
-	refresh()
+	mainPanel.render()
 
 	uiEvents := ui.PollEvents()
 	ticker := time.NewTicker(interval)
@@ -380,27 +137,444 @@ func runDashboard() error {
 			switch e.ID {
 			case "q", "<C-c>":
 				return nil
+			case "1":
+				mainPanel.tabPane.FocusLeft()
+				ui.Clear()
+				mainPanel.render()
+			case "2":
+				mainPanel.tabPane.FocusRight()
+				ui.Clear()
+				mainPanel.render()
 			case "<Resize>":
 				payload := e.Payload.(ui.Resize)
-				width := payload.Width
-				height := payload.Height
-				clusterStatusAPI.SetRect(50, headerHeight, width, 3+headerHeight)
-				clusterStatusControl.SetRect(50, 3+headerHeight, width, 6+headerHeight)
-				clusterStatusNodes.SetRect(50, 6+headerHeight, width, 9+headerHeight)
-				clusterStatusSystem.SetRect(50, 9+headerHeight, width, 12+headerHeight)
-				header.SetRect(0, 0, width-25, headerHeight)
-				filters.SetRect(width-25, 0, width, headerHeight)
-				tableHeights := (height - (headerHeight + 12)) / 2
-				clusterProblems.ColumnWidths = []int{12, width - 12}
-				clusterProblems.SetRect(0, 12+headerHeight, width, 12+headerHeight+tableHeights)
-				clusterLastErrors.ColumnWidths = []int{12, width - 12}
-				clusterLastErrors.SetRect(0, 12+headerHeight+tableHeights, width, height)
+				var (
+					height = payload.Height
+					width  = payload.Width
+				)
+
+				mainPanel.size(0, 0, width, mainPanel.headerHeight())
+				clusterPane.size(0, mainPanel.headerHeight(), width, height)
+				volumePane.size(0, mainPanel.headerHeight(), width, height)
+
 				ui.Clear()
-				ui.Render(filters)
-				refresh()
+				mainPanel.render()
 			}
 		case <-ticker.C:
-			refresh()
+			mainPanel.render()
 		}
+	}
+}
+
+type dashboardMain struct {
+	statusHeader *widgets.Paragraph
+	filterHeader *widgets.Paragraph
+
+	tabPane *widgets.TabPane
+
+	clusterPane *dashboardClusterPane
+	volumePane  *dashboardVolumePane
+
+	sem *semaphore.Weighted
+}
+
+func (d *dashboardMain) init(clusterPane *dashboardClusterPane, volumePane *dashboardVolumePane) {
+	var (
+		tenant    = viper.GetString("tenant")
+		partition = viper.GetString("partition")
+		purpose   = viper.GetString("purpose")
+	)
+
+	d.sem = semaphore.NewWeighted(1)
+
+	d.clusterPane = clusterPane
+	d.volumePane = volumePane
+
+	d.tabPane = widgets.NewTabPane("(1) Clusters", "(2) Volumes")
+	d.tabPane.ActiveTabStyle = ui.NewStyle(ui.ColorBlue)
+	d.tabPane.Border = false
+
+	d.statusHeader = widgets.NewParagraph()
+	d.statusHeader.Title = "Cloud Dashboard"
+	d.statusHeader.WrapText = false
+
+	d.filterHeader = widgets.NewParagraph()
+	d.filterHeader.Title = "Filters"
+	d.filterHeader.Text = fmt.Sprintf("Tenant=%s\nPartition=%s\nPurpose=%s", tenant, partition, purpose)
+	d.filterHeader.WrapText = false
+}
+
+func (d *dashboardMain) size(x1, y1, x2, y2 int) {
+	d.statusHeader.SetRect(x1, 0, x2-25, y2-1)
+	d.filterHeader.SetRect(x2-25, 0, x2, y2-1)
+	d.tabPane.SetRect(x1, y2-1, x2, y2)
+}
+
+func (d *dashboardMain) headerHeight() int {
+	return 6
+}
+
+func (d *dashboardMain) render() {
+	if !d.sem.TryAcquire(1) { // prevent concurrent updates
+		return
+	}
+	defer d.sem.Release(1)
+
+	ui.Render(d.filterHeader, d.tabPane)
+
+	var (
+		apiVersion       = "unknown"
+		apiHealth        = "unknown"
+		apiHealthMessage string
+	)
+
+	defer func() {
+		var coloredHealth string
+		switch apiHealth {
+		case rest.HealthStatusHealthy:
+			coloredHealth = "[" + apiHealth + "](fg:green)"
+		case rest.HealthStatusUnhealthy:
+			if apiHealthMessage != "" {
+				coloredHealth = "[" + apiHealth + fmt.Sprintf(" (%s)](fg:red)", apiHealthMessage)
+			} else {
+				coloredHealth = "[" + apiHealth + "](fg:red)"
+			}
+		default:
+			coloredHealth = apiHealth
+		}
+
+		versionLine := fmt.Sprintf("cloud-api %s (API Health: %s), cloudctl %s (%s)", apiVersion, coloredHealth, v.Version, v.GitSHA1)
+		fetchInfoLine := fmt.Sprintf("Last Update: %s", time.Now().Format("15:04:05"))
+		if dashboardErr != nil {
+			fetchInfoLine += fmt.Sprintf(", [Update Error: %s](fg:red)", dashboardErr)
+		}
+		glossaryLine := "Switch between tabs with number keys. Press q to quit."
+
+		d.statusHeader.Text = fmt.Sprintf("%s\n%s\n%s", versionLine, fetchInfoLine, glossaryLine)
+		ui.Render(d.statusHeader)
+	}()
+
+	var infoResp *version.InfoOK
+	infoResp, dashboardErr = cloud.Version.Info(version.NewInfoParams(), nil)
+	if dashboardErr != nil {
+		return
+	}
+	apiVersion = *infoResp.Payload.Version
+
+	var healthResp *health.HealthOK
+	healthResp, dashboardErr = cloud.Health.Health(health.NewHealthParams(), nil)
+	if dashboardErr != nil {
+		return
+	}
+	apiHealth = *healthResp.Payload.Status
+	apiHealthMessage = *healthResp.Payload.Message
+
+	switch d.tabPane.ActiveTabIndex {
+	case 0:
+		d.clusterPane.render()
+	case 1:
+		d.volumePane.render()
+	}
+}
+
+type dashboardClusterError struct {
+	ClusterName  string
+	ErrorMessage string
+	Time         time.Time
+}
+
+type dashboardClusterPane struct {
+	clusterHealth *widgets.BarChart
+
+	clusterStatusAPI     *widgets.Gauge
+	clusterStatusControl *widgets.Gauge
+	clusterStatusNodes   *widgets.Gauge
+	clusterStatusSystem  *widgets.Gauge
+
+	clusterProblems   *widgets.Table
+	clusterLastErrors *widgets.Table
+
+	sem *semaphore.Weighted
+}
+
+func (d *dashboardClusterPane) init() {
+	d.sem = semaphore.NewWeighted(1)
+
+	d.clusterHealth = widgets.NewBarChart()
+	d.clusterHealth.Labels = []string{"Succeeded", "Progressing", "Unhealthy"}
+	d.clusterHealth.Title = "Cluster Operation"
+	d.clusterHealth.PaddingLeft = 5
+	d.clusterHealth.BarWidth = 5
+	d.clusterHealth.BarGap = 10
+	d.clusterHealth.BarColors = []ui.Color{ui.ColorGreen, ui.ColorYellow, ui.ColorRed}
+
+	d.clusterStatusAPI = widgets.NewGauge()
+	d.clusterStatusAPI.Title = "API"
+	d.clusterStatusAPI.BarColor = ui.ColorGreen
+
+	d.clusterStatusControl = widgets.NewGauge()
+	d.clusterStatusControl.Title = "Control"
+	d.clusterStatusControl.BarColor = ui.ColorGreen
+
+	d.clusterStatusNodes = widgets.NewGauge()
+	d.clusterStatusNodes.Title = "Nodes"
+	d.clusterStatusNodes.BarColor = ui.ColorGreen
+
+	d.clusterStatusSystem = widgets.NewGauge()
+	d.clusterStatusSystem.Title = "System"
+	d.clusterStatusSystem.BarColor = ui.ColorGreen
+
+	d.clusterProblems = widgets.NewTable()
+	d.clusterProblems.Title = "Cluster Problems"
+	d.clusterProblems.TextAlignment = ui.AlignLeft
+	d.clusterProblems.RowSeparator = false
+
+	d.clusterLastErrors = widgets.NewTable()
+	d.clusterLastErrors.Title = "Last Errors"
+	d.clusterLastErrors.TextAlignment = ui.AlignLeft
+	d.clusterLastErrors.RowSeparator = false
+}
+
+func (d *dashboardClusterPane) size(x1, y1, x2, y2 int) {
+	d.clusterHealth.SetRect(x1, y1, x1+48, y1+12)
+
+	d.clusterStatusAPI.SetRect(x1+50, y1, x2, 3+y1)
+	d.clusterStatusControl.SetRect(x1+50, 3+y1, x2, 6+y1)
+	d.clusterStatusNodes.SetRect(x1+50, 6+y1, x2, 9+y1)
+	d.clusterStatusSystem.SetRect(x1+50, 9+y1, x2, 12+y1)
+
+	tableHeights := (y2 - (y1 + 12)) / 2
+
+	d.clusterProblems.SetRect(x1, 12+y1, x2, y1+12+tableHeights)
+	d.clusterProblems.ColumnWidths = []int{12, x2 - 12}
+
+	d.clusterLastErrors.SetRect(x1, 12+y1+tableHeights, x2, y2)
+	d.clusterLastErrors.ColumnWidths = []int{12, x2 - 12}
+}
+
+func (d *dashboardClusterPane) render() {
+	if !d.sem.TryAcquire(1) { // prevent concurrent updates
+		return
+	}
+	defer d.sem.Release(1)
+
+	var (
+		tenant    = viper.GetString("tenant")
+		partition = viper.GetString("partition")
+		purpose   = viper.GetString("purpose")
+
+		clusters    []*models.V1ClusterResponse
+		filteredOut int
+
+		succeeded  int
+		processing int
+		unhealthy  int
+
+		apiOK     int
+		controlOK int
+		nodesOK   int
+		systemOK  int
+
+		clusterErrors []dashboardClusterError
+		lastErrors    []dashboardClusterError
+
+		strDeref = func(s string) *string {
+			if s == "" {
+				return nil
+			}
+			return &s
+		}
+	)
+
+	var resp *cluster.FindClustersOK
+	resp, dashboardErr = cloud.Cluster.FindClusters(cluster.NewFindClustersParams().WithBody(&models.V1ClusterFindRequest{
+		PartitionID: strDeref(partition),
+		Tenant:      strDeref(tenant),
+	}).WithReturnMachines(pointer.BoolPtr(false)), nil)
+	if dashboardErr != nil {
+		return
+	}
+	clusters = resp.Payload
+
+	for _, c := range clusters {
+		if c.Purpose == nil || (purpose != "" && *c.Purpose != purpose) {
+			filteredOut++
+			continue
+		}
+		if c.Status == nil || c.Status.LastOperation == nil || c.Status.LastOperation.State == nil || *c.Status.LastOperation.State == "" {
+			unhealthy++
+			continue
+		}
+
+		switch *c.Status.LastOperation.State {
+		case string(v1beta1.LastOperationStateSucceeded):
+			succeeded++
+		case string(v1beta1.LastOperationStateProcessing):
+			processing++
+		default:
+			unhealthy++
+		}
+
+		for _, condition := range c.Status.Conditions {
+			if condition == nil || condition.Status == nil || condition.Type == nil {
+				continue
+			}
+
+			status := *condition.Status
+			if status != "True" {
+				if c.Name == nil || condition.Message == nil || condition.LastUpdateTime == nil {
+					continue
+				}
+				t, err := time.Parse(time.RFC3339, *condition.LastUpdateTime)
+				if err != nil {
+					continue
+				}
+				clusterErrors = append(clusterErrors, dashboardClusterError{
+					ClusterName:  *c.Name,
+					ErrorMessage: fmt.Sprintf("(%s) %s", *condition.Type, *condition.Message),
+					Time:         t,
+				})
+				continue
+			}
+
+			switch *condition.Type {
+			case string(v1beta1.ShootControlPlaneHealthy):
+				controlOK++
+			case string(v1beta1.ShootEveryNodeReady):
+				nodesOK++
+			case string(v1beta1.ShootSystemComponentsHealthy):
+				systemOK++
+			case string(v1beta1.ShootAPIServerAvailable):
+				apiOK++
+			}
+		}
+
+		for _, e := range c.Status.LastErrors {
+			if c.Name == nil || e.Description == nil {
+				continue
+			}
+			t, err := time.Parse(time.RFC3339, e.LastUpdateTime)
+			if err != nil {
+				continue
+			}
+			lastErrors = append(lastErrors, dashboardClusterError{
+				ClusterName:  *c.Name,
+				ErrorMessage: *e.Description,
+				Time:         t,
+			})
+		}
+	}
+
+	processedClusters := len(clusters) - filteredOut
+	if processedClusters <= 0 {
+		return
+	}
+
+	// for some reason the UI hangs when all values are zero...
+	// so we render this individually
+	if succeeded > 0 || processing > 0 || unhealthy > 0 {
+		d.clusterHealth.Data = []float64{float64(succeeded), float64(processing), float64(unhealthy)}
+		ui.Render(d.clusterHealth)
+	}
+
+	sort.Slice(clusterErrors, func(i, j int) bool {
+		return clusterErrors[i].Time.Before(clusterErrors[j].Time)
+	})
+	rows := [][]string{}
+	for _, e := range clusterErrors {
+		rows = append(rows, []string{e.ClusterName, e.ErrorMessage})
+	}
+	d.clusterProblems.Rows = rows
+	ui.Render(d.clusterProblems)
+
+	sort.Slice(lastErrors, func(i, j int) bool {
+		return lastErrors[i].Time.Before(lastErrors[j].Time)
+	})
+	rows = [][]string{}
+	for _, e := range lastErrors {
+		rows = append(rows, []string{e.ClusterName, e.ErrorMessage})
+	}
+	d.clusterLastErrors.Rows = rows
+	ui.Render(d.clusterLastErrors)
+
+	d.clusterStatusAPI.Percent = apiOK * 100 / processedClusters
+	d.clusterStatusControl.Percent = controlOK * 100 / processedClusters
+	d.clusterStatusNodes.Percent = nodesOK * 100 / processedClusters
+	d.clusterStatusSystem.Percent = systemOK * 100 / processedClusters
+	ui.Render(d.clusterStatusAPI, d.clusterStatusControl, d.clusterStatusNodes, d.clusterStatusSystem)
+}
+
+type dashboardVolumePane struct {
+	healthyClusters *widgets.BarChart
+
+	sem *semaphore.Weighted
+}
+
+func (d *dashboardVolumePane) init() {
+	d.sem = semaphore.NewWeighted(1)
+
+	d.healthyClusters = widgets.NewBarChart()
+	d.healthyClusters.Labels = []string{"Healthy", "Unhealthy"}
+	d.healthyClusters.Title = "Clusters"
+	d.healthyClusters.PaddingLeft = 5
+	d.healthyClusters.BarWidth = 5
+	d.healthyClusters.BarGap = 10
+	d.healthyClusters.BarColors = []ui.Color{ui.ColorGreen, ui.ColorRed}
+}
+
+func (d *dashboardVolumePane) size(x1, y1, x2, y2 int) {
+	d.healthyClusters.SetRect(x1, y1, x2, y2)
+}
+
+func (d *dashboardVolumePane) render() {
+	if !d.sem.TryAcquire(1) { // prevent concurrent updates
+		return
+	}
+	defer d.sem.Release(1)
+
+	var (
+		partition = viper.GetString("partition")
+
+		clusters    []*models.V1StorageClusterInfo
+		filteredOut int
+
+		healthy   int
+		unhealthy int
+	)
+
+	var resp *volume.ClusterInfoOK
+	resp, dashboardErr = cloud.Volume.ClusterInfo(volume.NewClusterInfoParams(), nil)
+	if dashboardErr != nil {
+		return
+	}
+	clusters = resp.Payload
+
+	for _, c := range clusters {
+		if c.Partition == nil || (partition != "" && *c.Partition != partition) {
+			filteredOut++
+			continue
+		}
+		if c.Health == nil || c.Health.State == nil {
+			unhealthy++
+			continue
+		}
+
+		switch *c.Health.State {
+		case "OK":
+			healthy++
+		default:
+			unhealthy++
+		}
+	}
+
+	processedClusters := len(clusters) - filteredOut
+	if processedClusters <= 0 {
+		return
+	}
+
+	// for some reason the UI hangs when all values are zero...
+	// so we render this individually
+	if healthy > 0 || unhealthy > 0 {
+		d.healthyClusters.Data = []float64{float64(healthy), float64(unhealthy)}
+		ui.Render(d.healthyClusters)
 	}
 }
