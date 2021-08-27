@@ -102,31 +102,19 @@ func runDashboard() error {
 	}
 	defer ui.Close()
 
-	var (
-		interval = viper.GetDuration("refresh-interval")
-		color    = viper.GetString("color-theme")
-
-		width, height = ui.TerminalDimensions()
-
-		mainPanel   = dashboardMain{}
-		clusterPane = dashboardClusterPane{}
-		volumePane  = dashboardVolumePane{}
-	)
-
-	err := dashboardApplyTheme(color)
+	err := dashboardApplyTheme(viper.GetString("color-theme"))
 	if err != nil {
 		return err
 	}
 
-	mainPanel.init(&clusterPane, &volumePane)
-	clusterPane.init()
-	volumePane.init()
+	var (
+		interval      = viper.GetDuration("refresh-interval")
+		width, height = ui.TerminalDimensions()
+		d             = NewDashboard()
+	)
 
-	mainPanel.size(0, 0, width, mainPanel.headerHeight())
-	clusterPane.size(0, mainPanel.headerHeight(), width, height)
-	volumePane.size(0, mainPanel.headerHeight(), width, height)
-
-	mainPanel.render()
+	d.Size(0, 0, width, height)
+	d.Render()
 
 	uiEvents := ui.PollEvents()
 	ticker := time.NewTicker(interval)
@@ -138,34 +126,30 @@ func runDashboard() error {
 			case "q", "<C-c>":
 				return nil
 			case "1":
-				mainPanel.tabPane.FocusLeft()
+				d.tabPane.FocusLeft()
 				ui.Clear()
-				mainPanel.render()
+				d.Render()
 			case "2":
-				mainPanel.tabPane.FocusRight()
+				d.tabPane.FocusRight()
 				ui.Clear()
-				mainPanel.render()
+				d.Render()
 			case "<Resize>":
 				payload := e.Payload.(ui.Resize)
 				var (
 					height = payload.Height
 					width  = payload.Width
 				)
-
-				mainPanel.size(0, 0, width, mainPanel.headerHeight())
-				clusterPane.size(0, mainPanel.headerHeight(), width, height)
-				volumePane.size(0, mainPanel.headerHeight(), width, height)
-
+				d.Size(0, 0, width, height)
 				ui.Clear()
-				mainPanel.render()
+				d.Render()
 			}
 		case <-ticker.C:
-			mainPanel.render()
+			d.Render()
 		}
 	}
 }
 
-type dashboardMain struct {
+type dashboard struct {
 	statusHeader *widgets.Paragraph
 	filterHeader *widgets.Paragraph
 
@@ -177,17 +161,19 @@ type dashboardMain struct {
 	sem *semaphore.Weighted
 }
 
-func (d *dashboardMain) init(clusterPane *dashboardClusterPane, volumePane *dashboardVolumePane) {
+func NewDashboard() *dashboard {
 	var (
 		tenant    = viper.GetString("tenant")
 		partition = viper.GetString("partition")
 		purpose   = viper.GetString("purpose")
 	)
 
+	d := &dashboard{}
+
 	d.sem = semaphore.NewWeighted(1)
 
-	d.clusterPane = clusterPane
-	d.volumePane = volumePane
+	d.clusterPane = NewDashboardClusterPane()
+	d.volumePane = NewDashboardVolumePane()
 
 	d.tabPane = widgets.NewTabPane("(1) Clusters", "(2) Volumes")
 	d.tabPane.ActiveTabStyle = ui.NewStyle(ui.ColorBlue)
@@ -201,19 +187,24 @@ func (d *dashboardMain) init(clusterPane *dashboardClusterPane, volumePane *dash
 	d.filterHeader.Title = "Filters"
 	d.filterHeader.Text = fmt.Sprintf("Tenant=%s\nPartition=%s\nPurpose=%s", tenant, partition, purpose)
 	d.filterHeader.WrapText = false
+
+	return d
 }
 
-func (d *dashboardMain) size(x1, y1, x2, y2 int) {
-	d.statusHeader.SetRect(x1, 0, x2-25, y2-1)
-	d.filterHeader.SetRect(x2-25, 0, x2, y2-1)
-	d.tabPane.SetRect(x1, y2-1, x2, y2)
+func (d *dashboard) Size(x1, y1, x2, y2 int) {
+	d.statusHeader.SetRect(x1, 0, x2-25, d.headerHeight()-1)
+	d.filterHeader.SetRect(x2-25, 0, x2, d.headerHeight()-1)
+	d.tabPane.SetRect(x1, d.headerHeight()-1, x2, d.headerHeight())
+
+	d.clusterPane.Size(0, d.headerHeight(), x2, y2)
+	d.volumePane.Size(0, d.headerHeight(), x2, y2)
 }
 
-func (d *dashboardMain) headerHeight() int {
+func (d *dashboard) headerHeight() int {
 	return 6
 }
 
-func (d *dashboardMain) render() {
+func (d *dashboard) Render() {
 	if !d.sem.TryAcquire(1) { // prevent concurrent updates
 		return
 	}
@@ -270,9 +261,9 @@ func (d *dashboardMain) render() {
 
 	switch d.tabPane.ActiveTabIndex {
 	case 0:
-		d.clusterPane.render()
+		d.clusterPane.Render()
 	case 1:
-		d.volumePane.render()
+		d.volumePane.Render()
 	}
 }
 
@@ -296,7 +287,9 @@ type dashboardClusterPane struct {
 	sem *semaphore.Weighted
 }
 
-func (d *dashboardClusterPane) init() {
+func NewDashboardClusterPane() *dashboardClusterPane {
+	d := &dashboardClusterPane{}
+
 	d.sem = semaphore.NewWeighted(1)
 
 	d.clusterHealth = widgets.NewBarChart()
@@ -332,9 +325,11 @@ func (d *dashboardClusterPane) init() {
 	d.clusterLastErrors.Title = "Last Errors"
 	d.clusterLastErrors.TextAlignment = ui.AlignLeft
 	d.clusterLastErrors.RowSeparator = false
+
+	return d
 }
 
-func (d *dashboardClusterPane) size(x1, y1, x2, y2 int) {
+func (d *dashboardClusterPane) Size(x1, y1, x2, y2 int) {
 	d.clusterHealth.SetRect(x1, y1, x1+48, y1+12)
 
 	d.clusterStatusAPI.SetRect(x1+50, y1, x2, 3+y1)
@@ -351,7 +346,7 @@ func (d *dashboardClusterPane) size(x1, y1, x2, y2 int) {
 	d.clusterLastErrors.ColumnWidths = []int{12, x2 - 12}
 }
 
-func (d *dashboardClusterPane) render() {
+func (d *dashboardClusterPane) Render() {
 	if !d.sem.TryAcquire(1) { // prevent concurrent updates
 		return
 	}
@@ -509,7 +504,9 @@ type dashboardVolumePane struct {
 	sem *semaphore.Weighted
 }
 
-func (d *dashboardVolumePane) init() {
+func NewDashboardVolumePane() *dashboardVolumePane {
+	d := &dashboardVolumePane{}
+
 	d.sem = semaphore.NewWeighted(1)
 
 	d.healthyClusters = widgets.NewBarChart()
@@ -519,13 +516,15 @@ func (d *dashboardVolumePane) init() {
 	d.healthyClusters.BarWidth = 5
 	d.healthyClusters.BarGap = 10
 	d.healthyClusters.BarColors = []ui.Color{ui.ColorGreen, ui.ColorRed}
+
+	return d
 }
 
-func (d *dashboardVolumePane) size(x1, y1, x2, y2 int) {
+func (d *dashboardVolumePane) Size(x1, y1, x2, y2 int) {
 	d.healthyClusters.SetRect(x1, y1, x2, y2)
 }
 
-func (d *dashboardVolumePane) render() {
+func (d *dashboardVolumePane) Render() {
 	if !d.sem.TryAcquire(1) { // prevent concurrent updates
 		return
 	}
