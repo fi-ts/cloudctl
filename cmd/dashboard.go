@@ -33,10 +33,12 @@ var (
 )
 
 func init() {
-	dashboardCmd.Flags().String("partition", "", "show clusters in partition")
-	dashboardCmd.Flags().String("tenant", "", "show clusters of given tenant")
-	dashboardCmd.Flags().String("purpose", "", "show clusters of given purpose")
-	dashboardCmd.Flags().Duration("refresh-interval", 3*time.Second, "refresh interval")
+	dashboardCmd.Flags().String("partition", "", "show clusters in partition [optional]")
+	dashboardCmd.Flags().String("tenant", "", "show clusters of given tenant [optional]")
+	dashboardCmd.Flags().String("purpose", "", "show clusters of given purpose [optional]")
+	dashboardCmd.Flags().String("color-theme", "default", "the dashboard's color theme [default|dark] [optional]")
+	dashboardCmd.Flags().Duration("refresh-interval", 3*time.Second, "refresh interval [optional]")
+
 	err := dashboardCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return partitionListCompletion()
 	})
@@ -55,6 +57,40 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	err = dashboardCmd.RegisterFlagCompletionFunc("color-theme", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{
+			"default\twith bright fonts, optimized for dark terminal backgrounds",
+			"dark\twith dark fonts, optimized for bright terminal backgrounds",
+		}, cobra.ShellCompDirectiveNoFileComp
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+}
+
+func dashboardApplyTheme(theme string) error {
+	switch theme {
+	case "default":
+		ui.Theme.BarChart.Labels = []ui.Style{ui.NewStyle(ui.ColorWhite)}
+		ui.Theme.BarChart.Nums = []ui.Style{ui.NewStyle(ui.ColorWhite)}
+	case "dark":
+		ui.Theme.Default = ui.NewStyle(ui.ColorBlack)
+		ui.Theme.Block.Border = ui.NewStyle(ui.ColorBlack)
+		ui.Theme.Block.Title = ui.NewStyle(ui.ColorBlack)
+
+		ui.Theme.BarChart.Labels = []ui.Style{ui.NewStyle(ui.ColorBlack)}
+		ui.Theme.BarChart.Nums = []ui.Style{ui.NewStyle(ui.ColorBlack)}
+
+		ui.Theme.Gauge.Label = ui.NewStyle(ui.ColorBlack)
+		ui.Theme.Gauge.Label.Fg = ui.ColorBlack
+
+		ui.Theme.Paragraph.Text = ui.NewStyle(ui.ColorBlack)
+
+		ui.Theme.Table.Text = ui.NewStyle(ui.ColorBlack)
+	default:
+		return fmt.Errorf("unknown theme: %s", theme)
+	}
+	return nil
 }
 
 func runDashboard() error {
@@ -62,6 +98,11 @@ func runDashboard() error {
 		return err
 	}
 	defer ui.Close()
+
+	err := dashboardApplyTheme(viper.GetString("color-theme"))
+	if err != nil {
+		return err
+	}
 
 	var (
 		tenant        = viper.GetString("tenant")
@@ -102,40 +143,29 @@ func runDashboard() error {
 	clusterHealth.BarWidth = 5
 	clusterHealth.BarGap = 10
 	clusterHealth.BarColors = []ui.Color{ui.ColorGreen, ui.ColorYellow, ui.ColorRed}
-	clusterHealth.LabelStyles = []ui.Style{ui.NewStyle(ui.ColorWhite)}
-	clusterHealth.NumStyles = []ui.Style{ui.NewStyle(ui.ColorWhite)}
 
 	clusterStatusAPI := widgets.NewGauge()
 	clusterStatusAPI.Title = "API"
 	clusterStatusAPI.SetRect(50, headerHeight, width, 3+headerHeight)
 	clusterStatusAPI.BarColor = ui.ColorGreen
-	clusterStatusAPI.BorderStyle.Fg = ui.ColorWhite
-	clusterStatusAPI.TitleStyle.Fg = ui.ColorWhite
 
 	clusterStatusControl := widgets.NewGauge()
 	clusterStatusControl.Title = "Control"
 	clusterStatusControl.SetRect(50, 3+headerHeight, width, 6+headerHeight)
 	clusterStatusControl.BarColor = ui.ColorGreen
-	clusterStatusControl.BorderStyle.Fg = ui.ColorWhite
-	clusterStatusControl.TitleStyle.Fg = ui.ColorWhite
 
 	clusterStatusNodes := widgets.NewGauge()
 	clusterStatusNodes.Title = "Nodes"
 	clusterStatusNodes.SetRect(50, 6+headerHeight, width, 9+headerHeight)
 	clusterStatusNodes.BarColor = ui.ColorGreen
-	clusterStatusNodes.BorderStyle.Fg = ui.ColorWhite
-	clusterStatusNodes.TitleStyle.Fg = ui.ColorWhite
 
 	clusterStatusSystem := widgets.NewGauge()
 	clusterStatusSystem.Title = "System"
 	clusterStatusSystem.SetRect(50, 9+headerHeight, width, 12+headerHeight)
 	clusterStatusSystem.BarColor = ui.ColorGreen
-	clusterStatusSystem.BorderStyle.Fg = ui.ColorWhite
-	clusterStatusSystem.TitleStyle.Fg = ui.ColorWhite
 
 	clusterProblems := widgets.NewTable()
 	clusterProblems.Title = "Cluster Problems"
-	clusterProblems.TextStyle = ui.NewStyle(ui.ColorWhite)
 	clusterProblems.TextAlignment = ui.AlignLeft
 	clusterProblems.RowSeparator = false
 	clusterProblems.ColumnWidths = []int{12, width - 12}
@@ -143,7 +173,6 @@ func runDashboard() error {
 
 	clusterLastErrors := widgets.NewTable()
 	clusterLastErrors.Title = "Last Errors"
-	clusterLastErrors.TextStyle = ui.NewStyle(ui.ColorWhite)
 	clusterLastErrors.TextAlignment = ui.AlignLeft
 	clusterLastErrors.RowSeparator = false
 	clusterLastErrors.ColumnWidths = []int{12, width - 12}
