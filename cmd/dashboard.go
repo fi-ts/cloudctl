@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -598,16 +599,14 @@ func (d *dashboardVolumePane) Render() {
 		return
 	}
 
-	infoResp, err := cloud.Volume.ClusterInfo(volume.NewClusterInfoParams().WithPartitionid(partition), nil)
+	infoResp, err := cloud.Volume.ClusterInfo(volume.NewClusterInfoParams().WithPartitionid(&partition), nil)
 	if err != nil {
-		switch e := err.(type) {
-		case *volume.ClusterInfoDefault:
-			// allow forbidden response
-			if e.Code() != http.StatusForbidden {
-				dashboardErr = err
-				return
-			}
-		default:
+		var typedErr *volume.ClusterInfoDefault
+		if errors.As(err, &typedErr) && typedErr.Code() != http.StatusForbidden {
+			// allow forbidden response, because cluster info is only for provider admins
+			dashboardErr = err
+			return
+		} else {
 			dashboardErr = err
 			return
 		}
