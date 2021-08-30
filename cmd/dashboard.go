@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"math"
+	"net/http"
 	"sort"
 	"time"
 
@@ -20,6 +22,8 @@ import (
 	"github.com/spf13/viper"
 	"golang.org/x/sync/semaphore"
 	"k8s.io/utils/pointer"
+
+	durosv2 "github.com/metal-stack/duros-go/api/duros/v2"
 )
 
 var (
@@ -76,6 +80,8 @@ func dashboardApplyTheme(theme string) error {
 	case "default":
 		ui.Theme.BarChart.Labels = []ui.Style{ui.NewStyle(ui.ColorWhite)}
 		ui.Theme.BarChart.Nums = []ui.Style{ui.NewStyle(ui.ColorWhite)}
+
+		ui.Theme.Tab.Active = ui.NewStyle(ui.ColorYellow)
 	case "dark":
 		ui.Theme.Default = ui.NewStyle(ui.ColorBlack)
 		ui.Theme.Block.Border = ui.NewStyle(ui.ColorBlack)
@@ -89,6 +95,7 @@ func dashboardApplyTheme(theme string) error {
 
 		ui.Theme.Paragraph.Text = ui.NewStyle(ui.ColorBlack)
 
+		ui.Theme.Tab.Active = ui.NewStyle(ui.ColorYellow)
 		ui.Theme.Table.Text = ui.NewStyle(ui.ColorBlack)
 	default:
 		return fmt.Errorf("unknown theme: %s", theme)
@@ -126,11 +133,11 @@ func runDashboard() error {
 			case "q", "<C-c>":
 				return nil
 			case "1":
-				d.tabPane.FocusLeft()
+				d.tabPane.ActiveTabIndex = 0
 				ui.Clear()
 				d.Render()
 			case "2":
-				d.tabPane.FocusRight()
+				d.tabPane.ActiveTabIndex = 1
 				ui.Clear()
 				d.Render()
 			case "<Resize>":
@@ -176,7 +183,7 @@ func NewDashboard() *dashboard {
 	d.volumePane = NewDashboardVolumePane()
 
 	d.tabPane = widgets.NewTabPane("(1) Clusters", "(2) Volumes")
-	d.tabPane.ActiveTabStyle = ui.NewStyle(ui.ColorBlue)
+	d.tabPane.Title = "Tabs"
 	d.tabPane.Border = false
 
 	d.statusHeader = widgets.NewParagraph()
@@ -192,16 +199,17 @@ func NewDashboard() *dashboard {
 }
 
 func (d *dashboard) Size(x1, y1, x2, y2 int) {
-	d.statusHeader.SetRect(x1, 0, x2-25, d.headerHeight()-1)
-	d.filterHeader.SetRect(x2-25, 0, x2, d.headerHeight()-1)
-	d.tabPane.SetRect(x1, d.headerHeight()-1, x2, d.headerHeight())
+	d.statusHeader.SetRect(x1, y1, x2-25, d.headerHeight())
+	d.filterHeader.SetRect(x2-25, y1, x2, d.headerHeight())
 
-	d.clusterPane.Size(0, d.headerHeight(), x2, y2)
-	d.volumePane.Size(0, d.headerHeight(), x2, y2)
+	d.clusterPane.Size(x1, d.headerHeight(), x2, y2-1)
+	d.volumePane.Size(x1, d.headerHeight(), x2, y2-1)
+
+	d.tabPane.SetRect(x1, y2-1, x2, y2)
 }
 
 func (d *dashboard) headerHeight() int {
-	return 6
+	return 5
 }
 
 func (d *dashboard) Render() {
@@ -337,7 +345,7 @@ func (d *dashboardClusterPane) Size(x1, y1, x2, y2 int) {
 	d.clusterStatusNodes.SetRect(x1+50, 6+y1, x2, 9+y1)
 	d.clusterStatusSystem.SetRect(x1+50, 9+y1, x2, 12+y1)
 
-	tableHeights := (y2 - (y1 + 12)) / 2
+	tableHeights := int(math.Ceil((float64(y2) - (float64(y1) + 12)) / 2))
 
 	d.clusterProblems.SetRect(x1, 12+y1, x2, y1+12+tableHeights)
 	d.clusterProblems.ColumnWidths = []int{12, x2 - 12}
@@ -371,13 +379,6 @@ func (d *dashboardClusterPane) Render() {
 
 		clusterErrors []dashboardClusterError
 		lastErrors    []dashboardClusterError
-
-		strDeref = func(s string) *string {
-			if s == "" {
-				return nil
-			}
-			return &s
-		}
 	)
 
 	var resp *cluster.FindClustersOK
@@ -415,7 +416,7 @@ func (d *dashboardClusterPane) Render() {
 			}
 
 			status := *condition.Status
-			if status != "True" {
+			if status != string(v1beta1.ConditionTrue) && status != string(v1beta1.ConditionProgressing) {
 				if c.Name == nil || condition.Message == nil || condition.LastUpdateTime == nil {
 					continue
 				}
@@ -499,7 +500,10 @@ func (d *dashboardClusterPane) Render() {
 }
 
 type dashboardVolumePane struct {
-	healthyClusters *widgets.BarChart
+	volumeProtectionState *widgets.BarChart
+	volumeState           *widgets.BarChart
+	clusterState          *widgets.BarChart
+	serverState           *widgets.BarChart
 
 	sem *semaphore.Weighted
 }
@@ -509,19 +513,50 @@ func NewDashboardVolumePane() *dashboardVolumePane {
 
 	d.sem = semaphore.NewWeighted(1)
 
-	d.healthyClusters = widgets.NewBarChart()
-	d.healthyClusters.Labels = []string{"Healthy", "Unhealthy"}
-	d.healthyClusters.Title = "Clusters"
-	d.healthyClusters.PaddingLeft = 5
-	d.healthyClusters.BarWidth = 5
-	d.healthyClusters.BarGap = 10
-	d.healthyClusters.BarColors = []ui.Color{ui.ColorGreen, ui.ColorRed}
+	d.volumeProtectionState = widgets.NewBarChart()
+	d.volumeProtectionState.Labels = []string{"Protected", "Degraded", "Read-Only", "Other"}
+	d.volumeProtectionState.Title = "Volume Protection State"
+	d.volumeProtectionState.PaddingLeft = 5
+	d.volumeProtectionState.BarWidth = 5
+	d.volumeProtectionState.BarGap = 10
+	d.volumeProtectionState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorRed, ui.ColorRed, ui.ColorYellow}
+
+	d.volumeState = widgets.NewBarChart()
+	d.volumeState.Labels = []string{"Availble", "Failed", "Other"}
+	d.volumeState.Title = "Volume State"
+	d.volumeState.PaddingLeft = 5
+	d.volumeState.BarWidth = 5
+	d.volumeState.BarGap = 10
+	d.volumeState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorRed, ui.ColorYellow}
+
+	d.clusterState = widgets.NewBarChart()
+	d.clusterState.Labels = []string{"OK", "Warning", "Error", "Other"}
+	d.clusterState.Title = "Cluster State"
+	d.clusterState.PaddingLeft = 5
+	d.clusterState.BarWidth = 5
+	d.clusterState.BarGap = 10
+	d.clusterState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorYellow, ui.ColorRed, ui.ColorRed}
+
+	d.serverState = widgets.NewBarChart()
+	d.serverState.Labels = []string{"Enabled", "Failed", "Other"}
+	d.serverState.Title = "Server State"
+	d.serverState.PaddingLeft = 5
+	d.serverState.BarWidth = 5
+	d.serverState.BarGap = 10
+	d.serverState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorRed, ui.ColorYellow}
 
 	return d
 }
 
 func (d *dashboardVolumePane) Size(x1, y1, x2, y2 int) {
-	d.healthyClusters.SetRect(x1, y1, x2, y2)
+	columnWidth := int(math.Ceil((float64(x2) - (float64(x1))) / 2))
+	rowHeight := int(math.Ceil((float64(y2) - (float64(y1))) / 2))
+
+	d.volumeState.SetRect(x1, y1, x1+columnWidth, rowHeight)
+	d.volumeProtectionState.SetRect(columnWidth, y1, x2, rowHeight)
+
+	d.clusterState.SetRect(x1, rowHeight, x1+columnWidth, y2)
+	d.serverState.SetRect(columnWidth, rowHeight, x2, y2)
 }
 
 func (d *dashboardVolumePane) Render() {
@@ -533,47 +568,150 @@ func (d *dashboardVolumePane) Render() {
 	var (
 		partition = viper.GetString("partition")
 
-		clusters    []*models.V1StorageClusterInfo
-		filteredOut int
+		clusters []*models.V1StorageClusterInfo
+		volumes  []*models.V1VolumeResponse
 
-		healthy   int
-		unhealthy int
+		volumesProtectionFullyProtected int
+		volumesProtectionDegraded       int
+		volumesProtectionReadOnly       int
+		volumesProtectionOther          int
+
+		volumesAvailable int
+		volumesFailed    int
+		volumesOther     int
+
+		clusterStateOK      int
+		clusterStateError   int
+		clusterStateWarning int
+		clusterStateOther   int
+
+		serversEnabled int
+		serversFailed  int
+		serversOther   int
 	)
 
-	var resp *volume.ClusterInfoOK
-	resp, dashboardErr = cloud.Volume.ClusterInfo(volume.NewClusterInfoParams(), nil)
+	var volumeResp *volume.FindVolumesOK
+	volumeResp, dashboardErr = cloud.Volume.FindVolumes(volume.NewFindVolumesParams().WithBody(&models.V1VolumeFindRequest{
+		PartitionID: strDeref(partition),
+	}), nil)
 	if dashboardErr != nil {
 		return
 	}
-	clusters = resp.Payload
 
-	for _, c := range clusters {
-		if c.Partition == nil || (partition != "" && *c.Partition != partition) {
-			filteredOut++
+	infoResp, err := cloud.Volume.ClusterInfo(volume.NewClusterInfoParams().WithPartitionid(partition), nil)
+	if err != nil {
+		switch e := err.(type) {
+		case *volume.ClusterInfoDefault:
+			// allow forbidden response
+			if e.Code() != http.StatusForbidden {
+				dashboardErr = err
+				return
+			}
+		default:
+			dashboardErr = err
+			return
+		}
+	}
+
+	clusters = infoResp.Payload
+	volumes = volumeResp.Payload
+
+	for _, v := range volumes {
+		if v.State == nil || v.ProtectionState == nil {
+			volumesOther++
+			volumesProtectionOther++
 			continue
 		}
+
+		switch *v.State {
+		case durosv2.Volume_Available.String():
+			volumesAvailable++
+		case durosv2.Volume_Failed.String():
+			volumesFailed++
+		default:
+			volumesOther++
+		}
+
+		switch *v.ProtectionState {
+		case durosv2.ProtectionStateEnum_FullyProtected.String():
+			volumesProtectionFullyProtected++
+		case durosv2.ProtectionStateEnum_Degraded.String():
+			volumesProtectionDegraded++
+		case durosv2.ProtectionStateEnum_ReadOnly.String():
+			volumesProtectionReadOnly++
+		default:
+			volumesProtectionOther++
+		}
+	}
+
+	for _, c := range clusters {
 		if c.Health == nil || c.Health.State == nil {
-			unhealthy++
+			clusterStateOther++
 			continue
 		}
 
 		switch *c.Health.State {
-		case "OK":
-			healthy++
+		case durosv2.ClusterHealth_OK.String():
+			clusterStateOK++
+		case durosv2.ClusterHealth_Error.String():
+			clusterStateError++
+		case durosv2.ClusterHealth_Warning.String():
+			clusterStateWarning++
+		case durosv2.ClusterHealth_None.String():
+			clusterStateOther++
 		default:
-			unhealthy++
+			clusterStateOther++
 		}
-	}
 
-	processedClusters := len(clusters) - filteredOut
-	if processedClusters <= 0 {
-		return
+		for _, s := range c.Servers {
+			if s.State == nil {
+				serversOther++
+				continue
+			}
+
+			switch *s.State {
+			case durosv2.Server_Enabled.String():
+				serversEnabled++
+			case durosv2.Server_Failed.String():
+				serversFailed++
+			default:
+				serversOther++
+			}
+		}
 	}
 
 	// for some reason the UI hangs when all values are zero...
 	// so we render this individually
-	if healthy > 0 || unhealthy > 0 {
-		d.healthyClusters.Data = []float64{float64(healthy), float64(unhealthy)}
-		ui.Render(d.healthyClusters)
+	if volumesAvailable > 0 || volumesFailed > 0 || volumesOther > 0 {
+		d.volumeState.Data = []float64{float64(volumesAvailable), float64(volumesFailed), float64(volumesOther)}
+		ui.Render(d.volumeState)
 	}
+
+	// for some reason the UI hangs when all values are zero...
+	// so we render this individually
+	if volumesProtectionFullyProtected > 0 || volumesProtectionDegraded > 0 || volumesProtectionReadOnly > 0 || volumesProtectionOther > 0 {
+		d.volumeProtectionState.Data = []float64{float64(volumesProtectionFullyProtected), float64(volumesProtectionDegraded), float64(volumesProtectionReadOnly), float64(volumesProtectionOther)}
+		ui.Render(d.volumeProtectionState)
+	}
+
+	// for some reason the UI hangs when all values are zero...
+	// so we render this individually
+	if clusterStateOK > 0 || clusterStateError > 0 || clusterStateWarning > 0 || clusterStateOther > 0 {
+		d.clusterState.Data = []float64{float64(clusterStateOK), float64(clusterStateWarning), float64(clusterStateError), float64(clusterStateOther)}
+		ui.Render(d.clusterState)
+	}
+
+	// for some reason the UI hangs when all values are zero...
+	// so we render this individually
+	if serversEnabled > 0 || serversFailed > 0 || serversOther > 0 {
+		d.serverState.Data = []float64{float64(serversEnabled), float64(serversFailed), float64(serversOther)}
+		ui.Render(d.serverState)
+	}
+}
+
+func strDeref(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }
