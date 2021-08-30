@@ -561,7 +561,7 @@ func NewDashboardVolumePane() *dashboardVolumePane {
 	d.volumeProtectionState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorRed, ui.ColorRed, ui.ColorYellow}
 
 	d.volumeState = widgets.NewBarChart()
-	d.volumeState.Labels = []string{"Availble", "Failed", "Other"}
+	d.volumeState.Labels = []string{"Available", "Failed", "Other"}
 	d.volumeState.Title = "Volume State"
 	d.volumeState.PaddingLeft = 5
 	d.volumeState.BarWidth = 5
@@ -601,16 +601,16 @@ func (d *dashboardVolumePane) Size(x1, y1, x2, y2 int) {
 	columnWidth := int(math.Ceil((float64(x2) - (float64(x1))) / 2))
 	rowHeight := int(math.Ceil((float64(y2) - (float64(y1))) / 2))
 
-	d.volumeState.SetRect(x1, y1, x1+columnWidth, rowHeight-3)
-	d.volumeProtectionState.SetRect(columnWidth, y1, x2, rowHeight-3)
+	d.volumeState.SetRect(x1, y1, x1+columnWidth, rowHeight)
+	d.volumeProtectionState.SetRect(columnWidth, y1, x2, rowHeight)
 
-	d.volumeUsedSpace.SetRect(x1, rowHeight-3, x2, rowHeight)
+	d.volumeUsedSpace.SetRect(x1, rowHeight, x2, rowHeight+3)
 
-	d.physicalFree.SetRect(x1, rowHeight, x1+columnWidth, rowHeight+3)
-	d.compressionRatio.SetRect(columnWidth, rowHeight, x2, rowHeight+3)
+	d.physicalFree.SetRect(x1, rowHeight+3, x1+columnWidth, rowHeight+6)
+	d.compressionRatio.SetRect(columnWidth, rowHeight+3, x2, rowHeight+6)
 
-	d.clusterState.SetRect(x1, rowHeight+3, x1+columnWidth, y2)
-	d.serverState.SetRect(columnWidth, rowHeight+3, x2, y2)
+	d.clusterState.SetRect(x1, rowHeight+6, x1+columnWidth, y2)
+	d.serverState.SetRect(columnWidth, rowHeight+6, x2, y2)
 }
 
 func (d *dashboardVolumePane) Render() {
