@@ -37,7 +37,11 @@ var (
 		PreRun: bindPFlags,
 	}
 
-	dashboardErr error
+	dashboardErr    error
+	dashboardPanels = map[int]string{
+		1: "Clusters",
+		2: "Volumes",
+	}
 )
 
 func init() {
@@ -45,6 +49,7 @@ func init() {
 	dashboardCmd.Flags().String("tenant", "", "show clusters of given tenant [optional]")
 	dashboardCmd.Flags().String("purpose", "", "show clusters of given purpose [optional]")
 	dashboardCmd.Flags().String("color-theme", "default", "the dashboard's color theme [default|dark] [optional]")
+	dashboardCmd.Flags().Int("panel", 1, "the panel to show when starting the dashboard [optional]")
 	dashboardCmd.Flags().Duration("refresh-interval", 3*time.Second, "refresh interval [optional]")
 
 	err := dashboardCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -74,6 +79,16 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	err = dashboardCmd.RegisterFlagCompletionFunc("panel", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		var names []string
+		for i, name := range dashboardPanels {
+			names = append(names, fmt.Sprintf("%d\t%s", i, name))
+		}
+		return names, cobra.ShellCompDirectiveNoFileComp
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 }
 
 func dashboardApplyTheme(theme string) error {
@@ -81,6 +96,8 @@ func dashboardApplyTheme(theme string) error {
 	case "default":
 		ui.Theme.BarChart.Labels = []ui.Style{ui.NewStyle(ui.ColorWhite)}
 		ui.Theme.BarChart.Nums = []ui.Style{ui.NewStyle(ui.ColorWhite)}
+
+		ui.Theme.Gauge.Bar = ui.ColorWhite
 
 		ui.Theme.Tab.Active = ui.NewStyle(ui.ColorYellow)
 	case "dark":
@@ -93,6 +110,7 @@ func dashboardApplyTheme(theme string) error {
 
 		ui.Theme.Gauge.Label = ui.NewStyle(ui.ColorBlack)
 		ui.Theme.Gauge.Label.Fg = ui.ColorBlack
+		ui.Theme.Gauge.Bar = ui.ColorBlack
 
 		ui.Theme.Paragraph.Text = ui.NewStyle(ui.ColorBlack)
 
@@ -174,6 +192,7 @@ func NewDashboard() *dashboard {
 		tenant    = viper.GetString("tenant")
 		partition = viper.GetString("partition")
 		purpose   = viper.GetString("purpose")
+		panel     = viper.GetInt("panel")
 	)
 
 	d := &dashboard{}
@@ -183,9 +202,20 @@ func NewDashboard() *dashboard {
 	d.clusterPane = NewDashboardClusterPane()
 	d.volumePane = NewDashboardVolumePane()
 
-	d.tabPane = widgets.NewTabPane("(1) Clusters", "(2) Volumes")
+	var panels []string
+	for _, name := range dashboardPanels {
+		panels = append(panels, name)
+	}
+
+	d.tabPane = widgets.NewTabPane(panels...)
 	d.tabPane.Title = "Tabs"
 	d.tabPane.Border = false
+
+	_, ok := dashboardPanels[panel]
+	if !ok {
+		log.Fatal("invalid initial panel")
+	}
+	d.tabPane.ActiveTabIndex = panel - 1
 
 	d.statusHeader = widgets.NewParagraph()
 	d.statusHeader.Title = "Cloud Dashboard"
@@ -506,6 +536,9 @@ type dashboardVolumePane struct {
 	clusterState          *widgets.BarChart
 	serverState           *widgets.BarChart
 
+	physicalFree     *widgets.Gauge
+	compressionRatio *widgets.Gauge
+
 	sem *semaphore.Weighted
 }
 
@@ -529,6 +562,12 @@ func NewDashboardVolumePane() *dashboardVolumePane {
 	d.volumeState.BarWidth = 5
 	d.volumeState.BarGap = 10
 	d.volumeState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorRed, ui.ColorYellow}
+
+	d.physicalFree = widgets.NewGauge()
+	d.physicalFree.Title = "Free Physical Space"
+
+	d.compressionRatio = widgets.NewGauge()
+	d.compressionRatio.Title = "Compression Ratio"
 
 	d.clusterState = widgets.NewBarChart()
 	d.clusterState.Labels = []string{"OK", "Warning", "Error", "Other"}
@@ -556,8 +595,11 @@ func (d *dashboardVolumePane) Size(x1, y1, x2, y2 int) {
 	d.volumeState.SetRect(x1, y1, x1+columnWidth, rowHeight)
 	d.volumeProtectionState.SetRect(columnWidth, y1, x2, rowHeight)
 
-	d.clusterState.SetRect(x1, rowHeight, x1+columnWidth, y2)
-	d.serverState.SetRect(columnWidth, rowHeight, x2, y2)
+	d.physicalFree.SetRect(x1, rowHeight, x1+columnWidth, rowHeight+3)
+	d.compressionRatio.SetRect(columnWidth, rowHeight, x2, rowHeight+3)
+
+	d.clusterState.SetRect(x1, rowHeight+3, x1+columnWidth, y2)
+	d.serverState.SetRect(columnWidth, rowHeight+3, x2, y2)
 }
 
 func (d *dashboardVolumePane) Render() {
@@ -590,6 +632,10 @@ func (d *dashboardVolumePane) Render() {
 		serversEnabled int
 		serversFailed  int
 		serversOther   int
+
+		physicalFree     int64
+		physicalUsed     int64
+		compressionRatio float64
 	)
 
 	var volumeResp *volume.FindVolumesOK
@@ -679,7 +725,35 @@ func (d *dashboardVolumePane) Render() {
 				serversOther++
 			}
 		}
+
+		if c.Statistics != nil {
+			if c.Statistics.FreePhysicalStorage == nil || c.Statistics.PhysicalUsedStorage == nil || c.Statistics.CompressionRatio == nil {
+				continue
+			}
+
+			physicalFree += *c.Statistics.FreePhysicalStorage
+			physicalUsed += *c.Statistics.PhysicalUsedStorage
+			compressionRatio += *c.Statistics.CompressionRatio
+		}
 	}
+
+	if len(clusters) == 0 {
+		return
+	}
+
+	d.compressionRatio.Percent = int((compressionRatio / float64(len(clusters))) * 100)
+
+	totalStorage := float64(physicalFree + physicalUsed)
+	d.physicalFree.Percent = int((float64(physicalFree) / totalStorage) * 100)
+	if d.physicalFree.Percent < 10 {
+		d.physicalFree.BarColor = ui.ColorRed
+	} else if d.physicalFree.Percent < 30 {
+		d.physicalFree.BarColor = ui.ColorYellow
+	} else {
+		d.physicalFree.BarColor = ui.ColorGreen
+	}
+
+	ui.Render(d.compressionRatio, d.physicalFree)
 
 	// for some reason the UI hangs when all values are zero...
 	// so we render this individually
