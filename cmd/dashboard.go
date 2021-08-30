@@ -116,6 +116,8 @@ func dashboardApplyTheme(theme string) error {
 		ui.Theme.Paragraph.Text = ui.NewStyle(ui.ColorBlack)
 
 		ui.Theme.Tab.Active = ui.NewStyle(ui.ColorYellow)
+		ui.Theme.Tab.Inactive = ui.NewStyle(ui.ColorBlack)
+
 		ui.Theme.Table.Text = ui.NewStyle(ui.ColorBlack)
 	default:
 		return fmt.Errorf("unknown theme: %s", theme)
