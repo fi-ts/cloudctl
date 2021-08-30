@@ -567,6 +567,7 @@ func (d *dashboardVolumePane) Render() {
 	defer d.sem.Release(1)
 
 	var (
+		tenant    = viper.GetString("tenant")
 		partition = viper.GetString("partition")
 
 		clusters []*models.V1StorageClusterInfo
@@ -594,6 +595,7 @@ func (d *dashboardVolumePane) Render() {
 	var volumeResp *volume.FindVolumesOK
 	volumeResp, dashboardErr = cloud.Volume.FindVolumes(volume.NewFindVolumesParams().WithBody(&models.V1VolumeFindRequest{
 		PartitionID: strDeref(partition),
+		TenantID:    strDeref(tenant),
 	}), nil)
 	if dashboardErr != nil {
 		return
