@@ -14,6 +14,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/client/version"
 	"github.com/fi-ts/cloud-go/api/client/volume"
 	"github.com/fi-ts/cloud-go/api/models"
+	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
@@ -203,8 +204,8 @@ func NewDashboard() *dashboard {
 	d.volumePane = NewDashboardVolumePane()
 
 	var panels []string
-	for _, name := range dashboardPanels {
-		panels = append(panels, name)
+	for i, name := range dashboardPanels {
+		panels = append(panels, fmt.Sprintf("(%d) %s", i, name))
 	}
 
 	d.tabPane = widgets.NewTabPane(panels...)
@@ -531,6 +532,8 @@ func (d *dashboardClusterPane) Render() {
 }
 
 type dashboardVolumePane struct {
+	volumeUsedSpace *widgets.Paragraph
+
 	volumeProtectionState *widgets.BarChart
 	volumeState           *widgets.BarChart
 	clusterState          *widgets.BarChart
@@ -563,6 +566,10 @@ func NewDashboardVolumePane() *dashboardVolumePane {
 	d.volumeState.BarGap = 10
 	d.volumeState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorRed, ui.ColorYellow}
 
+	d.volumeUsedSpace = widgets.NewParagraph()
+	d.volumeUsedSpace.Title = "Volume Infos"
+	d.volumeUsedSpace.WrapText = false
+
 	d.physicalFree = widgets.NewGauge()
 	d.physicalFree.Title = "Free Physical Space"
 
@@ -592,8 +599,10 @@ func (d *dashboardVolumePane) Size(x1, y1, x2, y2 int) {
 	columnWidth := int(math.Ceil((float64(x2) - (float64(x1))) / 2))
 	rowHeight := int(math.Ceil((float64(y2) - (float64(y1))) / 2))
 
-	d.volumeState.SetRect(x1, y1, x1+columnWidth, rowHeight)
-	d.volumeProtectionState.SetRect(columnWidth, y1, x2, rowHeight)
+	d.volumeState.SetRect(x1, y1, x1+columnWidth, rowHeight-3)
+	d.volumeProtectionState.SetRect(columnWidth, y1, x2, rowHeight-3)
+
+	d.volumeUsedSpace.SetRect(x1, rowHeight-3, x2, rowHeight)
 
 	d.physicalFree.SetRect(x1, rowHeight, x1+columnWidth, rowHeight+3)
 	d.compressionRatio.SetRect(columnWidth, rowHeight, x2, rowHeight+3)
@@ -623,6 +632,8 @@ func (d *dashboardVolumePane) Render() {
 		volumesAvailable int
 		volumesFailed    int
 		volumesOther     int
+
+		volumesUsedPhysical int64
 
 		clusterStateOK      int
 		clusterStateError   int
@@ -689,6 +700,13 @@ func (d *dashboardVolumePane) Render() {
 		default:
 			volumesProtectionOther++
 		}
+
+		if v.Statistics != nil {
+			if v.Statistics.PhysicalUsedStorage == nil {
+				continue
+			}
+			volumesUsedPhysical += *v.Statistics.PhysicalUsedStorage
+		}
 	}
 
 	for _, c := range clusters {
@@ -741,6 +759,8 @@ func (d *dashboardVolumePane) Render() {
 		return
 	}
 
+	d.volumeUsedSpace.Text = fmt.Sprintf("Summed up physical size of volumes: %s", helper.HumanizeSize(volumesUsedPhysical))
+
 	d.compressionRatio.Percent = int((compressionRatio / float64(len(clusters))) * 100)
 
 	totalStorage := float64(physicalFree + physicalUsed)
@@ -753,7 +773,7 @@ func (d *dashboardVolumePane) Render() {
 		d.physicalFree.BarColor = ui.ColorGreen
 	}
 
-	ui.Render(d.compressionRatio, d.physicalFree)
+	ui.Render(d.volumeUsedSpace, d.compressionRatio, d.physicalFree)
 
 	// for some reason the UI hangs when all values are zero...
 	// so we render this individually
