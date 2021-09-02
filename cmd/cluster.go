@@ -1248,8 +1248,16 @@ func clusterMachineSSH(args []string, console bool) error {
 			defer os.Remove(privateKeyFile)
 			if console {
 				fmt.Printf("access console via ssh\n")
+				authContext, err := getAuthContext(viper.GetString("kubeConfig"))
+				if err != nil {
+					return err
+				}
+				err = os.Setenv("LC_METAL_STACK_OIDC_TOKEN", authContext.IDToken)
+				if err != nil {
+					return err
+				}
 				bmcConsolePort := "5222"
-				err := ssh("-i", privateKeyFile, mid+"@"+consoleHost, "-p", bmcConsolePort)
+				err = ssh("-i", privateKeyFile, mid+"@"+consoleHost, "-p", bmcConsolePort)
 				return err
 			}
 			networks := m.Allocation.Networks
