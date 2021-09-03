@@ -7,6 +7,8 @@ import (
 	"math"
 	"net/http"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/fi-ts/cloud-go/api/client/cluster"
@@ -39,18 +41,24 @@ var (
 	}
 
 	dashboardErr    error
-	dashboardPanels = map[int]string{
-		1: "Clusters",
-		2: "Volumes",
+	dashboardPanels = dashboardPanelSpecs{
+		{
+			Name:        "Clusters",
+			Description: "Cluster health and issues",
+		},
+		{
+			Name:        "Volumes",
+			Description: "Volume health, for operators also cluster health",
+		},
 	}
 )
 
 func init() {
-	dashboardCmd.Flags().String("partition", "", "show clusters in partition [optional]")
-	dashboardCmd.Flags().String("tenant", "", "show clusters of given tenant [optional]")
-	dashboardCmd.Flags().String("purpose", "", "show clusters of given purpose [optional]")
+	dashboardCmd.Flags().String("partition", "", "show resources in partition [optional]")
+	dashboardCmd.Flags().String("tenant", "", "show resources of given tenant [optional]")
+	dashboardCmd.Flags().String("purpose", "", "show resources of given purpose [optional]")
 	dashboardCmd.Flags().String("color-theme", "default", "the dashboard's color theme [default|dark] [optional]")
-	dashboardCmd.Flags().Int("panel", 1, "the panel to show when starting the dashboard [optional]")
+	dashboardCmd.Flags().String("panel", dashboardPanels[0].Name, "the panel to show when starting the dashboard [optional]")
 	dashboardCmd.Flags().Duration("refresh-interval", 3*time.Second, "refresh interval [optional]")
 
 	err := dashboardCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -82,14 +90,30 @@ func init() {
 	}
 	err = dashboardCmd.RegisterFlagCompletionFunc("panel", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var names []string
-		for i, name := range dashboardPanels {
-			names = append(names, fmt.Sprintf("%d\t%s", i, name))
+		for _, p := range dashboardPanels {
+			names = append(names, fmt.Sprintf("%s\t%s", strings.ToLower(p.Name), p.Description))
 		}
 		return names, cobra.ShellCompDirectiveNoFileComp
 	})
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+}
+
+type dashboardPanelSpec struct {
+	Name        string
+	Description string
+}
+
+type dashboardPanelSpecs []dashboardPanelSpec
+
+func (d dashboardPanelSpecs) FindIndexByName(name string) (int, error) {
+	for i, p := range d {
+		if strings.EqualFold(p.Name, name) {
+			return i, nil
+		}
+	}
+	return 0, fmt.Errorf("panel with name %q not found", name)
 }
 
 func dashboardApplyTheme(theme string) error {
@@ -154,12 +178,9 @@ func runDashboard() error {
 			switch e.ID {
 			case "q", "<C-c>":
 				return nil
-			case "1":
-				d.tabPane.ActiveTabIndex = 0
-				ui.Clear()
-				d.Render()
-			case "2":
-				d.tabPane.ActiveTabIndex = 1
+			case "1", "2":
+				i, _ := strconv.Atoi(e.ID)
+				d.tabPane.ActiveTabIndex = i - 1
 				ui.Clear()
 				d.Render()
 			case "<Resize>":
@@ -195,7 +216,6 @@ func NewDashboard() *dashboard {
 		tenant    = viper.GetString("tenant")
 		partition = viper.GetString("partition")
 		purpose   = viper.GetString("purpose")
-		panel     = viper.GetInt("panel")
 	)
 
 	d := &dashboard{}
@@ -206,19 +226,21 @@ func NewDashboard() *dashboard {
 	d.volumePane = NewDashboardVolumePane()
 
 	var panels []string
-	for i, name := range dashboardPanels {
-		panels = append(panels, fmt.Sprintf("(%d) %s", i, name))
+	for i, p := range dashboardPanels {
+		panels = append(panels, fmt.Sprintf("(%d) %s", i+1, p.Name))
 	}
 
 	d.tabPane = widgets.NewTabPane(panels...)
 	d.tabPane.Title = "Tabs"
 	d.tabPane.Border = false
 
-	_, ok := dashboardPanels[panel]
-	if !ok {
-		log.Fatal("invalid initial panel")
+	if viper.IsSet("panel") {
+		initialPanelIndex, err := dashboardPanels.FindIndexByName(viper.GetString("panel"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		d.tabPane.ActiveTabIndex = initialPanelIndex
 	}
-	d.tabPane.ActiveTabIndex = panel - 1
 
 	d.statusHeader = widgets.NewParagraph()
 	d.statusHeader.Title = "Cloud Dashboard"
@@ -507,7 +529,7 @@ func (d *dashboardClusterPane) Render() {
 	}
 
 	sort.Slice(clusterErrors, func(i, j int) bool {
-		return clusterErrors[i].Time.Before(clusterErrors[j].Time)
+		return clusterErrors[i].Time.After(clusterErrors[j].Time)
 	})
 	rows := [][]string{}
 	for _, e := range clusterErrors {
@@ -517,7 +539,7 @@ func (d *dashboardClusterPane) Render() {
 	ui.Render(d.clusterProblems)
 
 	sort.Slice(lastErrors, func(i, j int) bool {
-		return lastErrors[i].Time.Before(lastErrors[j].Time)
+		return lastErrors[i].Time.After(lastErrors[j].Time)
 	})
 	rows = [][]string{}
 	for _, e := range lastErrors {
