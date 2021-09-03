@@ -39,26 +39,16 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-
-	dashboardErr    error
-	dashboardPanels = dashboardPanelSpecs{
-		{
-			Name:        "Clusters",
-			Description: "Cluster health and issues",
-		},
-		{
-			Name:        "Volumes",
-			Description: "Volume health, for operators also cluster health",
-		},
-	}
 )
 
 func init() {
+	d := NewDashboard()
+
 	dashboardCmd.Flags().String("partition", "", "show resources in partition [optional]")
 	dashboardCmd.Flags().String("tenant", "", "show resources of given tenant [optional]")
 	dashboardCmd.Flags().String("purpose", "", "show resources of given purpose [optional]")
 	dashboardCmd.Flags().String("color-theme", "default", "the dashboard's color theme [default|dark] [optional]")
-	dashboardCmd.Flags().String("panel", dashboardPanels[0].Name, "the panel to show when starting the dashboard [optional]")
+	dashboardCmd.Flags().String("panel", d.tabs[0].Name(), "the panel to show when starting the dashboard [optional]")
 	dashboardCmd.Flags().Duration("refresh-interval", 3*time.Second, "refresh interval [optional]")
 
 	err := dashboardCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -90,30 +80,14 @@ func init() {
 	}
 	err = dashboardCmd.RegisterFlagCompletionFunc("panel", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var names []string
-		for _, p := range dashboardPanels {
-			names = append(names, fmt.Sprintf("%s\t%s", strings.ToLower(p.Name), p.Description))
+		for _, p := range d.tabs {
+			names = append(names, fmt.Sprintf("%s\t%s", strings.ToLower(p.Name()), p.Description()))
 		}
 		return names, cobra.ShellCompDirectiveNoFileComp
 	})
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-}
-
-type dashboardPanelSpec struct {
-	Name        string
-	Description string
-}
-
-type dashboardPanelSpecs []dashboardPanelSpec
-
-func (d dashboardPanelSpecs) FindIndexByName(name string) (int, error) {
-	for i, p := range d {
-		if strings.EqualFold(p.Name, name) {
-			return i, nil
-		}
-	}
-	return 0, fmt.Errorf("panel with name %q not found", name)
 }
 
 func dashboardApplyTheme(theme string) error {
@@ -205,10 +179,28 @@ type dashboard struct {
 
 	tabPane *widgets.TabPane
 
-	clusterPane *dashboardClusterPane
-	volumePane  *dashboardVolumePane
+	lastErr error
+	tabs    dashboardTabs
 
 	sem *semaphore.Weighted
+}
+
+type dashboardTab interface {
+	Name() string
+	Description() string
+	Render() error
+	Size(x1, y1, x2, y2 int)
+}
+
+type dashboardTabs []dashboardTab
+
+func (d dashboardTabs) FindIndexByName(name string) (int, error) {
+	for i, p := range d {
+		if strings.EqualFold(p.Name(), name) {
+			return i, nil
+		}
+	}
+	return 0, fmt.Errorf("panel with name %q not found", name)
 }
 
 func NewDashboard() *dashboard {
@@ -218,28 +210,8 @@ func NewDashboard() *dashboard {
 		purpose   = viper.GetString("purpose")
 	)
 
-	d := &dashboard{}
-
-	d.sem = semaphore.NewWeighted(1)
-
-	d.clusterPane = NewDashboardClusterPane()
-	d.volumePane = NewDashboardVolumePane()
-
-	var panels []string
-	for i, p := range dashboardPanels {
-		panels = append(panels, fmt.Sprintf("(%d) %s", i+1, p.Name))
-	}
-
-	d.tabPane = widgets.NewTabPane(panels...)
-	d.tabPane.Title = "Tabs"
-	d.tabPane.Border = false
-
-	if viper.IsSet("panel") {
-		initialPanelIndex, err := dashboardPanels.FindIndexByName(viper.GetString("panel"))
-		if err != nil {
-			log.Fatal(err)
-		}
-		d.tabPane.ActiveTabIndex = initialPanelIndex
+	d := &dashboard{
+		sem: semaphore.NewWeighted(1),
 	}
 
 	d.statusHeader = widgets.NewParagraph()
@@ -251,6 +223,27 @@ func NewDashboard() *dashboard {
 	d.filterHeader.Text = fmt.Sprintf("Tenant=%s\nPartition=%s\nPurpose=%s", tenant, partition, purpose)
 	d.filterHeader.WrapText = false
 
+	d.tabs = dashboardTabs{
+		NewDashboardClusterPane(),
+		NewDashboardVolumePane(),
+	}
+
+	var tabNames []string
+	for i, p := range d.tabs {
+		tabNames = append(tabNames, fmt.Sprintf("(%d) %s", i+1, p.Name()))
+	}
+	d.tabPane = widgets.NewTabPane(tabNames...)
+	d.tabPane.Title = "Tabs"
+	d.tabPane.Border = false
+
+	if viper.IsSet("panel") {
+		initialPanelIndex, err := d.tabs.FindIndexByName(viper.GetString("panel"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		d.tabPane.ActiveTabIndex = initialPanelIndex
+	}
+
 	return d
 }
 
@@ -258,8 +251,9 @@ func (d *dashboard) Size(x1, y1, x2, y2 int) {
 	d.statusHeader.SetRect(x1, y1, x2-25, d.headerHeight())
 	d.filterHeader.SetRect(x2-25, y1, x2, d.headerHeight())
 
-	d.clusterPane.Size(x1, d.headerHeight(), x2, y2-1)
-	d.volumePane.Size(x1, d.headerHeight(), x2, y2-1)
+	for _, p := range d.tabs {
+		p.Size(x1, d.headerHeight(), x2, y2-1)
+	}
 
 	d.tabPane.SetRect(x1, y2-1, x2, y2)
 }
@@ -299,8 +293,8 @@ func (d *dashboard) Render() {
 
 		versionLine := fmt.Sprintf("cloud-api %s (API Health: %s), cloudctl %s (%s)", apiVersion, coloredHealth, v.Version, v.GitSHA1)
 		fetchInfoLine := fmt.Sprintf("Last Update: %s", time.Now().Format("15:04:05"))
-		if dashboardErr != nil {
-			fetchInfoLine += fmt.Sprintf(", [Update Error: %s](fg:red)", dashboardErr)
+		if d.lastErr != nil {
+			fetchInfoLine += fmt.Sprintf(", [Update Error: %s](fg:red)", d.lastErr)
 		}
 		glossaryLine := "Switch between tabs with number keys. Press q to quit."
 
@@ -309,25 +303,23 @@ func (d *dashboard) Render() {
 	}()
 
 	var infoResp *version.InfoOK
-	infoResp, dashboardErr = cloud.Version.Info(version.NewInfoParams(), nil)
-	if dashboardErr != nil {
+	infoResp, d.lastErr = cloud.Version.Info(version.NewInfoParams(), nil)
+	if d.lastErr != nil {
 		return
 	}
 	apiVersion = *infoResp.Payload.Version
 
 	var healthResp *health.HealthOK
-	healthResp, dashboardErr = cloud.Health.Health(health.NewHealthParams(), nil)
-	if dashboardErr != nil {
+	healthResp, d.lastErr = cloud.Health.Health(health.NewHealthParams(), nil)
+	if d.lastErr != nil {
 		return
 	}
 	apiHealth = *healthResp.Payload.Status
 	apiHealthMessage = *healthResp.Payload.Message
 
-	switch d.tabPane.ActiveTabIndex {
-	case 0:
-		d.clusterPane.Render()
-	case 1:
-		d.volumePane.Render()
+	d.lastErr = d.tabs[d.tabPane.ActiveTabIndex].Render()
+	if d.lastErr != nil {
+		return
 	}
 }
 
@@ -393,6 +385,14 @@ func NewDashboardClusterPane() *dashboardClusterPane {
 	return d
 }
 
+func (d *dashboardClusterPane) Name() string {
+	return "Clusters"
+}
+
+func (d *dashboardClusterPane) Description() string {
+	return "Cluster health and issues"
+}
+
 func (d *dashboardClusterPane) Size(x1, y1, x2, y2 int) {
 	d.clusterHealth.SetRect(x1, y1, x1+48, y1+12)
 
@@ -410,9 +410,9 @@ func (d *dashboardClusterPane) Size(x1, y1, x2, y2 int) {
 	d.clusterLastErrors.ColumnWidths = []int{12, x2 - 12}
 }
 
-func (d *dashboardClusterPane) Render() {
+func (d *dashboardClusterPane) Render() error {
 	if !d.sem.TryAcquire(1) { // prevent concurrent updates
-		return
+		return nil
 	}
 	defer d.sem.Release(1)
 
@@ -437,13 +437,12 @@ func (d *dashboardClusterPane) Render() {
 		lastErrors    []dashboardClusterError
 	)
 
-	var resp *cluster.FindClustersOK
-	resp, dashboardErr = cloud.Cluster.FindClusters(cluster.NewFindClustersParams().WithBody(&models.V1ClusterFindRequest{
+	resp, err := cloud.Cluster.FindClusters(cluster.NewFindClustersParams().WithBody(&models.V1ClusterFindRequest{
 		PartitionID: strDeref(partition),
 		Tenant:      strDeref(tenant),
 	}).WithReturnMachines(pointer.BoolPtr(false)), nil)
-	if dashboardErr != nil {
-		return
+	if err != nil {
+		return err
 	}
 	clusters = resp.Payload
 
@@ -518,7 +517,7 @@ func (d *dashboardClusterPane) Render() {
 
 	processedClusters := len(clusters) - filteredOut
 	if processedClusters <= 0 {
-		return
+		return nil
 	}
 
 	// for some reason the UI hangs when all values are zero...
@@ -553,6 +552,8 @@ func (d *dashboardClusterPane) Render() {
 	d.clusterStatusNodes.Percent = nodesOK * 100 / processedClusters
 	d.clusterStatusSystem.Percent = systemOK * 100 / processedClusters
 	ui.Render(d.clusterStatusAPI, d.clusterStatusControl, d.clusterStatusNodes, d.clusterStatusSystem)
+
+	return nil
 }
 
 type dashboardVolumePane struct {
@@ -619,6 +620,14 @@ func NewDashboardVolumePane() *dashboardVolumePane {
 	return d
 }
 
+func (d *dashboardVolumePane) Name() string {
+	return "Volumes"
+}
+
+func (d *dashboardVolumePane) Description() string {
+	return "Volume health, for operators also cluster health"
+}
+
 func (d *dashboardVolumePane) Size(x1, y1, x2, y2 int) {
 	columnWidth := int(math.Ceil((float64(x2) - (float64(x1))) / 2))
 	rowHeight := int(math.Ceil((float64(y2) - (float64(y1))) / 2))
@@ -635,9 +644,9 @@ func (d *dashboardVolumePane) Size(x1, y1, x2, y2 int) {
 	d.serverState.SetRect(columnWidth, rowHeight+6, x2, y2)
 }
 
-func (d *dashboardVolumePane) Render() {
+func (d *dashboardVolumePane) Render() error {
 	if !d.sem.TryAcquire(1) { // prevent concurrent updates
-		return
+		return nil
 	}
 	defer d.sem.Release(1)
 
@@ -673,25 +682,21 @@ func (d *dashboardVolumePane) Render() {
 		compressionRatio float64
 	)
 
-	var volumeResp *volume.FindVolumesOK
-	volumeResp, dashboardErr = cloud.Volume.FindVolumes(volume.NewFindVolumesParams().WithBody(&models.V1VolumeFindRequest{
+	volumeResp, err := cloud.Volume.FindVolumes(volume.NewFindVolumesParams().WithBody(&models.V1VolumeFindRequest{
 		PartitionID: strDeref(partition),
 		TenantID:    strDeref(tenant),
 	}), nil)
-	if dashboardErr != nil {
-		return
+	if err != nil {
+		return err
 	}
 
 	infoResp, err := cloud.Volume.ClusterInfo(volume.NewClusterInfoParams().WithPartitionid(&partition), nil)
 	if err != nil {
 		var typedErr *volume.ClusterInfoDefault
-		if errors.As(err, &typedErr) && typedErr.Code() != http.StatusForbidden {
-			// allow forbidden response, because cluster info is only for provider admins
-			dashboardErr = err
-			return
+		if errors.As(err, &typedErr) && typedErr.Code() != http.StatusForbidden { // allow forbidden response, because cluster info is only for provider admins
+			return err
 		} else {
-			dashboardErr = err
-			return
+			return err
 		}
 	}
 
@@ -780,7 +785,7 @@ func (d *dashboardVolumePane) Render() {
 	}
 
 	if len(clusters) == 0 {
-		return
+		return nil
 	}
 
 	d.volumeUsedSpace.Text = fmt.Sprintf("Summed up physical size of volumes: %s", helper.HumanizeSize(volumesUsedPhysical))
@@ -826,6 +831,8 @@ func (d *dashboardVolumePane) Render() {
 		d.serverState.Data = []float64{float64(serversEnabled), float64(serversFailed), float64(serversOther)}
 		ui.Render(d.serverState)
 	}
+
+	return nil
 }
 
 func strDeref(s string) *string {
