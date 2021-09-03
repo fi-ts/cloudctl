@@ -49,7 +49,7 @@ func init() {
 	dashboardCmd.Flags().String("tenant", "", "show resources of given tenant [optional]")
 	dashboardCmd.Flags().String("purpose", "", "show resources of given purpose [optional]")
 	dashboardCmd.Flags().String("color-theme", "default", "the dashboard's color theme [default|dark] [optional]")
-	dashboardCmd.Flags().String("panel", tabs[0].Name(), "the panel to show when starting the dashboard [optional]")
+	dashboardCmd.Flags().String("initial-tab", tabs[0].Name(), "the tab to show when starting the dashboard [optional]")
 	dashboardCmd.Flags().Duration("refresh-interval", 3*time.Second, "refresh interval [optional]")
 
 	err := dashboardCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -79,7 +79,7 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = dashboardCmd.RegisterFlagCompletionFunc("panel", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = dashboardCmd.RegisterFlagCompletionFunc("initial-tab", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var names []string
 		for _, t := range tabs {
 			names = append(names, fmt.Sprintf("%s\t%s", strings.ToLower(t.Name()), t.Description()))
@@ -209,7 +209,7 @@ func (d dashboardTabPanes) FindIndexByName(name string) (int, error) {
 			return i, nil
 		}
 	}
-	return 0, fmt.Errorf("panel with name %q not found", name)
+	return 0, fmt.Errorf("tab with name %q not found", name)
 }
 
 func NewDashboard() (*dashboard, error) {
@@ -242,8 +242,8 @@ func NewDashboard() (*dashboard, error) {
 	d.tabPane.Title = "Tabs"
 	d.tabPane.Border = false
 
-	if viper.IsSet("panel") {
-		initialPanelIndex, err := d.tabs.FindIndexByName(viper.GetString("panel"))
+	if viper.IsSet("initial-tab") {
+		initialPanelIndex, err := d.tabs.FindIndexByName(viper.GetString("initial-tab"))
 		if err != nil {
 			return nil, err
 		}
@@ -699,14 +699,16 @@ func (d *dashboardVolumePane) Render() error {
 	infoResp, err := cloud.Volume.ClusterInfo(volume.NewClusterInfoParams().WithPartitionid(&partition), nil)
 	if err != nil {
 		var typedErr *volume.ClusterInfoDefault
-		if errors.As(err, &typedErr) && typedErr.Code() != http.StatusForbidden { // allow forbidden response, because cluster info is only for provider admins
-			return err
+		if errors.As(err, &typedErr) {
+			if typedErr.Code() != http.StatusForbidden {
+				return err
+			}
+			// allow forbidden response, because cluster info is only for provider admins
 		} else {
 			return err
 		}
 	}
 
-	clusters = infoResp.Payload
 	volumes = volumeResp.Payload
 
 	for _, v := range volumes {
@@ -743,6 +745,42 @@ func (d *dashboardVolumePane) Render() error {
 			volumesUsedPhysical += *v.Statistics.PhysicalUsedStorage
 		}
 	}
+
+	d.volumeUsedSpace.Text = fmt.Sprintf("Summed up physical size of volumes: %s", helper.HumanizeSize(volumesUsedPhysical))
+	ui.Render(d.volumeUsedSpace)
+
+	// for some reason the UI hangs when all values are zero...
+	if volumesAvailable > 0 || volumesFailed > 0 || volumesOther > 0 {
+		d.volumeState.Data = []float64{float64(volumesAvailable), float64(volumesFailed), float64(volumesOther)}
+		ui.Render(d.volumeState)
+	}
+
+	// for some reason the UI hangs when all values are zero...
+	if volumesProtectionFullyProtected > 0 || volumesProtectionDegraded > 0 || volumesProtectionReadOnly > 0 || volumesProtectionOther > 0 {
+		d.volumeProtectionState.Data = []float64{float64(volumesProtectionFullyProtected), float64(volumesProtectionDegraded), float64(volumesProtectionReadOnly), float64(volumesProtectionOther)}
+		ui.Render(d.volumeProtectionState)
+	}
+
+	if infoResp == nil {
+		// for non-admins, we stop here
+		return nil
+	}
+
+	d.compressionRatio.Percent = int((compressionRatio / float64(len(clusters))) * 100)
+
+	totalStorage := float64(physicalFree + physicalUsed)
+	d.physicalFree.Percent = int((float64(physicalFree) / totalStorage) * 100)
+	if d.physicalFree.Percent < 10 {
+		d.physicalFree.BarColor = ui.ColorRed
+	} else if d.physicalFree.Percent < 30 {
+		d.physicalFree.BarColor = ui.ColorYellow
+	} else {
+		d.physicalFree.BarColor = ui.ColorGreen
+	}
+
+	ui.Render(d.compressionRatio, d.physicalFree)
+
+	clusters = infoResp.Payload
 
 	for _, c := range clusters {
 		if c.Health == nil || c.Health.State == nil {
@@ -792,34 +830,6 @@ func (d *dashboardVolumePane) Render() error {
 
 	if len(clusters) == 0 {
 		return nil
-	}
-
-	d.volumeUsedSpace.Text = fmt.Sprintf("Summed up physical size of volumes: %s", helper.HumanizeSize(volumesUsedPhysical))
-
-	d.compressionRatio.Percent = int((compressionRatio / float64(len(clusters))) * 100)
-
-	totalStorage := float64(physicalFree + physicalUsed)
-	d.physicalFree.Percent = int((float64(physicalFree) / totalStorage) * 100)
-	if d.physicalFree.Percent < 10 {
-		d.physicalFree.BarColor = ui.ColorRed
-	} else if d.physicalFree.Percent < 30 {
-		d.physicalFree.BarColor = ui.ColorYellow
-	} else {
-		d.physicalFree.BarColor = ui.ColorGreen
-	}
-
-	ui.Render(d.volumeUsedSpace, d.compressionRatio, d.physicalFree)
-
-	// for some reason the UI hangs when all values are zero...
-	if volumesAvailable > 0 || volumesFailed > 0 || volumesOther > 0 {
-		d.volumeState.Data = []float64{float64(volumesAvailable), float64(volumesFailed), float64(volumesOther)}
-		ui.Render(d.volumeState)
-	}
-
-	// for some reason the UI hangs when all values are zero...
-	if volumesProtectionFullyProtected > 0 || volumesProtectionDegraded > 0 || volumesProtectionReadOnly > 0 || volumesProtectionOther > 0 {
-		d.volumeProtectionState.Data = []float64{float64(volumesProtectionFullyProtected), float64(volumesProtectionDegraded), float64(volumesProtectionReadOnly), float64(volumesProtectionOther)}
-		ui.Render(d.volumeProtectionState)
 	}
 
 	// for some reason the UI hangs when all values are zero...
