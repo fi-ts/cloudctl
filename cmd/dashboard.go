@@ -17,6 +17,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/client/volume"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
+	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
@@ -177,6 +178,10 @@ type dashboard struct {
 	statusHeader *widgets.Paragraph
 	filterHeader *widgets.Paragraph
 
+	filterTenant    string
+	filterPartition string
+	filterPurpose   string
+
 	tabPane *widgets.TabPane
 	tabs    dashboardTabs
 
@@ -202,14 +207,11 @@ func (d dashboardTabs) FindIndexByName(name string) (int, error) {
 }
 
 func NewDashboard() *dashboard {
-	var (
-		tenant    = viper.GetString("tenant")
-		partition = viper.GetString("partition")
-		purpose   = viper.GetString("purpose")
-	)
-
 	d := &dashboard{
-		sem: semaphore.NewWeighted(1),
+		sem:             semaphore.NewWeighted(1),
+		filterTenant:    viper.GetString("tenant"),
+		filterPartition: viper.GetString("partition"),
+		filterPurpose:   viper.GetString("purpose"),
 	}
 
 	d.statusHeader = widgets.NewParagraph()
@@ -218,7 +220,6 @@ func NewDashboard() *dashboard {
 
 	d.filterHeader = widgets.NewParagraph()
 	d.filterHeader.Title = "Filters"
-	d.filterHeader.Text = fmt.Sprintf("Tenant=%s\nPartition=%s\nPurpose=%s", tenant, partition, purpose)
 	d.filterHeader.WrapText = false
 
 	d.tabs = dashboardTabs{
@@ -265,6 +266,8 @@ func (d *dashboard) Render() {
 		return
 	}
 	defer d.sem.Release(1)
+
+	d.filterHeader.Text = fmt.Sprintf("Tenant=%s\nPartition=%s\nPurpose=%s", d.filterTenant, d.filterPartition, d.filterPurpose)
 
 	ui.Render(d.filterHeader, d.tabPane)
 
@@ -435,8 +438,8 @@ func (d *dashboardClusterPane) Render() error {
 	)
 
 	resp, err := cloud.Cluster.FindClusters(cluster.NewFindClustersParams().WithBody(&models.V1ClusterFindRequest{
-		PartitionID: strDeref(partition),
-		Tenant:      strDeref(tenant),
+		PartitionID: output.StrDeref(partition),
+		Tenant:      output.StrDeref(tenant),
 	}).WithReturnMachines(pointer.BoolPtr(false)), nil)
 	if err != nil {
 		return err
@@ -518,7 +521,6 @@ func (d *dashboardClusterPane) Render() error {
 	}
 
 	// for some reason the UI hangs when all values are zero...
-	// so we render this individually
 	if succeeded > 0 || processing > 0 || unhealthy > 0 {
 		d.clusterHealth.Data = []float64{float64(succeeded), float64(processing), float64(unhealthy)}
 		ui.Render(d.clusterHealth)
@@ -680,8 +682,8 @@ func (d *dashboardVolumePane) Render() error {
 	)
 
 	volumeResp, err := cloud.Volume.FindVolumes(volume.NewFindVolumesParams().WithBody(&models.V1VolumeFindRequest{
-		PartitionID: strDeref(partition),
-		TenantID:    strDeref(tenant),
+		PartitionID: output.StrDeref(partition),
+		TenantID:    output.StrDeref(tenant),
 	}), nil)
 	if err != nil {
 		return err
@@ -802,39 +804,28 @@ func (d *dashboardVolumePane) Render() error {
 	ui.Render(d.volumeUsedSpace, d.compressionRatio, d.physicalFree)
 
 	// for some reason the UI hangs when all values are zero...
-	// so we render this individually
 	if volumesAvailable > 0 || volumesFailed > 0 || volumesOther > 0 {
 		d.volumeState.Data = []float64{float64(volumesAvailable), float64(volumesFailed), float64(volumesOther)}
 		ui.Render(d.volumeState)
 	}
 
 	// for some reason the UI hangs when all values are zero...
-	// so we render this individually
 	if volumesProtectionFullyProtected > 0 || volumesProtectionDegraded > 0 || volumesProtectionReadOnly > 0 || volumesProtectionOther > 0 {
 		d.volumeProtectionState.Data = []float64{float64(volumesProtectionFullyProtected), float64(volumesProtectionDegraded), float64(volumesProtectionReadOnly), float64(volumesProtectionOther)}
 		ui.Render(d.volumeProtectionState)
 	}
 
 	// for some reason the UI hangs when all values are zero...
-	// so we render this individually
 	if clusterStateOK > 0 || clusterStateError > 0 || clusterStateWarning > 0 || clusterStateOther > 0 {
 		d.clusterState.Data = []float64{float64(clusterStateOK), float64(clusterStateWarning), float64(clusterStateError), float64(clusterStateOther)}
 		ui.Render(d.clusterState)
 	}
 
 	// for some reason the UI hangs when all values are zero...
-	// so we render this individually
 	if serversEnabled > 0 || serversFailed > 0 || serversOther > 0 {
 		d.serverState.Data = []float64{float64(serversEnabled), float64(serversFailed), float64(serversOther)}
 		ui.Render(d.serverState)
 	}
 
 	return nil
-}
-
-func strDeref(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }
