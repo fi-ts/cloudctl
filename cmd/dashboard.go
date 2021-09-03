@@ -765,22 +765,10 @@ func (d *dashboardVolumePane) Render() error {
 		// for non-admins, we stop here
 		return nil
 	}
-
-	d.compressionRatio.Percent = int((compressionRatio / float64(len(clusters))) * 100)
-
-	totalStorage := float64(physicalFree + physicalUsed)
-	d.physicalFree.Percent = int((float64(physicalFree) / totalStorage) * 100)
-	if d.physicalFree.Percent < 10 {
-		d.physicalFree.BarColor = ui.ColorRed
-	} else if d.physicalFree.Percent < 30 {
-		d.physicalFree.BarColor = ui.ColorYellow
-	} else {
-		d.physicalFree.BarColor = ui.ColorGreen
-	}
-
-	ui.Render(d.compressionRatio, d.physicalFree)
-
 	clusters = infoResp.Payload
+	if len(clusters) == 0 {
+		return nil
+	}
 
 	for _, c := range clusters {
 		if c.Health == nil || c.Health.State == nil {
@@ -828,9 +816,19 @@ func (d *dashboardVolumePane) Render() error {
 		}
 	}
 
-	if len(clusters) == 0 {
-		return nil
+	d.compressionRatio.Percent = int((compressionRatio / float64(len(clusters))) * 100)
+
+	totalStorage := float64(physicalFree + physicalUsed)
+	d.physicalFree.Percent = int((float64(physicalFree) / totalStorage) * 100)
+	if d.physicalFree.Percent < 10 {
+		d.physicalFree.BarColor = ui.ColorRed
+	} else if d.physicalFree.Percent < 30 {
+		d.physicalFree.BarColor = ui.ColorYellow
+	} else {
+		d.physicalFree.BarColor = ui.ColorGreen
 	}
+
+	ui.Render(d.compressionRatio, d.physicalFree)
 
 	// for some reason the UI hangs when all values are zero...
 	if clusterStateOK > 0 || clusterStateError > 0 || clusterStateWarning > 0 || clusterStateOther > 0 {
