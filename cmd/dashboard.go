@@ -43,7 +43,7 @@ var (
 )
 
 func init() {
-	tabs := dashboardDefaultTabs()
+	tabs := dashboardTabs()
 
 	dashboardCmd.Flags().String("partition", "", "show resources in partition [optional]")
 	dashboardCmd.Flags().String("tenant", "", "show resources of given tenant [optional]")
@@ -173,7 +173,7 @@ func runDashboard() error {
 	}
 }
 
-func dashboardDefaultTabs() dashboardTabPanes {
+func dashboardTabs() dashboardTabPanes {
 	return dashboardTabPanes{
 		NewDashboardClusterPane(),
 		NewDashboardVolumePane(),
@@ -233,7 +233,7 @@ func NewDashboard() (*dashboard, error) {
 	d.filterHeader.Title = "Filters"
 	d.filterHeader.WrapText = false
 
-	d.tabs = dashboardDefaultTabs()
+	d.tabs = dashboardTabs()
 	var tabNames []string
 	for i, p := range d.tabs {
 		tabNames = append(tabNames, fmt.Sprintf("(%d) %s", i+1, p.Name()))
