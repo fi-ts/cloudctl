@@ -43,13 +43,13 @@ var (
 )
 
 func init() {
-	d := NewDashboard()
+	tabs := dashboardDefaultTabs()
 
 	dashboardCmd.Flags().String("partition", "", "show resources in partition [optional]")
 	dashboardCmd.Flags().String("tenant", "", "show resources of given tenant [optional]")
 	dashboardCmd.Flags().String("purpose", "", "show resources of given purpose [optional]")
 	dashboardCmd.Flags().String("color-theme", "default", "the dashboard's color theme [default|dark] [optional]")
-	dashboardCmd.Flags().String("panel", d.tabs[0].Name(), "the panel to show when starting the dashboard [optional]")
+	dashboardCmd.Flags().String("panel", tabs[0].Name(), "the panel to show when starting the dashboard [optional]")
 	dashboardCmd.Flags().Duration("refresh-interval", 3*time.Second, "refresh interval [optional]")
 
 	err := dashboardCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -81,8 +81,8 @@ func init() {
 	}
 	err = dashboardCmd.RegisterFlagCompletionFunc("panel", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var names []string
-		for _, p := range d.tabs {
-			names = append(names, fmt.Sprintf("%s\t%s", strings.ToLower(p.Name()), p.Description()))
+		for _, t := range tabs {
+			names = append(names, fmt.Sprintf("%s\t%s", strings.ToLower(t.Name()), t.Description()))
 		}
 		return names, cobra.ShellCompDirectiveNoFileComp
 	})
@@ -130,16 +130,15 @@ func runDashboard() error {
 	}
 	defer ui.Close()
 
-	err := dashboardApplyTheme(viper.GetString("color-theme"))
-	if err != nil {
-		return err
-	}
-
 	var (
 		interval      = viper.GetDuration("refresh-interval")
 		width, height = ui.TerminalDimensions()
-		d             = NewDashboard()
 	)
+
+	d, err := NewDashboard()
+	if err != nil {
+		return err
+	}
 
 	d.Size(0, 0, width, height)
 	d.Render()
@@ -174,6 +173,13 @@ func runDashboard() error {
 	}
 }
 
+func dashboardDefaultTabs() dashboardTabPanes {
+	return dashboardTabPanes{
+		NewDashboardClusterPane(),
+		NewDashboardVolumePane(),
+	}
+}
+
 type dashboard struct {
 	statusHeader *widgets.Paragraph
 	filterHeader *widgets.Paragraph
@@ -183,21 +189,21 @@ type dashboard struct {
 	filterPurpose   string
 
 	tabPane *widgets.TabPane
-	tabs    dashboardTabs
+	tabs    dashboardTabPanes
 
 	sem *semaphore.Weighted
 }
 
-type dashboardTab interface {
+type dashboardTabPane interface {
 	Name() string
 	Description() string
 	Render() error
 	Size(x1, y1, x2, y2 int)
 }
 
-type dashboardTabs []dashboardTab
+type dashboardTabPanes []dashboardTabPane
 
-func (d dashboardTabs) FindIndexByName(name string) (int, error) {
+func (d dashboardTabPanes) FindIndexByName(name string) (int, error) {
 	for i, p := range d {
 		if strings.EqualFold(p.Name(), name) {
 			return i, nil
@@ -206,7 +212,12 @@ func (d dashboardTabs) FindIndexByName(name string) (int, error) {
 	return 0, fmt.Errorf("panel with name %q not found", name)
 }
 
-func NewDashboard() *dashboard {
+func NewDashboard() (*dashboard, error) {
+	err := dashboardApplyTheme(viper.GetString("color-theme"))
+	if err != nil {
+		return nil, err
+	}
+
 	d := &dashboard{
 		sem:             semaphore.NewWeighted(1),
 		filterTenant:    viper.GetString("tenant"),
@@ -222,11 +233,7 @@ func NewDashboard() *dashboard {
 	d.filterHeader.Title = "Filters"
 	d.filterHeader.WrapText = false
 
-	d.tabs = dashboardTabs{
-		NewDashboardClusterPane(),
-		NewDashboardVolumePane(),
-	}
-
+	d.tabs = dashboardDefaultTabs()
 	var tabNames []string
 	for i, p := range d.tabs {
 		tabNames = append(tabNames, fmt.Sprintf("(%d) %s", i+1, p.Name()))
@@ -238,12 +245,12 @@ func NewDashboard() *dashboard {
 	if viper.IsSet("panel") {
 		initialPanelIndex, err := d.tabs.FindIndexByName(viper.GetString("panel"))
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		d.tabPane.ActiveTabIndex = initialPanelIndex
 	}
 
-	return d
+	return d, nil
 }
 
 func (d *dashboard) Size(x1, y1, x2, y2 int) {
