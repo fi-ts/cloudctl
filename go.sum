@@ -233,8 +233,8 @@ github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5Kwzbycv
 github.com/fatih/color v1.10.0/go.mod h1:ELkj/draVOlAH/xkhN6mQ50Qd0MPOk5AAr3maGEBuJM=
 github.com/fatih/color v1.12.0 h1:mRhaKNwANqRgUBGKmnI5ZxEk7QXmjQeCcuYFMX2bfcc=
 github.com/fatih/color v1.12.0/go.mod h1:ELkj/draVOlAH/xkhN6mQ50Qd0MPOk5AAr3maGEBuJM=
-github.com/fi-ts/cloud-go v0.17.12-0.20210830110343-18bb758145f0 h1:Vx2o7F84LYFoRxkS0C7tK8exxUUM9mcHTbbD719tO0k=
-github.com/fi-ts/cloud-go v0.17.12-0.20210830110343-18bb758145f0/go.mod h1:0hd1Jbm3aN8Thugo6rCo+c+G2OO1+PezfKRD+on/vZM=
+github.com/fi-ts/cloud-go v0.17.15 h1:e/Iia9N766WFScqXPO+TpqCOA/+ManfmjiJEe2zOY98=
+github.com/fi-ts/cloud-go v0.17.15/go.mod h1:0hd1Jbm3aN8Thugo6rCo+c+G2OO1+PezfKRD+on/vZM=
 github.com/fogleman/gg v1.2.1-0.20190220221249-0403632d5b90/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
 github.com/form3tech-oss/jwt-go v3.2.2+incompatible/go.mod h1:pbq4aXjuKjdthFRnoDwaVPLA+WlJuPGy+QneDUgJi2k=
 github.com/frankban/quicktest v1.5.0/go.mod h1:jaStnuzAqU1AJdCO0l53JDCJrVDKcS03DbaAcR7Ks/o=
