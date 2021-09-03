@@ -178,8 +178,6 @@ type dashboard struct {
 	filterHeader *widgets.Paragraph
 
 	tabPane *widgets.TabPane
-
-	lastErr error
 	tabs    dashboardTabs
 
 	sem *semaphore.Weighted
@@ -274,6 +272,8 @@ func (d *dashboard) Render() {
 		apiVersion       = "unknown"
 		apiHealth        = "unknown"
 		apiHealthMessage string
+
+		lastErr error
 	)
 
 	defer func() {
@@ -293,8 +293,8 @@ func (d *dashboard) Render() {
 
 		versionLine := fmt.Sprintf("cloud-api %s (API Health: %s), cloudctl %s (%s)", apiVersion, coloredHealth, v.Version, v.GitSHA1)
 		fetchInfoLine := fmt.Sprintf("Last Update: %s", time.Now().Format("15:04:05"))
-		if d.lastErr != nil {
-			fetchInfoLine += fmt.Sprintf(", [Update Error: %s](fg:red)", d.lastErr)
+		if lastErr != nil {
+			fetchInfoLine += fmt.Sprintf(", [Update Error: %s](fg:red)", lastErr)
 		}
 		glossaryLine := "Switch between tabs with number keys. Press q to quit."
 
@@ -303,24 +303,21 @@ func (d *dashboard) Render() {
 	}()
 
 	var infoResp *version.InfoOK
-	infoResp, d.lastErr = cloud.Version.Info(version.NewInfoParams(), nil)
-	if d.lastErr != nil {
+	infoResp, lastErr = cloud.Version.Info(version.NewInfoParams(), nil)
+	if lastErr != nil {
 		return
 	}
 	apiVersion = *infoResp.Payload.Version
 
 	var healthResp *health.HealthOK
-	healthResp, d.lastErr = cloud.Health.Health(health.NewHealthParams(), nil)
-	if d.lastErr != nil {
+	healthResp, lastErr = cloud.Health.Health(health.NewHealthParams(), nil)
+	if lastErr != nil {
 		return
 	}
 	apiHealth = *healthResp.Payload.Status
 	apiHealthMessage = *healthResp.Payload.Message
 
-	d.lastErr = d.tabs[d.tabPane.ActiveTabIndex].Render()
-	if d.lastErr != nil {
-		return
-	}
+	lastErr = d.tabs[d.tabPane.ActiveTabIndex].Render()
 }
 
 type dashboardClusterError struct {
