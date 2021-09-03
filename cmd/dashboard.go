@@ -140,11 +140,16 @@ func runDashboard() error {
 		return err
 	}
 
-	d.Size(0, 0, width, height)
+	d.Resize(0, 0, width, height)
 	d.Render()
 
 	uiEvents := ui.PollEvents()
 	ticker := time.NewTicker(interval)
+
+	panelNumbers := map[string]bool{}
+	for i := range d.tabs {
+		panelNumbers[strconv.Itoa(i+1)] = true
+	}
 
 	for {
 		select {
@@ -152,20 +157,23 @@ func runDashboard() error {
 			switch e.ID {
 			case "q", "<C-c>":
 				return nil
-			case "1", "2":
-				i, _ := strconv.Atoi(e.ID)
-				d.tabPane.ActiveTabIndex = i - 1
-				ui.Clear()
-				d.Render()
 			case "<Resize>":
 				payload := e.Payload.(ui.Resize)
 				var (
 					height = payload.Height
 					width  = payload.Width
 				)
-				d.Size(0, 0, width, height)
+				d.Resize(0, 0, width, height)
 				ui.Clear()
 				d.Render()
+			default:
+				_, ok := panelNumbers[e.ID]
+				if ok {
+					i, _ := strconv.Atoi(e.ID)
+					d.tabPane.ActiveTabIndex = i - 1
+					ui.Clear()
+					d.Render()
+				}
 			}
 		case <-ticker.C:
 			d.Render()
@@ -198,7 +206,7 @@ type dashboardTabPane interface {
 	Name() string
 	Description() string
 	Render() error
-	Size(x1, y1, x2, y2 int)
+	Resize(x1, y1, x2, y2 int)
 }
 
 type dashboardTabPanes []dashboardTabPane
@@ -253,12 +261,12 @@ func NewDashboard() (*dashboard, error) {
 	return d, nil
 }
 
-func (d *dashboard) Size(x1, y1, x2, y2 int) {
+func (d *dashboard) Resize(x1, y1, x2, y2 int) {
 	d.statusHeader.SetRect(x1, y1, x2-25, d.headerHeight())
 	d.filterHeader.SetRect(x2-25, y1, x2, d.headerHeight())
 
 	for _, p := range d.tabs {
-		p.Size(x1, d.headerHeight(), x2, y2-1)
+		p.Resize(x1, d.headerHeight(), x2, y2-1)
 	}
 
 	d.tabPane.SetRect(x1, y2-1, x2, y2)
@@ -400,7 +408,7 @@ func (d *dashboardClusterPane) Description() string {
 	return "Cluster health and issues"
 }
 
-func (d *dashboardClusterPane) Size(x1, y1, x2, y2 int) {
+func (d *dashboardClusterPane) Resize(x1, y1, x2, y2 int) {
 	d.clusterHealth.SetRect(x1, y1, x1+48, y1+12)
 
 	d.clusterStatusAPI.SetRect(x1+50, y1, x2, 3+y1)
@@ -634,7 +642,7 @@ func (d *dashboardVolumePane) Description() string {
 	return "Volume health, for operators also cluster health"
 }
 
-func (d *dashboardVolumePane) Size(x1, y1, x2, y2 int) {
+func (d *dashboardVolumePane) Resize(x1, y1, x2, y2 int) {
 	columnWidth := int(math.Ceil((float64(x2) - (float64(x1))) / 2))
 	rowHeight := int(math.Ceil((float64(y2) - (float64(y1))) / 2))
 
