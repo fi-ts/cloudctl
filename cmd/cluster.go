@@ -206,8 +206,7 @@ func init() {
 	clusterCreateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
 	clusterCreateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <network>:<ip>; e.g.: --egress internet:1.2.3.4,extnet:123.1.1.1 --egress internet:1.2.3.5 [optional]")
 	clusterCreateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster.")
-	clusterCreateCmd.Flags().BoolP("audit", "", true, "audit logging for cluster API access. True by default. [optional]")
-	clusterCreateCmd.Flags().BoolP("audittosplunk", "", false, "forward cluster API audit messages to a splunk endpoint; by default the fi-ts splunk shared index. [optional]")
+	clusterCreateCmd.Flags().String("audit", "on", "audit logging of cluster API access; can be off, on (default) or splunk (Logging to a predefined or custom splunk endpoint). [optional]")
 	clusterCreateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced. [optional]")
 	clusterCreateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. [optional]")
 
@@ -289,6 +288,12 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	err = clusterCreateCmd.RegisterFlagCompletionFunc("audit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"off", "on", "splunk"}, cobra.ShellCompDirectiveNoFileComp
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	// Cluster list --------------------------------------------------------------------
 	clusterListCmd.Flags().String("id", "", "show clusters of given id")
 	clusterListCmd.Flags().String("name", "", "show clusters of given name")
@@ -321,8 +326,7 @@ func init() {
 	clusterUpdateCmd.Flags().StringSlice("addlabels", []string{}, "labels to add to the cluster")
 	clusterUpdateCmd.Flags().StringSlice("removelabels", []string{}, "labels to remove from the cluster")
 	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster, please add --yes-i-really-mean-it")
-	clusterUpdateCmd.Flags().BoolP("audit", "", true, "audit logging for cluster API access.")
-	clusterUpdateCmd.Flags().BoolP("audittosplunk", "", false, "forward cluster API audit messages to fi-ts splunk shared index.")
+	clusterUpdateCmd.Flags().String("audit", "on", "audit logging of cluster API access; can be off, on or splunk (Logging to a predefined or custom splunk endpoint).")
 	clusterUpdateCmd.Flags().String("purpose", "", "purpose of the cluster, can be one of production|development|evaluation. SLA is only given on production clusters.")
 	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]. Use --egress none to remove all ingress rules.")
 	clusterUpdateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
@@ -371,6 +375,12 @@ func init() {
 	}
 	err = clusterUpdateCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"production", "development", "evaluation"}, cobra.ShellCompDirectiveNoFileComp
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = clusterUpdateCmd.RegisterFlagCompletionFunc("audit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"off", "on", "splunk"}, cobra.ShellCompDirectiveNoFileComp
 	})
 	if err != nil {
 		log.Fatal(err.Error())
@@ -483,8 +493,7 @@ func clusterCreate() error {
 	draintimeout := viper.GetDuration("draintimeout")
 
 	allowprivileged := viper.GetBool("allowprivileged")
-	audit := viper.GetBool("audit")
-	audittosplunk := viper.GetBool("audittosplunk")
+	audit := viper.GetString("audit")
 
 	labels := viper.GetStringSlice("labels")
 
@@ -548,6 +557,25 @@ func clusterCreate() error {
 		log.Fatalf("provided cri:%s is not supported, only docker or containerd at the moment", cri)
 	}
 
+	var (
+		clusterAudit  bool
+		auditToSplunk bool
+	)
+	switch audit {
+	case "off":
+		clusterAudit = false
+		auditToSplunk = false
+	case "on":
+		clusterAudit = true
+		auditToSplunk = false
+	case "splunk":
+		clusterAudit = true
+		auditToSplunk = true
+	case "":
+	default:
+		log.Fatalf("Audit value %s is not supported; choose \"off\", \"on\" or \"splunk\".", audit)
+	}
+
 	scr := &models.V1ClusterCreateRequest{
 		ProjectID:   &project,
 		Name:        &name,
@@ -573,8 +601,8 @@ func clusterCreate() error {
 			Version:                   &version,
 		},
 		Audit: &models.V1Audit{
-			ClusterAudit:  &audit,
-			AuditToSplunk: &audittosplunk,
+			ClusterAudit:  &clusterAudit,
+			AuditToSplunk: &auditToSplunk,
 		},
 		Maintenance: &models.V1Maintenance{
 			TimeWindow: &models.V1MaintenanceTimeWindow{
@@ -932,16 +960,29 @@ func updateCluster(args []string) error {
 	}
 	cur.Kubernetes = k8s
 
-	audit := &models.V1Audit{}
-	if viper.IsSet("audit") {
-		a := viper.GetBool("audit")
-		audit.ClusterAudit = &a
+	auditFlags := &models.V1Audit{}
+	audit := viper.GetString("audit")
+	switch audit {
+	case "off":
+		ca := false
+		as := false
+		auditFlags.ClusterAudit = &ca
+		auditFlags.AuditToSplunk = &as
+	case "on":
+		ca := true
+		as := false
+		auditFlags.ClusterAudit = &ca
+		auditFlags.AuditToSplunk = &as
+	case "splunk":
+		ca := true
+		as := true
+		auditFlags.ClusterAudit = &ca
+		auditFlags.AuditToSplunk = &as
+	case "":
+	default:
+		log.Fatalf("Audit value %s is not supported; choose \"off\", \"on\" or \"splunk\".", audit)
 	}
-	if viper.IsSet("audittosplunk") {
-		as := viper.GetBool("audittosplunk")
-		audit.AuditToSplunk = &as
-	}
-	cur.Audit = audit
+	cur.Audit = auditFlags
 
 	cur.EgressRules = makeEgressRules(egress)
 
