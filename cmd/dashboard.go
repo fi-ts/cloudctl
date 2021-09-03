@@ -49,7 +49,7 @@ func init() {
 	dashboardCmd.Flags().String("tenant", "", "show resources of given tenant [optional]")
 	dashboardCmd.Flags().String("purpose", "", "show resources of given purpose [optional]")
 	dashboardCmd.Flags().String("color-theme", "default", "the dashboard's color theme [default|dark] [optional]")
-	dashboardCmd.Flags().String("initial-tab", tabs[0].Name(), "the tab to show when starting the dashboard [optional]")
+	dashboardCmd.Flags().String("initial-tab", strings.ToLower(tabs[0].Name()), "the tab to show when starting the dashboard [optional]")
 	dashboardCmd.Flags().Duration("refresh-interval", 3*time.Second, "refresh interval [optional]")
 
 	err := dashboardCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
