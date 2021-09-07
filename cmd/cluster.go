@@ -183,6 +183,14 @@ var (
 		ValidArgsFunction: clusterListCompletionFunc,
 		PreRun:            bindPFlags,
 	}
+	clusterSplunkConfigTemplateCmd = &cobra.Command{
+		Use:   "splunk-config-template",
+		Short: "get a template for a custom splunk HEC endpoint and index configuration",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterSplunkConfigTemplate()
+		},
+		PreRun: bindPFlags,
+	}
 )
 
 func init() {
@@ -289,7 +297,12 @@ func init() {
 		log.Fatal(err.Error())
 	}
 	err = clusterCreateCmd.RegisterFlagCompletionFunc("audit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"off", "on", "splunk"}, cobra.ShellCompDirectiveNoFileComp
+		return []string{
+				"off\tDo not create a kube-apiserver auditlog",
+				"on\tCreate a kube-apiserver auditlog, and expose it as container log of the audittailer Deployment in the audit Namespace",
+				"splunk\tAlso forward the auditlog to a splunk HEC endpoint. To get a custom config template execute \"cloudctl cluster splunk-config-template\"",
+			},
+			cobra.ShellCompDirectiveNoFileComp
 	})
 	if err != nil {
 		log.Fatal(err.Error())
@@ -380,7 +393,12 @@ func init() {
 		log.Fatal(err.Error())
 	}
 	err = clusterUpdateCmd.RegisterFlagCompletionFunc("audit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"off", "on", "splunk"}, cobra.ShellCompDirectiveNoFileComp
+		return []string{
+				"off\tTurn off the kube-apiserver auditlog",
+				"on\tTurn on the kube-apiserver auditlog, and expose it as container log of the audittailer Deployment in the audit Namespace",
+				"splunk\tAlso forward the auditlog to a splunk HEC endpoint. To get a custom config template execute \"cloudctl cluster splunk-config-template\"",
+			},
+			cobra.ShellCompDirectiveNoFileComp
 	})
 	if err != nil {
 		log.Fatal(err.Error())
@@ -468,6 +486,7 @@ func init() {
 	clusterCmd.AddCommand(clusterMachineCmd)
 	clusterCmd.AddCommand(clusterLogsCmd)
 	clusterCmd.AddCommand(clusterIssuesCmd)
+	clusterCmd.AddCommand(clusterSplunkConfigTemplateCmd)
 }
 
 func clusterCreate() error {
@@ -1204,6 +1223,31 @@ func clusterInputs() error {
 	}
 
 	return output.YAMLPrinter{}.Print(sc)
+}
+
+func clusterSplunkConfigTemplate() error {
+	template := `---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: splunk-config
+  namespace: kube-system
+type: Opaque
+stringData:
+  # Fill in your custom values below, and apply the secret to your cluster.
+  # If you delete a key, the default value from the partition will be used.
+  hecToken: "hec token"
+  index: "splunk index"
+  hecHost: "splunk HEC endpoint - hostname or ip address"
+  hecPort: "Port number for the splunk endpoint"
+  tlsEnabled: <bool: true means TLS should be used>
+  hecCAFile: |
+	ca certificate (chain) for the hecHost certificate.
+	This is necessary even for well-known CA certificates!
+`
+
+	fmt.Println(template)
+	return nil
 }
 
 func clusterMachineReset(args []string) error {
