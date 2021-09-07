@@ -590,7 +590,6 @@ func clusterCreate() error {
 	case "splunk":
 		clusterAudit = true
 		auditToSplunk = true
-	case "":
 	default:
 		log.Fatalf("Audit value %s is not supported; choose \"off\", \"on\" or \"splunk\".", audit)
 	}
@@ -979,29 +978,30 @@ func updateCluster(args []string) error {
 	}
 	cur.Kubernetes = k8s
 
-	auditFlags := &models.V1Audit{}
-	audit := viper.GetString("audit")
-	switch audit {
-	case "off":
-		ca := false
-		as := false
-		auditFlags.ClusterAudit = &ca
-		auditFlags.AuditToSplunk = &as
-	case "on":
-		ca := true
-		as := false
-		auditFlags.ClusterAudit = &ca
-		auditFlags.AuditToSplunk = &as
-	case "splunk":
-		ca := true
-		as := true
-		auditFlags.ClusterAudit = &ca
-		auditFlags.AuditToSplunk = &as
-	case "":
-	default:
-		log.Fatalf("Audit value %s is not supported; choose \"off\", \"on\" or \"splunk\".", audit)
+	if viper.IsSet("audit") {
+		auditFlags := &models.V1Audit{}
+		audit := viper.GetString("audit")
+		switch audit {
+		case "off":
+			ca := false
+			as := false
+			auditFlags.ClusterAudit = &ca
+			auditFlags.AuditToSplunk = &as
+		case "on":
+			ca := true
+			as := false
+			auditFlags.ClusterAudit = &ca
+			auditFlags.AuditToSplunk = &as
+		case "splunk":
+			ca := true
+			as := true
+			auditFlags.ClusterAudit = &ca
+			auditFlags.AuditToSplunk = &as
+		default:
+			log.Fatalf("Audit value %s is not supported; choose \"off\", \"on\" or \"splunk\".", audit)
+		}
+		cur.Audit = auditFlags
 	}
-	cur.Audit = auditFlags
 
 	cur.EgressRules = makeEgressRules(egress)
 
