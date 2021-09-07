@@ -130,9 +130,8 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
 	wideFooter := make([]string, len(s.wideHeader)-len(footer))
-	s.addWideData(append(wideFooter, footer...), data)
-
-	s.addShortData(append(shortFooter, footer...), data)
+	s.addWideData(append(wideFooter, footer...), data)   // nolint:makezero
+	s.addShortData(append(shortFooter, footer...), data) // nolint:makezero
 	s.render()
 }
 
@@ -254,8 +253,8 @@ func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
 	wideFooter := make([]string, len(s.wideHeader)-len(footer))
-	s.addWideData(append(wideFooter, footer...), data)
-	s.addShortData(append(shortFooter, footer...), data)
+	s.addWideData(append(wideFooter, footer...), data)   // nolint:makezero
+	s.addShortData(append(shortFooter, footer...), data) // nolint:makezero
 	s.render()
 }
 
@@ -335,9 +334,8 @@ func (s IPBillingTablePrinter) Print(data *models.V1IPUsageResponse) {
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
 	wideFooter := make([]string, len(s.wideHeader)-len(footer))
-	s.addWideData(append(wideFooter, footer...), data)
-
-	s.addShortData(append(shortFooter, footer...), data)
+	s.addWideData(append(wideFooter, footer...), data)   // nolint:makezero
+	s.addShortData(append(shortFooter, footer...), data) // nolint:makezero
 	s.render()
 }
 
@@ -459,9 +457,8 @@ func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResp
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
 	wideFooter := make([]string, len(s.wideHeader)-len(footer))
-	s.addWideData(append(wideFooter, footer...), data)
-
-	s.addShortData(append(shortFooter, footer...), data)
+	s.addWideData(append(wideFooter, footer...), data)   // nolint:makezero
+	s.addShortData(append(shortFooter, footer...), data) // nolint:makezero
 	s.render()
 }
 
@@ -583,9 +580,8 @@ func (s S3BillingTablePrinter) Print(data *models.V1S3UsageResponse) {
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
 	wideFooter := make([]string, len(s.wideHeader)-len(footer))
-	s.addWideData(append(wideFooter, footer...), data)
-
-	s.addShortData(append(shortFooter, footer...), data)
+	s.addWideData(append(wideFooter, footer...), data)   // nolint:makezero
+	s.addShortData(append(shortFooter, footer...), data) // nolint:makezero
 	s.render()
 }
 
@@ -716,9 +712,8 @@ func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageRespons
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
 	wideFooter := make([]string, len(s.wideHeader)-len(footer))
-	s.addWideData(append(wideFooter, footer...), data)
-
-	s.addShortData(append(shortFooter, footer...), data)
+	s.addWideData(append(wideFooter, footer...), data)   // nolint:makezero
+	s.addShortData(append(shortFooter, footer...), data) // nolint:makezero
 	s.render()
 }
 
@@ -813,9 +808,8 @@ func (s PostgresBillingTablePrinter) Print(data *models.V1PostgresUsageResponse)
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
 	wideFooter := make([]string, len(s.wideHeader)-len(footer))
-	s.addWideData(append(wideFooter, footer...), data)
-
-	s.addShortData(append(shortFooter, footer...), data)
+	s.addWideData(append(wideFooter, footer...), data)   // nolint:makezero
+	s.addShortData(append(shortFooter, footer...), data) // nolint:makezero
 	s.render()
 }
 

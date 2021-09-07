@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 
 	"github.com/fi-ts/cloud-go/api/models"
@@ -34,7 +36,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return projectDescribe(args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: projectListCompletionFunc,
 	}
 	projectDeleteCmd = &cobra.Command{
 		Use:     "remove <projectID>",
@@ -43,7 +46,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return projectDelete(args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: projectListCompletionFunc,
 	}
 	projectApplyCmd = &cobra.Command{
 		Use:   "apply",
@@ -59,7 +63,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return projectEdit(args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: projectListCompletionFunc,
 	}
 	projectListCmd = &cobra.Command{
 		Use:     "list",
@@ -227,9 +232,15 @@ func projectApply() error {
 		request.SetID(par.Meta.ID)
 		p, err := cloud.Project.FindProject(request, nil)
 		if err != nil {
-			return err
+			var r *project.FindProjectDefault
+			if !errors.As(err, &r) {
+				return err
+			}
+			if r.Code() != http.StatusNotFound {
+				return err
+			}
 		}
-		if p.Payload == nil {
+		if p == nil || p.Payload == nil {
 			params := project.NewCreateProjectParams()
 			params.SetBody(&pars[i])
 			resp, err := cloud.Project.CreateProject(params, nil)

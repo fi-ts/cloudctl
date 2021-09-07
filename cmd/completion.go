@@ -5,6 +5,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/client/database"
 	"github.com/fi-ts/cloud-go/api/client/project"
 	"github.com/fi-ts/cloud-go/api/client/s3"
+	"github.com/fi-ts/cloud-go/api/client/tenant"
 	"github.com/fi-ts/cloud-go/api/client/volume"
 	"github.com/spf13/cobra"
 )
@@ -78,6 +79,21 @@ func partitionListCompletion() ([]string, cobra.ShellCompDirective) {
 	}
 
 	return sc.Payload.Partitions, cobra.ShellCompDirectiveNoFileComp
+}
+
+func tenantListCompletion() ([]string, cobra.ShellCompDirective) {
+	request := tenant.NewListTenantsParams()
+	ts, err := cloud.Tenant.ListTenants(request, nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+
+	var names []string
+	for _, t := range ts.Payload {
+		name := t.Meta.ID + "\t" + t.Name
+		names = append(names, name)
+	}
+	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
 func volumeListCompletion() ([]string, cobra.ShellCompDirective) {
@@ -208,4 +224,17 @@ func postgresListVersionsCompletion() ([]string, cobra.ShellCompDirective) {
 		names = append(names, v.Version)
 	}
 	return names, cobra.ShellCompDirectiveNoFileComp
+}
+
+var clusterListCompletionFunc = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) != 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	return clusterListCompletion()
+}
+var projectListCompletionFunc = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) != 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	return projectListCompletion()
 }

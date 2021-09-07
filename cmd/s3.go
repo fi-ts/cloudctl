@@ -109,21 +109,32 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	s3CreateCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = s3CreateCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return s3ListPartitionsCompletion()
 	})
-	s3CreateCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = s3CreateCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return projectListCompletion()
 	})
-
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	s3ListCmd.Flags().StringP("partition", "p", "", "name of s3 partition.")
 	s3ListCmd.Flags().String("project", "", "id of the project that the s3 user belongs to")
-	s3ListCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = s3ListCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return s3ListPartitionsCompletion()
 	})
-	s3ListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = s3ListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return projectListCompletion()
 	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	s3DescribeCmd.Flags().StringP("id", "i", "", "id of the s3 user [required]")
 	s3DescribeCmd.Flags().StringP("partition", "p", "", "name of s3 partition where this user is in [required]")
@@ -142,12 +153,18 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	s3DescribeCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = s3DescribeCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return s3ListPartitionsCompletion()
 	})
-	s3DescribeCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = s3DescribeCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return projectListCompletion()
 	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	s3DeleteCmd.Flags().StringP("id", "i", "", "id of the s3 user [required]")
 	s3DeleteCmd.Flags().StringP("partition", "p", "", "name of s3 partition where this user is in [required]")
@@ -166,12 +183,18 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	s3DeleteCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = s3DeleteCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return s3ListPartitionsCompletion()
 	})
-	s3DeleteCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = s3DeleteCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return projectListCompletion()
 	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	s3AddKeyCmd.Flags().StringP("id", "i", "", "id of the s3 user [required]")
 	s3AddKeyCmd.Flags().StringP("partition", "p", "", "name of s3 partition where this user is in [required]")
@@ -191,12 +214,18 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	s3AddKeyCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = s3AddKeyCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return s3ListPartitionsCompletion()
 	})
-	s3AddKeyCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = s3AddKeyCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return projectListCompletion()
 	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	s3RemoveKeyCmd.Flags().StringP("id", "i", "", "id of the s3 user [required]")
 	s3RemoveKeyCmd.Flags().StringP("partition", "p", "", "name of s3 partition where this user is in [required]")
@@ -215,12 +244,18 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	s3RemoveKeyCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = s3RemoveKeyCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return s3ListPartitionsCompletion()
 	})
-	s3RemoveKeyCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = s3RemoveKeyCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return projectListCompletion()
 	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	s3Cmd.AddCommand(s3CreateCmd)
 	s3Cmd.AddCommand(s3DescribeCmd)

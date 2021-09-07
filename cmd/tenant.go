@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
@@ -122,9 +124,15 @@ func tenantApply() error {
 		request.SetID(tar.Meta.ID)
 		t, err := cloud.Tenant.GetTenant(request, nil)
 		if err != nil {
-			return err
+			var r *tenant.GetTenantDefault
+			if !errors.As(err, &r) {
+				return err
+			}
+			if r.Code() != http.StatusNotFound {
+				return err
+			}
 		}
-		if t.Payload == nil {
+		if t == nil || t.Payload == nil {
 			return fmt.Errorf("only tenant update is supported")
 		}
 		if t.Payload.Meta != nil {
