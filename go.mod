@@ -16,6 +16,7 @@ require (
 	github.com/go-playground/validator/v10 v10.9.0
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jinzhu/now v1.1.2
+	github.com/metal-stack/duros-go v0.2.2
 	github.com/metal-stack/metal-lib v0.8.0
 	github.com/metal-stack/security v0.6.1 // indirect
 	github.com/metal-stack/updater v1.1.3
@@ -25,9 +26,7 @@ require (
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/viper v1.8.1
 	github.com/tidwall/pretty v1.2.0 // indirect
-	go.uber.org/zap v1.18.1 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	k8s.io/api v0.20.9
 	k8s.io/apimachinery v0.20.9
