@@ -1240,10 +1240,10 @@ stringData:
   index: "splunk index"
   hecHost: "splunk HEC endpoint - hostname or ip address"
   hecPort: "Port number for the splunk endpoint"
-  tlsEnabled: <bool: true means TLS should be used>
+  tlsEnabled: "true" if TLS encryption should be used, otherwise "false"
   hecCAFile: |
-	ca certificate (chain) for the hecHost certificate.
-	This is necessary even for well-known CA certificates!
+    ca certificate (chain) for the hecHost certificate.
+    This is necessary even for well-known CA certificates!
 `
 
 	fmt.Println(template)
