@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -12,7 +13,10 @@ import (
 	"strings"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"sigs.k8s.io/yaml"
 
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 
@@ -1245,8 +1249,31 @@ stringData:
     ca certificate (chain) for the hecHost certificate.
     This is necessary even for well-known CA certificates!
 `
+	secret := corev1.Secret{
+		TypeMeta:   v1.TypeMeta{Kind: "Secret", APIVersion: "v1"},
+		ObjectMeta: v1.ObjectMeta{Name: "splunk-config", Namespace: "kube-system"},
+		Type:       corev1.SecretTypeOpaque,
+		StringData: map[string]string{
+			"hecToken":   "hec token",
+			"index":      "splunk index",
+			"hecHost":    "splunk HEC endpoint - hostname or ip address",
+			"hecPort":    "Port number for the splunk endpoint",
+			"tlsEnabled": "\"true\" if TLS encryption should be used, otherwise \"false\"",
+			"hecCAFile":  "ca certificate (chain) for the hecHost certificate.\nThis is necessary even for well-known CA certificates!",
+		},
+	}
+	js, err := json.Marshal(secret)
+	if err != nil {
+		return fmt.Errorf("unable to marshal to yaml:%w", err)
+	}
+	y, err := yaml.JSONToYAML(js)
+	if err != nil {
+		return fmt.Errorf("unable to marshal to yaml:%w", err)
+	}
 
 	fmt.Println(template)
+	fmt.Printf("%s\n", string(y))
+
 	return nil
 }
 
