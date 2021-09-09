@@ -16,6 +16,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/pointer"
 	"sigs.k8s.io/yaml"
 
 	"github.com/fi-ts/cloud-go/api/client/cluster"
@@ -304,7 +305,7 @@ func init() {
 		return []string{
 				"off\tDo not create a kube-apiserver auditlog",
 				"on\tCreate a kube-apiserver auditlog, and expose it as container log of the audittailer Deployment in the audit Namespace",
-				"splunk\tAlso forward the auditlog to a splunk HEC endpoint. To get a custom config template execute \"cloudctl cluster splunk-config-template\"",
+				"splunk\tAlso forward the auditlog to a splunk HEC endpoint. Create a custom splunk config manifest with \"cloudctl cluster splunk-config-manifest\"",
 			},
 			cobra.ShellCompDirectiveNoFileComp
 	})
@@ -400,7 +401,7 @@ func init() {
 		return []string{
 				"off\tTurn off the kube-apiserver auditlog",
 				"on\tTurn on the kube-apiserver auditlog, and expose it as container log of the audittailer Deployment in the audit Namespace",
-				"splunk\tAlso forward the auditlog to a splunk HEC endpoint. To get a custom config template execute \"cloudctl cluster splunk-config-template\"",
+				"splunk\tAlso forward the auditlog to a splunk HEC endpoint. Create a custom splunk config manifest with \"cloudctl cluster splunk-config-manifest\"",
 			},
 			cobra.ShellCompDirectiveNoFileComp
 	})
@@ -502,6 +503,43 @@ func init() {
 	clusterCmd.AddCommand(clusterSplunkConfigManifestCmd)
 }
 
+type auditConfigOptionsMap map[string]struct {
+	Config      *models.V1Audit
+	Description string
+}
+
+func (a auditConfigOptionsMap) Names() []string {
+	var names []string
+	for opt := range a {
+		names = append(names, opt)
+	}
+	return names
+}
+
+var auditConfigOptions = auditConfigOptionsMap{
+	"off": {
+		Description: "audting turned off",
+		Config: &models.V1Audit{
+			ClusterAudit:  pointer.BoolPtr(false),
+			AuditToSplunk: pointer.BoolPtr(false),
+		},
+	},
+	"on": {
+		Description: "audting turned on",
+		Config: &models.V1Audit{
+			ClusterAudit:  pointer.BoolPtr(true),
+			AuditToSplunk: pointer.BoolPtr(false),
+		},
+	},
+	"splunk": {
+		Description: "audting turned on and forwarded to splunk",
+		Config: &models.V1Audit{
+			ClusterAudit:  pointer.BoolPtr(true),
+			AuditToSplunk: pointer.BoolPtr(true),
+		},
+	},
+}
+
 func clusterCreate() error {
 	name := viper.GetString("name")
 	desc := viper.GetString("description")
@@ -589,22 +627,9 @@ func clusterCreate() error {
 		log.Fatalf("provided cri:%s is not supported, only docker or containerd at the moment", cri)
 	}
 
-	var (
-		clusterAudit  bool
-		auditToSplunk bool
-	)
-	switch audit {
-	case "off":
-		clusterAudit = false
-		auditToSplunk = false
-	case "on":
-		clusterAudit = true
-		auditToSplunk = false
-	case "splunk":
-		clusterAudit = true
-		auditToSplunk = true
-	default:
-		log.Fatalf("Audit value %s is not supported; choose \"off\", \"on\" or \"splunk\".", audit)
+	auditConfig, ok := auditConfigOptions[audit]
+	if !ok {
+		return fmt.Errorf("audit value %s is not supported; choose one of %v", audit, auditConfigOptions.Names())
 	}
 
 	scr := &models.V1ClusterCreateRequest{
@@ -631,10 +656,7 @@ func clusterCreate() error {
 			AllowPrivilegedContainers: &allowprivileged,
 			Version:                   &version,
 		},
-		Audit: &models.V1Audit{
-			ClusterAudit:  &clusterAudit,
-			AuditToSplunk: &auditToSplunk,
-		},
+		Audit: auditConfig.Config,
 		Maintenance: &models.V1Maintenance{
 			TimeWindow: &models.V1MaintenanceTimeWindow{
 				Begin: &maintenanceBegin,
@@ -992,28 +1014,12 @@ func updateCluster(args []string) error {
 	cur.Kubernetes = k8s
 
 	if viper.IsSet("audit") {
-		auditFlags := &models.V1Audit{}
 		audit := viper.GetString("audit")
-		switch audit {
-		case "off":
-			ca := false
-			as := false
-			auditFlags.ClusterAudit = &ca
-			auditFlags.AuditToSplunk = &as
-		case "on":
-			ca := true
-			as := false
-			auditFlags.ClusterAudit = &ca
-			auditFlags.AuditToSplunk = &as
-		case "splunk":
-			ca := true
-			as := true
-			auditFlags.ClusterAudit = &ca
-			auditFlags.AuditToSplunk = &as
-		default:
-			log.Fatalf("Audit value %s is not supported; choose \"off\", \"on\" or \"splunk\".", audit)
+		auditConfig, ok := auditConfigOptions[audit]
+		if !ok {
+			return fmt.Errorf("audit value %s is not supported; choose one of %v", audit, auditConfigOptions.Names())
 		}
-		cur.Audit = auditFlags
+		cur.Audit = auditConfig.Config
 	}
 
 	cur.EgressRules = makeEgressRules(egress)
