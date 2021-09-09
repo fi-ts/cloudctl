@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -29,6 +30,10 @@ import (
 	"k8s.io/utils/pointer"
 
 	durosv2 "github.com/metal-stack/duros-go/api/duros/v2"
+)
+
+const (
+	dashboardRequestsContextTimeout = 5 * time.Second
 )
 
 var (
@@ -320,15 +325,18 @@ func (d *dashboard) Render() {
 		ui.Render(d.statusHeader)
 	}()
 
+	ctx, cancel := context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
+	defer cancel()
+
 	var infoResp *version.InfoOK
-	infoResp, lastErr = cloud.Version.Info(version.NewInfoParams(), nil)
+	infoResp, lastErr = cloud.Version.Info(version.NewInfoParams().WithContext(ctx), nil)
 	if lastErr != nil {
 		return
 	}
 	apiVersion = *infoResp.Payload.Version
 
 	var healthResp *health.HealthOK
-	healthResp, lastErr = cloud.Health.Health(health.NewHealthParams(), nil)
+	healthResp, lastErr = cloud.Health.Health(health.NewHealthParams().WithContext(ctx), nil)
 	if lastErr != nil {
 		return
 	}
@@ -452,10 +460,13 @@ func (d *dashboardClusterPane) Render() error {
 		lastErrors    []dashboardClusterError
 	)
 
+	ctx, cancel := context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
+	defer cancel()
+
 	resp, err := cloud.Cluster.FindClusters(cluster.NewFindClustersParams().WithBody(&models.V1ClusterFindRequest{
 		PartitionID: output.StrDeref(partition),
 		Tenant:      output.StrDeref(tenant),
-	}).WithReturnMachines(pointer.BoolPtr(false)), nil)
+	}).WithReturnMachines(pointer.BoolPtr(false)).WithContext(ctx), nil)
 	if err != nil {
 		return err
 	}
@@ -696,15 +707,21 @@ func (d *dashboardVolumePane) Render() error {
 		compressionRatio float64
 	)
 
+	ctx, cancel := context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
+	defer cancel()
+
 	volumeResp, err := cloud.Volume.FindVolumes(volume.NewFindVolumesParams().WithBody(&models.V1VolumeFindRequest{
 		PartitionID: output.StrDeref(partition),
 		TenantID:    output.StrDeref(tenant),
-	}), nil)
+	}).WithContext(ctx), nil)
 	if err != nil {
 		return err
 	}
 
-	infoResp, err := cloud.Volume.ClusterInfo(volume.NewClusterInfoParams().WithPartitionid(&partition), nil)
+	ctx, cancel = context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
+	defer cancel()
+
+	infoResp, err := cloud.Volume.ClusterInfo(volume.NewClusterInfoParams().WithPartitionid(&partition).WithContext(ctx), nil)
 	if err != nil {
 		var typedErr *volume.ClusterInfoDefault
 		if errors.As(err, &typedErr) {
