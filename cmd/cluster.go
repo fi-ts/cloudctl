@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -10,6 +9,7 @@ import (
 	"os/exec"
 	"path"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -187,11 +187,11 @@ var (
 		ValidArgsFunction: clusterListCompletionFunc,
 		PreRun:            bindPFlags,
 	}
-	clusterSplunkConfigTemplateCmd = &cobra.Command{
-		Use:   "splunk-config-template",
-		Short: "get a template for a custom splunk HEC endpoint and index configuration",
+	clusterSplunkConfigManifestCmd = &cobra.Command{
+		Use:   "splunk-config-manifest",
+		Short: "create a manifest for a custom splunk configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterSplunkConfigTemplate()
+			return clusterSplunkConfigManifest()
 		},
 		PreRun: bindPFlags,
 	}
@@ -407,6 +407,15 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	// Cluster splunk config manifest --------------------------------------------------------------------
+	clusterSplunkConfigManifestCmd.Flags().String("token", "", "the hec token to use for this cluster's audit logs")
+	clusterSplunkConfigManifestCmd.Flags().String("index", "", "the splunk index to use for this cluster's audit logs")
+	clusterSplunkConfigManifestCmd.Flags().String("hechost", "", "the hostname or IP of the splunk HEC endpoint")
+	clusterSplunkConfigManifestCmd.Flags().Int("hecport", 0, "port on which the splunk HEC endpoint is listening")
+	clusterSplunkConfigManifestCmd.Flags().Bool("tls", false, "whether to use TLS encryption. You do need to specify a CA file.")
+	clusterSplunkConfigManifestCmd.Flags().String("cafile", "", "the path to the file containing the ca certificate (chain) for the splunk HEC endpoint")
+	clusterSplunkConfigManifestCmd.Flags().String("cabase64", "", "the base64-encoded ca certificate (chain) for the splunk HEC endpoint")
+	// Cluster machine ... --------------------------------------------------------------------
 	clusterMachineSSHCmd.Flags().String("machineid", "", "machine to connect to.")
 	err = clusterMachineSSHCmd.MarkFlagRequired("machineid")
 	if err != nil {
@@ -490,7 +499,7 @@ func init() {
 	clusterCmd.AddCommand(clusterMachineCmd)
 	clusterCmd.AddCommand(clusterLogsCmd)
 	clusterCmd.AddCommand(clusterIssuesCmd)
-	clusterCmd.AddCommand(clusterSplunkConfigTemplateCmd)
+	clusterCmd.AddCommand(clusterSplunkConfigManifestCmd)
 }
 
 func clusterCreate() error {
@@ -1229,50 +1238,56 @@ func clusterInputs() error {
 	return output.YAMLPrinter{}.Print(sc)
 }
 
-func clusterSplunkConfigTemplate() error {
-	template := `---
-apiVersion: v1
-kind: Secret
-metadata:
-  name: splunk-config
-  namespace: kube-system
-type: Opaque
-stringData:
-  # Fill in your custom values below, and apply the secret to your cluster.
-  # If you delete a key, the default value from the partition will be used.
-  hecToken: "hec token"
-  index: "splunk index"
-  hecHost: "splunk HEC endpoint - hostname or ip address"
-  hecPort: "Port number for the splunk endpoint"
-  tlsEnabled: "true" if TLS encryption should be used, otherwise "false"
-  hecCAFile: |
-    ca certificate (chain) for the hecHost certificate.
-    This is necessary even for well-known CA certificates!
-`
+func clusterSplunkConfigManifest() error {
 	secret := corev1.Secret{
 		TypeMeta:   v1.TypeMeta{Kind: "Secret", APIVersion: "v1"},
 		ObjectMeta: v1.ObjectMeta{Name: "splunk-config", Namespace: "kube-system"},
 		Type:       corev1.SecretTypeOpaque,
-		StringData: map[string]string{
-			"hecToken":   "hec token",
-			"index":      "splunk index",
-			"hecHost":    "splunk HEC endpoint - hostname or ip address",
-			"hecPort":    "Port number for the splunk endpoint",
-			"tlsEnabled": "\"true\" if TLS encryption should be used, otherwise \"false\"",
-			"hecCAFile":  "ca certificate (chain) for the hecHost certificate.\nThis is necessary even for well-known CA certificates!",
-		},
+		StringData: map[string]string{},
+		Data:       map[string][]byte{},
 	}
-	js, err := json.Marshal(secret)
-	if err != nil {
-		return fmt.Errorf("unable to marshal to yaml:%w", err)
+	if viper.IsSet("token") {
+		secret.StringData["hecToken"] = viper.GetString("token")
 	}
-	y, err := yaml.JSONToYAML(js)
-	if err != nil {
-		return fmt.Errorf("unable to marshal to yaml:%w", err)
+	if viper.IsSet("index") {
+		secret.StringData["index"] = viper.GetString("index")
+	}
+	if viper.IsSet("hechost") {
+		secret.StringData["hecHost"] = viper.GetString("hechost")
+	}
+	if viper.IsSet("hecport") {
+		secret.StringData["hecPort"] = strconv.Itoa(viper.GetInt("hecport"))
+	}
+	if viper.IsSet("tls") {
+		if !viper.IsSet("cafile") && !viper.IsSet("cabase64") {
+			return fmt.Errorf("you need to supply a ca certificate when using TLS")
+		}
+		secret.StringData["tlsEnabled"] = strconv.FormatBool(viper.GetBool("tls"))
+	}
+	if viper.IsSet("cafile") {
+		if viper.IsSet("cabase64") {
+			return fmt.Errorf("specify ca certificate either through cafile or through cabase64, do not use both flags")
+		}
+		hecCAFile, err := os.ReadFile(viper.GetString("cafile"))
+		if err != nil {
+			return err
+		}
+		secret.StringData["hecCAFile"] = string(hecCAFile)
+	}
+	if viper.IsSet("cabase64") {
+		hecCAFileString := viper.GetString("cabase64")
+		_, err := base64.StdEncoding.DecodeString(hecCAFileString)
+		if err != nil {
+			return fmt.Errorf("unable to decode ca file string:%w", err)
+		}
+		secret.Data["hecCAFile"] = []byte(hecCAFileString)
 	}
 
-	fmt.Println(template)
-	fmt.Printf("%s\n", string(y))
+	y, err := yaml.Marshal(secret)
+	if err != nil {
+		return fmt.Errorf("unable to marshal to yaml:%w", err)
+	}
+	fmt.Printf("\n---\n%s\n", string(y))
 
 	return nil
 }
