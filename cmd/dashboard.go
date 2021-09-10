@@ -601,20 +601,20 @@ func NewDashboardVolumePane() *dashboardVolumePane {
 	d.sem = semaphore.NewWeighted(1)
 
 	d.volumeProtectionState = widgets.NewBarChart()
-	d.volumeProtectionState.Labels = []string{"Protected", "Degraded", "Read-Only", "Other"}
+	d.volumeProtectionState.Labels = []string{"Protected", "Degraded", "Read-Only", "N/A", "Unknown"}
 	d.volumeProtectionState.Title = "Volume Protection State"
 	d.volumeProtectionState.PaddingLeft = 5
 	d.volumeProtectionState.BarWidth = 5
 	d.volumeProtectionState.BarGap = 10
-	d.volumeProtectionState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorRed, ui.ColorRed, ui.ColorYellow}
+	d.volumeProtectionState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorYellow, ui.ColorRed, ui.ColorRed, ui.ColorRed}
 
 	d.volumeState = widgets.NewBarChart()
-	d.volumeState.Labels = []string{"Available", "Failed", "Other"}
+	d.volumeState.Labels = []string{"Available", "Failed", "Unknown", "Other"}
 	d.volumeState.Title = "Volume State"
 	d.volumeState.PaddingLeft = 5
 	d.volumeState.BarWidth = 5
 	d.volumeState.BarGap = 10
-	d.volumeState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorRed, ui.ColorYellow}
+	d.volumeState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorRed, ui.ColorRed, ui.ColorYellow}
 
 	d.volumeUsedSpace = widgets.NewParagraph()
 	d.volumeUsedSpace.Title = "Volume Infos"
@@ -635,12 +635,12 @@ func NewDashboardVolumePane() *dashboardVolumePane {
 	d.clusterState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorYellow, ui.ColorRed, ui.ColorRed}
 
 	d.serverState = widgets.NewBarChart()
-	d.serverState.Labels = []string{"Enabled", "Failed", "Other"}
+	d.serverState.Labels = []string{"Enabled", "Disabled", "Failed", "Other"}
 	d.serverState.Title = "Server State"
 	d.serverState.PaddingLeft = 5
 	d.serverState.BarWidth = 5
 	d.serverState.BarGap = 10
-	d.serverState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorRed, ui.ColorYellow}
+	d.serverState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorYellow, ui.ColorRed, ui.ColorYellow}
 
 	return d
 }
@@ -685,10 +685,12 @@ func (d *dashboardVolumePane) Render() error {
 		volumesProtectionFullyProtected int
 		volumesProtectionDegraded       int
 		volumesProtectionReadOnly       int
-		volumesProtectionOther          int
+		volumesProtectionNotAvailable   int
+		volumesProtectionUnknown        int
 
 		volumesAvailable int
 		volumesFailed    int
+		volumesUnknown   int
 		volumesOther     int
 
 		volumesUsedPhysical int64
@@ -698,9 +700,10 @@ func (d *dashboardVolumePane) Render() error {
 		clusterStateWarning int
 		clusterStateOther   int
 
-		serversEnabled int
-		serversFailed  int
-		serversOther   int
+		serversEnabled  int
+		serversDisabled int
+		serversFailed   int
+		serversOther    int
 
 		physicalFree     int64
 		physicalUsed     int64
@@ -739,7 +742,7 @@ func (d *dashboardVolumePane) Render() error {
 	for _, v := range volumes {
 		if v.State == nil || v.ProtectionState == nil {
 			volumesOther++
-			volumesProtectionOther++
+			volumesProtectionUnknown++
 			continue
 		}
 
@@ -748,6 +751,8 @@ func (d *dashboardVolumePane) Render() error {
 			volumesAvailable++
 		case durosv2.Volume_Failed.String():
 			volumesFailed++
+		case durosv2.Volume_Unknown.String():
+			volumesUnknown++
 		default:
 			volumesOther++
 		}
@@ -759,8 +764,12 @@ func (d *dashboardVolumePane) Render() error {
 			volumesProtectionDegraded++
 		case durosv2.ProtectionStateEnum_ReadOnly.String():
 			volumesProtectionReadOnly++
+		case durosv2.ProtectionStateEnum_NotAvailable.String():
+			volumesProtectionNotAvailable++
+		case durosv2.ProtectionStateEnum_Unknown.String():
+			volumesProtectionUnknown++
 		default:
-			volumesProtectionOther++
+			volumesProtectionUnknown++
 		}
 
 		if v.Statistics != nil {
@@ -775,14 +784,14 @@ func (d *dashboardVolumePane) Render() error {
 	ui.Render(d.volumeUsedSpace)
 
 	// for some reason the UI hangs when all values are zero...
-	if volumesAvailable > 0 || volumesFailed > 0 || volumesOther > 0 {
-		d.volumeState.Data = []float64{float64(volumesAvailable), float64(volumesFailed), float64(volumesOther)}
+	if volumesAvailable > 0 || volumesFailed > 0 || volumesUnknown > 0 || volumesOther > 0 {
+		d.volumeState.Data = []float64{float64(volumesAvailable), float64(volumesFailed), float64(volumesUnknown), float64(volumesOther)}
 		ui.Render(d.volumeState)
 	}
 
 	// for some reason the UI hangs when all values are zero...
-	if volumesProtectionFullyProtected > 0 || volumesProtectionDegraded > 0 || volumesProtectionReadOnly > 0 || volumesProtectionOther > 0 {
-		d.volumeProtectionState.Data = []float64{float64(volumesProtectionFullyProtected), float64(volumesProtectionDegraded), float64(volumesProtectionReadOnly), float64(volumesProtectionOther)}
+	if volumesProtectionFullyProtected > 0 || volumesProtectionDegraded > 0 || volumesProtectionReadOnly > 0 || volumesProtectionNotAvailable > 0 || volumesProtectionUnknown > 0 {
+		d.volumeProtectionState.Data = []float64{float64(volumesProtectionFullyProtected), float64(volumesProtectionDegraded), float64(volumesProtectionReadOnly), float64(volumesProtectionNotAvailable), float64(volumesProtectionUnknown)}
 		ui.Render(d.volumeProtectionState)
 	}
 
@@ -823,6 +832,8 @@ func (d *dashboardVolumePane) Render() error {
 			switch *s.State {
 			case durosv2.Server_Enabled.String():
 				serversEnabled++
+			case durosv2.Server_Disabled.String():
+				serversDisabled++
 			case durosv2.Server_Failed.String():
 				serversFailed++
 			default:
@@ -862,8 +873,8 @@ func (d *dashboardVolumePane) Render() error {
 	}
 
 	// for some reason the UI hangs when all values are zero...
-	if serversEnabled > 0 || serversFailed > 0 || serversOther > 0 {
-		d.serverState.Data = []float64{float64(serversEnabled), float64(serversFailed), float64(serversOther)}
+	if serversEnabled > 0 || serversDisabled > 0 || serversFailed > 0 || serversOther > 0 {
+		d.serverState.Data = []float64{float64(serversEnabled), float64(serversDisabled), float64(serversFailed), float64(serversOther)}
 		ui.Render(d.serverState)
 	}
 
