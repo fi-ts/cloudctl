@@ -30,6 +30,23 @@ import (
 	"github.com/spf13/viper"
 )
 
+type auditConfigOptionsMap map[string]struct {
+	Config      *models.V1Audit
+	Description string
+}
+
+func (a auditConfigOptionsMap) Names(withDescription bool) []string {
+	var names []string
+	for name, opt := range a {
+		if withDescription {
+			names = append(names, fmt.Sprintf("%s\t%s", name, opt.Description))
+		} else {
+			names = append(names, name)
+		}
+	}
+	return names
+}
+
 var (
 	clusterCmd = &cobra.Command{
 		Use:   "cluster",
@@ -190,11 +207,36 @@ var (
 	}
 	clusterSplunkConfigManifestCmd = &cobra.Command{
 		Use:   "splunk-config-manifest",
-		Short: "create a manifest for a custom splunk configuration",
+		Short: "create a manifest for a custom splunk configuration, every provided provided overrides the default setting",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterSplunkConfigManifest()
 		},
 		PreRun: bindPFlags,
+	}
+
+	// options
+	auditConfigOptions = auditConfigOptionsMap{
+		"off": {
+			Description: "turn off the kube-apiserver auditlog",
+			Config: &models.V1Audit{
+				ClusterAudit:  pointer.BoolPtr(false),
+				AuditToSplunk: pointer.BoolPtr(false),
+			},
+		},
+		"on": {
+			Description: "turn on the kube-apiserver auditlog, and expose it as container log of the audittailer deployment in the audit namespace",
+			Config: &models.V1Audit{
+				ClusterAudit:  pointer.BoolPtr(true),
+				AuditToSplunk: pointer.BoolPtr(false),
+			},
+		},
+		"splunk": {
+			Description: "also forward the auditlog to a splunk HEC endpoint. create a custom splunk config manifest with \"cloudctl cluster splunk-config-manifest\"",
+			Config: &models.V1Audit{
+				ClusterAudit:  pointer.BoolPtr(true),
+				AuditToSplunk: pointer.BoolPtr(true),
+			},
+		},
 	}
 )
 
@@ -219,7 +261,7 @@ func init() {
 	clusterCreateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
 	clusterCreateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <network>:<ip>; e.g.: --egress internet:1.2.3.4,extnet:123.1.1.1 --egress internet:1.2.3.5 [optional]")
 	clusterCreateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster.")
-	clusterCreateCmd.Flags().String("audit", "on", "audit logging of cluster API access; can be off, on (default) or splunk (Logging to a predefined or custom splunk endpoint). [optional]")
+	clusterCreateCmd.Flags().String("audit", "on", "audit logging of cluster API access; can be off, on (default) or splunk (logging to a predefined or custom splunk endpoint). [optional]")
 	clusterCreateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced. [optional]")
 	clusterCreateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. [optional]")
 
@@ -302,11 +344,7 @@ func init() {
 		log.Fatal(err.Error())
 	}
 	err = clusterCreateCmd.RegisterFlagCompletionFunc("audit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{
-				"off\tDo not create a kube-apiserver auditlog",
-				"on\tCreate a kube-apiserver auditlog, and expose it as container log of the audittailer Deployment in the audit Namespace",
-				"splunk\tAlso forward the auditlog to a splunk HEC endpoint. Create a custom splunk config manifest with \"cloudctl cluster splunk-config-manifest\"",
-			},
+		return auditConfigOptions.Names(true),
 			cobra.ShellCompDirectiveNoFileComp
 	})
 	if err != nil {
@@ -344,7 +382,7 @@ func init() {
 	clusterUpdateCmd.Flags().StringSlice("addlabels", []string{}, "labels to add to the cluster")
 	clusterUpdateCmd.Flags().StringSlice("removelabels", []string{}, "labels to remove from the cluster")
 	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster, please add --yes-i-really-mean-it")
-	clusterUpdateCmd.Flags().String("audit", "on", "audit logging of cluster API access; can be off, on or splunk (Logging to a predefined or custom splunk endpoint).")
+	clusterUpdateCmd.Flags().String("audit", "on", "audit logging of cluster API access; can be off, on or splunk (logging to a predefined or custom splunk endpoint).")
 	clusterUpdateCmd.Flags().String("purpose", "", "purpose of the cluster, can be one of production|development|evaluation. SLA is only given on production clusters.")
 	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]. Use --egress none to remove all ingress rules.")
 	clusterUpdateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
@@ -398,11 +436,7 @@ func init() {
 		log.Fatal(err.Error())
 	}
 	err = clusterUpdateCmd.RegisterFlagCompletionFunc("audit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{
-				"off\tTurn off the kube-apiserver auditlog",
-				"on\tTurn on the kube-apiserver auditlog, and expose it as container log of the audittailer Deployment in the audit Namespace",
-				"splunk\tAlso forward the auditlog to a splunk HEC endpoint. Create a custom splunk config manifest with \"cloudctl cluster splunk-config-manifest\"",
-			},
+		return auditConfigOptions.Names(true),
 			cobra.ShellCompDirectiveNoFileComp
 	})
 	if err != nil {
@@ -503,43 +537,6 @@ func init() {
 	clusterCmd.AddCommand(clusterSplunkConfigManifestCmd)
 }
 
-type auditConfigOptionsMap map[string]struct {
-	Config      *models.V1Audit
-	Description string
-}
-
-func (a auditConfigOptionsMap) Names() []string {
-	var names []string
-	for opt := range a {
-		names = append(names, opt)
-	}
-	return names
-}
-
-var auditConfigOptions = auditConfigOptionsMap{
-	"off": {
-		Description: "audting turned off",
-		Config: &models.V1Audit{
-			ClusterAudit:  pointer.BoolPtr(false),
-			AuditToSplunk: pointer.BoolPtr(false),
-		},
-	},
-	"on": {
-		Description: "audting turned on",
-		Config: &models.V1Audit{
-			ClusterAudit:  pointer.BoolPtr(true),
-			AuditToSplunk: pointer.BoolPtr(false),
-		},
-	},
-	"splunk": {
-		Description: "audting turned on and forwarded to splunk",
-		Config: &models.V1Audit{
-			ClusterAudit:  pointer.BoolPtr(true),
-			AuditToSplunk: pointer.BoolPtr(true),
-		},
-	},
-}
-
 func clusterCreate() error {
 	name := viper.GetString("name")
 	desc := viper.GetString("description")
@@ -629,7 +626,7 @@ func clusterCreate() error {
 
 	auditConfig, ok := auditConfigOptions[audit]
 	if !ok {
-		return fmt.Errorf("audit value %s is not supported; choose one of %v", audit, auditConfigOptions.Names())
+		return fmt.Errorf("audit value %s is not supported; choose one of %v", audit, auditConfigOptions.Names(false))
 	}
 
 	scr := &models.V1ClusterCreateRequest{
@@ -1017,7 +1014,7 @@ func updateCluster(args []string) error {
 		audit := viper.GetString("audit")
 		auditConfig, ok := auditConfigOptions[audit]
 		if !ok {
-			return fmt.Errorf("audit value %s is not supported; choose one of %v", audit, auditConfigOptions.Names())
+			return fmt.Errorf("audit value %s is not supported; choose one of %v", audit, auditConfigOptions.Names(false))
 		}
 		cur.Audit = auditConfig.Config
 	}
