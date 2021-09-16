@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -12,9 +13,12 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/fi-ts/cloud-go/api/client/cluster"
+	"github.com/gosimple/slug"
+	"github.com/metal-stack/metal-lib/auth"
 
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
@@ -443,6 +447,8 @@ func init() {
 	clusterIssuesCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterIssuesCmd.Flags().String("tenant", "", "show clusters of given tenant")
 
+	clusterKubeconfigCmd.Flags().Bool("merge", false, "Merges the cluster's kubeconfig into the current active kubeconfig, otherwise an individual kubeconfig is printed console only")
+
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
 	clusterCmd.AddCommand(clusterKubeconfigCmd)
@@ -643,12 +649,13 @@ func clusterList() error {
 }
 
 func clusterKubeconfig(args []string) error {
-	ci, err := clusterID("credentials", args)
+	id, err := clusterID("credentials", args)
 	if err != nil {
 		return err
 	}
+
 	request := cluster.NewGetClusterKubeconfigTplParams()
-	request.SetID(ci)
+	request.SetID(id)
 	credentials, err := cloud.Cluster.GetClusterKubeconfigTpl(request, nil)
 	if err != nil {
 		return err
@@ -657,7 +664,7 @@ func clusterKubeconfig(args []string) error {
 	// kubeconfig with cluster
 	kubeconfigContent := *credentials.Payload.Kubeconfig
 
-	kubeconfigFile := viper.GetString("kubeConfig")
+	kubeconfigFile := viper.GetString("kubeconfig")
 	authContext, err := getAuthContext(kubeconfigFile)
 	if err != nil {
 		return err
@@ -666,13 +673,71 @@ func clusterKubeconfig(args []string) error {
 		return fmt.Errorf("active user %s has no oidc authProvider, check config", authContext.User)
 	}
 
-	mergedKubeconfig, err := helper.EnrichKubeconfigTpl(kubeconfigContent, authContext)
+	if !viper.GetBool("merge") {
+		mergedKubeconfig, err := helper.EnrichKubeconfigTpl(kubeconfigContent, authContext)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(string(mergedKubeconfig))
+		return nil
+	}
+
+	currentCfg, filename, _, err := auth.LoadKubeConfig(kubeconfigFile)
 	if err != nil {
 		return err
 	}
 
-	// print kubeconfig
-	fmt.Println(string(mergedKubeconfig))
+	clusterResp, err := cloud.Cluster.FindCluster(cluster.NewFindClusterParams().WithID(id), nil)
+	if err != nil {
+		return err
+	}
+
+	var (
+		clusterName = *clusterResp.Payload.Name
+		contextName = slug.Make(clusterName)
+
+		clusters = &struct {
+			Clusters []struct {
+				Cluster map[string]interface{} `yaml:"cluster"`
+			} `yaml:"clusters"`
+		}{}
+	)
+
+	err = yaml.Unmarshal([]byte(kubeconfigContent), clusters)
+	if err != nil {
+		return err
+	}
+	if len(clusters.Clusters) == 0 {
+		return fmt.Errorf("kubeconfig template from cloud-api does not contain cluster entry")
+	}
+
+	err = auth.AddCluster(currentCfg, clusterName, clusters.Clusters[0].Cluster)
+	if err != nil {
+		return err
+	}
+	err = auth.AddUser(currentCfg, *authContext)
+	if err != nil {
+		return err
+	}
+	err = auth.AddContext(currentCfg, contextName, *clusterResp.Payload.Name, authContext.User)
+	if err != nil {
+		return err
+	}
+	auth.SetCurrentContext(currentCfg, contextName)
+
+	mergedKubeconfig, err := yaml.Marshal(currentCfg)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(filename, mergedKubeconfig, 0600)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Successfully written kubeconfig to %s\n", filename)
+
 	return nil
 }
 
@@ -1248,7 +1313,7 @@ func clusterMachineSSH(args []string, console bool) error {
 			defer os.Remove(privateKeyFile)
 			if console {
 				fmt.Printf("access console via ssh\n")
-				authContext, err := getAuthContext(viper.GetString("kubeConfig"))
+				authContext, err := getAuthContext(viper.GetString("kubeconfig"))
 				if err != nil {
 					return err
 				}

@@ -11,14 +11,13 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/gizak/termui/v3 v3.1.0
 	github.com/go-openapi/errors v0.20.1 // indirect
-	github.com/go-openapi/runtime v0.19.30 // indirect
 	github.com/go-openapi/strfmt v0.20.2
 	github.com/go-playground/validator/v10 v10.9.0
+	github.com/gosimple/slug v1.10.0
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jinzhu/now v1.1.2
 	github.com/metal-stack/duros-go v0.2.2
 	github.com/metal-stack/metal-lib v0.8.0
-	github.com/metal-stack/security v0.6.1 // indirect
 	github.com/metal-stack/updater v1.1.3
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
@@ -33,4 +32,9 @@ require (
 	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009
 )
 
-replace k8s.io/client-go => k8s.io/client-go v0.20.9
+replace (
+	github.com/go-logr/logr => github.com/go-logr/logr v0.4.0
+	k8s.io/client-go => k8s.io/client-go v0.20.9
+)
+
+replace github.com/metal-stack/metal-lib => /home/gerrit/git/github.com/metal-stack/metal-lib
