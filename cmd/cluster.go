@@ -17,7 +17,6 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
-	"sigs.k8s.io/yaml"
 
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 
@@ -1286,11 +1285,7 @@ func clusterSplunkConfigManifest() error {
 		secret.Data["hecCAFile"] = []byte(hecCAFileString)
 	}
 
-	y, err := yaml.Marshal(secret)
-	if err != nil {
-		return fmt.Errorf("unable to marshal to yaml:%w", err)
-	}
-	fmt.Printf("\n---\n%s\n", string(y))
+	helper.MustPrintKubernetesResource(secret)
 
 	return nil
 }
