@@ -444,7 +444,7 @@ func init() {
 	clusterIssuesCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterIssuesCmd.Flags().String("tenant", "", "show clusters of given tenant")
 
-	clusterKubeconfigCmd.Flags().Bool("merge", false, "Merges the cluster's kubeconfig into the current active kubeconfig, otherwise an individual kubeconfig is printed console only")
+	clusterKubeconfigCmd.Flags().Bool("merge", false, "Merges the cluster's kubeconfig into the current active kubeconfig, otherwise an individual kubeconfig is printed to console only")
 
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
