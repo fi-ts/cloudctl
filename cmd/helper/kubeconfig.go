@@ -3,6 +3,7 @@ package helper
 import (
 	"fmt"
 
+	"github.com/gosimple/slug"
 	"github.com/metal-stack/metal-lib/auth"
 	"gopkg.in/yaml.v3"
 )
@@ -38,6 +39,47 @@ func EnrichKubeconfigTpl(tpl string, authContext *auth.AuthContext) ([]byte, err
 	auth.SetCurrentContext(cfg, contextName)
 
 	mergedKubeconfig, err := yaml.Marshal(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return mergedKubeconfig, nil
+}
+
+func MergeKubeconfigTpl(tpl string, currentCfg map[interface{}]interface{}, clusterName string, authContext *auth.AuthContext) ([]byte, error) {
+	var (
+		contextName = slug.Make(clusterName)
+
+		clusters = &struct {
+			Clusters []struct {
+				Cluster map[string]interface{} `yaml:"cluster"`
+			} `yaml:"clusters"`
+		}{}
+	)
+
+	err := yaml.Unmarshal([]byte(tpl), clusters)
+	if err != nil {
+		return nil, err
+	}
+	if len(clusters.Clusters) == 0 {
+		return nil, fmt.Errorf("kubeconfig template from cloud-api does not contain cluster entry")
+	}
+
+	err = auth.AddCluster(currentCfg, clusterName, clusters.Clusters[0].Cluster)
+	if err != nil {
+		return nil, err
+	}
+	err = auth.AddUser(currentCfg, *authContext)
+	if err != nil {
+		return nil, err
+	}
+	err = auth.AddContext(currentCfg, contextName, clusterName, authContext.User)
+	if err != nil {
+		return nil, err
+	}
+	auth.SetCurrentContext(currentCfg, contextName)
+
+	mergedKubeconfig, err := yaml.Marshal(currentCfg)
 	if err != nil {
 		return nil, err
 	}

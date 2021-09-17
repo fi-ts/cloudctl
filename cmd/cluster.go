@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -13,11 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/fi-ts/cloud-go/api/client/cluster"
-	"github.com/gosimple/slug"
 	"github.com/metal-stack/metal-lib/auth"
 
 	"github.com/fi-ts/cloud-go/api/models"
@@ -661,8 +658,7 @@ func clusterKubeconfig(args []string) error {
 		return err
 	}
 
-	// kubeconfig with cluster
-	kubeconfigContent := *credentials.Payload.Kubeconfig
+	kubeconfigTpl := *credentials.Payload.Kubeconfig // is a kubeconfig with only a single cluster entry
 
 	kubeconfigFile := viper.GetString("kubeconfig")
 	authContext, err := getAuthContext(kubeconfigFile)
@@ -674,7 +670,7 @@ func clusterKubeconfig(args []string) error {
 	}
 
 	if !viper.GetBool("merge") {
-		mergedKubeconfig, err := helper.EnrichKubeconfigTpl(kubeconfigContent, authContext)
+		mergedKubeconfig, err := helper.EnrichKubeconfigTpl(kubeconfigTpl, authContext)
 		if err != nil {
 			return err
 		}
@@ -693,45 +689,12 @@ func clusterKubeconfig(args []string) error {
 		return err
 	}
 
-	var (
-		clusterName = *clusterResp.Payload.Name
-		contextName = slug.Make(clusterName)
-
-		clusters = &struct {
-			Clusters []struct {
-				Cluster map[string]interface{} `yaml:"cluster"`
-			} `yaml:"clusters"`
-		}{}
-	)
-
-	err = yaml.Unmarshal([]byte(kubeconfigContent), clusters)
-	if err != nil {
-		return err
-	}
-	if len(clusters.Clusters) == 0 {
-		return fmt.Errorf("kubeconfig template from cloud-api does not contain cluster entry")
-	}
-
-	err = auth.AddCluster(currentCfg, clusterName, clusters.Clusters[0].Cluster)
-	if err != nil {
-		return err
-	}
-	err = auth.AddUser(currentCfg, *authContext)
-	if err != nil {
-		return err
-	}
-	err = auth.AddContext(currentCfg, contextName, *clusterResp.Payload.Name, authContext.User)
-	if err != nil {
-		return err
-	}
-	auth.SetCurrentContext(currentCfg, contextName)
-
-	mergedKubeconfig, err := yaml.Marshal(currentCfg)
+	mergedKubeconfig, err := helper.MergeKubeconfigTpl(kubeconfigTpl, currentCfg, *clusterResp.Payload.Name, authContext)
 	if err != nil {
 		return err
 	}
 
-	err = ioutil.WriteFile(filename, mergedKubeconfig, 0600)
+	err = os.WriteFile(filename, mergedKubeconfig, 0600)
 	if err != nil {
 		return err
 	}
