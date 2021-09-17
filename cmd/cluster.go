@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/fi-ts/cloud-go/api/client/cluster"
+	"github.com/gosimple/slug"
 	"github.com/metal-stack/metal-lib/auth"
 
 	"github.com/fi-ts/cloud-go/api/models"
@@ -445,6 +446,7 @@ func init() {
 	clusterIssuesCmd.Flags().String("tenant", "", "show clusters of given tenant")
 
 	clusterKubeconfigCmd.Flags().Bool("merge", false, "Merges the cluster's kubeconfig into the current active kubeconfig, otherwise an individual kubeconfig is printed to console only")
+	clusterKubeconfigCmd.Flags().Bool("set-context", false, "When setting the merge parameter to true, immediately activates the cluster's context")
 
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
@@ -689,7 +691,13 @@ func clusterKubeconfig(args []string) error {
 		return err
 	}
 
-	mergedKubeconfig, err := helper.MergeKubeconfigTpl(kubeconfigTpl, currentCfg, *clusterResp.Payload.Name, authContext)
+	contextName := slug.Make(*clusterResp.Payload.Name)
+
+	if viper.GetBool("set-context") {
+		auth.SetCurrentContext(currentCfg, contextName)
+	}
+
+	mergedKubeconfig, err := helper.MergeKubeconfigTpl(currentCfg, kubeconfigTpl, contextName, *clusterResp.Payload.Name, authContext)
 	if err != nil {
 		return err
 	}
@@ -699,7 +707,7 @@ func clusterKubeconfig(args []string) error {
 		return err
 	}
 
-	fmt.Printf("Successfully written kubeconfig to %s\n", filename)
+	fmt.Printf("Successfully wrote kubeconfig with additional context %q to %s\n", contextName, filename)
 
 	return nil
 }
