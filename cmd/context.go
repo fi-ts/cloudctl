@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fatih/color"
 	"github.com/fi-ts/cloudctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -106,7 +107,7 @@ func previous() error {
 	}
 	prev := ctxs.PreviousContext
 	if prev == "" {
-		prev = ctxs.CurrentContext
+		return fmt.Errorf("no previous context found")
 	}
 	curr := ctxs.CurrentContext
 	ctxs.PreviousContext = curr
@@ -146,11 +147,15 @@ func getContexts() (*api.Contexts, error) {
 }
 
 func writeContexts(ctxs *api.Contexts) error {
-	cfgFile := viper.GetViper().ConfigFileUsed()
-	fmt.Printf("update config:%s\n", cfgFile)
 	c, err := yaml.Marshal(ctxs)
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(cfgFile, c, 0600)
+	cfgFile := viper.GetViper().ConfigFileUsed()
+	err = os.WriteFile(cfgFile, c, 0600)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%s switched context to \"%s\"\n", color.GreenString("✔"), color.GreenString(ctxs.CurrentContext))
+	return nil
 }

@@ -14,6 +14,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/sets"
 
+	"github.com/fatih/color"
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/gosimple/slug"
 	"github.com/metal-stack/metal-lib/auth"
@@ -707,7 +708,7 @@ func clusterKubeconfig(args []string) error {
 		return err
 	}
 
-	fmt.Printf("Successfully merged context %q into %s\n", contextName, filename)
+	fmt.Printf("%s merged context %q into %s\n", color.GreenString("✔"), contextName, filename)
 
 	return nil
 }
