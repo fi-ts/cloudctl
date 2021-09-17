@@ -96,6 +96,11 @@ func contextSet(args []string) error {
 	if !ok {
 		return fmt.Errorf("context %s not found", defaultCtxName)
 	}
+	if defaultCtxName == ctxs.CurrentContext {
+		// when new context is already current, don't need to do anything
+		return nil
+	}
+	ctxs.PreviousContext = ctxs.CurrentContext
 	ctxs.CurrentContext = defaultCtxName
 	return writeContexts(ctxs)
 }
