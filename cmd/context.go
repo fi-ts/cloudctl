@@ -97,7 +97,7 @@ func contextSet(args []string) error {
 		return fmt.Errorf("context %s not found", defaultCtxName)
 	}
 	if defaultCtxName == ctxs.CurrentContext {
-		// when new context is already current, don't need to do anything
+		fmt.Printf("%s context \"%s\" already active\n", color.GreenString("✔"), color.GreenString(ctxs.CurrentContext))
 		return nil
 	}
 	ctxs.PreviousContext = ctxs.CurrentContext
