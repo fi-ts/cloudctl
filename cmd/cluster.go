@@ -707,7 +707,7 @@ func clusterKubeconfig(args []string) error {
 		return err
 	}
 
-	fmt.Printf("Successfully wrote kubeconfig with additional context %q to %s\n", contextName, filename)
+	fmt.Printf("Successfully merged context %q into %s\n", contextName, filename)
 
 	return nil
 }
