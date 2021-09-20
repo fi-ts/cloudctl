@@ -367,6 +367,12 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	err = clusterListCmd.RegisterFlagCompletionFunc("tenant", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return tenantListCompletion()
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	// Cluster update --------------------------------------------------------------------
 	clusterUpdateCmd.Flags().String("workergroup", "", "the name of the worker group to apply updates to, only required when there are multiple worker groups.")
