@@ -17,7 +17,7 @@ require (
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jinzhu/now v1.1.2
 	github.com/metal-stack/duros-go v0.2.2
-	github.com/metal-stack/metal-lib v0.8.2-0.20210917081718-db28030926cd
+	github.com/metal-stack/metal-lib v0.8.2
 	github.com/metal-stack/updater v1.1.3
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
