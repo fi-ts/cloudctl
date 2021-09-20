@@ -18,7 +18,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
 
+	"github.com/fatih/color"
 	"github.com/fi-ts/cloud-go/api/client/cluster"
+	"github.com/gosimple/slug"
+	"github.com/metal-stack/metal-lib/auth"
 
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
@@ -355,6 +358,12 @@ func init() {
 	clusterListCmd.Flags().String("project", "", "show clusters of given project")
 	clusterListCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterListCmd.Flags().String("tenant", "", "show clusters of given tenant")
+	err = clusterListCmd.RegisterFlagCompletionFunc("name", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return clusterNameCompletion()
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	err = clusterListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return projectListCompletion()
 	})
@@ -363,6 +372,12 @@ func init() {
 	}
 	err = clusterListCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return partitionListCompletion()
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = clusterListCmd.RegisterFlagCompletionFunc("tenant", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return tenantListCompletion()
 	})
 	if err != nil {
 		log.Fatal(err.Error())
@@ -391,7 +406,6 @@ func init() {
 	clusterUpdateCmd.Flags().String("maxunavailable", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
-
 	err = clusterUpdateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return versionListCompletion()
 	})
@@ -521,6 +535,34 @@ func init() {
 	clusterIssuesCmd.Flags().String("project", "", "show clusters of given project")
 	clusterIssuesCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterIssuesCmd.Flags().String("tenant", "", "show clusters of given tenant")
+
+	err = clusterIssuesCmd.RegisterFlagCompletionFunc("name", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return clusterNameCompletion()
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = clusterIssuesCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return projectListCompletion()
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = clusterIssuesCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return partitionListCompletion()
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = clusterIssuesCmd.RegisterFlagCompletionFunc("tenant", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return tenantListCompletion()
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	clusterKubeconfigCmd.Flags().Bool("merge", false, "merges the cluster's kubeconfig into the current active kubeconfig, otherwise an individual kubeconfig is printed to console only")
+	clusterKubeconfigCmd.Flags().Bool("set-context", false, "when setting the merge parameter to true, immediately activates the cluster's context")
 
 	clusterCmd.AddCommand(clusterCreateCmd)
 	clusterCmd.AddCommand(clusterListCmd)
@@ -730,21 +772,21 @@ func clusterList() error {
 }
 
 func clusterKubeconfig(args []string) error {
-	ci, err := clusterID("credentials", args)
+	id, err := clusterID("credentials", args)
 	if err != nil {
 		return err
 	}
+
 	request := cluster.NewGetClusterKubeconfigTplParams()
-	request.SetID(ci)
+	request.SetID(id)
 	credentials, err := cloud.Cluster.GetClusterKubeconfigTpl(request, nil)
 	if err != nil {
 		return err
 	}
 
-	// kubeconfig with cluster
-	kubeconfigContent := *credentials.Payload.Kubeconfig
+	kubeconfigTpl := *credentials.Payload.Kubeconfig // is a kubeconfig with only a single cluster entry
 
-	kubeconfigFile := viper.GetString("kubeConfig")
+	kubeconfigFile := viper.GetString("kubeconfig")
 	authContext, err := getAuthContext(kubeconfigFile)
 	if err != nil {
 		return err
@@ -753,13 +795,44 @@ func clusterKubeconfig(args []string) error {
 		return fmt.Errorf("active user %s has no oidc authProvider, check config", authContext.User)
 	}
 
-	mergedKubeconfig, err := helper.EnrichKubeconfigTpl(kubeconfigContent, authContext)
+	if !viper.GetBool("merge") {
+		mergedKubeconfig, err := helper.EnrichKubeconfigTpl(kubeconfigTpl, authContext)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(string(mergedKubeconfig))
+		return nil
+	}
+
+	currentCfg, filename, _, err := auth.LoadKubeConfig(kubeconfigFile)
 	if err != nil {
 		return err
 	}
 
-	// print kubeconfig
-	fmt.Println(string(mergedKubeconfig))
+	clusterResp, err := cloud.Cluster.FindCluster(cluster.NewFindClusterParams().WithID(id), nil)
+	if err != nil {
+		return err
+	}
+
+	contextName := slug.Make(*clusterResp.Payload.Name)
+
+	if viper.GetBool("set-context") {
+		auth.SetCurrentContext(currentCfg, contextName)
+	}
+
+	mergedKubeconfig, err := helper.MergeKubeconfigTpl(currentCfg, kubeconfigTpl, contextName, *clusterResp.Payload.Name, authContext)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(filename, mergedKubeconfig, 0600)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%s merged context %q into %s\n", color.GreenString("✔"), contextName, filename)
+
 	return nil
 }
 
@@ -1394,7 +1467,7 @@ func clusterMachineSSH(args []string, console bool) error {
 			defer os.Remove(privateKeyFile)
 			if console {
 				fmt.Printf("access console via ssh\n")
-				authContext, err := getAuthContext(viper.GetString("kubeConfig"))
+				authContext, err := getAuthContext(viper.GetString("kubeconfig"))
 				if err != nil {
 					return err
 				}

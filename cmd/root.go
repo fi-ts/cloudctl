@@ -64,7 +64,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringP("url", "u", "", "api server address. Can be specified with CLOUDCTL_URL environment variable.")
 	rootCmd.PersistentFlags().String("apitoken", "", "api token to authenticate. Can be specified with CLOUDCTL_APITOKEN environment variable.")
-	rootCmd.PersistentFlags().String("kubeconfig", "", "Path to the kube-config to use for authentication and authorization. Is updated by login.")
+	rootCmd.PersistentFlags().String("kubeconfig", "", "Path to the kube-config to use for authentication and authorization. Is updated by login. Uses default path if not specified.")
 	rootCmd.PersistentFlags().StringP("order", "", "", "order by (comma separated) column(s)")
 	rootCmd.PersistentFlags().StringP("output-format", "o", "table", "output format (table|wide|markdown|json|yaml|template), wide is a table with more columns.")
 	rootCmd.PersistentFlags().StringP("template", "", "", `output template for template output-format, go template format.
@@ -138,7 +138,7 @@ func initConfig() {
 	// if there is no api token explicitly specified we try to pull it out of
 	// the kubeconfig context
 	if apiToken == "" {
-		authContext, err := getAuthContext(viper.GetString("kubeConfig"))
+		authContext, err := getAuthContext(viper.GetString("kubeconfig"))
 		// if there is an error, no kubeconfig exists for us ... this is not really an error
 		// if cloudctl is used in scripting with an hmac-key
 		if err == nil {
