@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fatih/color"
 	"github.com/fi-ts/cloudctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -90,12 +91,17 @@ func contextSet(args []string) error {
 	if err != nil {
 		return err
 	}
-	defaultCtxName := args[0]
-	_, ok := ctxs.Contexts[defaultCtxName]
+	nextCtx := args[0]
+	_, ok := ctxs.Contexts[nextCtx]
 	if !ok {
-		return fmt.Errorf("context %s not found", defaultCtxName)
+		return fmt.Errorf("context %s not found", nextCtx)
 	}
-	ctxs.CurrentContext = defaultCtxName
+	if nextCtx == ctxs.CurrentContext {
+		fmt.Printf("%s context \"%s\" already active\n", color.GreenString("✔"), color.GreenString(ctxs.CurrentContext))
+		return nil
+	}
+	ctxs.PreviousContext = ctxs.CurrentContext
+	ctxs.CurrentContext = nextCtx
 	return writeContexts(ctxs)
 }
 
@@ -106,7 +112,7 @@ func previous() error {
 	}
 	prev := ctxs.PreviousContext
 	if prev == "" {
-		prev = ctxs.CurrentContext
+		return fmt.Errorf("no previous context found")
 	}
 	curr := ctxs.CurrentContext
 	ctxs.PreviousContext = curr
@@ -146,11 +152,15 @@ func getContexts() (*api.Contexts, error) {
 }
 
 func writeContexts(ctxs *api.Contexts) error {
-	cfgFile := viper.GetViper().ConfigFileUsed()
-	fmt.Printf("update config:%s\n", cfgFile)
 	c, err := yaml.Marshal(ctxs)
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(cfgFile, c, 0600)
+	cfgFile := viper.GetViper().ConfigFileUsed()
+	err = os.WriteFile(cfgFile, c, 0600)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%s switched context to \"%s\"\n", color.GreenString("✔"), color.GreenString(ctxs.CurrentContext))
+	return nil
 }
