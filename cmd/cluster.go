@@ -9,10 +9,14 @@ import (
 	"os/exec"
 	"path"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/pointer"
 
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 
@@ -24,6 +28,23 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
+
+type auditConfigOptionsMap map[string]struct {
+	Config      *models.V1Audit
+	Description string
+}
+
+func (a auditConfigOptionsMap) Names(withDescription bool) []string {
+	var names []string
+	for name, opt := range a {
+		if withDescription {
+			names = append(names, fmt.Sprintf("%s\t%s", name, opt.Description))
+		} else {
+			names = append(names, name)
+		}
+	}
+	return names
+}
 
 var (
 	clusterCmd = &cobra.Command{
@@ -183,6 +204,39 @@ var (
 		ValidArgsFunction: clusterListCompletionFunc,
 		PreRun:            bindPFlags,
 	}
+	clusterSplunkConfigManifestCmd = &cobra.Command{
+		Use:   "splunk-config-manifest",
+		Short: "create a manifest for a custom splunk configuration, every provided provided overrides the default setting",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterSplunkConfigManifest()
+		},
+		PreRun: bindPFlags,
+	}
+
+	// options
+	auditConfigOptions = auditConfigOptionsMap{
+		"off": {
+			Description: "turn off the kube-apiserver auditlog",
+			Config: &models.V1Audit{
+				ClusterAudit:  pointer.BoolPtr(false),
+				AuditToSplunk: pointer.BoolPtr(false),
+			},
+		},
+		"on": {
+			Description: "turn on the kube-apiserver auditlog, and expose it as container log of the audittailer deployment in the audit namespace",
+			Config: &models.V1Audit{
+				ClusterAudit:  pointer.BoolPtr(true),
+				AuditToSplunk: pointer.BoolPtr(false),
+			},
+		},
+		"splunk": {
+			Description: "also forward the auditlog to a splunk HEC endpoint. create a custom splunk config manifest with \"cloudctl cluster splunk-config-manifest\"",
+			Config: &models.V1Audit{
+				ClusterAudit:  pointer.BoolPtr(true),
+				AuditToSplunk: pointer.BoolPtr(true),
+			},
+		},
+	}
 )
 
 func init() {
@@ -206,6 +260,7 @@ func init() {
 	clusterCreateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
 	clusterCreateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <network>:<ip>; e.g.: --egress internet:1.2.3.4,extnet:123.1.1.1 --egress internet:1.2.3.5 [optional]")
 	clusterCreateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster.")
+	clusterCreateCmd.Flags().String("audit", "on", "audit logging of cluster API access; can be off, on (default) or splunk (logging to a predefined or custom splunk endpoint). [optional]")
 	clusterCreateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced. [optional]")
 	clusterCreateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. [optional]")
 
@@ -287,6 +342,13 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	err = clusterCreateCmd.RegisterFlagCompletionFunc("audit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return auditConfigOptions.Names(true),
+			cobra.ShellCompDirectiveNoFileComp
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	// Cluster list --------------------------------------------------------------------
 	clusterListCmd.Flags().String("id", "", "show clusters of given id")
 	clusterListCmd.Flags().String("name", "", "show clusters of given name")
@@ -319,6 +381,7 @@ func init() {
 	clusterUpdateCmd.Flags().StringSlice("addlabels", []string{}, "labels to add to the cluster")
 	clusterUpdateCmd.Flags().StringSlice("removelabels", []string{}, "labels to remove from the cluster")
 	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster, please add --yes-i-really-mean-it")
+	clusterUpdateCmd.Flags().String("audit", "on", "audit logging of cluster API access; can be off, on or splunk (logging to a predefined or custom splunk endpoint).")
 	clusterUpdateCmd.Flags().String("purpose", "", "purpose of the cluster, can be one of production|development|evaluation. SLA is only given on production clusters.")
 	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]. Use --egress none to remove all ingress rules.")
 	clusterUpdateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
@@ -371,6 +434,22 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	err = clusterUpdateCmd.RegisterFlagCompletionFunc("audit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return auditConfigOptions.Names(true),
+			cobra.ShellCompDirectiveNoFileComp
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	// Cluster splunk config manifest --------------------------------------------------------------------
+	clusterSplunkConfigManifestCmd.Flags().String("token", "", "the hec token to use for this cluster's audit logs")
+	clusterSplunkConfigManifestCmd.Flags().String("index", "", "the splunk index to use for this cluster's audit logs")
+	clusterSplunkConfigManifestCmd.Flags().String("hechost", "", "the hostname or IP of the splunk HEC endpoint")
+	clusterSplunkConfigManifestCmd.Flags().Int("hecport", 0, "port on which the splunk HEC endpoint is listening")
+	clusterSplunkConfigManifestCmd.Flags().Bool("tls", false, "whether to use TLS encryption. You do need to specify a CA file.")
+	clusterSplunkConfigManifestCmd.Flags().String("cafile", "", "the path to the file containing the ca certificate (chain) for the splunk HEC endpoint")
+	clusterSplunkConfigManifestCmd.Flags().String("cabase64", "", "the base64-encoded ca certificate (chain) for the splunk HEC endpoint")
+	// Cluster machine ... --------------------------------------------------------------------
 	clusterMachineSSHCmd.Flags().String("machineid", "", "machine to connect to.")
 	err = clusterMachineSSHCmd.MarkFlagRequired("machineid")
 	if err != nil {
@@ -454,6 +533,7 @@ func init() {
 	clusterCmd.AddCommand(clusterMachineCmd)
 	clusterCmd.AddCommand(clusterLogsCmd)
 	clusterCmd.AddCommand(clusterIssuesCmd)
+	clusterCmd.AddCommand(clusterSplunkConfigManifestCmd)
 }
 
 func clusterCreate() error {
@@ -479,6 +559,7 @@ func clusterCreate() error {
 	draintimeout := viper.GetDuration("draintimeout")
 
 	allowprivileged := viper.GetBool("allowprivileged")
+	audit := viper.GetString("audit")
 
 	labels := viper.GetStringSlice("labels")
 
@@ -542,6 +623,11 @@ func clusterCreate() error {
 		log.Fatalf("provided cri:%s is not supported, only docker or containerd at the moment", cri)
 	}
 
+	auditConfig, ok := auditConfigOptions[audit]
+	if !ok {
+		return fmt.Errorf("audit value %s is not supported; choose one of %v", audit, auditConfigOptions.Names(false))
+	}
+
 	scr := &models.V1ClusterCreateRequest{
 		ProjectID:   &project,
 		Name:        &name,
@@ -566,6 +652,7 @@ func clusterCreate() error {
 			AllowPrivilegedContainers: &allowprivileged,
 			Version:                   &version,
 		},
+		Audit: auditConfig.Config,
 		Maintenance: &models.V1Maintenance{
 			TimeWindow: &models.V1MaintenanceTimeWindow{
 				Begin: &maintenanceBegin,
@@ -922,6 +1009,15 @@ func updateCluster(args []string) error {
 	}
 	cur.Kubernetes = k8s
 
+	if viper.IsSet("audit") {
+		audit := viper.GetString("audit")
+		auditConfig, ok := auditConfigOptions[audit]
+		if !ok {
+			return fmt.Errorf("audit value %s is not supported; choose one of %v", audit, auditConfigOptions.Names(false))
+		}
+		cur.Audit = auditConfig.Config
+	}
+
 	cur.EgressRules = makeEgressRules(egress)
 
 	if updateCausesDowntime && !viper.GetBool("yes-i-really-mean-it") {
@@ -1142,6 +1238,56 @@ func clusterInputs() error {
 	}
 
 	return output.YAMLPrinter{}.Print(sc)
+}
+
+func clusterSplunkConfigManifest() error {
+	secret := corev1.Secret{
+		TypeMeta:   v1.TypeMeta{Kind: "Secret", APIVersion: "v1"},
+		ObjectMeta: v1.ObjectMeta{Name: "splunk-config", Namespace: "kube-system"},
+		Type:       corev1.SecretTypeOpaque,
+		StringData: map[string]string{},
+		Data:       map[string][]byte{},
+	}
+	if viper.IsSet("token") {
+		secret.StringData["hecToken"] = viper.GetString("token")
+	}
+	if viper.IsSet("index") {
+		secret.StringData["index"] = viper.GetString("index")
+	}
+	if viper.IsSet("hechost") {
+		secret.StringData["hecHost"] = viper.GetString("hechost")
+	}
+	if viper.IsSet("hecport") {
+		secret.StringData["hecPort"] = strconv.Itoa(viper.GetInt("hecport"))
+	}
+	if viper.IsSet("tls") {
+		if !viper.IsSet("cafile") && !viper.IsSet("cabase64") {
+			return fmt.Errorf("you need to supply a ca certificate when using TLS")
+		}
+		secret.StringData["tlsEnabled"] = strconv.FormatBool(viper.GetBool("tls"))
+	}
+	if viper.IsSet("cafile") {
+		if viper.IsSet("cabase64") {
+			return fmt.Errorf("specify ca certificate either through cafile or through cabase64, do not use both flags")
+		}
+		hecCAFile, err := os.ReadFile(viper.GetString("cafile"))
+		if err != nil {
+			return err
+		}
+		secret.StringData["hecCAFile"] = string(hecCAFile)
+	}
+	if viper.IsSet("cabase64") {
+		hecCAFileString := viper.GetString("cabase64")
+		_, err := base64.StdEncoding.DecodeString(hecCAFileString)
+		if err != nil {
+			return fmt.Errorf("unable to decode ca file string:%w", err)
+		}
+		secret.Data["hecCAFile"] = []byte(hecCAFileString)
+	}
+
+	helper.MustPrintKubernetesResource(secret)
+
+	return nil
 }
 
 func clusterMachineReset(args []string) error {

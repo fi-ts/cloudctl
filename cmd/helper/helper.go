@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"gopkg.in/yaml.v3"
+	k8syaml "sigs.k8s.io/yaml"
 )
 
 // HumanizeDuration format given duration human readable
@@ -167,4 +168,12 @@ func LabelsToMap(labels []string) (map[string]string, error) {
 		labelMap[parts[0]] = parts[1]
 	}
 	return labelMap, nil
+}
+
+func MustPrintKubernetesResource(in interface{}) {
+	y, err := k8syaml.Marshal(in)
+	if err != nil {
+		panic(fmt.Errorf("unable to marshal to yaml: %w", err))
+	}
+	fmt.Printf("---\n%s", string(y))
 }
