@@ -91,17 +91,17 @@ func contextSet(args []string) error {
 	if err != nil {
 		return err
 	}
-	defaultCtxName := args[0]
-	_, ok := ctxs.Contexts[defaultCtxName]
+	nextCtx := args[0]
+	_, ok := ctxs.Contexts[nextCtx]
 	if !ok {
-		return fmt.Errorf("context %s not found", defaultCtxName)
+		return fmt.Errorf("context %s not found", nextCtx)
 	}
-	if defaultCtxName == ctxs.CurrentContext {
+	if nextCtx == ctxs.CurrentContext {
 		fmt.Printf("%s context \"%s\" already active\n", color.GreenString("✔"), color.GreenString(ctxs.CurrentContext))
 		return nil
 	}
 	ctxs.PreviousContext = ctxs.CurrentContext
-	ctxs.CurrentContext = defaultCtxName
+	ctxs.CurrentContext = nextCtx
 	return writeContexts(ctxs)
 }
 
