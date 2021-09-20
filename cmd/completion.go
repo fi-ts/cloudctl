@@ -35,6 +35,19 @@ func clusterListCompletion() ([]string, cobra.ShellCompDirective) {
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
+func clusterNameCompletion() ([]string, cobra.ShellCompDirective) {
+	request := cluster.NewListClustersParams()
+	response, err := cloud.Cluster.ListClusters(request, nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for _, c := range response.Payload {
+		names = append(names, *c.Name+"\t"+*c.ID)
+	}
+	return names, cobra.ShellCompDirectiveNoFileComp
+}
+
 func clusterMachineListCompletion(clusterIDs []string, includeMachines bool) ([]string, cobra.ShellCompDirective) {
 	if len(clusterIDs) != 1 {
 		return []string{"no clusterid given"}, cobra.ShellCompDirectiveNoFileComp

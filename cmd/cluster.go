@@ -296,6 +296,12 @@ func init() {
 	clusterListCmd.Flags().String("project", "", "show clusters of given project")
 	clusterListCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterListCmd.Flags().String("tenant", "", "show clusters of given tenant")
+	err = clusterListCmd.RegisterFlagCompletionFunc("name", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return clusterNameCompletion()
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	err = clusterListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return projectListCompletion()
 	})
@@ -331,7 +337,6 @@ func init() {
 	clusterUpdateCmd.Flags().String("maxunavailable", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
-
 	err = clusterUpdateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return versionListCompletion()
 	})
@@ -445,6 +450,25 @@ func init() {
 	clusterIssuesCmd.Flags().String("project", "", "show clusters of given project")
 	clusterIssuesCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterIssuesCmd.Flags().String("tenant", "", "show clusters of given tenant")
+
+	err = clusterIssuesCmd.RegisterFlagCompletionFunc("name", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return clusterNameCompletion()
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = clusterIssuesCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return projectListCompletion()
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = clusterIssuesCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return partitionListCompletion()
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	clusterKubeconfigCmd.Flags().Bool("merge", false, "merges the cluster's kubeconfig into the current active kubeconfig, otherwise an individual kubeconfig is printed to console only")
 	clusterKubeconfigCmd.Flags().Bool("set-context", false, "when setting the merge parameter to true, immediately activates the cluster's context")
