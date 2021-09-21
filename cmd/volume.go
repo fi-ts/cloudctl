@@ -95,9 +95,6 @@ func init() {
 	volumeListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
 	volumeListCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
 
-	volumeManifestCmd.Flags().StringP("name", "", "restored-pv", "name of the PersistentVolume")
-	volumeManifestCmd.Flags().StringP("namespace", "", "default", "namespace for the PersistentVolume")
-
 	err := volumeListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return projectListCompletion()
 	})
@@ -106,6 +103,17 @@ func init() {
 	}
 
 	err = volumeListCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return partitionListCompletion()
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	volumeManifestCmd.Flags().StringP("name", "", "restored-pv", "name of the PersistentVolume")
+	volumeManifestCmd.Flags().StringP("namespace", "", "default", "namespace for the PersistentVolume")
+
+	volumeClusterInfoCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
+	err = volumeClusterInfoCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return partitionListCompletion()
 	})
 	if err != nil {
@@ -164,7 +172,7 @@ func volumeDelete(args []string) error {
 }
 
 func volumeClusterInfo() error {
-	params := volume.NewClusterInfoParams()
+	params := volume.NewClusterInfoParams().WithPartitionid(helper.ViperString("partition"))
 	resp, err := cloud.Volume.ClusterInfo(params, nil)
 	if err != nil {
 		return err
