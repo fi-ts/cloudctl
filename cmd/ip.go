@@ -101,16 +101,12 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = ipAllocateCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return projectListCompletion()
-	})
+	err = ipAllocateCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	err = ipListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return projectListCompletion()
-	})
+	err = ipListCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

@@ -9,6 +9,7 @@ import (
 
 	cloudgo "github.com/fi-ts/cloud-go"
 	"github.com/fi-ts/cloud-go/api/client"
+	"github.com/fi-ts/cloudctl/cmd/completion"
 	output "github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/fi-ts/cloudctl/pkg/api"
 	"github.com/pkg/errors"
@@ -24,6 +25,7 @@ const (
 var (
 	ctx         api.Context
 	cloud       *client.CloudAPI
+	comp        *completion.Completion
 	consoleHost string
 	printer     output.Printer
 	// will bind all viper flags to subcommands and
@@ -151,6 +153,8 @@ func initConfig() {
 	if err != nil {
 		log.Fatalf("error initializing cloud-api client: %v", err)
 	}
+
+	comp = completion.NewCompletion(cloud)
 
 	parsedURL, err := url.Parse(driverURL)
 	if err != nil {

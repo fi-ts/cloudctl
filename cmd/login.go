@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/fi-ts/cloudctl/pkg/api"
 	"github.com/metal-stack/metal-lib/auth"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -23,7 +24,7 @@ var loginCmd = &cobra.Command{
 			// do not store, only print to console
 			handler = printTokenHandler
 		} else {
-			cs, err := getContexts()
+			cs, err := api.GetContexts()
 			if err != nil {
 				return err
 			}

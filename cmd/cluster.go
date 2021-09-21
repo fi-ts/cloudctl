@@ -80,7 +80,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterDelete(args)
 		},
-		ValidArgsFunction: clusterListCompletionFunc,
+		ValidArgsFunction: comp.ClusterListCompletion,
 		PreRun:            bindPFlags,
 	}
 	clusterDescribeCmd = &cobra.Command{
@@ -89,7 +89,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterDescribe(args)
 		},
-		ValidArgsFunction: clusterListCompletionFunc,
+		ValidArgsFunction: comp.ClusterListCompletion,
 		PreRun:            bindPFlags,
 	}
 	clusterKubeconfigCmd = &cobra.Command{
@@ -98,7 +98,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterKubeconfig(args)
 		},
-		ValidArgsFunction: clusterListCompletionFunc,
+		ValidArgsFunction: comp.ClusterListCompletion,
 		PreRun:            bindPFlags,
 	}
 
@@ -108,7 +108,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return reconcileCluster(args)
 		},
-		ValidArgsFunction: clusterListCompletionFunc,
+		ValidArgsFunction: comp.ClusterListCompletion,
 		PreRun:            bindPFlags,
 	}
 	clusterUpdateCmd = &cobra.Command{
@@ -117,7 +117,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return updateCluster(args)
 		},
-		ValidArgsFunction: clusterListCompletionFunc,
+		ValidArgsFunction: comp.ClusterListCompletion,
 		PreRun:            bindPFlags,
 	}
 	clusterInputsCmd = &cobra.Command{
@@ -140,7 +140,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterMachines(args)
 		},
-		ValidArgsFunction: clusterListCompletionFunc,
+		ValidArgsFunction: comp.ClusterListCompletion,
 		PreRun:            bindPFlags,
 	}
 	clusterIssuesCmd = &cobra.Command{
@@ -150,7 +150,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterIssues(args)
 		},
-		ValidArgsFunction: clusterListCompletionFunc,
+		ValidArgsFunction: comp.ClusterListCompletion,
 		PreRun:            bindPFlags,
 	}
 	clusterMachineSSHCmd = &cobra.Command{
@@ -159,7 +159,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterMachineSSH(args, false)
 		},
-		ValidArgsFunction: clusterListCompletionFunc,
+		ValidArgsFunction: comp.ClusterListCompletion,
 		PreRun:            bindPFlags,
 	}
 	clusterMachineConsoleCmd = &cobra.Command{
@@ -168,7 +168,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterMachineSSH(args, true)
 		},
-		ValidArgsFunction: clusterListCompletionFunc,
+		ValidArgsFunction: comp.ClusterListCompletion,
 		PreRun:            bindPFlags,
 	}
 	clusterMachineResetCmd = &cobra.Command{
@@ -177,7 +177,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterMachineReset(args)
 		},
-		ValidArgsFunction: clusterListCompletionFunc,
+		ValidArgsFunction: comp.ClusterListCompletion,
 		PreRun:            bindPFlags,
 	}
 	clusterMachineCycleCmd = &cobra.Command{
@@ -186,7 +186,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterMachineCycle(args)
 		},
-		ValidArgsFunction: clusterListCompletionFunc,
+		ValidArgsFunction: comp.ClusterListCompletion,
 		PreRun:            bindPFlags,
 	}
 	clusterMachineReinstallCmd = &cobra.Command{
@@ -195,7 +195,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterMachineReinstall(args)
 		},
-		ValidArgsFunction: clusterListCompletionFunc,
+		ValidArgsFunction: comp.ClusterListCompletion,
 		PreRun:            bindPFlags,
 	}
 	clusterLogsCmd = &cobra.Command{
@@ -204,7 +204,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return clusterLogs(args)
 		},
-		ValidArgsFunction: clusterListCompletionFunc,
+		ValidArgsFunction: comp.ClusterListCompletion,
 		PreRun:            bindPFlags,
 	}
 	clusterSplunkConfigManifestCmd = &cobra.Command{
@@ -279,57 +279,39 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return projectListCompletion()
-	})
+	err = clusterCreateCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return partitionListCompletion()
-	})
+	err = clusterCreateCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("external-networks", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return networkListCompletion()
-	})
+	err = clusterCreateCmd.RegisterFlagCompletionFunc("external-networks", comp.NetworkListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return versionListCompletion()
-	})
+	err = clusterCreateCmd.RegisterFlagCompletionFunc("version", comp.VersionListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("machinetype", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return machineTypeListCompletion()
-	})
+	err = clusterCreateCmd.RegisterFlagCompletionFunc("machinetype", comp.MachineTypeListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("machineimage", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return machineImageListCompletion()
-	})
+	err = clusterCreateCmd.RegisterFlagCompletionFunc("machineimage", comp.MachineImageListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("firewalltype", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return firewallTypeListCompletion()
-	})
+	err = clusterCreateCmd.RegisterFlagCompletionFunc("firewalltype", comp.FirewallTypeListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("firewallimage", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return firewallImageListCompletion()
-	})
+	err = clusterCreateCmd.RegisterFlagCompletionFunc("firewallimage", comp.FirewallImageListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("firewallcontroller", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return firewallControllerVersionListCompletion()
-	})
+	err = clusterCreateCmd.RegisterFlagCompletionFunc("firewallcontroller", comp.FirewallControllerVersionListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -358,27 +340,19 @@ func init() {
 	clusterListCmd.Flags().String("project", "", "show clusters of given project")
 	clusterListCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterListCmd.Flags().String("tenant", "", "show clusters of given tenant")
-	err = clusterListCmd.RegisterFlagCompletionFunc("name", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return clusterNameCompletion()
-	})
+	err = clusterListCmd.RegisterFlagCompletionFunc("name", comp.ClusterNameCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return projectListCompletion()
-	})
+	err = clusterListCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterListCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return partitionListCompletion()
-	})
+	err = clusterListCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterListCmd.RegisterFlagCompletionFunc("tenant", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return tenantListCompletion()
-	})
+	err = clusterListCmd.RegisterFlagCompletionFunc("tenant", comp.TenantListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -406,39 +380,27 @@ func init() {
 	clusterUpdateCmd.Flags().String("maxunavailable", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return versionListCompletion()
-	})
+	err = clusterUpdateCmd.RegisterFlagCompletionFunc("version", comp.VersionListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("firewalltype", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return firewallTypeListCompletion()
-	})
+	err = clusterUpdateCmd.RegisterFlagCompletionFunc("firewalltype", comp.FirewallTypeListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("firewallimage", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return firewallImageListCompletion()
-	})
+	err = clusterUpdateCmd.RegisterFlagCompletionFunc("firewallimage", comp.FirewallImageListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("firewallcontroller", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return firewallControllerVersionListCompletion()
-	})
+	err = clusterUpdateCmd.RegisterFlagCompletionFunc("firewallcontroller", comp.FirewallControllerVersionListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("machinetype", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return machineTypeListCompletion()
-	})
+	err = clusterUpdateCmd.RegisterFlagCompletionFunc("machinetype", comp.MachineTypeListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("machineimage", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return machineImageListCompletion()
-	})
+	err = clusterUpdateCmd.RegisterFlagCompletionFunc("machineimage", comp.MachineImageListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -469,9 +431,7 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterMachineSSHCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return clusterMachineListCompletion(args, false)
-	})
+	err = clusterMachineSSHCmd.RegisterFlagCompletionFunc("machineid", comp.ClusterFirewallListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -480,9 +440,7 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterMachineConsoleCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return clusterMachineListCompletion(args, true)
-	})
+	err = clusterMachineConsoleCmd.RegisterFlagCompletionFunc("machineid", comp.ClusterMachineListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -491,9 +449,7 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterMachineResetCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return clusterMachineListCompletion(args, true)
-	})
+	err = clusterMachineResetCmd.RegisterFlagCompletionFunc("machineid", comp.ClusterMachineListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -502,9 +458,7 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterMachineCycleCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return clusterMachineListCompletion(args, true)
-	})
+	err = clusterMachineCycleCmd.RegisterFlagCompletionFunc("machineid", comp.ClusterMachineListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -514,9 +468,7 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterMachineReinstallCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return clusterMachineListCompletion(args, true)
-	})
+	err = clusterMachineReinstallCmd.RegisterFlagCompletionFunc("machineid", comp.ClusterMachineListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -536,27 +488,19 @@ func init() {
 	clusterIssuesCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterIssuesCmd.Flags().String("tenant", "", "show clusters of given tenant")
 
-	err = clusterIssuesCmd.RegisterFlagCompletionFunc("name", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return clusterNameCompletion()
-	})
+	err = clusterIssuesCmd.RegisterFlagCompletionFunc("name", comp.ClusterNameCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterIssuesCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return projectListCompletion()
-	})
+	err = clusterIssuesCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterIssuesCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return partitionListCompletion()
-	})
+	err = clusterIssuesCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = clusterIssuesCmd.RegisterFlagCompletionFunc("tenant", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return tenantListCompletion()
-	})
+	err = clusterIssuesCmd.RegisterFlagCompletionFunc("tenant", comp.TenantListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

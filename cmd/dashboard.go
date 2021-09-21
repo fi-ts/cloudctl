@@ -57,15 +57,11 @@ func init() {
 	dashboardCmd.Flags().String("initial-tab", strings.ToLower(tabs[0].Name()), "the tab to show when starting the dashboard [optional]")
 	dashboardCmd.Flags().Duration("refresh-interval", 3*time.Second, "refresh interval [optional]")
 
-	err := dashboardCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return partitionListCompletion()
-	})
+	err := dashboardCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = dashboardCmd.RegisterFlagCompletionFunc("tenant", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return tenantListCompletion()
-	})
+	err = dashboardCmd.RegisterFlagCompletionFunc("tenant", comp.TenantListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

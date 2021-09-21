@@ -243,22 +243,16 @@ func init() {
 		log.Fatal(err.Error())
 	}
 
-	err = postgresCreateCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return projectListCompletion()
-	})
+	err = postgresCreateCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	err = postgresCreateCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return postgresListPartitionsCompletion()
-	})
+	err = postgresCreateCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = postgresCreateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return postgresListVersionsCompletion()
-	})
+	err = postgresCreateCmd.RegisterFlagCompletionFunc("version", comp.PostgresListVersionsCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -269,16 +263,12 @@ func init() {
 	postgresListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
 	postgresListCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
 
-	err = postgresListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return projectListCompletion()
-	})
+	err = postgresListCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	err = postgresListCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return partitionListCompletion()
-	})
+	err = postgresListCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

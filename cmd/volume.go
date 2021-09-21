@@ -34,13 +34,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return volumeDescribe(args)
 		},
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
-			}
-			return volumeListCompletion()
-		},
-		PreRun: bindPFlags,
+		ValidArgsFunction: comp.VolumeListCompletion,
+		PreRun:            bindPFlags,
 	}
 	volumeDeleteCmd = &cobra.Command{
 		Use:     "delete <volume>",
@@ -49,13 +44,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return volumeDelete(args)
 		},
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
-			}
-			return volumeListCompletion()
-		},
-		PreRun: bindPFlags,
+		ValidArgsFunction: comp.VolumeListCompletion,
+		PreRun:            bindPFlags,
 	}
 	volumeManifestCmd = &cobra.Command{
 		Use:   "manifest <volume>",
@@ -64,13 +54,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return volumeManifest(args)
 		},
-		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
-			}
-			return volumeListCompletion()
-		},
-		PreRun: bindPFlags,
+		ValidArgsFunction: comp.VolumeListCompletion,
+		PreRun:            bindPFlags,
 	}
 	volumeClusterInfoCmd = &cobra.Command{
 		Use:   "clusterinfo",
@@ -98,16 +83,12 @@ func init() {
 	volumeManifestCmd.Flags().StringP("name", "", "restored-pv", "name of the PersistentVolume")
 	volumeManifestCmd.Flags().StringP("namespace", "", "default", "namespace for the PersistentVolume")
 
-	err := volumeListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return projectListCompletion()
-	})
+	err := volumeListCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
-	err = volumeListCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return partitionListCompletion()
-	})
+	err = volumeListCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

@@ -37,7 +37,7 @@ var (
 			return projectDescribe(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: projectListCompletionFunc,
+		ValidArgsFunction: comp.ProjectListCompletion,
 	}
 	projectDeleteCmd = &cobra.Command{
 		Use:     "remove <projectID>",
@@ -47,7 +47,7 @@ var (
 			return projectDelete(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: projectListCompletionFunc,
+		ValidArgsFunction: comp.ProjectListCompletion,
 	}
 	projectApplyCmd = &cobra.Command{
 		Use:   "apply",
@@ -64,7 +64,7 @@ var (
 			return projectEdit(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: projectListCompletionFunc,
+		ValidArgsFunction: comp.ProjectListCompletion,
 	}
 	projectListCmd = &cobra.Command{
 		Use:     "list",

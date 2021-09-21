@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+
+	"github.com/fi-ts/cloudctl/pkg/api"
 	"github.com/metal-stack/metal-lib/auth"
 )
 
@@ -9,7 +11,7 @@ const cloudContext = "cloudctl"
 
 // getAuthContext reads AuthContext from given kubeconfig
 func getAuthContext(kubeconfig string) (*auth.AuthContext, error) {
-	cs, err := getContexts()
+	cs, err := api.GetContexts()
 	if err != nil {
 		return nil, err
 	}
