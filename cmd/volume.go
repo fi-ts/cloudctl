@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/fi-ts/cloud-go/api/client/volume"
 
@@ -83,15 +82,8 @@ func init() {
 	volumeManifestCmd.Flags().StringP("name", "", "restored-pv", "name of the PersistentVolume")
 	volumeManifestCmd.Flags().StringP("namespace", "", "default", "namespace for the PersistentVolume")
 
-	err := volumeListCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	err = volumeListCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(volumeListCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion))
+	must(volumeListCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion))
 }
 
 func volumeFind() error {

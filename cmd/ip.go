@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/fi-ts/cloud-go/api/client/ip"
 
@@ -70,14 +69,8 @@ func init() {
 
 	ipStaticCmd.Flags().StringP("name", "", "", "set name of the ip address [required]")
 	ipStaticCmd.Flags().StringP("description", "", "", "set description of the ip address [required]")
-	err := ipStaticCmd.MarkFlagRequired("name")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = ipStaticCmd.MarkFlagRequired("description")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(ipStaticCmd.MarkFlagRequired("name"))
+	must(ipStaticCmd.MarkFlagRequired("description"))
 
 	ipAllocateCmd.Flags().StringP("name", "", "", "set name of the ip address [required]")
 	ipAllocateCmd.Flags().StringP("description", "", "", "set description of the ip address [required]")
@@ -85,31 +78,13 @@ func init() {
 	ipAllocateCmd.Flags().StringP("network", "", "", "the network of the ip address [required]")
 	ipAllocateCmd.Flags().StringP("project", "", "", "the project of the ip address [required]")
 	ipAllocateCmd.Flags().StringSliceP("tags", "", []string{}, "set tags of the ip address [optional]")
-	err = ipAllocateCmd.MarkFlagRequired("name")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = ipAllocateCmd.MarkFlagRequired("description")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = ipAllocateCmd.MarkFlagRequired("network")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = ipAllocateCmd.MarkFlagRequired("project")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = ipAllocateCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(ipAllocateCmd.MarkFlagRequired("name"))
+	must(ipAllocateCmd.MarkFlagRequired("description"))
+	must(ipAllocateCmd.MarkFlagRequired("network"))
+	must(ipAllocateCmd.MarkFlagRequired("project"))
+	must(ipAllocateCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion))
 
-	err = ipListCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(ipListCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion))
 }
 
 func ipList() error {

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/fi-ts/cloud-go/api/client/database"
@@ -230,32 +229,13 @@ func init() {
 	postgresCreateCmd.Flags().StringP("storage", "", "10Gi", "storage for the database")
 	postgresCreateCmd.Flags().StringP("backup-config", "", "", "backup to use")
 	postgresCreateCmd.Flags().StringSliceP("maintenance", "", []string{"Sun:22:00-23:00"}, "time specification of the automatic maintenance in the form Weekday:HH:MM-HH-MM [optional]")
-	err := postgresCreateCmd.MarkFlagRequired("description")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = postgresCreateCmd.MarkFlagRequired("project")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = postgresCreateCmd.MarkFlagRequired("partition")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(postgresCreateCmd.MarkFlagRequired("description"))
+	must(postgresCreateCmd.MarkFlagRequired("project"))
+	must(postgresCreateCmd.MarkFlagRequired("partition"))
+	must(postgresCreateCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion))
+	must(postgresCreateCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion))
+	must(postgresCreateCmd.RegisterFlagCompletionFunc("version", comp.PostgresListVersionsCompletion))
 
-	err = postgresCreateCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	err = postgresCreateCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = postgresCreateCmd.RegisterFlagCompletionFunc("version", comp.PostgresListVersionsCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
 	// List
 	postgresListCmd.Flags().StringP("id", "", "", "postgres id to filter [optional]")
 	postgresListCmd.Flags().StringP("description", "", "", "description to filter [optional]")
@@ -263,15 +243,8 @@ func init() {
 	postgresListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
 	postgresListCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
 
-	err = postgresListCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	err = postgresListCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(postgresListCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion))
+	must(postgresListCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion))
 
 	postgresApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
 	Example postgres update:
@@ -285,12 +258,9 @@ func init() {
 	`)
 
 	postgresConnectionStringCmd.Flags().StringP("type", "", "psql", "the type of the connectionstring to create, can be one of psql|jdbc")
-	err = postgresConnectionStringCmd.RegisterFlagCompletionFunc("type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	must(postgresConnectionStringCmd.RegisterFlagCompletionFunc("type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"jdbc", "psql"}, cobra.ShellCompDirectiveNoFileComp
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	}))
 
 	postgresBackupCreateCmd.Flags().StringP("name", "", "", "name of the database backup")
 	postgresBackupCreateCmd.Flags().StringP("project", "", "", "project of the database backup")
@@ -304,52 +274,25 @@ func init() {
 	postgresBackupCreateCmd.Flags().StringP("s3-accesskey", "", "", "s3-accesskey")
 	postgresBackupCreateCmd.Flags().StringP("s3-secretkey", "", "", "s3-secretkey")
 	postgresBackupCreateCmd.Flags().StringP("s3-encryptionkey", "", "", "s3 encryption key, enables sse (server side encryption) if given [optional]")
-	err = postgresBackupCreateCmd.MarkFlagRequired("name")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = postgresBackupCreateCmd.MarkFlagRequired("project")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = postgresBackupCreateCmd.MarkFlagRequired("s3-endpoint")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = postgresBackupCreateCmd.MarkFlagRequired("s3-accesskey")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = postgresBackupCreateCmd.MarkFlagRequired("s3-secretkey")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(postgresBackupCreateCmd.MarkFlagRequired("name"))
+	must(postgresBackupCreateCmd.MarkFlagRequired("project"))
+	must(postgresBackupCreateCmd.MarkFlagRequired("s3-endpoint"))
+	must(postgresBackupCreateCmd.MarkFlagRequired("s3-accesskey"))
+	must(postgresBackupCreateCmd.MarkFlagRequired("s3-secretkey"))
 
 	postgresBackupAutoCreateCmd.Flags().StringP("name", "", "", "name of the database backup")
 	postgresBackupAutoCreateCmd.Flags().StringP("project", "", "", "project of the database backup")
 	postgresBackupAutoCreateCmd.Flags().StringP("schedule", "", "30 00 * * *", "backup schedule in cron syntax")
 	postgresBackupAutoCreateCmd.Flags().Int32P("retention", "", int32(10), "number of backups per postgres to retain")
 	postgresBackupAutoCreateCmd.Flags().StringP("partition", "", "", "use this partition to create the backup bucket")
-	err = postgresBackupAutoCreateCmd.MarkFlagRequired("name")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = postgresBackupAutoCreateCmd.MarkFlagRequired("project")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = postgresBackupAutoCreateCmd.MarkFlagRequired("partition")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(postgresBackupAutoCreateCmd.MarkFlagRequired("name"))
+	must(postgresBackupAutoCreateCmd.MarkFlagRequired("project"))
+	must(postgresBackupAutoCreateCmd.MarkFlagRequired("partition"))
 
 	postgresBackupUpdateCmd.Flags().StringP("id", "", "", "id of the database backup")
 	postgresBackupUpdateCmd.Flags().StringP("schedule", "", "", "backup schedule in cron syntax [optional]")
 	postgresBackupUpdateCmd.Flags().Int32P("retention", "", int32(0), "number of backups per postgres to retain [optional]")
-	err = postgresBackupUpdateCmd.MarkFlagRequired("id")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(postgresBackupUpdateCmd.MarkFlagRequired("id"))
 
 }
 func postgresCreate() error {

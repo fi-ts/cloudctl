@@ -2,16 +2,15 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/fi-ts/cloud-go/api/client/accounting"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-playground/validator/v10"
 	"github.com/jinzhu/now"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/go-playground/validator/v10"
 )
 
 type BillingOpts struct {
@@ -182,10 +181,7 @@ func init() {
 	containerBillingCmd.Flags().StringVarP(&billingOpts.Namespace, "namespace", "n", "", "the namespace to account")
 	containerBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 
-	err := viper.BindPFlags(containerBillingCmd.Flags())
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(viper.BindPFlags(containerBillingCmd.Flags()))
 
 	clusterBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
 	clusterBillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
@@ -195,10 +191,7 @@ func init() {
 	clusterBillingCmd.Flags().StringVarP(&billingOpts.ClusterID, "cluster-id", "c", "", "the cluster to account")
 	clusterBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 
-	err = viper.BindPFlags(clusterBillingCmd.Flags())
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(viper.BindPFlags(clusterBillingCmd.Flags()))
 
 	ipBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
 	ipBillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
@@ -207,10 +200,7 @@ func init() {
 	ipBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
 	ipBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 
-	err = viper.BindPFlags(ipBillingCmd.Flags())
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(viper.BindPFlags(ipBillingCmd.Flags()))
 
 	networkTrafficBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
 	networkTrafficBillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
@@ -221,10 +211,7 @@ func init() {
 	networkTrafficBillingCmd.Flags().StringVarP(&billingOpts.Device, "device", "", "", "the device to account")
 	networkTrafficBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 
-	err = viper.BindPFlags(networkTrafficBillingCmd.Flags())
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(viper.BindPFlags(networkTrafficBillingCmd.Flags()))
 
 	s3BillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
 	s3BillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
@@ -233,10 +220,7 @@ func init() {
 	s3BillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
 	s3BillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 
-	err = viper.BindPFlags(s3BillingCmd.Flags())
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(viper.BindPFlags(s3BillingCmd.Flags()))
 
 	volumeBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
 	volumeBillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
@@ -247,10 +231,7 @@ func init() {
 	volumeBillingCmd.Flags().StringVarP(&billingOpts.ClusterID, "cluster-id", "c", "", "the cluster to account")
 	volumeBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 
-	err = viper.BindPFlags(volumeBillingCmd.Flags())
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(viper.BindPFlags(volumeBillingCmd.Flags()))
 
 	postgresBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
 	postgresBillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
@@ -259,10 +240,7 @@ func init() {
 	postgresBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
 	postgresBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 
-	err = viper.BindPFlags(postgresBillingCmd.Flags())
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(viper.BindPFlags(postgresBillingCmd.Flags()))
 }
 
 func initBillingOpts() error {

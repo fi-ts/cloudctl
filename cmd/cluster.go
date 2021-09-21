@@ -268,95 +268,39 @@ func init() {
 	clusterCreateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced. [optional]")
 	clusterCreateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. [optional]")
 
-	err := clusterCreateCmd.MarkFlagRequired("name")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.MarkFlagRequired("project")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.MarkFlagRequired("partition")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("external-networks", comp.NetworkListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("version", comp.VersionListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("machinetype", comp.MachineTypeListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("machineimage", comp.MachineImageListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("firewalltype", comp.FirewallTypeListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("firewallimage", comp.FirewallImageListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("firewallcontroller", comp.FirewallControllerVersionListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	must(clusterCreateCmd.MarkFlagRequired("name"))
+	must(clusterCreateCmd.MarkFlagRequired("project"))
+	must(clusterCreateCmd.MarkFlagRequired("partition"))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("external-networks", comp.NetworkListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("version", comp.VersionListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("machinetype", comp.MachineTypeListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("machineimage", comp.MachineImageListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("firewalltype", comp.FirewallTypeListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("firewallimage", comp.FirewallImageListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("firewallcontroller", comp.FirewallControllerVersionListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"production", "development", "evaluation"}, cobra.ShellCompDirectiveNoFileComp
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("cri", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	}))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("cri", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"docker", "containerd"}, cobra.ShellCompDirectiveNoFileComp
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("audit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	}))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("audit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return auditConfigOptions.Names(true),
 			cobra.ShellCompDirectiveNoFileComp
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	}))
+
 	// Cluster list --------------------------------------------------------------------
 	clusterListCmd.Flags().String("id", "", "show clusters of given id")
 	clusterListCmd.Flags().String("name", "", "show clusters of given name")
 	clusterListCmd.Flags().String("project", "", "show clusters of given project")
 	clusterListCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterListCmd.Flags().String("tenant", "", "show clusters of given tenant")
-	err = clusterListCmd.RegisterFlagCompletionFunc("name", comp.ClusterNameCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterListCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterListCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterListCmd.RegisterFlagCompletionFunc("tenant", comp.TenantListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(clusterListCmd.RegisterFlagCompletionFunc("name", comp.ClusterNameCompletion))
+	must(clusterListCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion))
+	must(clusterListCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion))
+	must(clusterListCmd.RegisterFlagCompletionFunc("tenant", comp.TenantListCompletion))
 
 	// Cluster update --------------------------------------------------------------------
 	clusterUpdateCmd.Flags().String("workergroup", "", "the name of the worker group to apply updates to, only required when there are multiple worker groups.")
@@ -381,43 +325,20 @@ func init() {
 	clusterUpdateCmd.Flags().String("maxunavailable", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("version", comp.VersionListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("firewalltype", comp.FirewallTypeListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("firewallimage", comp.FirewallImageListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("firewallcontroller", comp.FirewallControllerVersionListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("machinetype", comp.MachineTypeListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("machineimage", comp.MachineImageListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	must(clusterUpdateCmd.RegisterFlagCompletionFunc("version", comp.VersionListCompletion))
+	must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewalltype", comp.FirewallTypeListCompletion))
+	must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewallimage", comp.FirewallImageListCompletion))
+	must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewallcontroller", comp.FirewallControllerVersionListCompletion))
+	must(clusterUpdateCmd.RegisterFlagCompletionFunc("machinetype", comp.MachineTypeListCompletion))
+	must(clusterUpdateCmd.RegisterFlagCompletionFunc("machineimage", comp.MachineImageListCompletion))
+	must(clusterUpdateCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"production", "development", "evaluation"}, cobra.ShellCompDirectiveNoFileComp
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("audit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	}))
+	must(clusterUpdateCmd.RegisterFlagCompletionFunc("audit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return auditConfigOptions.Names(true),
 			cobra.ShellCompDirectiveNoFileComp
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	}))
+
 	// Cluster splunk config manifest --------------------------------------------------------------------
 	clusterSplunkConfigManifestCmd.Flags().String("token", "", "the hec token to use for this cluster's audit logs")
 	clusterSplunkConfigManifestCmd.Flags().String("index", "", "the splunk index to use for this cluster's audit logs")
@@ -428,51 +349,26 @@ func init() {
 	clusterSplunkConfigManifestCmd.Flags().String("cabase64", "", "the base64-encoded ca certificate (chain) for the splunk HEC endpoint")
 	// Cluster machine ... --------------------------------------------------------------------
 	clusterMachineSSHCmd.Flags().String("machineid", "", "machine to connect to.")
-	err = clusterMachineSSHCmd.MarkFlagRequired("machineid")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterMachineSSHCmd.RegisterFlagCompletionFunc("machineid", comp.ClusterFirewallListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(clusterMachineSSHCmd.MarkFlagRequired("machineid"))
+	must(clusterMachineSSHCmd.RegisterFlagCompletionFunc("machineid", comp.ClusterFirewallListCompletion))
+
 	clusterMachineConsoleCmd.Flags().String("machineid", "", "machine to connect to.")
-	err = clusterMachineConsoleCmd.MarkFlagRequired("machineid")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterMachineConsoleCmd.RegisterFlagCompletionFunc("machineid", comp.ClusterMachineListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(clusterMachineConsoleCmd.MarkFlagRequired("machineid"))
+	must(clusterMachineConsoleCmd.RegisterFlagCompletionFunc("machineid", comp.ClusterMachineListCompletion))
+
 	clusterMachineResetCmd.Flags().String("machineid", "", "machine to reset.")
-	err = clusterMachineResetCmd.MarkFlagRequired("machineid")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterMachineResetCmd.RegisterFlagCompletionFunc("machineid", comp.ClusterMachineListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(clusterMachineResetCmd.MarkFlagRequired("machineid"))
+	must(clusterMachineResetCmd.RegisterFlagCompletionFunc("machineid", comp.ClusterMachineListCompletion))
+
 	clusterMachineCycleCmd.Flags().String("machineid", "", "machine to reset.")
-	err = clusterMachineCycleCmd.MarkFlagRequired("machineid")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterMachineCycleCmd.RegisterFlagCompletionFunc("machineid", comp.ClusterMachineListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(clusterMachineCycleCmd.MarkFlagRequired("machineid"))
+	must(clusterMachineCycleCmd.RegisterFlagCompletionFunc("machineid", comp.ClusterMachineListCompletion))
+
 	clusterMachineReinstallCmd.Flags().String("machineid", "", "machine to reinstall.")
 	clusterMachineReinstallCmd.Flags().String("machineimage", "", "image to reinstall (optional).")
-	err = clusterMachineReinstallCmd.MarkFlagRequired("machineid")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterMachineReinstallCmd.RegisterFlagCompletionFunc("machineid", comp.ClusterMachineListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(clusterMachineReinstallCmd.MarkFlagRequired("machineid"))
+	must(clusterMachineReinstallCmd.RegisterFlagCompletionFunc("machineid", comp.ClusterMachineListCompletion))
+
 	clusterMachineCmd.AddCommand(clusterMachineListCmd)
 	clusterMachineCmd.AddCommand(clusterMachineSSHCmd)
 	clusterMachineCmd.AddCommand(clusterMachineConsoleCmd)
@@ -489,22 +385,10 @@ func init() {
 	clusterIssuesCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterIssuesCmd.Flags().String("tenant", "", "show clusters of given tenant")
 
-	err = clusterIssuesCmd.RegisterFlagCompletionFunc("name", comp.ClusterNameCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterIssuesCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterIssuesCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterIssuesCmd.RegisterFlagCompletionFunc("tenant", comp.TenantListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(clusterIssuesCmd.RegisterFlagCompletionFunc("name", comp.ClusterNameCompletion))
+	must(clusterIssuesCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion))
+	must(clusterIssuesCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion))
+	must(clusterIssuesCmd.RegisterFlagCompletionFunc("tenant", comp.TenantListCompletion))
 
 	clusterKubeconfigCmd.Flags().Bool("merge", false, "merges the cluster's kubeconfig into the current active kubeconfig, otherwise an individual kubeconfig is printed to console only")
 	clusterKubeconfigCmd.Flags().Bool("set-context", false, "when setting the merge parameter to true, immediately activates the cluster's context")

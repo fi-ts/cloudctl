@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 
@@ -86,10 +85,7 @@ func init() {
 	projectCreateCmd.Flags().Int32("cluster-quota", 0, "cluster quota")
 	projectCreateCmd.Flags().Int32("machine-quota", 0, "machine quota")
 	projectCreateCmd.Flags().Int32("ip-quota", 0, "ip quota")
-	err := projectCreateCmd.MarkFlagRequired("name")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(projectCreateCmd.MarkFlagRequired("name"))
 
 	projectApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
 	Example project update:

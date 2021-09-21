@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/fi-ts/cloud-go/api/models"
 
@@ -97,88 +96,38 @@ func init() {
 	s3CreateCmd.Flags().Int64("max-buckets", 0, "maximum number of buckets for the s3 user")
 	s3CreateCmd.Flags().StringP("access-key", "", "", "specify the access key, otherwise will be generated")
 	s3CreateCmd.Flags().StringP("secret-key", "", "", "specify the secret key, otherwise will be generated")
-	err := s3CreateCmd.MarkFlagRequired("id")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3CreateCmd.MarkFlagRequired("partition")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3CreateCmd.MarkFlagRequired("project")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3CreateCmd.RegisterFlagCompletionFunc("partition", comp.S3ListPartitionsCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3CreateCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(s3CreateCmd.MarkFlagRequired("id"))
+	must(s3CreateCmd.MarkFlagRequired("partition"))
+	must(s3CreateCmd.MarkFlagRequired("project"))
+	must(s3CreateCmd.RegisterFlagCompletionFunc("partition", comp.S3ListPartitionsCompletion))
+	must(s3CreateCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion))
+
 	s3ListCmd.Flags().StringP("partition", "p", "", "name of s3 partition.")
 	s3ListCmd.Flags().String("project", "", "id of the project that the s3 user belongs to")
-	err = s3ListCmd.RegisterFlagCompletionFunc("partition", comp.S3ListPartitionsCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3ListCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(s3ListCmd.RegisterFlagCompletionFunc("partition", comp.S3ListPartitionsCompletion))
+	must(s3ListCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion))
 
 	s3DescribeCmd.Flags().StringP("id", "i", "", "id of the s3 user [required]")
 	s3DescribeCmd.Flags().StringP("partition", "p", "", "name of s3 partition where this user is in [required]")
 	s3DescribeCmd.Flags().String("project", "", "id of the project that the s3 user belongs to [required]")
 	s3DescribeCmd.Flags().StringP("tenant", "t", "", "tenant of the s3 user, defaults to logged in tenant")
 	s3DescribeCmd.Flags().StringP("for-client", "", "", "output suitable client configuration for either minio|s3cmd")
-	err = s3DescribeCmd.MarkFlagRequired("id")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3DescribeCmd.MarkFlagRequired("partition")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3DescribeCmd.MarkFlagRequired("project")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3DescribeCmd.RegisterFlagCompletionFunc("partition", comp.S3ListPartitionsCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3DescribeCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(s3DescribeCmd.MarkFlagRequired("id"))
+	must(s3DescribeCmd.MarkFlagRequired("partition"))
+	must(s3DescribeCmd.MarkFlagRequired("project"))
+	must(s3DescribeCmd.RegisterFlagCompletionFunc("partition", comp.S3ListPartitionsCompletion))
+	must(s3DescribeCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion))
 
 	s3DeleteCmd.Flags().StringP("id", "i", "", "id of the s3 user [required]")
 	s3DeleteCmd.Flags().StringP("partition", "p", "", "name of s3 partition where this user is in [required]")
 	s3DeleteCmd.Flags().String("project", "", "id of the project that the s3 user belongs to [required]")
 	s3DeleteCmd.Flags().StringP("tenant", "t", "", "tenant of the s3 user, defaults to logged in tenant")
 	s3DeleteCmd.Flags().Bool("force", false, "forces s3 user deletion along with buckets and bucket objects even if those still exist (dangerous!)")
-	err = s3DeleteCmd.MarkFlagRequired("id")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3DeleteCmd.MarkFlagRequired("partition")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3DeleteCmd.MarkFlagRequired("project")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3DeleteCmd.RegisterFlagCompletionFunc("partition", comp.S3ListPartitionsCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3DeleteCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(s3DeleteCmd.MarkFlagRequired("id"))
+	must(s3DeleteCmd.MarkFlagRequired("partition"))
+	must(s3DeleteCmd.MarkFlagRequired("project"))
+	must(s3DeleteCmd.RegisterFlagCompletionFunc("partition", comp.S3ListPartitionsCompletion))
+	must(s3DeleteCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion))
 
 	s3AddKeyCmd.Flags().StringP("id", "i", "", "id of the s3 user [required]")
 	s3AddKeyCmd.Flags().StringP("partition", "p", "", "name of s3 partition where this user is in [required]")
@@ -186,52 +135,22 @@ func init() {
 	s3AddKeyCmd.Flags().StringP("tenant", "t", "", "tenant of the s3 user, defaults to logged in tenant")
 	s3AddKeyCmd.Flags().StringP("access-key", "", "", "specify the access key, otherwise will be generated")
 	s3AddKeyCmd.Flags().StringP("secret-key", "", "", "specify the secret key, otherwise will be generated")
-	err = s3AddKeyCmd.MarkFlagRequired("id")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3AddKeyCmd.MarkFlagRequired("partition")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3AddKeyCmd.MarkFlagRequired("project")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3AddKeyCmd.RegisterFlagCompletionFunc("partition", comp.S3ListPartitionsCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3AddKeyCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(s3AddKeyCmd.MarkFlagRequired("id"))
+	must(s3AddKeyCmd.MarkFlagRequired("partition"))
+	must(s3AddKeyCmd.MarkFlagRequired("project"))
+	must(s3AddKeyCmd.RegisterFlagCompletionFunc("partition", comp.S3ListPartitionsCompletion))
+	must(s3AddKeyCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion))
 
 	s3RemoveKeyCmd.Flags().StringP("id", "i", "", "id of the s3 user [required]")
 	s3RemoveKeyCmd.Flags().StringP("partition", "p", "", "name of s3 partition where this user is in [required]")
 	s3RemoveKeyCmd.Flags().String("project", "", "id of the project that the s3 user belongs to [required]")
 	s3RemoveKeyCmd.Flags().StringP("tenant", "t", "", "tenant of the s3 user, defaults to logged in tenant")
 	s3RemoveKeyCmd.Flags().StringP("access-key", "", "", "specify the access key to delete the access / secret key pair")
-	err = s3RemoveKeyCmd.MarkFlagRequired("id")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3RemoveKeyCmd.MarkFlagRequired("partition")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3RemoveKeyCmd.MarkFlagRequired("project")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3RemoveKeyCmd.RegisterFlagCompletionFunc("partition", comp.S3ListPartitionsCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = s3RemoveKeyCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(s3RemoveKeyCmd.MarkFlagRequired("id"))
+	must(s3RemoveKeyCmd.MarkFlagRequired("partition"))
+	must(s3RemoveKeyCmd.MarkFlagRequired("project"))
+	must(s3RemoveKeyCmd.RegisterFlagCompletionFunc("partition", comp.S3ListPartitionsCompletion))
+	must(s3RemoveKeyCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion))
 
 	s3Cmd.AddCommand(s3CreateCmd)
 	s3Cmd.AddCommand(s3DescribeCmd)

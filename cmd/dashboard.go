@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"math"
 	"net/http"
 	"sort"
@@ -57,39 +56,24 @@ func init() {
 	dashboardCmd.Flags().String("initial-tab", strings.ToLower(tabs[0].Name()), "the tab to show when starting the dashboard [optional]")
 	dashboardCmd.Flags().Duration("refresh-interval", 3*time.Second, "refresh interval [optional]")
 
-	err := dashboardCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = dashboardCmd.RegisterFlagCompletionFunc("tenant", comp.TenantListCompletion)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = dashboardCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	must(dashboardCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion))
+	must(dashboardCmd.RegisterFlagCompletionFunc("tenant", comp.TenantListCompletion))
+	must(dashboardCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"production", "development", "evaluation"}, cobra.ShellCompDirectiveNoFileComp
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = dashboardCmd.RegisterFlagCompletionFunc("color-theme", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	}))
+	must(dashboardCmd.RegisterFlagCompletionFunc("color-theme", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{
 			"default\twith bright fonts, optimized for dark terminal backgrounds",
 			"dark\twith dark fonts, optimized for bright terminal backgrounds",
 		}, cobra.ShellCompDirectiveNoFileComp
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = dashboardCmd.RegisterFlagCompletionFunc("initial-tab", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	}))
+	must(dashboardCmd.RegisterFlagCompletionFunc("initial-tab", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var names []string
 		for _, t := range tabs {
 			names = append(names, fmt.Sprintf("%s\t%s", strings.ToLower(t.Name()), t.Description()))
 		}
 		return names, cobra.ShellCompDirectiveNoFileComp
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	}))
 }
 
 func dashboardApplyTheme(theme string) error {
