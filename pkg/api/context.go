@@ -27,6 +27,11 @@ type Context struct {
 	HMAC         *string `yaml:"hmac"`
 }
 
+var defaultCtx = Context{
+	ApiURL:    "http://localhost:8080/cloud",
+	IssuerURL: "http://localhost:8080/",
+}
+
 func GetContexts() (*Contexts, error) {
 	var ctxs Contexts
 	cfgFile := viper.GetViper().ConfigFileUsed()
@@ -50,4 +55,16 @@ func WriteContexts(ctxs *Contexts) error {
 	}
 	fmt.Printf("%s switched context to \"%s\"\n", color.GreenString("✔"), color.GreenString(ctxs.CurrentContext))
 	return nil
+}
+
+func MustDefaultContext() Context {
+	ctxs, err := GetContexts()
+	if err != nil {
+		return defaultCtx
+	}
+	ctx, ok := ctxs.Contexts[ctxs.CurrentContext]
+	if !ok {
+		return defaultCtx
+	}
+	return ctx
 }
