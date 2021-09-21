@@ -45,10 +45,6 @@ contexts:
 		PreRun: bindPFlags,
 	}
 
-	defaultCtx = api.Context{
-		ApiURL:    "http://localhost:8080/cloud",
-		IssuerURL: "http://localhost:8080/",
-	}
 	contextShortCmd = &cobra.Command{
 		Use:   "short",
 		Short: "only show the default context name",
@@ -118,16 +114,4 @@ func contextList() error {
 		return err
 	}
 	return printer.Print(ctxs)
-}
-
-func mustDefaultContext() api.Context {
-	ctxs, err := api.GetContexts()
-	if err != nil {
-		return defaultCtx
-	}
-	ctx, ok := ctxs.Contexts[ctxs.CurrentContext]
-	if !ok {
-		return defaultCtx
-	}
-	return ctx
 }

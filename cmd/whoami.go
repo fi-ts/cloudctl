@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/fi-ts/cloudctl/pkg/api"
 	"github.com/metal-stack/metal-lib/jwt/sec"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -14,7 +15,7 @@ var whoamiCmd = &cobra.Command{
 	Short: "shows current user",
 	Long:  "shows the current user, that will be used to authenticate commands.",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		authContext, err := getAuthContext(viper.GetString("kubeconfig"))
+		authContext, err := api.GetAuthContext(viper.GetString("kubeconfig"))
 		if err != nil {
 			return err
 		}

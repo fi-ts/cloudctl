@@ -26,6 +26,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/fi-ts/cloudctl/cmd/output"
+	"github.com/fi-ts/cloudctl/pkg/api"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/spf13/cobra"
@@ -731,7 +732,7 @@ func clusterKubeconfig(args []string) error {
 	kubeconfigTpl := *credentials.Payload.Kubeconfig // is a kubeconfig with only a single cluster entry
 
 	kubeconfigFile := viper.GetString("kubeconfig")
-	authContext, err := getAuthContext(kubeconfigFile)
+	authContext, err := api.GetAuthContext(kubeconfigFile)
 	if err != nil {
 		return err
 	}
@@ -1411,7 +1412,7 @@ func clusterMachineSSH(args []string, console bool) error {
 			defer os.Remove(privateKeyFile)
 			if console {
 				fmt.Printf("access console via ssh\n")
-				authContext, err := getAuthContext(viper.GetString("kubeconfig"))
+				authContext, err := api.GetAuthContext(viper.GetString("kubeconfig"))
 				if err != nil {
 					return err
 				}

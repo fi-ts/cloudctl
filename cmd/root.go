@@ -63,7 +63,6 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringP("url", "u", "", "api server address. Can be specified with CLOUDCTL_URL environment variable.")
 	rootCmd.PersistentFlags().String("apitoken", "", "api token to authenticate. Can be specified with CLOUDCTL_APITOKEN environment variable.")
 	rootCmd.PersistentFlags().String("kubeconfig", "", "Path to the kube-config to use for authentication and authorization. Is updated by login. Uses default path if not specified.")
@@ -93,9 +92,7 @@ func init() {
 	if err != nil {
 		log.Fatalf("error setup root cmd:%v", err)
 	}
-}
 
-func initConfig() {
 	viper.SetEnvPrefix(strings.ToUpper(programName))
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	viper.AutomaticEnv()
@@ -126,7 +123,7 @@ func initConfig() {
 		}
 	}
 
-	ctx = mustDefaultContext()
+	ctx = api.MustDefaultContext()
 	driverURL := viper.GetString("url")
 	if driverURL == "" && ctx.ApiURL != "" {
 		driverURL = ctx.ApiURL
@@ -140,7 +137,7 @@ func initConfig() {
 	// if there is no api token explicitly specified we try to pull it out of
 	// the kubeconfig context
 	if apiToken == "" {
-		authContext, err := getAuthContext(viper.GetString("kubeconfig"))
+		authContext, err := api.GetAuthContext(viper.GetString("kubeconfig"))
 		// if there is an error, no kubeconfig exists for us ... this is not really an error
 		// if cloudctl is used in scripting with an hmac-key
 		if err == nil {
@@ -148,7 +145,6 @@ func initConfig() {
 		}
 	}
 
-	var err error
 	cloud, err = cloudgo.NewClient(driverURL, apiToken, hmac)
 	if err != nil {
 		log.Fatalf("error initializing cloud-api client: %v", err)
