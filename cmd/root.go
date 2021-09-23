@@ -77,17 +77,6 @@ func init() {
 	`)
 	rootCmd.PersistentFlags().BoolP("yes-i-really-mean-it", "", false, "skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)")
 
-	rootCmd.AddCommand(clusterCmd)
-	rootCmd.AddCommand(dashboardCmd)
-	rootCmd.AddCommand(updateCmd)
-	rootCmd.AddCommand(loginCmd)
-	rootCmd.AddCommand(whoamiCmd)
-	rootCmd.AddCommand(projectCmd)
-	rootCmd.AddCommand(tenantCmd)
-	rootCmd.AddCommand(contextCmd)
-	rootCmd.AddCommand(s3Cmd)
-	rootCmd.AddCommand(versionCmd)
-
 	err := viper.BindPFlags(rootCmd.PersistentFlags())
 	if err != nil {
 		log.Fatalf("error setup root cmd:%v", err)
@@ -157,6 +146,21 @@ func init() {
 		log.Fatalf("could not parse driver url: %v", err)
 	}
 	consoleHost = parsedURL.Host
+
+	rootCmd.AddCommand(newClusterCmd())
+	rootCmd.AddCommand(newDashboardCmd())
+	rootCmd.AddCommand(newUpdateCmd())
+	rootCmd.AddCommand(newLoginCmd())
+	rootCmd.AddCommand(newWhoamiCmd())
+	rootCmd.AddCommand(newProjectCmd())
+	rootCmd.AddCommand(newTenantCmd())
+	rootCmd.AddCommand(newContextCmd())
+	rootCmd.AddCommand(newS3Cmd())
+	rootCmd.AddCommand(newVersionCmd())
+	rootCmd.AddCommand(newVolumeCmd())
+	rootCmd.AddCommand(newPostgresCmd())
+	rootCmd.AddCommand(newIPCmd())
+	rootCmd.AddCommand(newBillingCmd())
 }
 
 func initPrinter() {

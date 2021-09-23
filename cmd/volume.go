@@ -12,13 +12,13 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	volumeCmd = &cobra.Command{
+func newVolumeCmd() *cobra.Command {
+	volumeCmd := &cobra.Command{
 		Use:   "volume",
 		Short: "manage volume",
 		Long:  "list/find/delete pvc volumes",
 	}
-	volumeListCmd = &cobra.Command{
+	volumeListCmd := &cobra.Command{
 		Use:     "list",
 		Short:   "list volume",
 		Aliases: []string{"ls"},
@@ -27,7 +27,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	volumeDescribeCmd = &cobra.Command{
+	volumeDescribeCmd := &cobra.Command{
 		Use:   "describe <volume>",
 		Short: "describes a volume",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -36,7 +36,7 @@ var (
 		ValidArgsFunction: comp.VolumeListCompletion,
 		PreRun:            bindPFlags,
 	}
-	volumeDeleteCmd = &cobra.Command{
+	volumeDeleteCmd := &cobra.Command{
 		Use:     "delete <volume>",
 		Aliases: []string{"rm", "destroy", "remove", "delete"},
 		Short:   "delete a volume",
@@ -46,7 +46,7 @@ var (
 		ValidArgsFunction: comp.VolumeListCompletion,
 		PreRun:            bindPFlags,
 	}
-	volumeManifestCmd = &cobra.Command{
+	volumeManifestCmd := &cobra.Command{
 		Use:   "manifest <volume>",
 		Short: "print a manifest for a volume",
 		Long:  "this is only useful for volumes which are not used in any k8s cluster. With the PersistenVolumeClaim given you can reuse it in a new cluster.",
@@ -56,7 +56,7 @@ var (
 		ValidArgsFunction: comp.VolumeListCompletion,
 		PreRun:            bindPFlags,
 	}
-	volumeClusterInfoCmd = &cobra.Command{
+	volumeClusterInfoCmd := &cobra.Command{
 		Use:   "clusterinfo",
 		Short: "show storage cluster infos",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -64,10 +64,6 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-)
-
-func init() {
-	rootCmd.AddCommand(volumeCmd)
 
 	volumeCmd.AddCommand(volumeListCmd)
 	volumeCmd.AddCommand(volumeDeleteCmd)
@@ -84,6 +80,8 @@ func init() {
 
 	must(volumeListCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion))
 	must(volumeListCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion))
+
+	return volumeCmd
 }
 
 func volumeFind() error {

@@ -11,13 +11,13 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	s3Cmd = &cobra.Command{
+func newS3Cmd() *cobra.Command {
+	s3Cmd := &cobra.Command{
 		Use:   "s3",
 		Short: "manage s3",
 		Long:  "manges access to s3 storage located in different partitions",
 	}
-	s3DescribeCmd = &cobra.Command{
+	s3DescribeCmd := &cobra.Command{
 		Use:   "describe",
 		Short: "describe an s3 user",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -25,7 +25,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	s3CreateCmd = &cobra.Command{
+	s3CreateCmd := &cobra.Command{
 		Use:   "create",
 		Short: "create an s3 user",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -33,7 +33,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	s3DeleteCmd = &cobra.Command{
+	s3DeleteCmd := &cobra.Command{
 		Use:     "remove",
 		Aliases: []string{"rm", "delete"},
 		Short:   "delete an s3 user",
@@ -42,7 +42,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	s3ListCmd = &cobra.Command{
+	s3ListCmd := &cobra.Command{
 		Use:     "list",
 		Short:   "list s3 users",
 		Aliases: []string{"ls"},
@@ -51,7 +51,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	s3PartitionListCmd = &cobra.Command{
+	s3PartitionListCmd := &cobra.Command{
 		Use:     "partitions",
 		Short:   "list s3 partitions",
 		Aliases: []string{"partition"},
@@ -60,7 +60,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	s3AddKeyCmd = &cobra.Command{
+	s3AddKeyCmd := &cobra.Command{
 		Use:   "add-key",
 		Short: "adds a key for an s3 user",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -68,7 +68,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	s3RemoveKeyCmd = &cobra.Command{
+	s3RemoveKeyCmd := &cobra.Command{
 		Use:   "remove-key",
 		Short: "remove a key for an s3 user",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -76,18 +76,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-)
 
-var s3cmdTemplate = `cat << EOF > ${HOME}/.s3cfg
-[default]
-access_key = %s
-host_base = %s
-host_bucket = %s
-secret_key = %s
-EOF
-`
-
-func init() {
 	s3CreateCmd.Flags().StringP("id", "i", "", "id of the s3 user [required]")
 	s3CreateCmd.Flags().StringP("partition", "p", "", "name of s3 partition to create the s3 user in [required]")
 	s3CreateCmd.Flags().String("project", "", "id of the project that the s3 user belongs to [required]")
@@ -159,7 +148,17 @@ func init() {
 	s3Cmd.AddCommand(s3PartitionListCmd)
 	s3Cmd.AddCommand(s3AddKeyCmd)
 	s3Cmd.AddCommand(s3RemoveKeyCmd)
+	return s3Cmd
 }
+
+var s3cmdTemplate = `cat << EOF > ${HOME}/.s3cfg
+[default]
+access_key = %s
+host_base = %s
+host_bucket = %s
+secret_key = %s
+EOF
+`
 
 func s3Describe() error {
 	tenant := viper.GetString("tenant")

@@ -35,8 +35,8 @@ const (
 	dashboardRequestsContextTimeout = 5 * time.Second
 )
 
-var (
-	dashboardCmd = &cobra.Command{
+func newDashboardCmd() *cobra.Command {
+	dashboardCmd := &cobra.Command{
 		Use:   "dashboard",
 		Short: "shows a live dashboard optimized for operation",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -44,9 +44,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-)
 
-func init() {
 	tabs := dashboardTabs()
 
 	dashboardCmd.Flags().String("partition", "", "show resources in partition [optional]")
@@ -74,6 +72,8 @@ func init() {
 		}
 		return names, cobra.ShellCompDirectiveNoFileComp
 	}))
+
+	return dashboardCmd
 }
 
 func dashboardApplyTheme(theme string) error {

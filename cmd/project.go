@@ -15,13 +15,13 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	projectCmd = &cobra.Command{
+func newProjectCmd() *cobra.Command {
+	projectCmd := &cobra.Command{
 		Use:   "project",
 		Short: "manage projects",
 		Long:  "a project organizes cloud resources regarding tenancy, quotas, billing and authentication",
 	}
-	projectCreateCmd = &cobra.Command{
+	projectCreateCmd := &cobra.Command{
 		Use:   "create",
 		Short: "create a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -29,7 +29,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	projectDescribeCmd = &cobra.Command{
+	projectDescribeCmd := &cobra.Command{
 		Use:   "describe <projectID>",
 		Short: "describe a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -38,7 +38,7 @@ var (
 		PreRun:            bindPFlags,
 		ValidArgsFunction: comp.ProjectListCompletion,
 	}
-	projectDeleteCmd = &cobra.Command{
+	projectDeleteCmd := &cobra.Command{
 		Use:     "remove <projectID>",
 		Aliases: []string{"rm", "delete"},
 		Short:   "delete a project",
@@ -48,7 +48,7 @@ var (
 		PreRun:            bindPFlags,
 		ValidArgsFunction: comp.ProjectListCompletion,
 	}
-	projectApplyCmd = &cobra.Command{
+	projectApplyCmd := &cobra.Command{
 		Use:   "apply",
 		Short: "create/update a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -56,7 +56,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	projectEditCmd = &cobra.Command{
+	projectEditCmd := &cobra.Command{
 		Use:   "edit <projectID>",
 		Short: "edit a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -65,7 +65,7 @@ var (
 		PreRun:            bindPFlags,
 		ValidArgsFunction: comp.ProjectListCompletion,
 	}
-	projectListCmd = &cobra.Command{
+	projectListCmd := &cobra.Command{
 		Use:     "list",
 		Short:   "list projects",
 		Aliases: []string{"ls"},
@@ -74,9 +74,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-)
 
-func init() {
 	projectCreateCmd.Flags().String("name", "", "name of the project, max 10 characters. [required]")
 	projectCreateCmd.Flags().String("description", "", "description of the project. [required]")
 	projectCreateCmd.Flags().String("tenant", "", "create project for given tenant")
@@ -104,6 +102,8 @@ func init() {
 	projectCmd.AddCommand(projectListCmd)
 	projectCmd.AddCommand(projectApplyCmd)
 	projectCmd.AddCommand(projectEditCmd)
+
+	return projectCmd
 }
 
 func projectCreate() error {

@@ -28,12 +28,15 @@ type BillingOpts struct {
 
 var (
 	billingOpts *BillingOpts
-	billingCmd  = &cobra.Command{
+)
+
+func newBillingCmd() *cobra.Command {
+	billingCmd := &cobra.Command{
 		Use:   "billing",
 		Short: "manage bills",
 		Long:  "TODO",
 	}
-	containerBillingCmd = &cobra.Command{
+	containerBillingCmd := &cobra.Command{
 		Use:   "container",
 		Short: "look at container bills",
 		Example: `If you want to get the costs in Euro, then set two environment variables with the prices from your contract:
@@ -52,7 +55,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	clusterBillingCmd = &cobra.Command{
+	clusterBillingCmd := &cobra.Command{
 		Use:   "cluster",
 		Short: "look at cluster bills",
 		Example: `If you want to get the costs in Euro, then set two environment variables with the prices from your contract:
@@ -68,7 +71,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	ipBillingCmd = &cobra.Command{
+	ipBillingCmd := &cobra.Command{
 		Use:   "ip",
 		Short: "look at ip bills",
 		Example: `If you want to get the costs in Euro, then set two environment variables with the prices from your contract:
@@ -84,7 +87,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	networkTrafficBillingCmd = &cobra.Command{
+	networkTrafficBillingCmd := &cobra.Command{
 		Use:   "network-traffic",
 		Short: "look at network traffic bills",
 		Example: `If you want to get the costs in Euro, then set two environment variables with the prices from your contract:
@@ -104,7 +107,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	s3BillingCmd = &cobra.Command{
+	s3BillingCmd := &cobra.Command{
 		Use:   "s3",
 		Short: "look at s3 bills",
 		Example: `If you want to get the costs in Euro, then set two environment variables with the prices from your contract:
@@ -122,7 +125,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	volumeBillingCmd = &cobra.Command{
+	volumeBillingCmd := &cobra.Command{
 		Use:   "volume",
 		Short: "look at volume bills",
 		Example: `If you want to get the costs in Euro, then set two environment variables with the prices from your contract:
@@ -140,7 +143,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	postgresBillingCmd = &cobra.Command{
+	postgresBillingCmd := &cobra.Command{
 		Use:   "postgres",
 		Short: "look at postgres bills",
 		//TODO set costs via env var?
@@ -157,10 +160,6 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-)
-
-func init() {
-	rootCmd.AddCommand(billingCmd)
 
 	billingCmd.AddCommand(containerBillingCmd)
 	billingCmd.AddCommand(clusterBillingCmd)
@@ -241,6 +240,8 @@ func init() {
 	postgresBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 
 	must(viper.BindPFlags(postgresBillingCmd.Flags()))
+
+	return billingCmd
 }
 
 func initBillingOpts() error {

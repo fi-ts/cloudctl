@@ -51,172 +51,6 @@ func (a auditConfigOptionsMap) Names(withDescription bool) []string {
 }
 
 var (
-	clusterCmd = &cobra.Command{
-		Use:   "cluster",
-		Short: "manage clusters",
-		Long:  "TODO",
-	}
-	clusterCreateCmd = &cobra.Command{
-		Use:   "create",
-		Short: "create a cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterCreate()
-		},
-		PreRun: bindPFlags,
-	}
-
-	clusterListCmd = &cobra.Command{
-		Use:     "list",
-		Short:   "list clusters",
-		Aliases: []string{"ls"},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterList()
-		},
-		PreRun: bindPFlags,
-	}
-	clusterDeleteCmd = &cobra.Command{
-		Use:     "delete <clusterid>",
-		Short:   "delete a cluster",
-		Aliases: []string{"rm"},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterDelete(args)
-		},
-		ValidArgsFunction: comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
-	}
-	clusterDescribeCmd = &cobra.Command{
-		Use:   "describe <clusterid>",
-		Short: "describe a cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterDescribe(args)
-		},
-		ValidArgsFunction: comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
-	}
-	clusterKubeconfigCmd = &cobra.Command{
-		Use:   "kubeconfig <clusterid>",
-		Short: "get cluster kubeconfig",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterKubeconfig(args)
-		},
-		ValidArgsFunction: comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
-	}
-
-	clusterReconcileCmd = &cobra.Command{
-		Use:   "reconcile <clusterid>",
-		Short: "trigger cluster reconciliation",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return reconcileCluster(args)
-		},
-		ValidArgsFunction: comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
-	}
-	clusterUpdateCmd = &cobra.Command{
-		Use:   "update <clusterid>",
-		Short: "update a cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return updateCluster(args)
-		},
-		ValidArgsFunction: comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
-	}
-	clusterInputsCmd = &cobra.Command{
-		Use:   "inputs",
-		Short: "get possible cluster inputs like k8s versions, etc.",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterInputs()
-		},
-		PreRun: bindPFlags,
-	}
-	clusterMachineCmd = &cobra.Command{
-		Use:     "machine",
-		Aliases: []string{"machines"},
-		Short:   "list and access machines in the cluster",
-	}
-	clusterMachineListCmd = &cobra.Command{
-		Use:     "ls <clusterid>",
-		Aliases: []string{"list"},
-		Short:   "list machines of the cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterMachines(args)
-		},
-		ValidArgsFunction: comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
-	}
-	clusterIssuesCmd = &cobra.Command{
-		Use:     "issues [<clusterid>]",
-		Aliases: []string{"problems", "warnings"},
-		Short:   "lists cluster issues, shows required actions explicitly when id argument is given",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterIssues(args)
-		},
-		ValidArgsFunction: comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
-	}
-	clusterMachineSSHCmd = &cobra.Command{
-		Use:   "ssh <clusterid>",
-		Short: "ssh access a machine/firewall of the cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterMachineSSH(args, false)
-		},
-		ValidArgsFunction: comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
-	}
-	clusterMachineConsoleCmd = &cobra.Command{
-		Use:   "console <clusterid>",
-		Short: "console access a machine/firewall of the cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterMachineSSH(args, true)
-		},
-		ValidArgsFunction: comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
-	}
-	clusterMachineResetCmd = &cobra.Command{
-		Use:   "reset <clusterid>",
-		Short: "hard power reset of a machine/firewall of the cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterMachineReset(args)
-		},
-		ValidArgsFunction: comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
-	}
-	clusterMachineCycleCmd = &cobra.Command{
-		Use:   "cycle <clusterid>",
-		Short: "soft power cycle of a machine/firewall of the cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterMachineCycle(args)
-		},
-		ValidArgsFunction: comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
-	}
-	clusterMachineReinstallCmd = &cobra.Command{
-		Use:   "reinstall <clusterid>",
-		Short: "reinstall OS image onto a machine/firewall of the cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterMachineReinstall(args)
-		},
-		ValidArgsFunction: comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
-	}
-	clusterLogsCmd = &cobra.Command{
-		Use:   "logs <clusterid>",
-		Short: "get logs for the cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterLogs(args)
-		},
-		ValidArgsFunction: comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
-	}
-	clusterSplunkConfigManifestCmd = &cobra.Command{
-		Use:   "splunk-config-manifest",
-		Short: "create a manifest for a custom splunk configuration, every provided provided overrides the default setting",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterSplunkConfigManifest()
-		},
-		PreRun: bindPFlags,
-	}
-
 	// options
 	auditConfigOptions = auditConfigOptionsMap{
 		"off": {
@@ -243,7 +77,173 @@ var (
 	}
 )
 
-func init() {
+func newClusterCmd() *cobra.Command {
+	clusterCmd := &cobra.Command{
+		Use:   "cluster",
+		Short: "manage clusters",
+		Long:  "TODO",
+	}
+	clusterCreateCmd := &cobra.Command{
+		Use:   "create",
+		Short: "create a cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterCreate()
+		},
+		PreRun: bindPFlags,
+	}
+
+	clusterListCmd := &cobra.Command{
+		Use:     "list",
+		Short:   "list clusters",
+		Aliases: []string{"ls"},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterList()
+		},
+		PreRun: bindPFlags,
+	}
+	clusterDeleteCmd := &cobra.Command{
+		Use:     "delete <clusterid>",
+		Short:   "delete a cluster",
+		Aliases: []string{"rm"},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterDelete(args)
+		},
+		ValidArgsFunction: comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterDescribeCmd := &cobra.Command{
+		Use:   "describe <clusterid>",
+		Short: "describe a cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterDescribe(args)
+		},
+		ValidArgsFunction: comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterKubeconfigCmd := &cobra.Command{
+		Use:   "kubeconfig <clusterid>",
+		Short: "get cluster kubeconfig",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterKubeconfig(args)
+		},
+		ValidArgsFunction: comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+
+	clusterReconcileCmd := &cobra.Command{
+		Use:   "reconcile <clusterid>",
+		Short: "trigger cluster reconciliation",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return reconcileCluster(args)
+		},
+		ValidArgsFunction: comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterUpdateCmd := &cobra.Command{
+		Use:   "update <clusterid>",
+		Short: "update a cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return updateCluster(args)
+		},
+		ValidArgsFunction: comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterInputsCmd := &cobra.Command{
+		Use:   "inputs",
+		Short: "get possible cluster inputs like k8s versions, etc.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterInputs()
+		},
+		PreRun: bindPFlags,
+	}
+	clusterMachineCmd := &cobra.Command{
+		Use:     "machine",
+		Aliases: []string{"machines"},
+		Short:   "list and access machines in the cluster",
+	}
+	clusterMachineListCmd := &cobra.Command{
+		Use:     "ls <clusterid>",
+		Aliases: []string{"list"},
+		Short:   "list machines of the cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterMachines(args)
+		},
+		ValidArgsFunction: comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterIssuesCmd := &cobra.Command{
+		Use:     "issues [<clusterid>]",
+		Aliases: []string{"problems", "warnings"},
+		Short:   "lists cluster issues, shows required actions explicitly when id argument is given",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterIssues(args)
+		},
+		ValidArgsFunction: comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterMachineSSHCmd := &cobra.Command{
+		Use:   "ssh <clusterid>",
+		Short: "ssh access a machine/firewall of the cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterMachineSSH(args, false)
+		},
+		ValidArgsFunction: comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterMachineConsoleCmd := &cobra.Command{
+		Use:   "console <clusterid>",
+		Short: "console access a machine/firewall of the cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterMachineSSH(args, true)
+		},
+		ValidArgsFunction: comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterMachineResetCmd := &cobra.Command{
+		Use:   "reset <clusterid>",
+		Short: "hard power reset of a machine/firewall of the cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterMachineReset(args)
+		},
+		ValidArgsFunction: comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterMachineCycleCmd := &cobra.Command{
+		Use:   "cycle <clusterid>",
+		Short: "soft power cycle of a machine/firewall of the cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterMachineCycle(args)
+		},
+		ValidArgsFunction: comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterMachineReinstallCmd := &cobra.Command{
+		Use:   "reinstall <clusterid>",
+		Short: "reinstall OS image onto a machine/firewall of the cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterMachineReinstall(args)
+		},
+		ValidArgsFunction: comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterLogsCmd := &cobra.Command{
+		Use:   "logs <clusterid>",
+		Short: "get logs for the cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterLogs(args)
+		},
+		ValidArgsFunction: comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterSplunkConfigManifestCmd := &cobra.Command{
+		Use:   "splunk-config-manifest",
+		Short: "create a manifest for a custom splunk configuration, every provided provided overrides the default setting",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return clusterSplunkConfigManifest()
+		},
+		PreRun: bindPFlags,
+	}
+
 	clusterCreateCmd.Flags().String("name", "", "name of the cluster, max 10 characters. [required]")
 	clusterCreateCmd.Flags().String("description", "", "description of the cluster. [optional]")
 	clusterCreateCmd.Flags().String("project", "", "project where this cluster should belong to. [required]")
@@ -405,6 +405,8 @@ func init() {
 	clusterCmd.AddCommand(clusterLogsCmd)
 	clusterCmd.AddCommand(clusterIssuesCmd)
 	clusterCmd.AddCommand(clusterSplunkConfigManifestCmd)
+
+	return clusterCmd
 }
 
 func clusterCreate() error {

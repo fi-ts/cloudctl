@@ -5,12 +5,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	updateCmd = &cobra.Command{
+func newUpdateCmd() *cobra.Command {
+	updateCmd := &cobra.Command{
 		Use:   "update",
 		Short: "update the program",
 	}
-	updateCheckCmd = &cobra.Command{
+	updateCheckCmd := &cobra.Command{
 		Use:   "check",
 		Short: "check for update of the program",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -21,7 +21,7 @@ var (
 			return u.Check()
 		},
 	}
-	updateDoCmd = &cobra.Command{
+	updateDoCmd := &cobra.Command{
 		Use:   "do",
 		Short: "do the update of the program",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -32,9 +32,9 @@ var (
 			return u.Do()
 		},
 	}
-)
 
-func init() {
 	updateCmd.AddCommand(updateCheckCmd)
 	updateCmd.AddCommand(updateDoCmd)
+
+	return updateCmd
 }

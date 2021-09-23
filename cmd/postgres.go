@@ -12,8 +12,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var (
-	postgresCmd = &cobra.Command{
+func newPostgresCmd() *cobra.Command {
+	postgresCmd := &cobra.Command{
 		Use:   "postgres",
 		Short: "manage postgres",
 		Long: `
@@ -64,7 +64,7 @@ postgres=#
 6. You can create more databases, all using the same backup-config
 `,
 	}
-	postgresCreateCmd = &cobra.Command{
+	postgresCreateCmd := &cobra.Command{
 		Use:   "create",
 		Short: "create postgres",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -72,7 +72,7 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
-	postgresApplyCmd = &cobra.Command{
+	postgresApplyCmd := &cobra.Command{
 		Use:   "apply",
 		Short: "apply postgres",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -80,7 +80,7 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
-	postgresEditCmd = &cobra.Command{
+	postgresEditCmd := &cobra.Command{
 		Use:   "edit",
 		Short: "edit postgres",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -88,7 +88,7 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
-	postgresListCmd = &cobra.Command{
+	postgresListCmd := &cobra.Command{
 		Use:     "list",
 		Short:   "list postgres",
 		Aliases: []string{"ls"},
@@ -97,7 +97,7 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
-	postgresListBackupsCmd = &cobra.Command{
+	postgresListBackupsCmd := &cobra.Command{
 		Use:   "list-backups",
 		Short: "list postgres backups",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -105,7 +105,7 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
-	postgresDeleteCmd = &cobra.Command{
+	postgresDeleteCmd := &cobra.Command{
 		Use:     "delete <postgres>",
 		Aliases: []string{"rm", "destroy", "remove", "delete"},
 		Short:   "delete a postgres",
@@ -114,7 +114,7 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
-	postgresDescribeCmd = &cobra.Command{
+	postgresDescribeCmd := &cobra.Command{
 		Use:   "describe <postgres>",
 		Short: "describe a postgres",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -122,7 +122,7 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
-	postgresConnectionStringCmd = &cobra.Command{
+	postgresConnectionStringCmd := &cobra.Command{
 		Use:   "connectionstring <postgres>",
 		Short: "return the connectionstring for a postgres",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -130,7 +130,7 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
-	postgresVersionsCmd = &cobra.Command{
+	postgresVersionsCmd := &cobra.Command{
 		Use:   "version",
 		Short: "describe all postgres versions",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -138,7 +138,7 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
-	postgresPartitionsCmd = &cobra.Command{
+	postgresPartitionsCmd := &cobra.Command{
 		Use:   "partition",
 		Short: "describe all partitions where postgres might be deployed",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -146,12 +146,12 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
-	postgresBackupCmd = &cobra.Command{
+	postgresBackupCmd := &cobra.Command{
 		Use:   "backup-config",
 		Short: "manage postgres backup configuration",
 		Long:  "list/find/delete postgres backup configuration",
 	}
-	postgresBackupCreateCmd = &cobra.Command{
+	postgresBackupCreateCmd := &cobra.Command{
 		Use:   "create",
 		Short: "create backup configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -159,7 +159,7 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
-	postgresBackupAutoCreateCmd = &cobra.Command{
+	postgresBackupAutoCreateCmd := &cobra.Command{
 		Use:   "auto-create",
 		Short: "auto create backup configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -167,7 +167,7 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
-	postgresBackupUpdateCmd = &cobra.Command{
+	postgresBackupUpdateCmd := &cobra.Command{
 		Use:   "update",
 		Short: "update backup configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -175,7 +175,7 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
-	postgresBackupListCmd = &cobra.Command{
+	postgresBackupListCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "list backup configuration",
@@ -184,7 +184,7 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
-	postgresBackupDeleteCmd = &cobra.Command{
+	postgresBackupDeleteCmd := &cobra.Command{
 		Use:     "delete <backup-config>",
 		Aliases: []string{"rm", "destroy", "remove", "delete"},
 		Short:   "delete a backup configuration",
@@ -193,10 +193,7 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
-)
 
-func init() {
-	rootCmd.AddCommand(postgresCmd)
 	postgresCmd.AddCommand(postgresBackupCmd)
 
 	postgresCmd.AddCommand(postgresCreateCmd)
@@ -294,7 +291,9 @@ func init() {
 	postgresBackupUpdateCmd.Flags().Int32P("retention", "", int32(0), "number of backups per postgres to retain [optional]")
 	must(postgresBackupUpdateCmd.MarkFlagRequired("id"))
 
+	return postgresCmd
 }
+
 func postgresCreate() error {
 	desc := viper.GetString("description")
 	project := viper.GetString("project")

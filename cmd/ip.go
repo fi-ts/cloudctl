@@ -11,13 +11,13 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	ipCmd = &cobra.Command{
+func newIPCmd() *cobra.Command {
+	ipCmd := &cobra.Command{
 		Use:   "ip",
 		Short: "manage ips",
 		Long:  "TODO",
 	}
-	ipListCmd = &cobra.Command{
+	ipListCmd := &cobra.Command{
 		Use:     "list",
 		Short:   "list ips",
 		Aliases: []string{"ls"},
@@ -26,7 +26,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	ipStaticCmd = &cobra.Command{
+	ipStaticCmd := &cobra.Command{
 		Use:   "static <ip>",
 		Short: "make an ephemeral ip static such that it won't be deleted if not used anymore",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -34,7 +34,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	ipAllocateCmd = &cobra.Command{
+	ipAllocateCmd := &cobra.Command{
 		Use:   "allocate <ip>",
 		Short: "allocate a static IP address for your project that can be used for your cluster's service type load balancer",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -42,7 +42,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	ipFreeCmd = &cobra.Command{
+	ipFreeCmd := &cobra.Command{
 		Use:     "free <ip>",
 		Aliases: []string{"rm", "destroy", "remove", "delete"},
 		Short:   "free an ip",
@@ -51,10 +51,6 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-)
-
-func init() {
-	rootCmd.AddCommand(ipCmd)
 
 	ipCmd.AddCommand(ipListCmd)
 	ipCmd.AddCommand(ipStaticCmd)
@@ -85,6 +81,8 @@ func init() {
 	must(ipAllocateCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion))
 
 	must(ipListCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion))
+
+	return ipCmd
 }
 
 func ipList() error {

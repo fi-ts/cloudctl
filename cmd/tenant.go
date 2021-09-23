@@ -14,12 +14,12 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	tenantCmd = &cobra.Command{
+func newTenantCmd() *cobra.Command {
+	tenantCmd := &cobra.Command{
 		Use:   "tenant",
 		Short: "manage tenants",
 	}
-	tenantListCmd = &cobra.Command{
+	tenantListCmd := &cobra.Command{
 		Use:     "list",
 		Short:   "lists tenants",
 		Aliases: []string{"ls"},
@@ -28,7 +28,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	tenantDescribeCmd = &cobra.Command{
+	tenantDescribeCmd := &cobra.Command{
 		Use:   "describe <tenantID>",
 		Short: "describe a tenant",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -36,7 +36,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	tenantEditCmd = &cobra.Command{
+	tenantEditCmd := &cobra.Command{
 		Use:   "edit <tenantID>",
 		Short: "edit a tenant",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -44,7 +44,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-	tenantApplyCmd = &cobra.Command{
+	tenantApplyCmd := &cobra.Command{
 		Use:   "apply",
 		Short: "create/update a tenant",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -52,9 +52,7 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
-)
 
-func init() {
 	tenantCmd.AddCommand(tenantDescribeCmd)
 	tenantCmd.AddCommand(tenantEditCmd)
 	tenantCmd.AddCommand(tenantListCmd)
@@ -70,6 +68,7 @@ func init() {
 	`)
 	tenantCmd.AddCommand(tenantApplyCmd)
 
+	return tenantCmd
 }
 
 func tenantID(verb string, args []string) (string, error) {

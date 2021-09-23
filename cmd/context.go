@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	contextCmd = &cobra.Command{
+func newContextCmd() *cobra.Command {
+	contextCmd := &cobra.Command{
 		Use:               "context <name>",
 		Aliases:           []string{"ctx"},
 		Short:             "manage cloudctl context",
@@ -44,7 +44,7 @@ contexts:
 		PreRun: bindPFlags,
 	}
 
-	contextShortCmd = &cobra.Command{
+	contextShortCmd := &cobra.Command{
 		Use:   "short",
 		Short: "only show the default context name",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -52,10 +52,10 @@ contexts:
 		},
 		PreRun: bindPFlags,
 	}
-)
 
-func init() {
 	contextCmd.AddCommand(contextShortCmd)
+
+	return contextCmd
 }
 
 func contextShort() error {
