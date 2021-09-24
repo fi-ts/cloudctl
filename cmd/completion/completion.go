@@ -1,6 +1,8 @@
 package completion
 
 import (
+	"sort"
+
 	"github.com/fi-ts/cloud-go/api/client"
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/fi-ts/cloud-go/api/client/database"
@@ -31,6 +33,7 @@ func (c *Completion) ContextListCompletion(cmd *cobra.Command, args []string, to
 	for name := range ctxs.Contexts {
 		names = append(names, name)
 	}
+	sort.Strings(names)
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
@@ -47,6 +50,7 @@ func (c *Completion) ClusterListCompletion(cmd *cobra.Command, args []string, to
 	for _, c := range response.Payload {
 		names = append(names, *c.ID+"\t"+*c.Name)
 	}
+	sort.Strings(names)
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
@@ -63,6 +67,7 @@ func (c *Completion) ClusterNameCompletion(cmd *cobra.Command, args []string, to
 	for _, c := range response.Payload {
 		names = append(names, *c.Name+"\t"+*c.ID)
 	}
+	sort.Strings(names)
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
 func (c *Completion) ClusterMachineListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -107,6 +112,7 @@ func (c *Completion) ProjectListCompletion(cmd *cobra.Command, args []string, to
 	for _, p := range response.Payload.Projects {
 		names = append(names, p.Meta.ID+"\t"+p.TenantID+"/"+p.Name)
 	}
+	sort.Strings(names)
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
@@ -119,7 +125,7 @@ func (c *Completion) PartitionListCompletion(cmd *cobra.Command, args []string, 
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
-
+	sort.Strings(sc.Payload.Partitions)
 	return sc.Payload.Partitions, cobra.ShellCompDirectiveNoFileComp
 }
 
@@ -138,6 +144,7 @@ func (c *Completion) TenantListCompletion(cmd *cobra.Command, args []string, toC
 		name := t.Meta.ID + "\t" + t.Name
 		names = append(names, name)
 	}
+	sort.Strings(names)
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
@@ -158,6 +165,7 @@ func (c *Completion) VolumeListCompletion(cmd *cobra.Command, args []string, toC
 		}
 		names = append(names, *v.VolumeID)
 	}
+	sort.Strings(names)
 	return names, cobra.ShellCompDirectiveDefault
 }
 
@@ -171,6 +179,7 @@ func (c *Completion) NetworkListCompletion(cmd *cobra.Command, args []string, to
 		return nil, cobra.ShellCompDirectiveError
 	}
 
+	sort.Strings(sc.Payload.Networks)
 	return sc.Payload.Networks, cobra.ShellCompDirectiveNoFileComp
 }
 func (c *Completion) VersionListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -182,6 +191,7 @@ func (c *Completion) VersionListCompletion(cmd *cobra.Command, args []string, to
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
+	sort.Strings(sc.Payload.KubernetesVersions)
 	return sc.Payload.KubernetesVersions, cobra.ShellCompDirectiveNoFileComp
 }
 
@@ -194,6 +204,7 @@ func (c *Completion) MachineTypeListCompletion(cmd *cobra.Command, args []string
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
+	sort.Strings(sc.Payload.MachineTypes)
 	return sc.Payload.MachineTypes, cobra.ShellCompDirectiveNoFileComp
 }
 
@@ -211,6 +222,7 @@ func (c *Completion) MachineImageListCompletion(cmd *cobra.Command, args []strin
 		name := *t.Name + "-" + *t.Version
 		names = append(names, name)
 	}
+	sort.Strings(names)
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
@@ -223,6 +235,7 @@ func (c *Completion) FirewallTypeListCompletion(cmd *cobra.Command, args []strin
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
+	sort.Strings(sc.Payload.FirewallTypes)
 	return sc.Payload.FirewallTypes, cobra.ShellCompDirectiveNoFileComp
 }
 
@@ -235,6 +248,7 @@ func (c *Completion) FirewallImageListCompletion(cmd *cobra.Command, args []stri
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
+	sort.Strings(sc.Payload.FirewallImages)
 	return sc.Payload.FirewallImages, cobra.ShellCompDirectiveNoFileComp
 }
 
@@ -254,6 +268,7 @@ func (c *Completion) FirewallControllerVersionListCompletion(cmd *cobra.Command,
 		}
 		fwcvs = append(fwcvs, *v.Version)
 	}
+	sort.Strings(fwcvs)
 	return fwcvs, cobra.ShellCompDirectiveNoFileComp
 }
 
@@ -270,6 +285,7 @@ func (c *Completion) S3ListPartitionsCompletion(cmd *cobra.Command, args []strin
 	for _, p := range response.Payload {
 		names = append(names, *p.ID)
 	}
+	sort.Strings(names)
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
 func (c *Completion) PostgresListPartitionsCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -285,6 +301,7 @@ func (c *Completion) PostgresListPartitionsCompletion(cmd *cobra.Command, args [
 	for name := range response.Payload {
 		names = append(names, name)
 	}
+	sort.Strings(names)
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
@@ -301,5 +318,6 @@ func (c *Completion) PostgresListVersionsCompletion(cmd *cobra.Command, args []s
 	for _, v := range response.Payload {
 		names = append(names, v.Version)
 	}
+	sort.Strings(names)
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
