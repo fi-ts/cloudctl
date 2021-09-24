@@ -63,6 +63,9 @@ func newIPCmd(c *config) *cobra.Command {
 	ipListCmd.Flags().StringP("machineid", "", "", "machineid to filter [optional]")
 	ipListCmd.Flags().StringP("network", "", "", "network to filter [optional]")
 
+	must(ipListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	must(ipListCmd.RegisterFlagCompletionFunc("network", c.comp.NetworkListCompletion))
+
 	ipStaticCmd.Flags().StringP("name", "", "", "set name of the ip address [required]")
 	ipStaticCmd.Flags().StringP("description", "", "", "set description of the ip address [required]")
 	must(ipStaticCmd.MarkFlagRequired("name"))
@@ -79,8 +82,6 @@ func newIPCmd(c *config) *cobra.Command {
 	must(ipAllocateCmd.MarkFlagRequired("network"))
 	must(ipAllocateCmd.MarkFlagRequired("project"))
 	must(ipAllocateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-
-	must(ipListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 
 	return ipCmd
 }

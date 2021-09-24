@@ -75,11 +75,14 @@ func newVolumeCmd(c *config) *cobra.Command {
 	volumeListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
 	volumeListCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
 
+	must(volumeListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	must(volumeListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+
 	volumeManifestCmd.Flags().StringP("name", "", "restored-pv", "name of the PersistentVolume")
 	volumeManifestCmd.Flags().StringP("namespace", "", "default", "namespace for the PersistentVolume")
 
-	must(volumeListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-	must(volumeListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	volumeClusterInfoCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
+	must(volumeClusterInfoCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 
 	return volumeCmd
 }
@@ -135,7 +138,7 @@ func (c *config) volumeDelete(args []string) error {
 }
 
 func (c *config) volumeClusterInfo() error {
-	params := volume.NewClusterInfoParams()
+	params := volume.NewClusterInfoParams().WithPartitionid(helper.ViperString("partition"))
 	resp, err := c.cloud.Volume.ClusterInfo(params, nil)
 	if err != nil {
 		return err
