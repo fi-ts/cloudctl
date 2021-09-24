@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newUpdateCmd() *cobra.Command {
+func newUpdateCmd(name string) *cobra.Command {
 	updateCmd := &cobra.Command{
 		Use:   "update",
 		Short: "update the program",
@@ -14,7 +14,7 @@ func newUpdateCmd() *cobra.Command {
 		Use:   "check",
 		Short: "check for update of the program",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			u, err := updater.New("fi-ts", programName, programName)
+			u, err := updater.New("fi-ts", name, name)
 			if err != nil {
 				return err
 			}
@@ -25,7 +25,7 @@ func newUpdateCmd() *cobra.Command {
 		Use:   "do",
 		Short: "do the update of the program",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			u, err := updater.New("fi-ts", programName, programName)
+			u, err := updater.New("fi-ts", name, name)
 			if err != nil {
 				return err
 			}

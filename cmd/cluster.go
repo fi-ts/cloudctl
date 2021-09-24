@@ -1287,7 +1287,7 @@ func (c *config) clusterMachineSSH(args []string, console bool) error {
 			if err != nil {
 				return fmt.Errorf("unable determine home directory:%w", err)
 			}
-			privateKeyFile := path.Join(home, "."+programName, "."+cid+".id_rsa")
+			privateKeyFile := path.Join(home, "."+c.name, "."+cid+".id_rsa")
 			err = os.WriteFile(privateKeyFile, keypair.privatekey, 0600)
 			if err != nil {
 				return fmt.Errorf("unable to write private key:%s error:%w", privateKeyFile, err)

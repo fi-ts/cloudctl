@@ -17,11 +17,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-const (
-	cfgFileType = "yaml"
-	programName = "cloudctl"
-)
-
 var (
 	// will bind all viper flags to subcommands and
 	// prevent overwrite of identical flag names from other commands
@@ -36,9 +31,9 @@ var (
 )
 
 func newRootCmd() *cobra.Command {
-
+	name := "cloudctl"
 	rootCmd := &cobra.Command{
-		Use:          programName,
+		Use:          name,
 		Short:        "a cli to manage cloud entities.",
 		Long:         "with cloudctl you can manage kubernetes cluster, view networks et.al.",
 		SilenceUsage: true,
@@ -62,11 +57,11 @@ func newRootCmd() *cobra.Command {
 	if err != nil {
 		log.Fatalf("error setup root cmd:%v", err)
 	}
-	cfg := getConfig(rootCmd)
+	cfg := getConfig(rootCmd, name)
 
 	rootCmd.AddCommand(newClusterCmd(cfg))
 	rootCmd.AddCommand(newDashboardCmd(cfg))
-	rootCmd.AddCommand(newUpdateCmd())
+	rootCmd.AddCommand(newUpdateCmd(name))
 	rootCmd.AddCommand(newLoginCmd(cfg))
 	rootCmd.AddCommand(newWhoamiCmd())
 	rootCmd.AddCommand(newProjectCmd(cfg))
@@ -96,6 +91,7 @@ func Execute() {
 }
 
 type config struct {
+	name        string
 	ctx         api.Context
 	cloud       *client.CloudAPI
 	comp        *completion.Completion
@@ -103,17 +99,17 @@ type config struct {
 	printer     output.Printer
 }
 
-func getConfig(cmd *cobra.Command) *config {
+func getConfig(cmd *cobra.Command, name string) *config {
 	err := viper.BindPFlags(cmd.PersistentFlags())
 	if err != nil {
 		log.Fatalf("error setup root cmd:%v", err)
 	}
 
-	viper.SetEnvPrefix(strings.ToUpper(programName))
+	viper.SetEnvPrefix(strings.ToUpper(name))
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	viper.AutomaticEnv()
 
-	viper.SetConfigType(cfgFileType)
+	viper.SetConfigType("yaml")
 	cfgFile := viper.GetString("config")
 
 	if cfgFile != "" {
@@ -123,12 +119,12 @@ func getConfig(cmd *cobra.Command) *config {
 		}
 	} else {
 		viper.SetConfigName("config")
-		viper.AddConfigPath(fmt.Sprintf("/etc/%s", programName))
+		viper.AddConfigPath(fmt.Sprintf("/etc/%s", name))
 		h, err := os.UserHomeDir()
 		if err != nil {
 			log.Printf("unable to figure out user home directory, skipping config lookup path: %v", err)
 		} else {
-			viper.AddConfigPath(fmt.Sprintf(h+"/.%s", programName))
+			viper.AddConfigPath(fmt.Sprintf(h+"/.%s", name))
 		}
 		viper.AddConfigPath(".")
 		if err := viper.ReadInConfig(); err != nil {
@@ -185,6 +181,7 @@ func getConfig(cmd *cobra.Command) *config {
 	}
 
 	return &config{
+		name:        name,
 		ctx:         ctx,
 		cloud:       cloud,
 		comp:        comp,
