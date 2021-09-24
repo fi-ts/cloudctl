@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func newProjectCmd() *cobra.Command {
+func newProjectCmd(c *config) *cobra.Command {
 	projectCmd := &cobra.Command{
 		Use:   "project",
 		Short: "manage projects",
@@ -25,7 +25,7 @@ func newProjectCmd() *cobra.Command {
 		Use:   "create",
 		Short: "create a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return projectCreate()
+			return c.projectCreate()
 		},
 		PreRun: bindPFlags,
 	}
@@ -33,26 +33,26 @@ func newProjectCmd() *cobra.Command {
 		Use:   "describe <projectID>",
 		Short: "describe a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return projectDescribe(args)
+			return c.projectDescribe(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: comp.ProjectListCompletion,
+		ValidArgsFunction: c.comp.ProjectListCompletion,
 	}
 	projectDeleteCmd := &cobra.Command{
 		Use:     "remove <projectID>",
 		Aliases: []string{"rm", "delete"},
 		Short:   "delete a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return projectDelete(args)
+			return c.projectDelete(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: comp.ProjectListCompletion,
+		ValidArgsFunction: c.comp.ProjectListCompletion,
 	}
 	projectApplyCmd := &cobra.Command{
 		Use:   "apply",
 		Short: "create/update a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return projectApply()
+			return c.projectApply()
 		},
 		PreRun: bindPFlags,
 	}
@@ -60,17 +60,17 @@ func newProjectCmd() *cobra.Command {
 		Use:   "edit <projectID>",
 		Short: "edit a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return projectEdit(args)
+			return c.projectEdit(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: comp.ProjectListCompletion,
+		ValidArgsFunction: c.comp.ProjectListCompletion,
 	}
 	projectListCmd := &cobra.Command{
 		Use:     "list",
 		Short:   "list projects",
 		Aliases: []string{"ls"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return projectList()
+			return c.projectList()
 		},
 		PreRun: bindPFlags,
 	}
@@ -106,7 +106,7 @@ func newProjectCmd() *cobra.Command {
 	return projectCmd
 }
 
-func projectCreate() error {
+func (c *config) projectCreate() error {
 	tenant := viper.GetString("tenant")
 	name := viper.GetString("name")
 	desc := viper.GetString("description")
@@ -150,56 +150,56 @@ func projectCreate() error {
 	request := project.NewCreateProjectParams()
 	request.SetBody(pcr)
 
-	response, err := cloud.Project.CreateProject(request, nil)
+	response, err := c.cloud.Project.CreateProject(request, nil)
 	if err != nil {
 		return err
 	}
 
-	return printer.Print(response.Payload)
+	return c.printer.Print(response.Payload)
 }
 
-func projectDescribe(args []string) error {
-	id, err := projectID("describe", args)
+func (c *config) projectDescribe(args []string) error {
+	id, err := c.projectID("describe", args)
 	if err != nil {
 		return err
 	}
 
 	request := project.NewFindProjectParams()
 	request.SetID(id)
-	p, err := cloud.Project.FindProject(request, nil)
+	p, err := c.cloud.Project.FindProject(request, nil)
 	if err != nil {
 		return err
 	}
 
-	return printer.Print(p.Payload)
+	return c.printer.Print(p.Payload)
 }
 
-func projectDelete(args []string) error {
-	id, err := projectID("delete", args)
+func (c *config) projectDelete(args []string) error {
+	id, err := c.projectID("delete", args)
 	if err != nil {
 		return err
 	}
 
 	request := project.NewDeleteProjectParams().WithID(id)
 
-	response, err := cloud.Project.DeleteProject(request, nil)
+	response, err := c.cloud.Project.DeleteProject(request, nil)
 	if err != nil {
 		return err
 	}
 
-	return printer.Print(response.Payload)
+	return c.printer.Print(response.Payload)
 }
 
-func projectList() error {
+func (c *config) projectList() error {
 	request := project.NewListProjectsParams()
-	response, err := cloud.Project.ListProjects(request, nil)
+	response, err := c.cloud.Project.ListProjects(request, nil)
 	if err != nil {
 		return err
 	}
-	return printer.Print(response.Payload.Projects)
+	return c.printer.Print(response.Payload.Projects)
 }
 
-func projectID(verb string, args []string) (string, error) {
+func (c *config) projectID(verb string, args []string) (string, error) {
 	if len(args) == 0 {
 		return "", fmt.Errorf("project %s requires projectID as argument", verb)
 	}
@@ -209,7 +209,7 @@ func projectID(verb string, args []string) (string, error) {
 	return "", fmt.Errorf("project %s requires exactly one projectID as argument", verb)
 }
 
-func projectApply() error {
+func (c *config) projectApply() error {
 	var pars []models.V1ProjectCreateRequest
 	var par models.V1ProjectCreateRequest
 	err := helper.ReadFrom(viper.GetString("file"), &par, func(data interface{}) {
@@ -226,7 +226,7 @@ func projectApply() error {
 	for i, par := range pars {
 		request := project.NewFindProjectParams()
 		request.SetID(par.Meta.ID)
-		p, err := cloud.Project.FindProject(request, nil)
+		p, err := c.cloud.Project.FindProject(request, nil)
 		if err != nil {
 			var r *project.FindProjectDefault
 			if !errors.As(err, &r) {
@@ -239,7 +239,7 @@ func projectApply() error {
 		if p == nil || p.Payload == nil {
 			params := project.NewCreateProjectParams()
 			params.SetBody(&pars[i])
-			resp, err := cloud.Project.CreateProject(params, nil)
+			resp, err := c.cloud.Project.CreateProject(params, nil)
 			if err != nil {
 				return err
 			}
@@ -265,7 +265,7 @@ func projectApply() error {
 				pur.TenantID = par.TenantID
 			}
 			params.SetBody(pur)
-			resp, err := cloud.Project.UpdateProject(params, nil)
+			resp, err := c.cloud.Project.UpdateProject(params, nil)
 			if err != nil {
 				return err
 			}
@@ -273,11 +273,11 @@ func projectApply() error {
 			continue
 		}
 	}
-	return printer.Print(response)
+	return c.printer.Print(response)
 }
 
-func projectEdit(args []string) error {
-	id, err := projectID("edit", args)
+func (c *config) projectEdit(args []string) error {
+	id, err := c.projectID("edit", args)
 	if err != nil {
 		return err
 	}
@@ -285,7 +285,7 @@ func projectEdit(args []string) error {
 	getFunc := func(id string) ([]byte, error) {
 		request := project.NewFindProjectParams()
 		request.SetID(id)
-		resp, err := cloud.Project.FindProject(request, nil)
+		resp, err := c.cloud.Project.FindProject(request, nil)
 		if err != nil {
 			return nil, fmt.Errorf("project describe error:%w", err)
 		}
@@ -305,11 +305,11 @@ func projectEdit(args []string) error {
 		}
 		pup := project.NewUpdateProjectParams()
 		pup.Body = &purs[0]
-		uresp, err := cloud.Project.UpdateProject(pup, nil)
+		uresp, err := c.cloud.Project.UpdateProject(pup, nil)
 		if err != nil {
 			return err
 		}
-		return printer.Print(uresp.Payload)
+		return c.printer.Print(uresp.Payload)
 	}
 
 	return helper.Edit(id, getFunc, updateFunc)

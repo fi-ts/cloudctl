@@ -12,7 +12,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func newPostgresCmd() *cobra.Command {
+func newPostgresCmd(c *config) *cobra.Command {
 	postgresCmd := &cobra.Command{
 		Use:   "postgres",
 		Short: "manage postgres",
@@ -68,7 +68,7 @@ postgres=#
 		Use:   "create",
 		Short: "create postgres",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return postgresCreate()
+			return c.postgresCreate()
 		},
 		PreRun: bindPFlags,
 	}
@@ -76,7 +76,7 @@ postgres=#
 		Use:   "apply",
 		Short: "apply postgres",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return postgresApply()
+			return c.postgresApply()
 		},
 		PreRun: bindPFlags,
 	}
@@ -84,7 +84,7 @@ postgres=#
 		Use:   "edit",
 		Short: "edit postgres",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return postgresEdit(args)
+			return c.postgresEdit(args)
 		},
 		PreRun: bindPFlags,
 	}
@@ -93,7 +93,7 @@ postgres=#
 		Short:   "list postgres",
 		Aliases: []string{"ls"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return postgresFind()
+			return c.postgresFind()
 		},
 		PreRun: bindPFlags,
 	}
@@ -101,7 +101,7 @@ postgres=#
 		Use:   "list-backups",
 		Short: "list postgres backups",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return postgresListBackups(args)
+			return c.postgresListBackups(args)
 		},
 		PreRun: bindPFlags,
 	}
@@ -110,7 +110,7 @@ postgres=#
 		Aliases: []string{"rm", "destroy", "remove", "delete"},
 		Short:   "delete a postgres",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return postgresDelete(args)
+			return c.postgresDelete(args)
 		},
 		PreRun: bindPFlags,
 	}
@@ -118,7 +118,7 @@ postgres=#
 		Use:   "describe <postgres>",
 		Short: "describe a postgres",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return postgresDescribe(args)
+			return c.postgresDescribe(args)
 		},
 		PreRun: bindPFlags,
 	}
@@ -126,7 +126,7 @@ postgres=#
 		Use:   "connectionstring <postgres>",
 		Short: "return the connectionstring for a postgres",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return postgresConnectionString(args)
+			return c.postgresConnectionString(args)
 		},
 		PreRun: bindPFlags,
 	}
@@ -134,7 +134,7 @@ postgres=#
 		Use:   "version",
 		Short: "describe all postgres versions",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return postgresVersions()
+			return c.postgresVersions()
 		},
 		PreRun: bindPFlags,
 	}
@@ -142,7 +142,7 @@ postgres=#
 		Use:   "partition",
 		Short: "describe all partitions where postgres might be deployed",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return postgresPartitions()
+			return c.postgresPartitions()
 		},
 		PreRun: bindPFlags,
 	}
@@ -155,7 +155,7 @@ postgres=#
 		Use:   "create",
 		Short: "create backup configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return postgresBackupCreate(false)
+			return c.postgresBackupCreate(false)
 		},
 		PreRun: bindPFlags,
 	}
@@ -163,7 +163,7 @@ postgres=#
 		Use:   "auto-create",
 		Short: "auto create backup configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return postgresBackupCreate(true)
+			return c.postgresBackupCreate(true)
 		},
 		PreRun: bindPFlags,
 	}
@@ -171,7 +171,7 @@ postgres=#
 		Use:   "update",
 		Short: "update backup configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return postgresBackupUpdate()
+			return c.postgresBackupUpdate()
 		},
 		PreRun: bindPFlags,
 	}
@@ -180,7 +180,7 @@ postgres=#
 		Aliases: []string{"ls"},
 		Short:   "list backup configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return postgresBackupGet(args)
+			return c.postgresBackupGet(args)
 		},
 		PreRun: bindPFlags,
 	}
@@ -189,7 +189,7 @@ postgres=#
 		Aliases: []string{"rm", "destroy", "remove", "delete"},
 		Short:   "delete a backup configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return postgresBackupDelete(args)
+			return c.postgresBackupDelete(args)
 		},
 		PreRun: bindPFlags,
 	}
@@ -229,9 +229,9 @@ postgres=#
 	must(postgresCreateCmd.MarkFlagRequired("description"))
 	must(postgresCreateCmd.MarkFlagRequired("project"))
 	must(postgresCreateCmd.MarkFlagRequired("partition"))
-	must(postgresCreateCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion))
-	must(postgresCreateCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion))
-	must(postgresCreateCmd.RegisterFlagCompletionFunc("version", comp.PostgresListVersionsCompletion))
+	must(postgresCreateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	must(postgresCreateCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	must(postgresCreateCmd.RegisterFlagCompletionFunc("version", c.comp.PostgresListVersionsCompletion))
 
 	// List
 	postgresListCmd.Flags().StringP("id", "", "", "postgres id to filter [optional]")
@@ -240,8 +240,8 @@ postgres=#
 	postgresListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
 	postgresListCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
 
-	must(postgresListCmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion))
-	must(postgresListCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion))
+	must(postgresListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	must(postgresListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 
 	postgresApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
 	Example postgres update:
@@ -294,7 +294,7 @@ postgres=#
 	return postgresCmd
 }
 
-func postgresCreate() error {
+func (c *config) postgresCreate() error {
 	desc := viper.GetString("description")
 	project := viper.GetString("project")
 	partition := viper.GetString("partition")
@@ -333,15 +333,15 @@ func postgresCreate() error {
 	request := database.NewCreatePostgresParams()
 	request.SetBody(pcr)
 
-	response, err := cloud.Database.CreatePostgres(request, nil)
+	response, err := c.cloud.Database.CreatePostgres(request, nil)
 	if err != nil {
 		return err
 	}
 
-	return printer.Print(response.Payload)
+	return c.printer.Print(response.Payload)
 }
 
-func postgresApply() error {
+func (c *config) postgresApply() error {
 	var pcrs []models.V1PostgresCreateRequest
 	var pcr models.V1PostgresCreateRequest
 
@@ -380,7 +380,7 @@ func postgresApply() error {
 			continue
 		}
 		params := database.NewGetPostgresParams().WithID(*par.ID)
-		resp, err := cloud.Database.GetPostgres(params, nil)
+		resp, err := c.cloud.Database.GetPostgres(params, nil)
 		if err != nil {
 			return err
 		}
@@ -389,7 +389,7 @@ func postgresApply() error {
 			request := database.NewUpdatePostgresParams()
 			request.SetBody(&purs[i])
 
-			updatedPG, err := cloud.Database.UpdatePostgres(request, nil)
+			updatedPG, err := c.cloud.Database.UpdatePostgres(request, nil)
 			if err != nil {
 				return err
 			}
@@ -403,25 +403,25 @@ func postgresApply() error {
 		request := database.NewCreatePostgresParams()
 		request.SetBody(&pcrs[i])
 
-		createdPG, err := cloud.Database.CreatePostgres(request, nil)
+		createdPG, err := c.cloud.Database.CreatePostgres(request, nil)
 		if err != nil {
 			return err
 		}
 		response = append(response, createdPG.Payload)
 		continue
 	}
-	return printer.Print(response)
+	return c.printer.Print(response)
 }
 
-func postgresEdit(args []string) error {
-	id, err := postgresID("edit", args)
+func (c *config) postgresEdit(args []string) error {
+	id, err := c.postgresID("edit", args)
 	if err != nil {
 		return err
 	}
 
 	getFunc := func(id string) ([]byte, error) {
 		params := database.NewGetPostgresParams().WithID(id)
-		resp, err := cloud.Database.GetPostgres(params, nil)
+		resp, err := c.cloud.Database.GetPostgres(params, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -441,11 +441,11 @@ func postgresEdit(args []string) error {
 		}
 		pup := database.NewUpdatePostgresParams()
 		pup.Body = &purs[0]
-		uresp, err := cloud.Database.UpdatePostgres(pup, nil)
+		uresp, err := c.cloud.Database.UpdatePostgres(pup, nil)
 		if err != nil {
 			return err
 		}
-		return printer.Print(uresp.Payload)
+		return c.printer.Print(uresp.Payload)
 	}
 	return helper.Edit(id, getFunc, updateFunc)
 }
@@ -466,7 +466,7 @@ func readPostgresUpdateRequests(filename string) ([]models.V1PostgresUpdateReque
 	return purs, nil
 }
 
-func postgresFind() error {
+func (c *config) postgresFind() error {
 	if helper.AtLeastOneViperStringFlagGiven("id", "description", "tenant", "project", "partition") {
 		params := database.NewFindPostgresParams()
 		ifr := &models.V1PostgresFindRequest{}
@@ -492,26 +492,26 @@ func postgresFind() error {
 		}
 
 		params.SetBody(ifr)
-		resp, err := cloud.Database.FindPostgres(params, nil)
+		resp, err := c.cloud.Database.FindPostgres(params, nil)
 		if err != nil {
 			return err
 		}
-		return printer.Print(resp.Payload)
+		return c.printer.Print(resp.Payload)
 	}
-	resp, err := cloud.Database.ListPostgres(nil, nil)
+	resp, err := c.cloud.Database.ListPostgres(nil, nil)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Payload)
+	return c.printer.Print(resp.Payload)
 }
 
-func postgresDelete(args []string) error {
-	pg, err := getPostgresFromArgs(args)
+func (c *config) postgresDelete(args []string) error {
+	pg, err := c.getPostgresFromArgs(args)
 	if err != nil {
 		return err
 	}
 
-	printer.Print(pg)
+	c.printer.Print(pg)
 
 	idParts := strings.Split(*pg.ID, "-")
 	firstPartOfPostgresID := idParts[0]
@@ -527,47 +527,47 @@ func postgresDelete(args []string) error {
 	}
 
 	params := database.NewDeletePostgresParams().WithID(*pg.ID)
-	resp, err := cloud.Database.DeletePostgres(params, nil)
+	resp, err := c.cloud.Database.DeletePostgres(params, nil)
 	if err != nil {
 		return err
 	}
 
-	return printer.Print(resp.Payload)
+	return c.printer.Print(resp.Payload)
 }
 
-func postgresDescribe(args []string) error {
-	postgres, err := getPostgresFromArgs(args)
+func (c *config) postgresDescribe(args []string) error {
+	postgres, err := c.getPostgresFromArgs(args)
 	if err != nil {
 		return err
 	}
 
-	return printer.Print(postgres)
+	return c.printer.Print(postgres)
 }
 
-func postgresListBackups(args []string) error {
+func (c *config) postgresListBackups(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no postgres id given")
 	}
 
 	id := args[0]
 	params := database.NewGetPostgresBackupsParams().WithID(id)
-	resp, err := cloud.Database.GetPostgresBackups(params, nil)
+	resp, err := c.cloud.Database.GetPostgresBackups(params, nil)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Payload)
+	return c.printer.Print(resp.Payload)
 }
 
-func postgresConnectionString(args []string) error {
+func (c *config) postgresConnectionString(args []string) error {
 	t := viper.GetString("type")
 
-	postgres, err := getPostgresFromArgs(args)
+	postgres, err := c.getPostgresFromArgs(args)
 	if err != nil {
 		return err
 	}
 
 	params := database.NewGetPostgresSecretsParams().WithID(*postgres.ID)
-	resp, err := cloud.Database.GetPostgresSecrets(params, nil)
+	resp, err := c.cloud.Database.GetPostgresSecrets(params, nil)
 	if err != nil {
 		return err
 	}
@@ -600,7 +600,7 @@ func postgresConnectionString(args []string) error {
 	return nil
 }
 
-func postgresBackupCreate(autocreate bool) error {
+func (c *config) postgresBackupCreate(autocreate bool) error {
 	name := viper.GetString("name")
 	project := viper.GetString("project")
 	schedule := viper.GetString("schedule")
@@ -639,18 +639,18 @@ func postgresBackupCreate(autocreate bool) error {
 	request := database.NewCreatePostgresBackupConfigParams()
 	request.SetBody(bcr)
 
-	response, err := cloud.Database.CreatePostgresBackupConfig(request, nil)
+	response, err := c.cloud.Database.CreatePostgresBackupConfig(request, nil)
 	if err != nil {
 		return err
 	}
 
-	return printer.Print(response.Payload)
+	return c.printer.Print(response.Payload)
 }
-func postgresBackupUpdate() error {
+func (c *config) postgresBackupUpdate() error {
 	id := viper.GetString("id")
 
 	request := database.NewGetBackupConfigParams().WithID(id)
-	resp, err := cloud.Database.GetBackupConfig(request, nil)
+	resp, err := c.cloud.Database.GetBackupConfig(request, nil)
 	if err != nil {
 		return err
 	}
@@ -674,32 +674,32 @@ func postgresBackupUpdate() error {
 	req := database.NewUpdatePostgresBackupConfigParams()
 	req.SetBody(bur)
 
-	response, err := cloud.Database.UpdatePostgresBackupConfig(req, nil)
+	response, err := c.cloud.Database.UpdatePostgresBackupConfig(req, nil)
 	if err != nil {
 		return err
 	}
 
-	return printer.Print(response.Payload)
+	return c.printer.Print(response.Payload)
 }
 
-func postgresBackupGet(args []string) error {
+func (c *config) postgresBackupGet(args []string) error {
 	if len(args) <= 0 {
 		request := database.NewListPostgresBackupConfigsParams()
-		resp, err := cloud.Database.ListPostgresBackupConfigs(request, nil)
+		resp, err := c.cloud.Database.ListPostgresBackupConfigs(request, nil)
 		if err != nil {
 			return err
 		}
-		return printer.Print(resp.Payload)
+		return c.printer.Print(resp.Payload)
 	}
 
 	request := database.NewGetPostgresBackupsParams().WithID(args[0])
-	resp, err := cloud.Database.GetPostgresBackups(request, nil)
+	resp, err := c.cloud.Database.GetPostgresBackups(request, nil)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Payload)
+	return c.printer.Print(resp.Payload)
 }
-func postgresBackupDelete(args []string) error {
+func (c *config) postgresBackupDelete(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("missing backup id")
 	}
@@ -708,7 +708,7 @@ func postgresBackupDelete(args []string) error {
 	}
 	id := args[0]
 
-	err := postgresBackupGet(args)
+	err := c.postgresBackupGet(args)
 	if err != nil {
 		return err
 	}
@@ -727,47 +727,47 @@ func postgresBackupDelete(args []string) error {
 	}
 
 	request := database.NewDeletePostgresBackupConfigParams().WithID(id)
-	resp, err := cloud.Database.DeletePostgresBackupConfig(request, nil)
+	resp, err := c.cloud.Database.DeletePostgresBackupConfig(request, nil)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Payload)
+	return c.printer.Print(resp.Payload)
 
 }
 
-func postgresVersions() error {
+func (c *config) postgresVersions() error {
 	params := database.NewGetPostgresVersionsParams()
-	resp, err := cloud.Database.GetPostgresVersions(params, nil)
+	resp, err := c.cloud.Database.GetPostgresVersions(params, nil)
 	if err != nil {
 		return err
 	}
 
-	return printer.Print(resp.Payload)
+	return c.printer.Print(resp.Payload)
 }
-func postgresPartitions() error {
+func (c *config) postgresPartitions() error {
 	params := database.NewGetPostgresPartitionsParams()
-	resp, err := cloud.Database.GetPostgresPartitions(params, nil)
+	resp, err := c.cloud.Database.GetPostgresPartitions(params, nil)
 	if err != nil {
 		return err
 	}
 
-	return printer.Print(resp.Payload)
+	return c.printer.Print(resp.Payload)
 }
-func getPostgresFromArgs(args []string) (*models.V1PostgresResponse, error) {
+func (c *config) getPostgresFromArgs(args []string) (*models.V1PostgresResponse, error) {
 	if len(args) < 1 {
 		return nil, fmt.Errorf("no postgres id given")
 	}
 
 	id := args[0]
 	params := database.NewGetPostgresParams().WithID(id)
-	resp, err := cloud.Database.GetPostgres(params, nil)
+	resp, err := c.cloud.Database.GetPostgres(params, nil)
 	if err != nil {
 		return nil, err
 	}
 	return resp.Payload, nil
 }
 
-func postgresID(verb string, args []string) (string, error) {
+func (c *config) postgresID(verb string, args []string) (string, error) {
 	if len(args) == 0 {
 		return "", fmt.Errorf("postgres %s requires postgresID as argument", verb)
 	}

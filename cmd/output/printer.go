@@ -19,6 +19,7 @@ type (
 	Printer interface {
 		Print(data interface{}) error
 		Type() string
+		Reset()
 	}
 	TablePrinter struct {
 		table       *tablewriter.Table
@@ -139,6 +140,16 @@ func NewPrinter(format, order, tpl string, noHeaders bool) (Printer, error) {
 	return printer, nil
 }
 
+func (t TablePrinter) Reset() {
+	t.table.ClearFooter()
+	t.table.ClearRows()
+}
+func (t JSONPrinter) Reset() {
+	return
+}
+func (t YAMLPrinter) Reset() {
+	return
+}
 func newTablePrinter(format, order string, noHeaders bool, template *template.Template) TablePrinter {
 	tp := TablePrinter{
 		wide:      false,
@@ -167,6 +178,7 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 		table.SetTablePadding("\t") // pad with tabs
 		table.SetNoWhiteSpace(true) // no whitespace in front of every line
 	}
+
 	tp.table = table
 	return tp
 }

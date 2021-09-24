@@ -12,7 +12,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-func newLoginCmd() *cobra.Command {
+func newLoginCmd(c *config) *cobra.Command {
+	ctx := c.ctx
 	loginCmd := &cobra.Command{
 		Use:   "login",
 		Short: "login user and receive token",

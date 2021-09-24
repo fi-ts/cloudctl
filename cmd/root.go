@@ -23,11 +23,6 @@ const (
 )
 
 var (
-	ctx         api.Context
-	cloud       *client.CloudAPI
-	comp        *completion.Completion
-	consoleHost string
-	printer     output.Printer
 	// will bind all viper flags to subcommands and
 	// prevent overwrite of identical flag names from other commands
 	// see https://github.com/spf13/viper/issues/233#issuecomment-386791444
@@ -38,31 +33,17 @@ var (
 			os.Exit(1)
 		}
 	}
-
-	rootCmd = &cobra.Command{
-		Use:   programName,
-		Short: "a cli to manage cloud entities.",
-		Long:  "with cloudctl you can manage kubernetes cluster, view networks et.al.",
-		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			initPrinter()
-		},
-		SilenceUsage: true,
-	}
 )
 
-// Execute is the entrypoint of the cloudctl application
-func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
-		if viper.GetBool("debug") {
-			st := errors.WithStack(err)
-			fmt.Printf("%+v", st)
-		}
-		os.Exit(1)
-	}
-}
+func newRootCmd() *cobra.Command {
 
-func init() {
+	rootCmd := &cobra.Command{
+		Use:          programName,
+		Short:        "a cli to manage cloud entities.",
+		Long:         "with cloudctl you can manage kubernetes cluster, view networks et.al.",
+		SilenceUsage: true,
+	}
+
 	rootCmd.PersistentFlags().StringP("url", "u", "", "api server address. Can be specified with CLOUDCTL_URL environment variable.")
 	rootCmd.PersistentFlags().String("apitoken", "", "api token to authenticate. Can be specified with CLOUDCTL_APITOKEN environment variable.")
 	rootCmd.PersistentFlags().String("kubeconfig", "", "Path to the kube-config to use for authentication and authorization. Is updated by login. Uses default path if not specified.")
@@ -78,6 +59,52 @@ func init() {
 	rootCmd.PersistentFlags().BoolP("yes-i-really-mean-it", "", false, "skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)")
 
 	err := viper.BindPFlags(rootCmd.PersistentFlags())
+	if err != nil {
+		log.Fatalf("error setup root cmd:%v", err)
+	}
+	cfg := getConfig(rootCmd)
+
+	rootCmd.AddCommand(newClusterCmd(cfg))
+	rootCmd.AddCommand(newDashboardCmd(cfg))
+	rootCmd.AddCommand(newUpdateCmd())
+	rootCmd.AddCommand(newLoginCmd(cfg))
+	rootCmd.AddCommand(newWhoamiCmd())
+	rootCmd.AddCommand(newProjectCmd(cfg))
+	rootCmd.AddCommand(newTenantCmd(cfg))
+	rootCmd.AddCommand(newContextCmd(cfg))
+	rootCmd.AddCommand(newS3Cmd(cfg))
+	rootCmd.AddCommand(newVersionCmd(cfg))
+	rootCmd.AddCommand(newVolumeCmd(cfg))
+	rootCmd.AddCommand(newPostgresCmd(cfg))
+	rootCmd.AddCommand(newIPCmd(cfg))
+	rootCmd.AddCommand(newBillingCmd(cfg))
+
+	return rootCmd
+}
+
+// Execute is the entrypoint of the cloudctl application
+func Execute() {
+	cmd := newRootCmd()
+	err := cmd.Execute()
+	if err != nil {
+		if viper.GetBool("debug") {
+			st := errors.WithStack(err)
+			fmt.Printf("%+v", st)
+		}
+		os.Exit(1)
+	}
+}
+
+type config struct {
+	ctx         api.Context
+	cloud       *client.CloudAPI
+	comp        *completion.Completion
+	consoleHost string
+	printer     output.Printer
+}
+
+func getConfig(cmd *cobra.Command) *config {
+	err := viper.BindPFlags(cmd.PersistentFlags())
 	if err != nil {
 		log.Fatalf("error setup root cmd:%v", err)
 	}
@@ -112,7 +139,7 @@ func init() {
 		}
 	}
 
-	ctx = api.MustDefaultContext()
+	ctx := api.MustDefaultContext()
 	driverURL := viper.GetString("url")
 	if driverURL == "" && ctx.ApiURL != "" {
 		driverURL = ctx.ApiURL
@@ -134,38 +161,20 @@ func init() {
 		}
 	}
 
-	cloud, err = cloudgo.NewClient(driverURL, apiToken, hmac)
+	cloud, err := cloudgo.NewClient(driverURL, apiToken, hmac)
 	if err != nil {
 		log.Fatalf("error initializing cloud-api client: %v", err)
 	}
 
-	comp = completion.NewCompletion(cloud)
+	comp := completion.NewCompletion(cloud)
 
 	parsedURL, err := url.Parse(driverURL)
 	if err != nil {
 		log.Fatalf("could not parse driver url: %v", err)
 	}
-	consoleHost = parsedURL.Host
+	consoleHost := parsedURL.Host
 
-	rootCmd.AddCommand(newClusterCmd())
-	rootCmd.AddCommand(newDashboardCmd())
-	rootCmd.AddCommand(newUpdateCmd())
-	rootCmd.AddCommand(newLoginCmd())
-	rootCmd.AddCommand(newWhoamiCmd())
-	rootCmd.AddCommand(newProjectCmd())
-	rootCmd.AddCommand(newTenantCmd())
-	rootCmd.AddCommand(newContextCmd())
-	rootCmd.AddCommand(newS3Cmd())
-	rootCmd.AddCommand(newVersionCmd())
-	rootCmd.AddCommand(newVolumeCmd())
-	rootCmd.AddCommand(newPostgresCmd())
-	rootCmd.AddCommand(newIPCmd())
-	rootCmd.AddCommand(newBillingCmd())
-}
-
-func initPrinter() {
-	var err error
-	printer, err = output.NewPrinter(
+	printer, err := output.NewPrinter(
 		viper.GetString("output-format"),
 		viper.GetString("order"),
 		viper.GetString("template"),
@@ -173,5 +182,13 @@ func initPrinter() {
 	)
 	if err != nil {
 		log.Fatalf("unable to initialize printer:%v", err)
+	}
+
+	return &config{
+		ctx:         ctx,
+		cloud:       cloud,
+		comp:        comp,
+		consoleHost: consoleHost,
+		printer:     printer,
 	}
 }

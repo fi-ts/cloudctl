@@ -8,13 +8,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newContextCmd() *cobra.Command {
+func newContextCmd(c *config) *cobra.Command {
 	contextCmd := &cobra.Command{
 		Use:               "context <name>",
 		Aliases:           []string{"ctx"},
 		Short:             "manage cloudctl context",
 		Long:              "context defines the backend to which cloudctl talks to. You can switch back and forth with \"-\"",
-		ValidArgsFunction: comp.ContextListCompletion,
+		ValidArgsFunction: c.comp.ContextListCompletion,
 		Example: `
 ~/.cloudctl/config.yaml
 ---
@@ -37,7 +37,7 @@ contexts:
 				return contextSet(args)
 			}
 			if len(args) == 0 {
-				return contextList()
+				return c.contextList()
 			}
 			return nil
 		},
@@ -107,10 +107,10 @@ func previous() error {
 	return api.WriteContexts(ctxs)
 }
 
-func contextList() error {
+func (c *config) contextList() error {
 	ctxs, err := api.GetContexts()
 	if err != nil {
 		return err
 	}
-	return printer.Print(ctxs)
+	return c.printer.Print(ctxs)
 }

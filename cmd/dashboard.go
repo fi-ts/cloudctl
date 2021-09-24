@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fi-ts/cloud-go/api/client"
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/fi-ts/cloud-go/api/client/health"
 	"github.com/fi-ts/cloud-go/api/client/version"
@@ -35,17 +36,17 @@ const (
 	dashboardRequestsContextTimeout = 5 * time.Second
 )
 
-func newDashboardCmd() *cobra.Command {
+func newDashboardCmd(c *config) *cobra.Command {
 	dashboardCmd := &cobra.Command{
 		Use:   "dashboard",
 		Short: "shows a live dashboard optimized for operation",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runDashboard()
+			return runDashboard(c.cloud)
 		},
 		PreRun: bindPFlags,
 	}
 
-	tabs := dashboardTabs()
+	tabs := dashboardTabs(c.cloud)
 
 	dashboardCmd.Flags().String("partition", "", "show resources in partition [optional]")
 	dashboardCmd.Flags().String("tenant", "", "show resources of given tenant [optional]")
@@ -54,8 +55,8 @@ func newDashboardCmd() *cobra.Command {
 	dashboardCmd.Flags().String("initial-tab", strings.ToLower(tabs[0].Name()), "the tab to show when starting the dashboard [optional]")
 	dashboardCmd.Flags().Duration("refresh-interval", 3*time.Second, "refresh interval [optional]")
 
-	must(dashboardCmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion))
-	must(dashboardCmd.RegisterFlagCompletionFunc("tenant", comp.TenantListCompletion))
+	must(dashboardCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	must(dashboardCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
 	must(dashboardCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"production", "development", "evaluation"}, cobra.ShellCompDirectiveNoFileComp
 	}))
@@ -109,7 +110,7 @@ func dashboardApplyTheme(theme string) error {
 	return nil
 }
 
-func runDashboard() error {
+func runDashboard(cloud *client.CloudAPI) error {
 	if err := ui.Init(); err != nil {
 		return err
 	}
@@ -120,7 +121,7 @@ func runDashboard() error {
 		width, height = ui.TerminalDimensions()
 	)
 
-	d, err := NewDashboard()
+	d, err := NewDashboard(cloud)
 	if err != nil {
 		return err
 	}
@@ -166,10 +167,10 @@ func runDashboard() error {
 	}
 }
 
-func dashboardTabs() dashboardTabPanes {
+func dashboardTabs(cloud *client.CloudAPI) dashboardTabPanes {
 	return dashboardTabPanes{
-		NewDashboardClusterPane(),
-		NewDashboardVolumePane(),
+		NewDashboardClusterPane(cloud),
+		NewDashboardVolumePane(cloud),
 	}
 }
 
@@ -185,6 +186,8 @@ type dashboard struct {
 	tabs    dashboardTabPanes
 
 	sem *semaphore.Weighted
+
+	cloud *client.CloudAPI
 }
 
 type dashboardTabPane interface {
@@ -205,7 +208,7 @@ func (d dashboardTabPanes) FindIndexByName(name string) (int, error) {
 	return 0, fmt.Errorf("tab with name %q not found", name)
 }
 
-func NewDashboard() (*dashboard, error) {
+func NewDashboard(cloud *client.CloudAPI) (*dashboard, error) {
 	err := dashboardApplyTheme(viper.GetString("color-theme"))
 	if err != nil {
 		return nil, err
@@ -216,6 +219,7 @@ func NewDashboard() (*dashboard, error) {
 		filterTenant:    viper.GetString("tenant"),
 		filterPartition: viper.GetString("partition"),
 		filterPurpose:   viper.GetString("purpose"),
+		cloud:           cloud,
 	}
 
 	d.statusHeader = widgets.NewParagraph()
@@ -226,7 +230,7 @@ func NewDashboard() (*dashboard, error) {
 	d.filterHeader.Title = "Filters"
 	d.filterHeader.WrapText = false
 
-	d.tabs = dashboardTabs()
+	d.tabs = dashboardTabs(cloud)
 	var tabNames []string
 	for i, p := range d.tabs {
 		tabNames = append(tabNames, fmt.Sprintf("(%d) %s", i+1, p.Name()))
@@ -309,14 +313,14 @@ func (d *dashboard) Render() {
 	defer cancel()
 
 	var infoResp *version.InfoOK
-	infoResp, lastErr = cloud.Version.Info(version.NewInfoParams().WithContext(ctx), nil)
+	infoResp, lastErr = d.cloud.Version.Info(version.NewInfoParams().WithContext(ctx), nil)
 	if lastErr != nil {
 		return
 	}
 	apiVersion = *infoResp.Payload.Version
 
 	var healthResp *health.HealthOK
-	healthResp, lastErr = cloud.Health.Health(health.NewHealthParams().WithContext(ctx), nil)
+	healthResp, lastErr = d.cloud.Health.Health(health.NewHealthParams().WithContext(ctx), nil)
 	if lastErr != nil {
 		return
 	}
@@ -344,9 +348,11 @@ type dashboardClusterPane struct {
 	clusterLastErrors *widgets.Table
 
 	sem *semaphore.Weighted
+
+	cloud *client.CloudAPI
 }
 
-func NewDashboardClusterPane() *dashboardClusterPane {
+func NewDashboardClusterPane(cloud *client.CloudAPI) *dashboardClusterPane {
 	d := &dashboardClusterPane{}
 
 	d.sem = semaphore.NewWeighted(1)
@@ -385,6 +391,7 @@ func NewDashboardClusterPane() *dashboardClusterPane {
 	d.clusterLastErrors.TextAlignment = ui.AlignLeft
 	d.clusterLastErrors.RowSeparator = false
 
+	d.cloud = cloud
 	return d
 }
 
@@ -443,7 +450,7 @@ func (d *dashboardClusterPane) Render() error {
 	ctx, cancel := context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
 	defer cancel()
 
-	resp, err := cloud.Cluster.FindClusters(cluster.NewFindClustersParams().WithBody(&models.V1ClusterFindRequest{
+	resp, err := d.cloud.Cluster.FindClusters(cluster.NewFindClustersParams().WithBody(&models.V1ClusterFindRequest{
 		PartitionID: output.StrDeref(partition),
 		Tenant:      output.StrDeref(tenant),
 	}).WithReturnMachines(pointer.BoolPtr(false)).WithContext(ctx), nil)
@@ -573,9 +580,11 @@ type dashboardVolumePane struct {
 	compressionRatio *widgets.Gauge
 
 	sem *semaphore.Weighted
+
+	cloud *client.CloudAPI
 }
 
-func NewDashboardVolumePane() *dashboardVolumePane {
+func NewDashboardVolumePane(cloud *client.CloudAPI) *dashboardVolumePane {
 	d := &dashboardVolumePane{}
 
 	d.sem = semaphore.NewWeighted(1)
@@ -622,6 +631,7 @@ func NewDashboardVolumePane() *dashboardVolumePane {
 	d.serverState.BarGap = 10
 	d.serverState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorYellow, ui.ColorRed, ui.ColorYellow}
 
+	d.cloud = cloud
 	return d
 }
 
@@ -693,7 +703,7 @@ func (d *dashboardVolumePane) Render() error {
 	ctx, cancel := context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
 	defer cancel()
 
-	volumeResp, err := cloud.Volume.FindVolumes(volume.NewFindVolumesParams().WithBody(&models.V1VolumeFindRequest{
+	volumeResp, err := d.cloud.Volume.FindVolumes(volume.NewFindVolumesParams().WithBody(&models.V1VolumeFindRequest{
 		PartitionID: output.StrDeref(partition),
 		TenantID:    output.StrDeref(tenant),
 	}).WithContext(ctx), nil)
@@ -704,7 +714,7 @@ func (d *dashboardVolumePane) Render() error {
 	ctx, cancel = context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
 	defer cancel()
 
-	infoResp, err := cloud.Volume.ClusterInfo(volume.NewClusterInfoParams().WithPartitionid(&partition).WithContext(ctx), nil)
+	infoResp, err := d.cloud.Volume.ClusterInfo(volume.NewClusterInfoParams().WithPartitionid(&partition).WithContext(ctx), nil)
 	if err != nil {
 		var typedErr *volume.ClusterInfoDefault
 		if errors.As(err, &typedErr) {
