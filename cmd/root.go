@@ -175,6 +175,7 @@ func getConfig(cmd *cobra.Command, name string) *config {
 		viper.GetString("order"),
 		viper.GetString("template"),
 		viper.GetBool("no-headers"),
+		os.Stdout,
 	)
 	if err != nil {
 		log.Fatalf("unable to initialize printer:%v", err)

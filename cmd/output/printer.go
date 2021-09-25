@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"text/template"
 
@@ -33,9 +34,13 @@ type (
 		wideData    [][]string
 	}
 	// JSONPrinter returns the model in json format
-	JSONPrinter struct{}
+	JSONPrinter struct {
+		outWriter io.Writer
+	}
 	// YAMLPrinter returns the model in yaml format
-	YAMLPrinter struct{}
+	YAMLPrinter struct {
+		outWriter io.Writer
+	}
 	// TablePrinter produces a human readable model representation
 )
 
@@ -119,21 +124,25 @@ func genericObject(input interface{}) map[string]interface{} {
 }
 
 // NewPrinter returns a suitable stdout printer for the given format
-func NewPrinter(format, order, tpl string, noHeaders bool) (Printer, error) {
+func NewPrinter(format, order, tpl string, noHeaders bool, writer io.Writer) (Printer, error) {
 	var printer Printer
 	switch format {
 	case "yaml":
-		printer = &YAMLPrinter{}
+		printer = &YAMLPrinter{
+			outWriter: writer,
+		}
 	case "json":
-		printer = &JSONPrinter{}
+		printer = &JSONPrinter{
+			outWriter: writer,
+		}
 	case "table", "wide":
-		printer = newTablePrinter(format, order, noHeaders, nil)
+		printer = newTablePrinter(format, order, noHeaders, nil, writer)
 	case "template":
 		tmpl, err := template.New("").Parse(tpl)
 		if err != nil {
 			return nil, fmt.Errorf("template invalid:%w", err)
 		}
-		printer = newTablePrinter(format, order, true, tmpl)
+		printer = newTablePrinter(format, order, true, tmpl, writer)
 	default:
 		return nil, fmt.Errorf("unknown format:%s", format)
 	}
@@ -145,18 +154,17 @@ func (t TablePrinter) Reset() {
 	t.table.ClearRows()
 }
 func (t JSONPrinter) Reset() {
-	return
 }
 func (t YAMLPrinter) Reset() {
-	return
 }
-func newTablePrinter(format, order string, noHeaders bool, template *template.Template) TablePrinter {
+
+func newTablePrinter(format, order string, noHeaders bool, template *template.Template, writer io.Writer) TablePrinter {
 	tp := TablePrinter{
 		wide:      false,
 		order:     order,
 		noHeaders: noHeaders,
 	}
-	table := tablewriter.NewWriter(os.Stdout)
+	table := tablewriter.NewWriter(writer)
 	if format == "wide" {
 		tp.wide = true
 	}
@@ -308,7 +316,7 @@ func (j JSONPrinter) Print(data interface{}) error {
 	if err != nil {
 		return fmt.Errorf("unable to marshal to json:%w", err)
 	}
-	fmt.Printf("%s\n", string(json))
+	fmt.Fprintf(j.outWriter, "%s\n", string(json))
 	return nil
 }
 
@@ -322,7 +330,7 @@ func (y YAMLPrinter) Print(data interface{}) error {
 	if err != nil {
 		return fmt.Errorf("unable to marshal to yaml:%w", err)
 	}
-	fmt.Printf("%s", string(yml))
+	fmt.Fprintf(y.outWriter, "%s", string(yml))
 	return nil
 }
 
