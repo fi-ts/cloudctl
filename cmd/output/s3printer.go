@@ -58,6 +58,9 @@ func (p S3TablePrinter) Print(data []*models.V1S3Response) {
 func (p S3PartitionTablePrinter) Print(data []*models.V1S3PartitionResponse) {
 	p.wideHeader = []string{"Name", "Endpoint", "Ready"}
 	p.shortHeader = p.wideHeader
+	if p.order == "" {
+		p.order = "id"
+	}
 	p.Order(data)
 
 	for _, partition := range data {

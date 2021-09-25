@@ -46,6 +46,9 @@ type (
 func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "ClusterStart", "ClusterEnd", "Lifetime", "Warnings"}
 	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterID", "ClusterName", "ClusterStart", "ClusterEnd", "Lifetime"}
+	if s.order == "" {
+		s.order = "tenant,project,partition,name,id"
+	}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {
 		var from string
@@ -139,6 +142,9 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Start", "End", "Class", "Name", "Type", "CapacitySeconds (Gi * h)", "Lifetime", "Warnings"}
 	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "Class", "Name", "Type", "CapacitySeconds (Gi * h)", "Lifetime"}
+	if s.order == "" {
+		s.order = "tenant,project,partition,cluster,name"
+	}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {
 		var from string
@@ -262,6 +268,9 @@ func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 func (s IPBillingTablePrinter) Print(data *models.V1IPUsageResponse) {
 	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "IP", "Start", "End", "Lifetime", "Warnings"}
 	s.shortHeader = []string{"Tenant", "ProjectID", "IP", "Start", "End", "Lifetime"}
+	if s.order == "" {
+		s.order = "tenant,project,ip"
+	}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {
 		var from string
@@ -343,6 +352,9 @@ func (s IPBillingTablePrinter) Print(data *models.V1IPUsageResponse) {
 func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResponse) {
 	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Device", "In (Gi)", "Out (Gi)", "Total (Gi)", "Lifetime", "Warnings"}
 	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "Device", "In (Gi)", "Out (Gi)", "Total (Gi)", "Lifetime"}
+	if s.order == "" {
+		s.order = "tenant,project,partition,cluster,device"
+	}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {
 		var from string
@@ -466,6 +478,9 @@ func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResp
 func (s S3BillingTablePrinter) Print(data *models.V1S3UsageResponse) {
 	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "User", "Bucket Name", "Bucket ID", "Start", "End", "Objects", "StorageSeconds (Gi * h)", "Lifetime", "Warnings"}
 	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "User", "Bucket Name", "Bucket ID", "Objects", "StorageSeconds (Gi * h)", "Lifetime"}
+	if s.order == "" {
+		s.order = "tenant,project,partition,user,bucket,bucket_id"
+	}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {
 		var from string
@@ -589,6 +604,9 @@ func (s S3BillingTablePrinter) Print(data *models.V1S3UsageResponse) {
 func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageResponse) {
 	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Namespace", "PodUUID", "PodName", "PodStartDate", "PodEndDate", "ContainerName", "ContainerImage", "Lifetime", "CPUSeconds", "MemorySeconds", "Warnings"}
 	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "Namespace", "PodName", "ContainerName", "Lifetime", "CPU (1 * s)", "Memory (Gi * h)"}
+	if s.order == "" {
+		s.order = "tenant,project,partition,cluster,namespace,pod,container"
+	}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {
 		var from string
@@ -721,6 +739,9 @@ func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageRespons
 func (s PostgresBillingTablePrinter) Print(data *models.V1PostgresUsageResponse) {
 	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "PostgresID", "Description", "Start", "End", "CPU (1 * s)", "Memory (Gi * h)", "StorageSeconds (Gi * h)", "Lifetime"}
 	s.shortHeader = []string{"Tenant", "ProjectID", "PostgresID", "Description", "CPU (1 * s)", "Memory (Gi * h)", "StorageSeconds (Gi * h)", "Lifetime"}
+	if s.order == "" {
+		s.order = "tenant,project,id"
+	}
 	s.Order(data.Usage)
 	for _, u := range data.Usage {
 		var from string

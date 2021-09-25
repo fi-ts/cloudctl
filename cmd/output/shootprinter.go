@@ -103,6 +103,9 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Audit", "Runtime", "Firewall", "Firewall Controller", "Egress IPs"}
 	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
+	if s.order == "" {
+		s.order = "tenant,project,name"
+	}
 	s.Order(data)
 
 	var short []string
@@ -119,6 +122,9 @@ func (s ShootIssuesTablePrinter) Print(data []*models.V1ClusterResponse) {
 	s.wideHeader = []string{"UID", "", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall", "Firewall Controller", "Egress IPs"}
 	s.shortHeader = []string{"UID", "", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
+	if s.order == "" {
+		s.order = "tenant,project,name"
+	}
 	s.Order(data)
 
 	var short []string

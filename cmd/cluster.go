@@ -1138,7 +1138,7 @@ func (c *config) clusterInputs() error {
 		return err
 	}
 
-	return output.YAMLPrinter{}.Print(sc)
+	return c.printer.Print(sc)
 }
 
 func (c *config) clusterSplunkConfigManifest() error {

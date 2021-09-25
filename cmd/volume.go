@@ -120,7 +120,7 @@ func (c *config) volumeDescribe(args []string) error {
 		return err
 	}
 
-	return output.YAMLPrinter{}.Print(resp.Payload)
+	return c.printer.Print(resp.Payload)
 }
 
 func (c *config) volumeDelete(args []string) error {

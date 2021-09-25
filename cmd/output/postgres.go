@@ -119,7 +119,10 @@ func (p PostgresPartitionsTablePrinter) Print(data models.V1PostgresPartitionsRe
 func (p PostgresBackupsTablePrinter) Print(data []*models.V1PostgresBackupConfigResponse) {
 	p.wideHeader = []string{"ID", "Name", "Project", "Schedule", "Retention", "S3", "CreatedBy"}
 	p.shortHeader = p.wideHeader
-
+	if p.order == "" {
+		p.order = "date"
+	}
+	// FIXME oder is no implemented
 	for _, b := range data {
 		createdBy := ""
 		if b.CreatedBy != nil {

@@ -8,6 +8,7 @@ import (
 	"os"
 	"text/template"
 
+	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/pkg/api"
 
@@ -32,6 +33,7 @@ type (
 		wideHeader  []string
 		shortData   [][]string
 		wideData    [][]string
+		outWriter   io.Writer
 	}
 	// JSONPrinter returns the model in json format
 	JSONPrinter struct {
@@ -163,12 +165,12 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 		wide:      false,
 		order:     order,
 		noHeaders: noHeaders,
+		outWriter: writer,
 	}
 	table := tablewriter.NewWriter(writer)
-	if format == "wide" {
-		tp.wide = true
-	}
 	switch format {
+	case "wide":
+		tp.wide = true
 	case "template":
 		tp.template = template
 	case "markdown":
@@ -201,16 +203,10 @@ func (t TablePrinter) Print(data interface{}) error {
 	case *models.V1ClusterResponse:
 		ShootTablePrinter{t}.Print([]*models.V1ClusterResponse{d})
 	case []*models.V1ClusterResponse:
-		if t.order == "" {
-			t.order = "tenant,project,name"
-		}
 		ShootTablePrinter{t}.Print(d)
 	case ShootIssuesResponse:
 		ShootIssuesTablePrinter{t}.Print([]*models.V1ClusterResponse{d})
 	case ShootIssuesResponses:
-		if t.order == "" {
-			t.order = "tenant,project,name"
-		}
 		ShootIssuesTablePrinter{t}.Print(d)
 	case []*models.V1beta1Condition:
 		ShootConditionsTablePrinter{t}.Print(d)
@@ -221,9 +217,6 @@ func (t TablePrinter) Print(data interface{}) error {
 	case *models.V1ProjectResponse:
 		ProjectTablePrinter{t}.Print([]*models.V1ProjectResponse{d})
 	case []*models.V1ProjectResponse:
-		if t.order == "" {
-			t.order = "tenant,project"
-		}
 		ProjectTablePrinter{t}.Print(d)
 	case []*models.V1TenantResponse:
 		TenantTablePrinter{t}.Print(d)
@@ -234,39 +227,18 @@ func (t TablePrinter) Print(data interface{}) error {
 	case *models.ModelsV1IPResponse:
 		IPTablePrinter{t}.Print([]*models.ModelsV1IPResponse{d})
 	case *models.V1ContainerUsageResponse:
-		if t.order == "" {
-			t.order = "tenant,project,partition,cluster,namespace,pod,container"
-		}
 		ContainerBillingTablePrinter{t}.Print(d)
 	case *models.V1ClusterUsageResponse:
-		if t.order == "" {
-			t.order = "tenant,project,partition,name,id"
-		}
 		ClusterBillingTablePrinter{t}.Print(d)
 	case *models.V1IPUsageResponse:
-		if t.order == "" {
-			t.order = "tenant,project,ip"
-		}
 		IPBillingTablePrinter{t}.Print(d)
 	case *models.V1NetworkUsageResponse:
-		if t.order == "" {
-			t.order = "tenant,project,partition,cluster,device"
-		}
 		NetworkTrafficBillingTablePrinter{t}.Print(d)
 	case *models.V1S3UsageResponse:
-		if t.order == "" {
-			t.order = "tenant,project,partition,user,bucket,bucket_id"
-		}
 		S3BillingTablePrinter{t}.Print(d)
 	case *models.V1VolumeUsageResponse:
-		if t.order == "" {
-			t.order = "tenant,project,partition,cluster,name"
-		}
 		VolumeBillingTablePrinter{t}.Print(d)
 	case *models.V1PostgresUsageResponse:
-		if t.order == "" {
-			t.order = "tenant,project,id"
-		}
 		PostgresBillingTablePrinter{t}.Print(d)
 	case []*models.ModelsV1MachineResponse:
 		MachineTablePrinter{t}.Print(d)
@@ -291,19 +263,23 @@ func (t TablePrinter) Print(data interface{}) error {
 	case *models.V1PostgresBackupConfigResponse:
 		PostgresBackupsTablePrinter{t}.Print([]*models.V1PostgresBackupConfigResponse{d})
 	case []*models.V1PostgresBackupEntry:
-		if t.order == "" {
-			t.order = "date"
-		}
 		PostgresBackupEntryTablePrinter{t}.Print(d)
 	case []*models.V1S3PartitionResponse:
-		if t.order == "" {
-			t.order = "id"
-		}
 		S3PartitionTablePrinter{t}.Print(d)
+	case *models.V1S3CredentialsResponse, *models.V1S3Response:
+		return YAMLPrinter{
+			outWriter: t.outWriter,
+		}.Print(d)
 	case *api.Contexts:
 		ContextPrinter{t}.Print(d)
 	case api.Version:
-		return YAMLPrinter{}.Print(d)
+		return YAMLPrinter{
+			outWriter: t.outWriter,
+		}.Print(d)
+	case *cluster.ListConstraintsOK:
+		return YAMLPrinter{
+			outWriter: t.outWriter,
+		}.Print(d)
 	default:
 		return fmt.Errorf("unknown table printer for type: %T", d)
 	}
