@@ -43,6 +43,7 @@ func newRootCmd() *cobra.Command {
 	rootCmd.PersistentFlags().String("apitoken", "", "api token to authenticate. Can be specified with CLOUDCTL_APITOKEN environment variable.")
 	rootCmd.PersistentFlags().String("kubeconfig", "", "Path to the kube-config to use for authentication and authorization. Is updated by login. Uses default path if not specified.")
 	rootCmd.PersistentFlags().StringP("order", "", "", "order by (comma separated) column(s)")
+	rootCmd.PersistentFlags().BoolP("no-headers", "", false, "ommit headers in tables")
 	rootCmd.PersistentFlags().StringP("output-format", "o", "table", "output format (table|wide|markdown|json|yaml|template), wide is a table with more columns.")
 	rootCmd.PersistentFlags().StringP("template", "", "", `output template for template output-format, go template format.
 	For property names inspect the output of -o json or -o yaml for reference.

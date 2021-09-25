@@ -11,7 +11,7 @@ import (
 type (
 	// ProjectTablePrinter print a Project in a Table
 	ProjectTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 )
 

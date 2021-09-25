@@ -16,22 +16,22 @@ type (
 	ShootIssuesResponses []*models.V1ClusterResponse
 	// ShootTablePrinter print a Shoot Cluster in a Table
 	ShootTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 	ShootIssuesTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 	// ShootConditionsTablePrinter print the Conditions of a Shoot Cluster in a Table
 	ShootConditionsTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 
 	ShootLastErrorsTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 
 	ShootLastOperationTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 )
 

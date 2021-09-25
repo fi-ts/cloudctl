@@ -23,8 +23,9 @@ type (
 		Type() string
 		Reset()
 	}
-	TablePrinter struct {
+	tablePrinter struct {
 		table       *tablewriter.Table
+		format      string
 		wide        bool
 		order       string
 		noHeaders   bool
@@ -35,19 +36,19 @@ type (
 		wideData    [][]string
 		outWriter   io.Writer
 	}
-	// JSONPrinter returns the model in json format
-	JSONPrinter struct {
+	// jsonPrinter returns the model in json format
+	jsonPrinter struct {
 		outWriter io.Writer
 	}
-	// YAMLPrinter returns the model in yaml format
-	YAMLPrinter struct {
+	// yamlPrinter returns the model in yaml format
+	yamlPrinter struct {
 		outWriter io.Writer
 	}
 	// TablePrinter produces a human readable model representation
 )
 
 // render the table shortHeader and shortData are always expected.
-func (t *TablePrinter) render() {
+func (t *tablePrinter) render() {
 	if t.template == nil {
 		if !t.noHeaders {
 			if t.wide {
@@ -79,13 +80,13 @@ func (t *TablePrinter) render() {
 	}
 	t.table.ClearRows()
 }
-func (t *TablePrinter) addShortData(row []string, data interface{}) {
+func (t *tablePrinter) addShortData(row []string, data interface{}) {
 	if t.wide {
 		return
 	}
 	t.shortData = append(t.shortData, t.rowOrTemplate(row, data))
 }
-func (t *TablePrinter) addWideData(row []string, data interface{}) {
+func (t *tablePrinter) addWideData(row []string, data interface{}) {
 	if !t.wide {
 		return
 	}
@@ -93,7 +94,7 @@ func (t *TablePrinter) addWideData(row []string, data interface{}) {
 }
 
 // rowOrTemplate return either given row or the data rendered with the given template, depending if template is set.
-func (t *TablePrinter) rowOrTemplate(row []string, data interface{}) []string {
+func (t *tablePrinter) rowOrTemplate(row []string, data interface{}) []string {
 	tpl := t.template
 	if tpl != nil {
 		var buf bytes.Buffer
@@ -130,11 +131,11 @@ func NewPrinter(format, order, tpl string, noHeaders bool, writer io.Writer) (Pr
 	var printer Printer
 	switch format {
 	case "yaml":
-		printer = &YAMLPrinter{
+		printer = &yamlPrinter{
 			outWriter: writer,
 		}
 	case "json":
-		printer = &JSONPrinter{
+		printer = &jsonPrinter{
 			outWriter: writer,
 		}
 	case "table", "wide":
@@ -151,17 +152,18 @@ func NewPrinter(format, order, tpl string, noHeaders bool, writer io.Writer) (Pr
 	return printer, nil
 }
 
-func (t TablePrinter) Reset() {
+func (t tablePrinter) Reset() {
 	t.table.ClearFooter()
 	t.table.ClearRows()
 }
-func (t JSONPrinter) Reset() {
+func (t jsonPrinter) Reset() {
 }
-func (t YAMLPrinter) Reset() {
+func (t yamlPrinter) Reset() {
 }
 
-func newTablePrinter(format, order string, noHeaders bool, template *template.Template, writer io.Writer) TablePrinter {
-	tp := TablePrinter{
+func newTablePrinter(format, order string, noHeaders bool, template *template.Template, writer io.Writer) tablePrinter {
+	tp := tablePrinter{
+		format:    format,
 		wide:      false,
 		order:     order,
 		noHeaders: noHeaders,
@@ -193,12 +195,12 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 	return tp
 }
 
-func (t TablePrinter) Type() string {
+func (t tablePrinter) Type() string {
 	return "table"
 }
 
 // Print a model in a human readable table
-func (t TablePrinter) Print(data interface{}) error {
+func (t tablePrinter) Print(data interface{}) error {
 	switch d := data.(type) {
 	case *models.V1ClusterResponse:
 		ShootTablePrinter{t}.Print([]*models.V1ClusterResponse{d})
@@ -267,17 +269,17 @@ func (t TablePrinter) Print(data interface{}) error {
 	case []*models.V1S3PartitionResponse:
 		S3PartitionTablePrinter{t}.Print(d)
 	case *models.V1S3CredentialsResponse, *models.V1S3Response:
-		return YAMLPrinter{
+		return yamlPrinter{
 			outWriter: t.outWriter,
 		}.Print(d)
 	case *api.Contexts:
 		ContextPrinter{t}.Print(d)
 	case api.Version:
-		return YAMLPrinter{
+		return yamlPrinter{
 			outWriter: t.outWriter,
 		}.Print(d)
 	case *cluster.ListConstraintsOK:
-		return YAMLPrinter{
+		return yamlPrinter{
 			outWriter: t.outWriter,
 		}.Print(d)
 	default:
@@ -287,7 +289,7 @@ func (t TablePrinter) Print(data interface{}) error {
 }
 
 // Print a model in json format
-func (j JSONPrinter) Print(data interface{}) error {
+func (j jsonPrinter) Print(data interface{}) error {
 	json, err := json.MarshalIndent(data, "", "    ")
 	if err != nil {
 		return fmt.Errorf("unable to marshal to json:%w", err)
@@ -296,12 +298,12 @@ func (j JSONPrinter) Print(data interface{}) error {
 	return nil
 }
 
-func (j JSONPrinter) Type() string {
+func (j jsonPrinter) Type() string {
 	return "json"
 }
 
 // Print a model in yaml format
-func (y YAMLPrinter) Print(data interface{}) error {
+func (y yamlPrinter) Print(data interface{}) error {
 	yml, err := yaml.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("unable to marshal to yaml:%w", err)
@@ -310,6 +312,6 @@ func (y YAMLPrinter) Print(data interface{}) error {
 	return nil
 }
 
-func (y YAMLPrinter) Type() string {
+func (y yamlPrinter) Type() string {
 	return "yaml"
 }

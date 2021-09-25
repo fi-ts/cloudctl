@@ -8,11 +8,11 @@ import (
 type (
 	// S3TablePrinter print S3 storage in a Table
 	S3TablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 
 	S3PartitionTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 )
 

@@ -12,21 +12,21 @@ import (
 type (
 	// PostgresTablePrinter prints postgres databases in a table
 	PostgresTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 
 	PostgresVersionsTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 	PostgresPartitionsTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 
 	PostgresBackupsTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 	PostgresBackupEntryTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 )
 

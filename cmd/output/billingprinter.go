@@ -14,31 +14,31 @@ import (
 type (
 	// ClusterBillingTablePrinter print bills in a Table
 	ClusterBillingTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 	// ContainerBillingTablePrinter print bills in a Table
 	ContainerBillingTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 	// IPBillingTablePrinter print bills in a Table
 	IPBillingTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 	// NetworkTrafficBillingTablePrinter print bills in a Table
 	NetworkTrafficBillingTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 	// S3BillingTablePrinter print bills in a Table
 	S3BillingTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 	// VolumeBillingTablePrinter print bills in a Table
 	VolumeBillingTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 	// PostgresBillingTablePrinter print bills in a Table
 	PostgresBillingTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 )
 
