@@ -1,14 +1,17 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"os"
+	"runtime"
 	"testing"
 
 	"github.com/fi-ts/cloud-go/api/client"
 	"github.com/fi-ts/cloud-go/api/client/version"
 	"github.com/fi-ts/cloud-go/api/models"
 	mockversion "github.com/fi-ts/cloud-go/test/mocks/version"
+	"github.com/metal-stack/v"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/utils/pointer"
@@ -21,6 +24,11 @@ func Test_newVersionCmd(t *testing.T) {
 	defer func() {
 		os.Stdout = rescueStdout
 	}()
+
+	v.BuildDate = "1.1.1970"
+	v.GitSHA1 = "abcdef"
+	v.Revision = "v0.0.0"
+	v.Version = "v0.0.0"
 
 	mockVersionService := new(mockversion.ClientService)
 	cloud := client.CloudAPI{
@@ -50,13 +58,13 @@ func Test_newVersionCmd(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected := `client: version not set, please build your app with appropriate ldflags, see https://github.com/metal-stack/v for reference, go1.17
+	expected := fmt.Sprintf(`client: v0.0.0 (abcdef), v0.0.0, 1.1.1970, %s
 server:
     builddate: null
     gitsha1: null
     name: cloudctl
     revision: null
     version: null
-`
+`, runtime.Version())
 	assert.Equal(t, expected, string(out))
 }
