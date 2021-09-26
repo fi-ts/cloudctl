@@ -62,7 +62,7 @@ func newRootCmd() *cobra.Command {
 	rootCmd.AddCommand(newClusterCmd(cfg))
 	rootCmd.AddCommand(newDashboardCmd(cfg))
 	rootCmd.AddCommand(newUpdateCmd(name))
-	rootCmd.AddCommand(newLoginCmd(cfg))
+	rootCmd.AddCommand(newLoginCmd())
 	rootCmd.AddCommand(newWhoamiCmd())
 	rootCmd.AddCommand(newProjectCmd(cfg))
 	rootCmd.AddCommand(newTenantCmd(cfg))
@@ -92,7 +92,6 @@ func Execute() {
 
 type config struct {
 	name        string
-	ctx         api.Context
 	cloud       *client.CloudAPI
 	comp        *completion.Completion
 	consoleHost string
@@ -171,7 +170,6 @@ func getConfig(cmd *cobra.Command, name string) *config {
 
 	return &config{
 		name:        name,
-		ctx:         ctx,
 		cloud:       cloud,
 		comp:        comp,
 		consoleHost: consoleHost,
