@@ -512,7 +512,7 @@ func (c *config) postgresDelete(args []string) error {
 		return err
 	}
 
-	output.P().Print(pg)
+	must(output.P().Print(pg))
 
 	idParts := strings.Split(*pg.ID, "-")
 	firstPartOfPostgresID := idParts[0]

@@ -956,7 +956,8 @@ func (c *config) clusterDelete(args []string) error {
 		return err
 	}
 
-	output.P().Print(resp.Payload)
+	must(output.P().Print(resp.Payload))
+
 	firstPartOfClusterID := strings.Split(*resp.Payload.ID, "-")[0]
 	fmt.Println("Please answer some security questions to delete this cluster")
 	err = helper.Prompt("first part of clusterID:", firstPartOfClusterID)
@@ -1068,7 +1069,7 @@ func (c *config) clusterMachines(args []string) error {
 	}
 
 	fmt.Println("Cluster:")
-	output.P().Print(shoot.Payload)
+	must(output.P().Print(shoot.Payload))
 
 	ms := shoot.Payload.Machines
 	ms = append(ms, shoot.Payload.Firewalls...)
