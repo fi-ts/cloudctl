@@ -10,7 +10,6 @@ import (
 	cloudgo "github.com/fi-ts/cloud-go"
 	"github.com/fi-ts/cloud-go/api/client"
 	"github.com/fi-ts/cloudctl/cmd/completion"
-	output "github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/fi-ts/cloudctl/pkg/api"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -97,7 +96,6 @@ type config struct {
 	cloud       *client.CloudAPI
 	comp        *completion.Completion
 	consoleHost string
-	printer     output.Printer
 }
 
 func getConfig(cmd *cobra.Command, name string) *config {
@@ -171,23 +169,11 @@ func getConfig(cmd *cobra.Command, name string) *config {
 	}
 	consoleHost := parsedURL.Host
 
-	printer, err := output.NewPrinter(
-		viper.GetString("output-format"),
-		viper.GetString("order"),
-		viper.GetString("template"),
-		viper.GetBool("no-headers"),
-		os.Stdout,
-	)
-	if err != nil {
-		log.Fatalf("unable to initialize printer:%v", err)
-	}
-
 	return &config{
 		name:        name,
 		ctx:         ctx,
 		cloud:       cloud,
 		comp:        comp,
 		consoleHost: consoleHost,
-		printer:     printer,
 	}
 }

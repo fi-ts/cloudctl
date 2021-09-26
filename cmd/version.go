@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/fi-ts/cloudctl/pkg/api"
 	"github.com/metal-stack/v"
 	"github.com/spf13/cobra"
@@ -23,7 +24,7 @@ func newVersionCmd(c *config) *cobra.Command {
 				v.Server = resp.Payload
 			}
 
-			if err2 := c.printer.Print(v); err2 != nil {
+			if err2 := output.P().Print(v); err2 != nil {
 				return err2
 			}
 			if err != nil {

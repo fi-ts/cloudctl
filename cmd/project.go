@@ -11,6 +11,7 @@ import (
 
 	"github.com/fi-ts/cloud-go/api/client/project"
 	"github.com/fi-ts/cloudctl/cmd/helper"
+	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -155,7 +156,7 @@ func (c *config) projectCreate() error {
 		return err
 	}
 
-	return c.printer.Print(response.Payload)
+	return output.P().Print(response.Payload)
 }
 
 func (c *config) projectDescribe(args []string) error {
@@ -171,7 +172,7 @@ func (c *config) projectDescribe(args []string) error {
 		return err
 	}
 
-	return c.printer.Print(p.Payload)
+	return output.P().Print(p.Payload)
 }
 
 func (c *config) projectDelete(args []string) error {
@@ -187,7 +188,7 @@ func (c *config) projectDelete(args []string) error {
 		return err
 	}
 
-	return c.printer.Print(response.Payload)
+	return output.P().Print(response.Payload)
 }
 
 func (c *config) projectList() error {
@@ -196,7 +197,7 @@ func (c *config) projectList() error {
 	if err != nil {
 		return err
 	}
-	return c.printer.Print(response.Payload.Projects)
+	return output.P().Print(response.Payload.Projects)
 }
 
 func (c *config) projectID(verb string, args []string) (string, error) {
@@ -273,7 +274,7 @@ func (c *config) projectApply() error {
 			continue
 		}
 	}
-	return c.printer.Print(response)
+	return output.P().Print(response)
 }
 
 func (c *config) projectEdit(args []string) error {
@@ -309,7 +310,7 @@ func (c *config) projectEdit(args []string) error {
 		if err != nil {
 			return err
 		}
-		return c.printer.Print(uresp.Payload)
+		return output.P().Print(uresp.Payload)
 	}
 
 	return helper.Edit(id, getFunc, updateFunc)

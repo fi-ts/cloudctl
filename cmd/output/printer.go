@@ -5,19 +5,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"text/template"
 
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/pkg/api"
+	"github.com/spf13/viper"
 
 	"github.com/olekukonko/tablewriter"
 	"gopkg.in/yaml.v3"
 )
 
 type (
-	// Printer main Interface for implementations which spits out to stdout
+	// Printer main Interface for implementations which spits out to specified Writer
 	Printer interface {
 		Print(data interface{}) error
 		Type() string
@@ -124,6 +126,21 @@ func genericObject(input interface{}) map[string]interface{} {
 	}
 	return result.(map[string]interface{})
 
+}
+
+// P returns a suitable stdout printer for the given format
+func P() Printer {
+	printer, err := NewPrinter(
+		viper.GetString("output-format"),
+		viper.GetString("order"),
+		viper.GetString("template"),
+		viper.GetBool("no-headers"),
+		os.Stdout,
+	)
+	if err != nil {
+		log.Fatalf("unable to initialize printer:%v", err)
+	}
+	return printer
 }
 
 // NewPrinter returns a suitable stdout printer for the given format

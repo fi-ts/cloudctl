@@ -7,6 +7,7 @@ import (
 
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
+	"github.com/fi-ts/cloudctl/cmd/output"
 	"gopkg.in/yaml.v3"
 
 	"github.com/fi-ts/cloud-go/api/client/tenant"
@@ -92,7 +93,7 @@ func (c *config) tenantDescribe(args []string) error {
 	if err != nil {
 		return fmt.Errorf("tenant describe error:%w", err)
 	}
-	return c.printer.Print(resp.Payload)
+	return output.P().Print(resp.Payload)
 }
 
 func (c *config) tenantList() error {
@@ -101,7 +102,7 @@ func (c *config) tenantList() error {
 	if err != nil {
 		return fmt.Errorf("tenant list error:%w", err)
 	}
-	return c.printer.Print(resp.Payload)
+	return output.P().Print(resp.Payload)
 }
 
 func (c *config) tenantApply() error {
@@ -145,7 +146,7 @@ func (c *config) tenantApply() error {
 			continue
 		}
 	}
-	return c.printer.Print(response)
+	return output.P().Print(response)
 }
 
 func (c *config) tenantEdit(args []string) error {
@@ -181,7 +182,7 @@ func (c *config) tenantEdit(args []string) error {
 		if err != nil {
 			return err
 		}
-		return c.printer.Print(uresp.Payload)
+		return output.P().Print(uresp.Payload)
 	}
 
 	return helper.Edit(id, getFunc, updateFunc)

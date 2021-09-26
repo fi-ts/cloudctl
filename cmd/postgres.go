@@ -7,6 +7,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/client/database"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
+	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
@@ -338,7 +339,7 @@ func (c *config) postgresCreate() error {
 		return err
 	}
 
-	return c.printer.Print(response.Payload)
+	return output.P().Print(response.Payload)
 }
 
 func (c *config) postgresApply() error {
@@ -410,7 +411,7 @@ func (c *config) postgresApply() error {
 		response = append(response, createdPG.Payload)
 		continue
 	}
-	return c.printer.Print(response)
+	return output.P().Print(response)
 }
 
 func (c *config) postgresEdit(args []string) error {
@@ -445,7 +446,7 @@ func (c *config) postgresEdit(args []string) error {
 		if err != nil {
 			return err
 		}
-		return c.printer.Print(uresp.Payload)
+		return output.P().Print(uresp.Payload)
 	}
 	return helper.Edit(id, getFunc, updateFunc)
 }
@@ -496,13 +497,13 @@ func (c *config) postgresFind() error {
 		if err != nil {
 			return err
 		}
-		return c.printer.Print(resp.Payload)
+		return output.P().Print(resp.Payload)
 	}
 	resp, err := c.cloud.Database.ListPostgres(nil, nil)
 	if err != nil {
 		return err
 	}
-	return c.printer.Print(resp.Payload)
+	return output.P().Print(resp.Payload)
 }
 
 func (c *config) postgresDelete(args []string) error {
@@ -511,7 +512,7 @@ func (c *config) postgresDelete(args []string) error {
 		return err
 	}
 
-	c.printer.Print(pg)
+	output.P().Print(pg)
 
 	idParts := strings.Split(*pg.ID, "-")
 	firstPartOfPostgresID := idParts[0]
@@ -532,7 +533,7 @@ func (c *config) postgresDelete(args []string) error {
 		return err
 	}
 
-	return c.printer.Print(resp.Payload)
+	return output.P().Print(resp.Payload)
 }
 
 func (c *config) postgresDescribe(args []string) error {
@@ -541,7 +542,7 @@ func (c *config) postgresDescribe(args []string) error {
 		return err
 	}
 
-	return c.printer.Print(postgres)
+	return output.P().Print(postgres)
 }
 
 func (c *config) postgresListBackups(args []string) error {
@@ -555,7 +556,7 @@ func (c *config) postgresListBackups(args []string) error {
 	if err != nil {
 		return err
 	}
-	return c.printer.Print(resp.Payload)
+	return output.P().Print(resp.Payload)
 }
 
 func (c *config) postgresConnectionString(args []string) error {
@@ -644,7 +645,7 @@ func (c *config) postgresBackupCreate(autocreate bool) error {
 		return err
 	}
 
-	return c.printer.Print(response.Payload)
+	return output.P().Print(response.Payload)
 }
 func (c *config) postgresBackupUpdate() error {
 	id := viper.GetString("id")
@@ -679,7 +680,7 @@ func (c *config) postgresBackupUpdate() error {
 		return err
 	}
 
-	return c.printer.Print(response.Payload)
+	return output.P().Print(response.Payload)
 }
 
 func (c *config) postgresBackupGet(args []string) error {
@@ -689,7 +690,7 @@ func (c *config) postgresBackupGet(args []string) error {
 		if err != nil {
 			return err
 		}
-		return c.printer.Print(resp.Payload)
+		return output.P().Print(resp.Payload)
 	}
 
 	request := database.NewGetPostgresBackupsParams().WithID(args[0])
@@ -697,7 +698,7 @@ func (c *config) postgresBackupGet(args []string) error {
 	if err != nil {
 		return err
 	}
-	return c.printer.Print(resp.Payload)
+	return output.P().Print(resp.Payload)
 }
 func (c *config) postgresBackupDelete(args []string) error {
 	if len(args) < 1 {
@@ -731,7 +732,7 @@ func (c *config) postgresBackupDelete(args []string) error {
 	if err != nil {
 		return err
 	}
-	return c.printer.Print(resp.Payload)
+	return output.P().Print(resp.Payload)
 
 }
 
@@ -742,7 +743,7 @@ func (c *config) postgresVersions() error {
 		return err
 	}
 
-	return c.printer.Print(resp.Payload)
+	return output.P().Print(resp.Payload)
 }
 func (c *config) postgresPartitions() error {
 	params := database.NewGetPostgresPartitionsParams()
@@ -751,7 +752,7 @@ func (c *config) postgresPartitions() error {
 		return err
 	}
 
-	return c.printer.Print(resp.Payload)
+	return output.P().Print(resp.Payload)
 }
 func (c *config) getPostgresFromArgs(args []string) (*models.V1PostgresResponse, error) {
 	if len(args) < 1 {

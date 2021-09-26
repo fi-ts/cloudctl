@@ -7,6 +7,7 @@ import (
 
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
+	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -101,13 +102,13 @@ func (c *config) ipList() error {
 		if err != nil {
 			return err
 		}
-		return c.printer.Print(resp.Payload)
+		return output.P().Print(resp.Payload)
 	}
 	resp, err := c.cloud.IP.ListIPs(nil, nil)
 	if err != nil {
 		return err
 	}
-	return c.printer.Print(resp.Payload)
+	return output.P().Print(resp.Payload)
 }
 
 func (c *config) ipStatic(args []string) error {
@@ -141,7 +142,7 @@ func (c *config) ipStatic(args []string) error {
 	if err != nil {
 		return err
 	}
-	return c.printer.Print(resp.Payload)
+	return output.P().Print(resp.Payload)
 }
 
 func (c *config) ipAllocate() error {
@@ -172,7 +173,7 @@ func (c *config) ipAllocate() error {
 	if err != nil {
 		return err
 	}
-	return c.printer.Print(resp.Payload)
+	return output.P().Print(resp.Payload)
 }
 
 func (c *config) ipFree(args []string) error {
@@ -188,7 +189,7 @@ func (c *config) ipFree(args []string) error {
 		return err
 	}
 
-	return c.printer.Print(resp.Payload)
+	return output.P().Print(resp.Payload)
 }
 
 func (c *config) getIPFromArgs(args []string) (string, error) {
