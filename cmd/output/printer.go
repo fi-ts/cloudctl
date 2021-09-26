@@ -23,7 +23,6 @@ type (
 	Printer interface {
 		Print(data interface{}) error
 		Type() string
-		Reset()
 	}
 	tablePrinter struct {
 		table       *tablewriter.Table
@@ -169,15 +168,6 @@ func NewPrinter(format, order, tpl string, noHeaders bool, writer io.Writer) (Pr
 	return printer, nil
 }
 
-func (t tablePrinter) Reset() {
-	t.table.ClearFooter()
-	t.table.ClearRows()
-}
-func (t jsonPrinter) Reset() {
-}
-func (t yamlPrinter) Reset() {
-}
-
 func newTablePrinter(format, order string, noHeaders bool, template *template.Template, writer io.Writer) tablePrinter {
 	tp := tablePrinter{
 		format:    format,
@@ -186,10 +176,11 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 		noHeaders: noHeaders,
 		outWriter: writer,
 	}
+	if format == "wide" {
+		tp.wide = true
+	}
 	table := tablewriter.NewWriter(writer)
 	switch format {
-	case "wide":
-		tp.wide = true
 	case "template":
 		tp.template = template
 	case "markdown":
