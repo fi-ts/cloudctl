@@ -144,6 +144,9 @@ func P() Printer {
 
 // NewPrinter returns a suitable stdout printer for the given format
 func NewPrinter(format, order, tpl string, noHeaders bool, writer io.Writer) (Printer, error) {
+	if format == "" {
+		format = "table"
+	}
 	var printer Printer
 	switch format {
 	case "yaml":
