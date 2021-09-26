@@ -13,7 +13,6 @@ import (
 )
 
 func newLoginCmd() *cobra.Command {
-	ctx := api.MustDefaultContext()
 	loginCmd := &cobra.Command{
 		Use:   "login",
 		Short: "login user and receive token",
@@ -22,7 +21,7 @@ func newLoginCmd() *cobra.Command {
 
 			var console io.Writer
 			var handler auth.TokenHandlerFunc
-			if viper.GetBool("printOnly") {
+			if viper.GetBool("print-only") {
 				// do not store, only print to console
 				handler = printTokenHandler
 			} else {
@@ -35,6 +34,7 @@ func newLoginCmd() *cobra.Command {
 			}
 
 			scopes := auth.DexScopes
+			ctx := api.MustDefaultContext()
 			if ctx.IssuerType == "generic" {
 				scopes = auth.GenericScopes
 			} else if ctx.CustomScopes != "" {
@@ -59,7 +59,7 @@ func newLoginCmd() *cobra.Command {
 		},
 		PreRun: bindPFlags,
 	}
-	loginCmd.Flags().Bool("printOnly", false, "If true, the token is printed to stdout")
+	loginCmd.Flags().Bool("print-only", false, "If true, the token is printed to stdout")
 	return loginCmd
 }
 
