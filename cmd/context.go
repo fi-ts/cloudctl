@@ -113,5 +113,5 @@ func (c *config) contextList() error {
 	if err != nil {
 		return err
 	}
-	return output.P().Print(ctxs)
+	return output.New().Print(ctxs)
 }

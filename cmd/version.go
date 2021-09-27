@@ -24,7 +24,7 @@ func newVersionCmd(c *config) *cobra.Command {
 				v.Server = resp.Payload
 			}
 
-			if err2 := output.P().Print(v); err2 != nil {
+			if err2 := output.New().Print(v); err2 != nil {
 				return err2
 			}
 			if err != nil {

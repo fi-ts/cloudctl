@@ -127,9 +127,9 @@ func genericObject(input interface{}) map[string]interface{} {
 
 }
 
-// P returns a suitable stdout printer for the given format
-func P() Printer {
-	printer, err := NewPrinter(
+// New returns a suitable stdout printer for the given format
+func New() Printer {
+	printer, err := newPrinter(
 		viper.GetString("output-format"),
 		viper.GetString("order"),
 		viper.GetString("template"),
@@ -142,8 +142,8 @@ func P() Printer {
 	return printer
 }
 
-// NewPrinter returns a suitable stdout printer for the given format
-func NewPrinter(format, order, tpl string, noHeaders bool, writer io.Writer) (Printer, error) {
+// newPrinter returns a suitable stdout printer for the given format
+func newPrinter(format, order, tpl string, noHeaders bool, writer io.Writer) (Printer, error) {
 	if format == "" {
 		format = "table"
 	}

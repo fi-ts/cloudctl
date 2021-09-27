@@ -100,13 +100,13 @@ func (c *config) volumeFind() error {
 		if err != nil {
 			return err
 		}
-		return output.P().Print(resp.Payload)
+		return output.New().Print(resp.Payload)
 	}
 	resp, err := c.cloud.Volume.ListVolumes(nil, nil)
 	if err != nil {
 		return err
 	}
-	return output.P().Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 
 func (c *config) volumeDescribe(args []string) error {
@@ -120,7 +120,7 @@ func (c *config) volumeDescribe(args []string) error {
 		return err
 	}
 
-	return output.P().Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 
 func (c *config) volumeDelete(args []string) error {
@@ -134,7 +134,7 @@ func (c *config) volumeDelete(args []string) error {
 		return err
 	}
 
-	return output.P().Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 
 func (c *config) volumeClusterInfo() error {
@@ -143,7 +143,7 @@ func (c *config) volumeClusterInfo() error {
 	if err != nil {
 		return err
 	}
-	return output.P().Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 
 func (c *config) volumeManifest(args []string) error {

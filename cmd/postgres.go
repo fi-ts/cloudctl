@@ -339,7 +339,7 @@ func (c *config) postgresCreate() error {
 		return err
 	}
 
-	return output.P().Print(response.Payload)
+	return output.New().Print(response.Payload)
 }
 
 func (c *config) postgresApply() error {
@@ -411,7 +411,7 @@ func (c *config) postgresApply() error {
 		response = append(response, createdPG.Payload)
 		continue
 	}
-	return output.P().Print(response)
+	return output.New().Print(response)
 }
 
 func (c *config) postgresEdit(args []string) error {
@@ -446,7 +446,7 @@ func (c *config) postgresEdit(args []string) error {
 		if err != nil {
 			return err
 		}
-		return output.P().Print(uresp.Payload)
+		return output.New().Print(uresp.Payload)
 	}
 	return helper.Edit(id, getFunc, updateFunc)
 }
@@ -497,13 +497,13 @@ func (c *config) postgresFind() error {
 		if err != nil {
 			return err
 		}
-		return output.P().Print(resp.Payload)
+		return output.New().Print(resp.Payload)
 	}
 	resp, err := c.cloud.Database.ListPostgres(nil, nil)
 	if err != nil {
 		return err
 	}
-	return output.P().Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 
 func (c *config) postgresDelete(args []string) error {
@@ -512,7 +512,7 @@ func (c *config) postgresDelete(args []string) error {
 		return err
 	}
 
-	must(output.P().Print(pg))
+	must(output.New().Print(pg))
 
 	idParts := strings.Split(*pg.ID, "-")
 	firstPartOfPostgresID := idParts[0]
@@ -533,7 +533,7 @@ func (c *config) postgresDelete(args []string) error {
 		return err
 	}
 
-	return output.P().Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 
 func (c *config) postgresDescribe(args []string) error {
@@ -542,7 +542,7 @@ func (c *config) postgresDescribe(args []string) error {
 		return err
 	}
 
-	return output.P().Print(postgres)
+	return output.New().Print(postgres)
 }
 
 func (c *config) postgresListBackups(args []string) error {
@@ -556,7 +556,7 @@ func (c *config) postgresListBackups(args []string) error {
 	if err != nil {
 		return err
 	}
-	return output.P().Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 
 func (c *config) postgresConnectionString(args []string) error {
@@ -645,7 +645,7 @@ func (c *config) postgresBackupCreate(autocreate bool) error {
 		return err
 	}
 
-	return output.P().Print(response.Payload)
+	return output.New().Print(response.Payload)
 }
 func (c *config) postgresBackupUpdate() error {
 	id := viper.GetString("id")
@@ -680,7 +680,7 @@ func (c *config) postgresBackupUpdate() error {
 		return err
 	}
 
-	return output.P().Print(response.Payload)
+	return output.New().Print(response.Payload)
 }
 
 func (c *config) postgresBackupGet(args []string) error {
@@ -690,7 +690,7 @@ func (c *config) postgresBackupGet(args []string) error {
 		if err != nil {
 			return err
 		}
-		return output.P().Print(resp.Payload)
+		return output.New().Print(resp.Payload)
 	}
 
 	request := database.NewGetPostgresBackupsParams().WithID(args[0])
@@ -698,7 +698,7 @@ func (c *config) postgresBackupGet(args []string) error {
 	if err != nil {
 		return err
 	}
-	return output.P().Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 func (c *config) postgresBackupDelete(args []string) error {
 	if len(args) < 1 {
@@ -732,7 +732,7 @@ func (c *config) postgresBackupDelete(args []string) error {
 	if err != nil {
 		return err
 	}
-	return output.P().Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 
 }
 
@@ -743,7 +743,7 @@ func (c *config) postgresVersions() error {
 		return err
 	}
 
-	return output.P().Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 func (c *config) postgresPartitions() error {
 	params := database.NewGetPostgresPartitionsParams()
@@ -752,7 +752,7 @@ func (c *config) postgresPartitions() error {
 		return err
 	}
 
-	return output.P().Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 func (c *config) getPostgresFromArgs(args []string) (*models.V1PostgresResponse, error) {
 	if len(args) < 1 {

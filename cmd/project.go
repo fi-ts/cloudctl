@@ -156,7 +156,7 @@ func (c *config) projectCreate() error {
 		return err
 	}
 
-	return output.P().Print(response.Payload)
+	return output.New().Print(response.Payload)
 }
 
 func (c *config) projectDescribe(args []string) error {
@@ -172,7 +172,7 @@ func (c *config) projectDescribe(args []string) error {
 		return err
 	}
 
-	return output.P().Print(p.Payload)
+	return output.New().Print(p.Payload)
 }
 
 func (c *config) projectDelete(args []string) error {
@@ -188,7 +188,7 @@ func (c *config) projectDelete(args []string) error {
 		return err
 	}
 
-	return output.P().Print(response.Payload)
+	return output.New().Print(response.Payload)
 }
 
 func (c *config) projectList() error {
@@ -197,7 +197,7 @@ func (c *config) projectList() error {
 	if err != nil {
 		return err
 	}
-	return output.P().Print(response.Payload.Projects)
+	return output.New().Print(response.Payload.Projects)
 }
 
 func (c *config) projectID(verb string, args []string) (string, error) {
@@ -274,7 +274,7 @@ func (c *config) projectApply() error {
 			continue
 		}
 	}
-	return output.P().Print(response)
+	return output.New().Print(response)
 }
 
 func (c *config) projectEdit(args []string) error {
@@ -310,7 +310,7 @@ func (c *config) projectEdit(args []string) error {
 		if err != nil {
 			return err
 		}
-		return output.P().Print(uresp.Payload)
+		return output.New().Print(uresp.Payload)
 	}
 
 	return helper.Edit(id, getFunc, updateFunc)

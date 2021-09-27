@@ -93,7 +93,7 @@ func (c *config) tenantDescribe(args []string) error {
 	if err != nil {
 		return fmt.Errorf("tenant describe error:%w", err)
 	}
-	return output.P().Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 
 func (c *config) tenantList() error {
@@ -102,7 +102,7 @@ func (c *config) tenantList() error {
 	if err != nil {
 		return fmt.Errorf("tenant list error:%w", err)
 	}
-	return output.P().Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 
 func (c *config) tenantApply() error {
@@ -146,7 +146,7 @@ func (c *config) tenantApply() error {
 			continue
 		}
 	}
-	return output.P().Print(response)
+	return output.New().Print(response)
 }
 
 func (c *config) tenantEdit(args []string) error {
@@ -182,7 +182,7 @@ func (c *config) tenantEdit(args []string) error {
 		if err != nil {
 			return err
 		}
-		return output.P().Print(uresp.Payload)
+		return output.New().Print(uresp.Payload)
 	}
 
 	return helper.Edit(id, getFunc, updateFunc)

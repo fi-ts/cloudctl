@@ -53,10 +53,8 @@ func newRootCmd() *cobra.Command {
 	`)
 	rootCmd.PersistentFlags().BoolP("yes-i-really-mean-it", "", false, "skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)")
 
-	err := viper.BindPFlags(rootCmd.PersistentFlags())
-	if err != nil {
-		log.Fatalf("error setup root cmd:%v", err)
-	}
+	must(viper.BindPFlags(rootCmd.PersistentFlags()))
+
 	cfg := getConfig(rootCmd, name)
 
 	rootCmd.AddCommand(newClusterCmd(cfg))
@@ -98,10 +96,7 @@ type config struct {
 }
 
 func getConfig(cmd *cobra.Command, name string) *config {
-	err := viper.BindPFlags(cmd.PersistentFlags())
-	if err != nil {
-		log.Fatalf("error setup root cmd:%v", err)
-	}
+	must(viper.BindPFlags(cmd.PersistentFlags()))
 
 	viper.SetEnvPrefix(strings.ToUpper(name))
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))

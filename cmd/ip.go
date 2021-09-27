@@ -102,13 +102,13 @@ func (c *config) ipList() error {
 		if err != nil {
 			return err
 		}
-		return output.P().Print(resp.Payload)
+		return output.New().Print(resp.Payload)
 	}
 	resp, err := c.cloud.IP.ListIPs(nil, nil)
 	if err != nil {
 		return err
 	}
-	return output.P().Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 
 func (c *config) ipStatic(args []string) error {
@@ -142,7 +142,7 @@ func (c *config) ipStatic(args []string) error {
 	if err != nil {
 		return err
 	}
-	return output.P().Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 
 func (c *config) ipAllocate() error {
@@ -173,7 +173,7 @@ func (c *config) ipAllocate() error {
 	if err != nil {
 		return err
 	}
-	return output.P().Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 
 func (c *config) ipFree(args []string) error {
@@ -189,7 +189,7 @@ func (c *config) ipFree(args []string) error {
 		return err
 	}
 
-	return output.P().Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 
 func (c *config) getIPFromArgs(args []string) (string, error) {
