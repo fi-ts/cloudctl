@@ -19,7 +19,7 @@ after:
   - ./result/cloudctl-linux-amd64 update dump ./result/cloudctl-linux-amd64 > ./result/version-linux-amd64.json
   - ./result/cloudctl-linux-amd64 update dump ./result/cloudctl-windows-amd64 > ./result/version-windows-amd64.json
   - ./result/cloudctl-linux-amd64 update dump ./result/cloudctl-darwin-amd64 > ./result/version-darwin-amd64.json
-  - ./result/cloudctl-linux-arm64 update dump ./result/cloudctl-darwin-arm64 > ./result/version-darwin-arm64.json
+  - ./result/cloudctl-linux-amd64 update dump ./result/cloudctl-darwin-arm64 > ./result/version-darwin-arm64.json
 builds:
   - name: cloudctl-slug
     tags:
