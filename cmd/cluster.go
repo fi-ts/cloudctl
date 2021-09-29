@@ -248,6 +248,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().String("description", "", "description of the cluster. [optional]")
 	clusterCreateCmd.Flags().String("project", "", "project where this cluster should belong to. [required]")
 	clusterCreateCmd.Flags().String("partition", "", "partition of the cluster. [required]")
+	clusterCreateCmd.Flags().String("seed", "", "name of seed where this cluster should be scheduled. [optional]")
 	clusterCreateCmd.Flags().String("purpose", "evaluation", "purpose of the cluster, can be one of production|development|evaluation. SLA is only given on production clusters. [optional]")
 	clusterCreateCmd.Flags().String("version", "", "kubernetes version of the cluster. defaults to latest available, check cluster inputs for possible values. [optional]")
 	clusterCreateCmd.Flags().String("machinetype", "", "machine type to use for the nodes. [optional]")
@@ -273,6 +274,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	must(clusterCreateCmd.MarkFlagRequired("partition"))
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("seed", c.comp.PartitionListCompletion))
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("external-networks", c.comp.NetworkListCompletion))
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("machinetype", c.comp.MachineTypeListCompletion))
@@ -413,6 +415,7 @@ func (c *config) clusterCreate() error {
 	name := viper.GetString("name")
 	desc := viper.GetString("description")
 	partition := viper.GetString("partition")
+	seed := viper.GetString("seed")
 	project := viper.GetString("project")
 	purpose := viper.GetString("purpose")
 	machineType := viper.GetString("machinetype")
@@ -534,6 +537,9 @@ func (c *config) clusterCreate() error {
 		},
 		AdditionalNetworks: networks,
 		PartitionID:        &partition,
+	}
+	if seed != "" {
+		scr.SeedName = seed
 	}
 
 	egressRules := makeEgressRules(egress)
