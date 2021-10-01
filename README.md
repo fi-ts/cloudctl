@@ -35,6 +35,7 @@ Download locations:
 
 - [cloudctl-linux-amd64](https://github.com/fi-ts/cloudctl/releases/latest/download/cloudctl-linux-amd64)
 - [cloudctl-darwin-amd64](https://github.com/fi-ts/cloudctl/releases/latest/download/cloudctl-darwin-amd64)
+- [cloudctl-darwin-arm64](https://github.com/fi-ts/cloudctl/releases/latest/download/cloudctl-darwin-arm64)
 - [cloudctl-windows-amd64](https://github.com/fi-ts/cloudctl/releases/latest/download/cloudctl-windows-amd64)
 
 ### Installation on Linux
@@ -47,10 +48,20 @@ sudo mv cloudctl-linux-amd64 /usr/local/bin/cloudctl
 
 ### Installation on MacOS
 
+For x86 based Macs:
+
 ```bash
 curl -LO https://github.com/fi-ts/cloudctl/releases/latest/download/cloudctl-darwin-amd64
 chmod +x cloudctl-darwin-amd64
 sudo mv cloudctl-darwin-amd64 /usr/local/bin/cloudctl
+```
+
+For Apple Silicon (M1) based Macs:
+
+```bash
+curl -LO https://github.com/fi-ts/cloudctl/releases/latest/download/cloudctl-darwin-arm64
+chmod +x cloudctl-darwin-arm64
+sudo mv cloudctl-darwin-arm64 /usr/local/bin/cloudctl
 ```
 
 ### Usage with Nix on Linux or MacOS

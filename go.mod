@@ -5,9 +5,9 @@ go 1.16
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/dustin/go-humanize v1.0.0
-	github.com/fatih/color v1.12.0
-	github.com/fi-ts/cloud-go v0.17.17
-	github.com/gardener/gardener v1.19.3
+	github.com/fatih/color v1.13.0
+	github.com/fi-ts/cloud-go v0.17.20
+	github.com/gardener/gardener v1.22.6
 	github.com/gizak/termui/v3 v3.1.0
 	github.com/go-openapi/errors v0.20.1 // indirect
 	github.com/go-openapi/strfmt v0.20.2
@@ -22,14 +22,15 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.2.1
-	github.com/spf13/viper v1.8.1
+	github.com/spf13/viper v1.9.0
+	github.com/stretchr/testify v1.7.0
 	github.com/tidwall/pretty v1.2.0 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	k8s.io/api v0.20.9
 	k8s.io/apimachinery v0.20.9
-	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009
-	sigs.k8s.io/yaml v1.2.0
+	k8s.io/utils v0.0.0-20210820185131-d34e5cb4466e
+	sigs.k8s.io/yaml v1.3.0
 )
 
 replace (

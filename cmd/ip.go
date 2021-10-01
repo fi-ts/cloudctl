@@ -2,60 +2,56 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/fi-ts/cloud-go/api/client/ip"
 
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
+	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var (
-	ipCmd = &cobra.Command{
+func newIPCmd(c *config) *cobra.Command {
+	ipCmd := &cobra.Command{
 		Use:   "ip",
 		Short: "manage ips",
 		Long:  "TODO",
 	}
-	ipListCmd = &cobra.Command{
+	ipListCmd := &cobra.Command{
 		Use:     "list",
 		Short:   "list ips",
 		Aliases: []string{"ls"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return ipList()
+			return c.ipList()
 		},
 		PreRun: bindPFlags,
 	}
-	ipStaticCmd = &cobra.Command{
+	ipStaticCmd := &cobra.Command{
 		Use:   "static <ip>",
 		Short: "make an ephemeral ip static such that it won't be deleted if not used anymore",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return ipStatic(args)
+			return c.ipStatic(args)
 		},
 		PreRun: bindPFlags,
 	}
-	ipAllocateCmd = &cobra.Command{
+	ipAllocateCmd := &cobra.Command{
 		Use:   "allocate <ip>",
 		Short: "allocate a static IP address for your project that can be used for your cluster's service type load balancer",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return ipAllocate()
+			return c.ipAllocate()
 		},
 		PreRun: bindPFlags,
 	}
-	ipFreeCmd = &cobra.Command{
+	ipFreeCmd := &cobra.Command{
 		Use:     "free <ip>",
 		Aliases: []string{"rm", "destroy", "remove", "delete"},
 		Short:   "free an ip",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return ipFree(args)
+			return c.ipFree(args)
 		},
 		PreRun: bindPFlags,
 	}
-)
-
-func init() {
-	rootCmd.AddCommand(ipCmd)
 
 	ipCmd.AddCommand(ipListCmd)
 	ipCmd.AddCommand(ipStaticCmd)
@@ -68,16 +64,13 @@ func init() {
 	ipListCmd.Flags().StringP("machineid", "", "", "machineid to filter [optional]")
 	ipListCmd.Flags().StringP("network", "", "", "network to filter [optional]")
 
+	must(ipListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	must(ipListCmd.RegisterFlagCompletionFunc("network", c.comp.NetworkListCompletion))
+
 	ipStaticCmd.Flags().StringP("name", "", "", "set name of the ip address [required]")
 	ipStaticCmd.Flags().StringP("description", "", "", "set description of the ip address [required]")
-	err := ipStaticCmd.MarkFlagRequired("name")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = ipStaticCmd.MarkFlagRequired("description")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(ipStaticCmd.MarkFlagRequired("name"))
+	must(ipStaticCmd.MarkFlagRequired("description"))
 
 	ipAllocateCmd.Flags().StringP("name", "", "", "set name of the ip address [required]")
 	ipAllocateCmd.Flags().StringP("description", "", "", "set description of the ip address [required]")
@@ -85,38 +78,16 @@ func init() {
 	ipAllocateCmd.Flags().StringP("network", "", "", "the network of the ip address [required]")
 	ipAllocateCmd.Flags().StringP("project", "", "", "the project of the ip address [required]")
 	ipAllocateCmd.Flags().StringSliceP("tags", "", []string{}, "set tags of the ip address [optional]")
-	err = ipAllocateCmd.MarkFlagRequired("name")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = ipAllocateCmd.MarkFlagRequired("description")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = ipAllocateCmd.MarkFlagRequired("network")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = ipAllocateCmd.MarkFlagRequired("project")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = ipAllocateCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return projectListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(ipAllocateCmd.MarkFlagRequired("name"))
+	must(ipAllocateCmd.MarkFlagRequired("description"))
+	must(ipAllocateCmd.MarkFlagRequired("network"))
+	must(ipAllocateCmd.MarkFlagRequired("project"))
+	must(ipAllocateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 
-	err = ipListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return projectListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	return ipCmd
 }
 
-func ipList() error {
+func (c *config) ipList() error {
 	if helper.AtLeastOneViperStringFlagGiven("ipaddress", "project", "prefix", "machineid", "network") {
 		params := ip.NewFindIPsParams()
 		ifr := &models.V1IPFindRequest{
@@ -127,21 +98,21 @@ func ipList() error {
 			MachineID:        helper.ViperString("machineid"),
 		}
 		params.SetBody(ifr)
-		resp, err := cloud.IP.FindIPs(params, nil)
+		resp, err := c.cloud.IP.FindIPs(params, nil)
 		if err != nil {
 			return err
 		}
-		return printer.Print(resp.Payload)
+		return output.New().Print(resp.Payload)
 	}
-	resp, err := cloud.IP.ListIPs(nil, nil)
+	resp, err := c.cloud.IP.ListIPs(nil, nil)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 
-func ipStatic(args []string) error {
-	ipAddress, err := getIPFromArgs(args)
+func (c *config) ipStatic(args []string) error {
+	ipAddress, err := c.getIPFromArgs(args)
 	if err != nil {
 		return err
 	}
@@ -167,14 +138,14 @@ func ipStatic(args []string) error {
 	}
 
 	params.SetBody(iur)
-	resp, err := cloud.IP.UpdateIP(params, nil)
+	resp, err := c.cloud.IP.UpdateIP(params, nil)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 
-func ipAllocate() error {
+func (c *config) ipAllocate() error {
 	params := ip.NewAllocateIPParams()
 	iar := &models.V1IPAllocateRequest{
 		Name:        *helper.ViperString("name"),
@@ -198,30 +169,30 @@ func ipAllocate() error {
 	}
 
 	params.SetBody(iar)
-	resp, err := cloud.IP.AllocateIP(params, nil)
+	resp, err := c.cloud.IP.AllocateIP(params, nil)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 
-func ipFree(args []string) error {
-	ipAddress, err := getIPFromArgs(args)
+func (c *config) ipFree(args []string) error {
+	ipAddress, err := c.getIPFromArgs(args)
 	if err != nil {
 		return err
 	}
 
 	params := ip.NewFreeIPParams()
 	params.SetIP(ipAddress)
-	resp, err := cloud.IP.FreeIP(params, nil)
+	resp, err := c.cloud.IP.FreeIP(params, nil)
 	if err != nil {
 		return err
 	}
 
-	return printer.Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 
-func getIPFromArgs(args []string) (string, error) {
+func (c *config) getIPFromArgs(args []string) (string, error) {
 	if len(args) < 1 {
 		return "", fmt.Errorf("no ip given")
 	}
@@ -230,7 +201,7 @@ func getIPFromArgs(args []string) (string, error) {
 	params := ip.NewGetIPParams()
 	params.SetIP(ipAddress)
 
-	_, err := cloud.IP.GetIP(params, nil)
+	_, err := c.cloud.IP.GetIP(params, nil)
 	if err != nil {
 		return "", err
 	}

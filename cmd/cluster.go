@@ -26,6 +26,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/fi-ts/cloudctl/cmd/output"
+	"github.com/fi-ts/cloudctl/pkg/api"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/spf13/cobra"
@@ -50,172 +51,6 @@ func (a auditConfigOptionsMap) Names(withDescription bool) []string {
 }
 
 var (
-	clusterCmd = &cobra.Command{
-		Use:   "cluster",
-		Short: "manage clusters",
-		Long:  "TODO",
-	}
-	clusterCreateCmd = &cobra.Command{
-		Use:   "create",
-		Short: "create a cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterCreate()
-		},
-		PreRun: bindPFlags,
-	}
-
-	clusterListCmd = &cobra.Command{
-		Use:     "list",
-		Short:   "list clusters",
-		Aliases: []string{"ls"},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterList()
-		},
-		PreRun: bindPFlags,
-	}
-	clusterDeleteCmd = &cobra.Command{
-		Use:     "delete <clusterid>",
-		Short:   "delete a cluster",
-		Aliases: []string{"rm"},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterDelete(args)
-		},
-		ValidArgsFunction: clusterListCompletionFunc,
-		PreRun:            bindPFlags,
-	}
-	clusterDescribeCmd = &cobra.Command{
-		Use:   "describe <clusterid>",
-		Short: "describe a cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterDescribe(args)
-		},
-		ValidArgsFunction: clusterListCompletionFunc,
-		PreRun:            bindPFlags,
-	}
-	clusterKubeconfigCmd = &cobra.Command{
-		Use:   "kubeconfig <clusterid>",
-		Short: "get cluster kubeconfig",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterKubeconfig(args)
-		},
-		ValidArgsFunction: clusterListCompletionFunc,
-		PreRun:            bindPFlags,
-	}
-
-	clusterReconcileCmd = &cobra.Command{
-		Use:   "reconcile <clusterid>",
-		Short: "trigger cluster reconciliation",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return reconcileCluster(args)
-		},
-		ValidArgsFunction: clusterListCompletionFunc,
-		PreRun:            bindPFlags,
-	}
-	clusterUpdateCmd = &cobra.Command{
-		Use:   "update <clusterid>",
-		Short: "update a cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return updateCluster(args)
-		},
-		ValidArgsFunction: clusterListCompletionFunc,
-		PreRun:            bindPFlags,
-	}
-	clusterInputsCmd = &cobra.Command{
-		Use:   "inputs",
-		Short: "get possible cluster inputs like k8s versions, etc.",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterInputs()
-		},
-		PreRun: bindPFlags,
-	}
-	clusterMachineCmd = &cobra.Command{
-		Use:     "machine",
-		Aliases: []string{"machines"},
-		Short:   "list and access machines in the cluster",
-	}
-	clusterMachineListCmd = &cobra.Command{
-		Use:     "ls <clusterid>",
-		Aliases: []string{"list"},
-		Short:   "list machines of the cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterMachines(args)
-		},
-		ValidArgsFunction: clusterListCompletionFunc,
-		PreRun:            bindPFlags,
-	}
-	clusterIssuesCmd = &cobra.Command{
-		Use:     "issues [<clusterid>]",
-		Aliases: []string{"problems", "warnings"},
-		Short:   "lists cluster issues, shows required actions explicitly when id argument is given",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterIssues(args)
-		},
-		ValidArgsFunction: clusterListCompletionFunc,
-		PreRun:            bindPFlags,
-	}
-	clusterMachineSSHCmd = &cobra.Command{
-		Use:   "ssh <clusterid>",
-		Short: "ssh access a machine/firewall of the cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterMachineSSH(args, false)
-		},
-		ValidArgsFunction: clusterListCompletionFunc,
-		PreRun:            bindPFlags,
-	}
-	clusterMachineConsoleCmd = &cobra.Command{
-		Use:   "console <clusterid>",
-		Short: "console access a machine/firewall of the cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterMachineSSH(args, true)
-		},
-		ValidArgsFunction: clusterListCompletionFunc,
-		PreRun:            bindPFlags,
-	}
-	clusterMachineResetCmd = &cobra.Command{
-		Use:   "reset <clusterid>",
-		Short: "hard power reset of a machine/firewall of the cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterMachineReset(args)
-		},
-		ValidArgsFunction: clusterListCompletionFunc,
-		PreRun:            bindPFlags,
-	}
-	clusterMachineCycleCmd = &cobra.Command{
-		Use:   "cycle <clusterid>",
-		Short: "soft power cycle of a machine/firewall of the cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterMachineCycle(args)
-		},
-		ValidArgsFunction: clusterListCompletionFunc,
-		PreRun:            bindPFlags,
-	}
-	clusterMachineReinstallCmd = &cobra.Command{
-		Use:   "reinstall <clusterid>",
-		Short: "reinstall OS image onto a machine/firewall of the cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterMachineReinstall(args)
-		},
-		ValidArgsFunction: clusterListCompletionFunc,
-		PreRun:            bindPFlags,
-	}
-	clusterLogsCmd = &cobra.Command{
-		Use:   "logs <clusterid>",
-		Short: "get logs for the cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterLogs(args)
-		},
-		ValidArgsFunction: clusterListCompletionFunc,
-		PreRun:            bindPFlags,
-	}
-	clusterSplunkConfigManifestCmd = &cobra.Command{
-		Use:   "splunk-config-manifest",
-		Short: "create a manifest for a custom splunk configuration, every provided provided overrides the default setting",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return clusterSplunkConfigManifest()
-		},
-		PreRun: bindPFlags,
-	}
-
 	// options
 	auditConfigOptions = auditConfigOptionsMap{
 		"off": {
@@ -242,11 +77,178 @@ var (
 	}
 )
 
-func init() {
+func newClusterCmd(c *config) *cobra.Command {
+	clusterCmd := &cobra.Command{
+		Use:   "cluster",
+		Short: "manage clusters",
+		Long:  "TODO",
+	}
+	clusterCreateCmd := &cobra.Command{
+		Use:   "create",
+		Short: "create a cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.clusterCreate()
+		},
+		PreRun: bindPFlags,
+	}
+
+	clusterListCmd := &cobra.Command{
+		Use:     "list",
+		Short:   "list clusters",
+		Aliases: []string{"ls"},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.clusterList()
+		},
+		PreRun: bindPFlags,
+	}
+	clusterDeleteCmd := &cobra.Command{
+		Use:     "delete <clusterid>",
+		Short:   "delete a cluster",
+		Aliases: []string{"rm"},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.clusterDelete(args)
+		},
+		ValidArgsFunction: c.comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterDescribeCmd := &cobra.Command{
+		Use:   "describe <clusterid>",
+		Short: "describe a cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.clusterDescribe(args)
+		},
+		ValidArgsFunction: c.comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterKubeconfigCmd := &cobra.Command{
+		Use:   "kubeconfig <clusterid>",
+		Short: "get cluster kubeconfig",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.clusterKubeconfig(args)
+		},
+		ValidArgsFunction: c.comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+
+	clusterReconcileCmd := &cobra.Command{
+		Use:   "reconcile <clusterid>",
+		Short: "trigger cluster reconciliation",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.reconcileCluster(args)
+		},
+		ValidArgsFunction: c.comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterUpdateCmd := &cobra.Command{
+		Use:   "update <clusterid>",
+		Short: "update a cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.updateCluster(args)
+		},
+		ValidArgsFunction: c.comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterInputsCmd := &cobra.Command{
+		Use:   "inputs",
+		Short: "get possible cluster inputs like k8s versions, etc.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.clusterInputs()
+		},
+		PreRun: bindPFlags,
+	}
+	clusterMachineCmd := &cobra.Command{
+		Use:     "machine",
+		Aliases: []string{"machines"},
+		Short:   "list and access machines in the cluster",
+	}
+	clusterMachineListCmd := &cobra.Command{
+		Use:     "ls <clusterid>",
+		Aliases: []string{"list"},
+		Short:   "list machines of the cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.clusterMachines(args)
+		},
+		ValidArgsFunction: c.comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterIssuesCmd := &cobra.Command{
+		Use:     "issues [<clusterid>]",
+		Aliases: []string{"problems", "warnings"},
+		Short:   "lists cluster issues, shows required actions explicitly when id argument is given",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.clusterIssues(args)
+		},
+		ValidArgsFunction: c.comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterMachineSSHCmd := &cobra.Command{
+		Use:   "ssh <clusterid>",
+		Short: "ssh access a machine/firewall of the cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.clusterMachineSSH(args, false)
+		},
+		ValidArgsFunction: c.comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterMachineConsoleCmd := &cobra.Command{
+		Use:   "console <clusterid>",
+		Short: "console access a machine/firewall of the cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.clusterMachineSSH(args, true)
+		},
+		ValidArgsFunction: c.comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterMachineResetCmd := &cobra.Command{
+		Use:   "reset <clusterid>",
+		Short: "hard power reset of a machine/firewall of the cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.clusterMachineReset(args)
+		},
+		ValidArgsFunction: c.comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterMachineCycleCmd := &cobra.Command{
+		Use:   "cycle <clusterid>",
+		Short: "soft power cycle of a machine/firewall of the cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.clusterMachineCycle(args)
+		},
+		ValidArgsFunction: c.comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterMachineReinstallCmd := &cobra.Command{
+		Use:   "reinstall <clusterid>",
+		Short: "reinstall OS image onto a machine/firewall of the cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.clusterMachineReinstall(args)
+		},
+		ValidArgsFunction: c.comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterLogsCmd := &cobra.Command{
+		Use:   "logs <clusterid>",
+		Short: "get logs for the cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.clusterLogs(args)
+		},
+		ValidArgsFunction: c.comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
+	clusterSplunkConfigManifestCmd := &cobra.Command{
+		Use:   "splunk-config-manifest",
+		Short: "create a manifest for a custom splunk configuration, every provided provided overrides the default setting",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.clusterSplunkConfigManifest()
+		},
+		PreRun: bindPFlags,
+	}
+
 	clusterCreateCmd.Flags().String("name", "", "name of the cluster, max 10 characters. [required]")
 	clusterCreateCmd.Flags().String("description", "", "description of the cluster. [optional]")
 	clusterCreateCmd.Flags().String("project", "", "project where this cluster should belong to. [required]")
 	clusterCreateCmd.Flags().String("partition", "", "partition of the cluster. [required]")
+	clusterCreateCmd.Flags().String("seed", "", "name of seed where this cluster should be scheduled. [optional]")
 	clusterCreateCmd.Flags().String("purpose", "evaluation", "purpose of the cluster, can be one of production|development|evaluation. SLA is only given on production clusters. [optional]")
 	clusterCreateCmd.Flags().String("version", "", "kubernetes version of the cluster. defaults to latest available, check cluster inputs for possible values. [optional]")
 	clusterCreateCmd.Flags().String("machinetype", "", "machine type to use for the nodes. [optional]")
@@ -267,121 +269,40 @@ func init() {
 	clusterCreateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced. [optional]")
 	clusterCreateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. [optional]")
 
-	err := clusterCreateCmd.MarkFlagRequired("name")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.MarkFlagRequired("project")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.MarkFlagRequired("partition")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return projectListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return partitionListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("external-networks", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return networkListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return versionListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("machinetype", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return machineTypeListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("machineimage", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return machineImageListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("firewalltype", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return firewallTypeListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("firewallimage", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return firewallImageListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("firewallcontroller", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return firewallControllerVersionListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	must(clusterCreateCmd.MarkFlagRequired("name"))
+	must(clusterCreateCmd.MarkFlagRequired("project"))
+	must(clusterCreateCmd.MarkFlagRequired("partition"))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("seed", c.comp.PartitionListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("external-networks", c.comp.NetworkListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("machinetype", c.comp.MachineTypeListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("machineimage", c.comp.MachineImageListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("firewalltype", c.comp.FirewallTypeListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("firewallimage", c.comp.FirewallImageListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("firewallcontroller", c.comp.FirewallControllerVersionListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"production", "development", "evaluation"}, cobra.ShellCompDirectiveNoFileComp
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("cri", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	}))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("cri", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"docker", "containerd"}, cobra.ShellCompDirectiveNoFileComp
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterCreateCmd.RegisterFlagCompletionFunc("audit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	}))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("audit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return auditConfigOptions.Names(true),
 			cobra.ShellCompDirectiveNoFileComp
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	}))
+
 	// Cluster list --------------------------------------------------------------------
 	clusterListCmd.Flags().String("id", "", "show clusters of given id")
 	clusterListCmd.Flags().String("name", "", "show clusters of given name")
 	clusterListCmd.Flags().String("project", "", "show clusters of given project")
 	clusterListCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterListCmd.Flags().String("tenant", "", "show clusters of given tenant")
-	err = clusterListCmd.RegisterFlagCompletionFunc("name", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return clusterNameCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return projectListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterListCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return partitionListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterListCmd.RegisterFlagCompletionFunc("tenant", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return tenantListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(clusterListCmd.RegisterFlagCompletionFunc("name", c.comp.ClusterNameCompletion))
+	must(clusterListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	must(clusterListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	must(clusterListCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
 
 	// Cluster update --------------------------------------------------------------------
 	clusterUpdateCmd.Flags().String("workergroup", "", "the name of the worker group to apply updates to, only required when there are multiple worker groups.")
@@ -406,55 +327,20 @@ func init() {
 	clusterUpdateCmd.Flags().String("maxunavailable", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("version", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return versionListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("firewalltype", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return firewallTypeListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("firewallimage", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return firewallImageListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("firewallcontroller", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return firewallControllerVersionListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("machinetype", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return machineTypeListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("machineimage", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return machineImageListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	must(clusterUpdateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
+	must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewalltype", c.comp.FirewallTypeListCompletion))
+	must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewallimage", c.comp.FirewallImageListCompletion))
+	must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewallcontroller", c.comp.FirewallControllerVersionListCompletion))
+	must(clusterUpdateCmd.RegisterFlagCompletionFunc("machinetype", c.comp.MachineTypeListCompletion))
+	must(clusterUpdateCmd.RegisterFlagCompletionFunc("machineimage", c.comp.MachineImageListCompletion))
+	must(clusterUpdateCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"production", "development", "evaluation"}, cobra.ShellCompDirectiveNoFileComp
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterUpdateCmd.RegisterFlagCompletionFunc("audit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	}))
+	must(clusterUpdateCmd.RegisterFlagCompletionFunc("audit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return auditConfigOptions.Names(true),
 			cobra.ShellCompDirectiveNoFileComp
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	}))
+
 	// Cluster splunk config manifest --------------------------------------------------------------------
 	clusterSplunkConfigManifestCmd.Flags().String("token", "", "the hec token to use for this cluster's audit logs")
 	clusterSplunkConfigManifestCmd.Flags().String("index", "", "the splunk index to use for this cluster's audit logs")
@@ -465,61 +351,26 @@ func init() {
 	clusterSplunkConfigManifestCmd.Flags().String("cabase64", "", "the base64-encoded ca certificate (chain) for the splunk HEC endpoint")
 	// Cluster machine ... --------------------------------------------------------------------
 	clusterMachineSSHCmd.Flags().String("machineid", "", "machine to connect to.")
-	err = clusterMachineSSHCmd.MarkFlagRequired("machineid")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterMachineSSHCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return clusterMachineListCompletion(args, false)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(clusterMachineSSHCmd.MarkFlagRequired("machineid"))
+	must(clusterMachineSSHCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterFirewallListCompletion))
+
 	clusterMachineConsoleCmd.Flags().String("machineid", "", "machine to connect to.")
-	err = clusterMachineConsoleCmd.MarkFlagRequired("machineid")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterMachineConsoleCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return clusterMachineListCompletion(args, true)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(clusterMachineConsoleCmd.MarkFlagRequired("machineid"))
+	must(clusterMachineConsoleCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterMachineListCompletion))
+
 	clusterMachineResetCmd.Flags().String("machineid", "", "machine to reset.")
-	err = clusterMachineResetCmd.MarkFlagRequired("machineid")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterMachineResetCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return clusterMachineListCompletion(args, true)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(clusterMachineResetCmd.MarkFlagRequired("machineid"))
+	must(clusterMachineResetCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterMachineListCompletion))
+
 	clusterMachineCycleCmd.Flags().String("machineid", "", "machine to reset.")
-	err = clusterMachineCycleCmd.MarkFlagRequired("machineid")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterMachineCycleCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return clusterMachineListCompletion(args, true)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(clusterMachineCycleCmd.MarkFlagRequired("machineid"))
+	must(clusterMachineCycleCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterMachineListCompletion))
+
 	clusterMachineReinstallCmd.Flags().String("machineid", "", "machine to reinstall.")
 	clusterMachineReinstallCmd.Flags().String("machineimage", "", "image to reinstall (optional).")
-	err = clusterMachineReinstallCmd.MarkFlagRequired("machineid")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterMachineReinstallCmd.RegisterFlagCompletionFunc("machineid", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return clusterMachineListCompletion(args, true)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(clusterMachineReinstallCmd.MarkFlagRequired("machineid"))
+	must(clusterMachineReinstallCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterMachineListCompletion))
+
 	clusterMachineCmd.AddCommand(clusterMachineListCmd)
 	clusterMachineCmd.AddCommand(clusterMachineSSHCmd)
 	clusterMachineCmd.AddCommand(clusterMachineConsoleCmd)
@@ -536,30 +387,10 @@ func init() {
 	clusterIssuesCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterIssuesCmd.Flags().String("tenant", "", "show clusters of given tenant")
 
-	err = clusterIssuesCmd.RegisterFlagCompletionFunc("name", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return clusterNameCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterIssuesCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return projectListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterIssuesCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return partitionListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = clusterIssuesCmd.RegisterFlagCompletionFunc("tenant", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return tenantListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(clusterIssuesCmd.RegisterFlagCompletionFunc("name", c.comp.ClusterNameCompletion))
+	must(clusterIssuesCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	must(clusterIssuesCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	must(clusterIssuesCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
 
 	clusterKubeconfigCmd.Flags().Bool("merge", false, "merges the cluster's kubeconfig into the current active kubeconfig, otherwise an individual kubeconfig is printed to console only")
 	clusterKubeconfigCmd.Flags().Bool("set-context", false, "when setting the merge parameter to true, immediately activates the cluster's context")
@@ -576,12 +407,15 @@ func init() {
 	clusterCmd.AddCommand(clusterLogsCmd)
 	clusterCmd.AddCommand(clusterIssuesCmd)
 	clusterCmd.AddCommand(clusterSplunkConfigManifestCmd)
+
+	return clusterCmd
 }
 
-func clusterCreate() error {
+func (c *config) clusterCreate() error {
 	name := viper.GetString("name")
 	desc := viper.GetString("description")
 	partition := viper.GetString("partition")
+	seed := viper.GetString("seed")
 	project := viper.GetString("project")
 	purpose := viper.GetString("purpose")
 	machineType := viper.GetString("machinetype")
@@ -614,7 +448,7 @@ func clusterCreate() error {
 	version := viper.GetString("version")
 	if version == "" {
 		request := cluster.NewListConstraintsParams()
-		constraints, err := cloud.Cluster.ListConstraints(request, nil)
+		constraints, err := c.cloud.Cluster.ListConstraints(request, nil)
 		if err != nil {
 			return err
 		}
@@ -704,6 +538,9 @@ func clusterCreate() error {
 		AdditionalNetworks: networks,
 		PartitionID:        &partition,
 	}
+	if seed != "" {
+		scr.SeedName = seed
+	}
 
 	egressRules := makeEgressRules(egress)
 	if len(egressRules) > 0 {
@@ -720,14 +557,14 @@ func clusterCreate() error {
 
 	request := cluster.NewCreateClusterParams()
 	request.SetBody(scr)
-	shoot, err := cloud.Cluster.CreateCluster(request, nil)
+	shoot, err := c.cloud.Cluster.CreateCluster(request, nil)
 	if err != nil {
 		return err
 	}
-	return printer.Print(shoot.Payload)
+	return output.New().Print(shoot.Payload)
 }
 
-func clusterList() error {
+func (c *config) clusterList() error {
 	id := viper.GetString("id")
 	name := viper.GetString("name")
 	tenant := viper.GetString("tenant")
@@ -756,30 +593,30 @@ func clusterList() error {
 	if cfr != nil {
 		fcp := cluster.NewFindClustersParams()
 		fcp.SetBody(cfr)
-		response, err := cloud.Cluster.FindClusters(fcp, nil)
+		response, err := c.cloud.Cluster.FindClusters(fcp, nil)
 		if err != nil {
 			return err
 		}
-		return printer.Print(response.Payload)
+		return output.New().Print(response.Payload)
 	}
 
 	request := cluster.NewListClustersParams()
-	shoots, err := cloud.Cluster.ListClusters(request, nil)
+	shoots, err := c.cloud.Cluster.ListClusters(request, nil)
 	if err != nil {
 		return err
 	}
-	return printer.Print(shoots.Payload)
+	return output.New().Print(shoots.Payload)
 }
 
-func clusterKubeconfig(args []string) error {
-	id, err := clusterID("credentials", args)
+func (c *config) clusterKubeconfig(args []string) error {
+	id, err := c.clusterID("credentials", args)
 	if err != nil {
 		return err
 	}
 
 	request := cluster.NewGetClusterKubeconfigTplParams()
 	request.SetID(id)
-	credentials, err := cloud.Cluster.GetClusterKubeconfigTpl(request, nil)
+	credentials, err := c.cloud.Cluster.GetClusterKubeconfigTpl(request, nil)
 	if err != nil {
 		return err
 	}
@@ -787,7 +624,7 @@ func clusterKubeconfig(args []string) error {
 	kubeconfigTpl := *credentials.Payload.Kubeconfig // is a kubeconfig with only a single cluster entry
 
 	kubeconfigFile := viper.GetString("kubeconfig")
-	authContext, err := getAuthContext(kubeconfigFile)
+	authContext, err := api.GetAuthContext(kubeconfigFile)
 	if err != nil {
 		return err
 	}
@@ -810,7 +647,7 @@ func clusterKubeconfig(args []string) error {
 		return err
 	}
 
-	clusterResp, err := cloud.Cluster.FindCluster(cluster.NewFindClusterParams().WithID(id), nil)
+	clusterResp, err := c.cloud.Cluster.FindCluster(cluster.NewFindClusterParams().WithID(id), nil)
 	if err != nil {
 		return err
 	}
@@ -841,10 +678,10 @@ type sshkeypair struct {
 	publickey  []byte
 }
 
-func sshKeyPair(clusterID string) (*sshkeypair, error) {
+func (c *config) sshKeyPair(clusterID string) (*sshkeypair, error) {
 	request := cluster.NewGetSSHKeyPairParams()
 	request.SetID(clusterID)
-	credentials, err := cloud.Cluster.GetSSHKeyPair(request, nil)
+	credentials, err := c.cloud.Cluster.GetSSHKeyPair(request, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -862,8 +699,8 @@ func sshKeyPair(clusterID string) (*sshkeypair, error) {
 	}, nil
 }
 
-func reconcileCluster(args []string) error {
-	ci, err := clusterID("reconcile", args)
+func (c *config) reconcileCluster(args []string) error {
+	ci, err := c.clusterID("reconcile", args)
 	if err != nil {
 		return err
 	}
@@ -886,15 +723,15 @@ func reconcileCluster(args []string) error {
 	}
 	request.Body = &models.V1ClusterReconcileRequest{Operation: operation}
 
-	shoot, err := cloud.Cluster.ReconcileCluster(request, nil)
+	shoot, err := c.cloud.Cluster.ReconcileCluster(request, nil)
 	if err != nil {
 		return err
 	}
-	return printer.Print(shoot.Payload)
+	return output.New().Print(shoot.Payload)
 }
 
-func updateCluster(args []string) error {
-	ci, err := clusterID("update", args)
+func (c *config) updateCluster(args []string) error {
+	ci, err := c.clusterID("update", args)
 	if err != nil {
 		return err
 	}
@@ -917,7 +754,7 @@ func updateCluster(args []string) error {
 
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	resp, err := cloud.Cluster.FindCluster(findRequest, nil)
+	resp, err := c.cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
@@ -1102,15 +939,15 @@ func updateCluster(args []string) error {
 	}
 
 	request.SetBody(cur)
-	shoot, err := cloud.Cluster.UpdateCluster(request, nil)
+	shoot, err := c.cloud.Cluster.UpdateCluster(request, nil)
 	if err != nil {
 		return err
 	}
-	return printer.Print(shoot.Payload)
+	return output.New().Print(shoot.Payload)
 }
 
-func clusterDelete(args []string) error {
-	ci, err := clusterID("delete", args)
+func (c *config) clusterDelete(args []string) error {
+	ci, err := c.clusterID("delete", args)
 	if err != nil {
 		return err
 	}
@@ -1120,12 +957,13 @@ func clusterDelete(args []string) error {
 	// local storage only could lead to very big problems for users.
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	resp, err := cloud.Cluster.FindCluster(findRequest, nil)
+	resp, err := c.cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
 
-	printer.Print(resp.Payload)
+	must(output.New().Print(resp.Payload))
+
 	firstPartOfClusterID := strings.Split(*resp.Payload.ID, "-")[0]
 	fmt.Println("Please answer some security questions to delete this cluster")
 	err = helper.Prompt("first part of clusterID:", firstPartOfClusterID)
@@ -1139,28 +977,28 @@ func clusterDelete(args []string) error {
 
 	request := cluster.NewDeleteClusterParams()
 	request.SetID(ci)
-	c, err := cloud.Cluster.DeleteCluster(request, nil)
+	cl, err := c.cloud.Cluster.DeleteCluster(request, nil)
 	if err != nil {
 		return err
 	}
-	return printer.Print(c.Payload)
+	return output.New().Print(cl.Payload)
 }
 
-func clusterDescribe(args []string) error {
-	ci, err := clusterID("describe", args)
+func (c *config) clusterDescribe(args []string) error {
+	ci, err := c.clusterID("describe", args)
 	if err != nil {
 		return err
 	}
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
+	shoot, err := c.cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
-	return printer.Print(shoot.Payload)
+	return output.New().Print(shoot.Payload)
 }
 
-func clusterIssues(args []string) error {
+func (c *config) clusterIssues(args []string) error {
 	if len(args) == 0 {
 		id := viper.GetString("id")
 		name := viper.GetString("name")
@@ -1192,70 +1030,67 @@ func clusterIssues(args []string) error {
 		if cfr != nil {
 			fcp := cluster.NewFindClustersParams().WithReturnMachines(&boolTrue)
 			fcp.SetBody(cfr)
-			response, err := cloud.Cluster.FindClusters(fcp, nil)
+			response, err := c.cloud.Cluster.FindClusters(fcp, nil)
 			if err != nil {
 				return err
 			}
-			return printer.Print(output.ShootIssuesResponses(response.Payload))
+			return output.New().Print(output.ShootIssuesResponses(response.Payload))
 		}
 
 		request := cluster.NewListClustersParams().WithReturnMachines(&boolTrue)
-		shoots, err := cloud.Cluster.ListClusters(request, nil)
+		shoots, err := c.cloud.Cluster.ListClusters(request, nil)
 		if err != nil {
 			return err
 		}
-		return printer.Print(output.ShootIssuesResponses(shoots.Payload))
+		return output.New().Print(output.ShootIssuesResponses(shoots.Payload))
 	}
 
-	ci, err := clusterID("issues", args)
+	ci, err := c.clusterID("issues", args)
 	if err != nil {
 		return err
 	}
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
+	shoot, err := c.cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
-	return printer.Print(output.ShootIssuesResponse(shoot.Payload))
+	return output.New().Print(output.ShootIssuesResponse(shoot.Payload))
 }
 
-func clusterMachines(args []string) error {
-	ci, err := clusterID("machines", args)
+func (c *config) clusterMachines(args []string) error {
+	ci, err := c.clusterID("machines", args)
 	if err != nil {
 		return err
 	}
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
+	shoot, err := c.cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
 
-	if printer.Type() != "table" {
-		return printer.Print(shoot.Payload)
+	if output.New().Type() != "table" {
+		return output.New().Print(shoot.Payload)
 	}
 
 	fmt.Println("Cluster:")
-	printer.Print(shoot.Payload)
-
-	// FIXME this is a ugly hack to reset the printer and have a new header.
-	initPrinter()
+	must(output.New().Print(shoot.Payload))
 
 	ms := shoot.Payload.Machines
 	ms = append(ms, shoot.Payload.Firewalls...)
 	fmt.Println("\nMachines:")
-	return printer.Print(ms)
+	return output.New().Print(ms)
 }
 
-func clusterLogs(args []string) error {
-	ci, err := clusterID("logs", args)
+func (c *config) clusterLogs(args []string) error {
+	ci, err := c.clusterID("logs", args)
 	if err != nil {
 		return err
 	}
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
+	shoot, err := c.cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
@@ -1268,13 +1103,13 @@ func clusterLogs(args []string) error {
 		lastErrors = shoot.Payload.Status.LastErrors
 	}
 
-	if printer.Type() != "table" {
+	if output.New().Type() != "table" {
 		type s struct {
 			Conditions    []*models.V1beta1Condition
 			LastOperation *models.V1beta1LastOperation
 			LastErrors    []*models.V1beta1LastError
 		}
-		return printer.Print(s{
+		return output.New().Print(s{
 			Conditions:    conditions,
 			LastOperation: lastOperation,
 			LastErrors:    lastErrors,
@@ -1282,38 +1117,32 @@ func clusterLogs(args []string) error {
 	}
 
 	fmt.Println("Conditions:")
-	err = printer.Print(conditions)
+	err = output.New().Print(conditions)
 	if err != nil {
 		return err
 	}
-
-	// FIXME this is a ugly hack to reset the printer and have a new header.
-	initPrinter()
 
 	fmt.Println("\nLast Errors:")
-	err = printer.Print(lastErrors)
+	err = output.New().Print(lastErrors)
 	if err != nil {
 		return err
 	}
-
-	// FIXME this is a ugly hack to reset the printer and have a new header.
-	initPrinter()
 
 	fmt.Println("\nLast Operation:")
-	return printer.Print(lastOperation)
+	return output.New().Print(lastOperation)
 }
 
-func clusterInputs() error {
+func (c *config) clusterInputs() error {
 	request := cluster.NewListConstraintsParams()
-	sc, err := cloud.Cluster.ListConstraints(request, nil)
+	sc, err := c.cloud.Cluster.ListConstraints(request, nil)
 	if err != nil {
 		return err
 	}
 
-	return output.YAMLPrinter{}.Print(sc)
+	return output.New().Print(sc)
 }
 
-func clusterSplunkConfigManifest() error {
+func (c *config) clusterSplunkConfigManifest() error {
 	secret := corev1.Secret{
 		TypeMeta:   v1.TypeMeta{Kind: "Secret", APIVersion: "v1"},
 		ObjectMeta: v1.ObjectMeta{Name: "splunk-config", Namespace: "kube-system"},
@@ -1363,8 +1192,8 @@ func clusterSplunkConfigManifest() error {
 	return nil
 }
 
-func clusterMachineReset(args []string) error {
-	cid, err := clusterID("reset", args)
+func (c *config) clusterMachineReset(args []string) error {
+	cid, err := c.clusterID("reset", args)
 	if err != nil {
 		return err
 	}
@@ -1374,7 +1203,7 @@ func clusterMachineReset(args []string) error {
 	request.SetID(cid)
 	request.Body = &models.V1ClusterMachineResetRequest{Machineid: &mid}
 
-	shoot, err := cloud.Cluster.ResetMachine(request, nil)
+	shoot, err := c.cloud.Cluster.ResetMachine(request, nil)
 	if err != nil {
 		return err
 	}
@@ -1382,11 +1211,11 @@ func clusterMachineReset(args []string) error {
 	ms := shoot.Payload.Machines
 	ms = append(ms, shoot.Payload.Firewalls...)
 
-	return printer.Print(ms)
+	return output.New().Print(ms)
 }
 
-func clusterMachineCycle(args []string) error {
-	cid, err := clusterID("reset", args)
+func (c *config) clusterMachineCycle(args []string) error {
+	cid, err := c.clusterID("reset", args)
 	if err != nil {
 		return err
 	}
@@ -1396,7 +1225,7 @@ func clusterMachineCycle(args []string) error {
 	request.SetID(cid)
 	request.Body = &models.V1ClusterMachineCycleRequest{Machineid: &mid}
 
-	shoot, err := cloud.Cluster.CycleMachine(request, nil)
+	shoot, err := c.cloud.Cluster.CycleMachine(request, nil)
 	if err != nil {
 		return err
 	}
@@ -1404,11 +1233,11 @@ func clusterMachineCycle(args []string) error {
 	ms := shoot.Payload.Machines
 	ms = append(ms, shoot.Payload.Firewalls...)
 
-	return printer.Print(ms)
+	return output.New().Print(ms)
 }
 
-func clusterMachineReinstall(args []string) error {
-	cid, err := clusterID("reinstall", args)
+func (c *config) clusterMachineReinstall(args []string) error {
+	cid, err := c.clusterID("reinstall", args)
 	if err != nil {
 		return err
 	}
@@ -1422,7 +1251,7 @@ func clusterMachineReinstall(args []string) error {
 		request.Body.Imageid = img
 	}
 
-	shoot, err := cloud.Cluster.ReinstallMachine(request, nil)
+	shoot, err := c.cloud.Cluster.ReinstallMachine(request, nil)
 	if err != nil {
 		return err
 	}
@@ -1430,11 +1259,11 @@ func clusterMachineReinstall(args []string) error {
 	ms := shoot.Payload.Machines
 	ms = append(ms, shoot.Payload.Firewalls...)
 
-	return printer.Print(ms)
+	return output.New().Print(ms)
 }
 
-func clusterMachineSSH(args []string, console bool) error {
-	cid, err := clusterID("ssh", args)
+func (c *config) clusterMachineSSH(args []string, console bool) error {
+	cid, err := c.clusterID("ssh", args)
 	if err != nil {
 		return err
 	}
@@ -1442,12 +1271,12 @@ func clusterMachineSSH(args []string, console bool) error {
 
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(cid)
-	shoot, err := cloud.Cluster.FindCluster(findRequest, nil)
+	shoot, err := c.cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
 
-	keypair, err := sshKeyPair(cid)
+	keypair, err := c.sshKeyPair(cid)
 	if err != nil {
 		return err
 	}
@@ -1459,7 +1288,7 @@ func clusterMachineSSH(args []string, console bool) error {
 			if err != nil {
 				return fmt.Errorf("unable determine home directory:%w", err)
 			}
-			privateKeyFile := path.Join(home, "."+programName, "."+cid+".id_rsa")
+			privateKeyFile := path.Join(home, "."+c.name, "."+cid+".id_rsa")
 			err = os.WriteFile(privateKeyFile, keypair.privatekey, 0600)
 			if err != nil {
 				return fmt.Errorf("unable to write private key:%s error:%w", privateKeyFile, err)
@@ -1467,7 +1296,7 @@ func clusterMachineSSH(args []string, console bool) error {
 			defer os.Remove(privateKeyFile)
 			if console {
 				fmt.Printf("access console via ssh\n")
-				authContext, err := getAuthContext(viper.GetString("kubeconfig"))
+				authContext, err := api.GetAuthContext(viper.GetString("kubeconfig"))
 				if err != nil {
 					return err
 				}
@@ -1476,7 +1305,7 @@ func clusterMachineSSH(args []string, console bool) error {
 					return err
 				}
 				bmcConsolePort := "5222"
-				err = ssh("-i", privateKeyFile, mid+"@"+consoleHost, "-p", bmcConsolePort)
+				err = ssh("-i", privateKeyFile, mid+"@"+c.consoleHost, "-p", bmcConsolePort)
 				return err
 			}
 			networks := m.Allocation.Networks
@@ -1534,7 +1363,7 @@ func portOpen(ip string, port string, timeout time.Duration) bool {
 	return false
 }
 
-func clusterID(verb string, args []string) (string, error) {
+func (c *config) clusterID(verb string, args []string) (string, error) {
 	if len(args) == 0 {
 		return "", fmt.Errorf("cluster %s requires clusterID as argument", verb)
 	}
