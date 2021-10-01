@@ -364,6 +364,9 @@ func NewDashboardClusterPane(cloud *client.CloudAPI) *dashboardClusterPane {
 	d.clusterHealth.BarWidth = 5
 	d.clusterHealth.BarGap = 10
 	d.clusterHealth.BarColors = []ui.Color{ui.ColorGreen, ui.ColorYellow, ui.ColorRed}
+	if viper.GetString("color-theme") == "default" {
+		d.clusterHealth.NumStyles = []ui.Style{{Fg: ui.ColorWhite}, {Fg: ui.ColorWhite}, {Fg: ui.ColorBlack}}
+	}
 
 	d.clusterStatusAPI = widgets.NewGauge()
 	d.clusterStatusAPI.Title = "API"
@@ -596,6 +599,9 @@ func NewDashboardVolumePane(cloud *client.CloudAPI) *dashboardVolumePane {
 	d.volumeProtectionState.BarWidth = 5
 	d.volumeProtectionState.BarGap = 10
 	d.volumeProtectionState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorYellow, ui.ColorRed, ui.ColorRed, ui.ColorRed}
+	if viper.GetString("color-theme") == "default" {
+		d.volumeProtectionState.NumStyles = []ui.Style{{Fg: ui.ColorWhite}, {Fg: ui.ColorWhite}, {Fg: ui.ColorBlack}, {Fg: ui.ColorWhite}, {Fg: ui.ColorWhite}}
+	}
 
 	d.volumeState = widgets.NewBarChart()
 	d.volumeState.Labels = []string{"Available", "Failed", "Unknown", "Other"}
@@ -604,6 +610,9 @@ func NewDashboardVolumePane(cloud *client.CloudAPI) *dashboardVolumePane {
 	d.volumeState.BarWidth = 5
 	d.volumeState.BarGap = 10
 	d.volumeState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorRed, ui.ColorRed, ui.ColorYellow}
+	if viper.GetString("color-theme") == "default" {
+		d.volumeState.NumStyles = []ui.Style{{Fg: ui.ColorBlack}, {Fg: ui.ColorWhite}, {Fg: ui.ColorWhite}, {Fg: ui.ColorWhite}}
+	}
 
 	d.volumeUsedSpace = widgets.NewParagraph()
 	d.volumeUsedSpace.Title = "Volume Infos"
@@ -622,6 +631,9 @@ func NewDashboardVolumePane(cloud *client.CloudAPI) *dashboardVolumePane {
 	d.clusterState.BarWidth = 5
 	d.clusterState.BarGap = 10
 	d.clusterState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorYellow, ui.ColorRed, ui.ColorRed}
+	if viper.GetString("color-theme") == "default" {
+		d.clusterState.NumStyles = []ui.Style{{Fg: ui.ColorWhite}, {Fg: ui.ColorWhite}, {Fg: ui.ColorBlack}, {Fg: ui.ColorWhite}}
+	}
 
 	d.serverState = widgets.NewBarChart()
 	d.serverState.Labels = []string{"Enabled", "Disabled", "Failed", "Other"}
@@ -630,6 +642,9 @@ func NewDashboardVolumePane(cloud *client.CloudAPI) *dashboardVolumePane {
 	d.serverState.BarWidth = 5
 	d.serverState.BarGap = 10
 	d.serverState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorYellow, ui.ColorRed, ui.ColorYellow}
+	if viper.GetString("color-theme") == "default" {
+		d.serverState.NumStyles = []ui.Style{{Fg: ui.ColorBlack}, {Fg: ui.ColorWhite}, {Fg: ui.ColorBlack}, {Fg: ui.ColorWhite}}
+	}
 
 	d.cloud = cloud
 	return d
