@@ -7,7 +7,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.13.0
 	github.com/fi-ts/cloud-go v0.17.20
-	github.com/gardener/gardener v1.21.2
+	github.com/gardener/gardener v1.22.6
 	github.com/gizak/termui/v3 v3.1.0
 	github.com/go-openapi/errors v0.20.1 // indirect
 	github.com/go-openapi/strfmt v0.20.2
