@@ -38,9 +38,6 @@ func (c *Completion) ContextListCompletion(cmd *cobra.Command, args []string, to
 }
 
 func (c *Completion) ClusterListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) != 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
 	request := cluster.NewListClustersParams()
 	response, err := c.cloud.Cluster.ListClusters(request, nil)
 	if err != nil {
@@ -55,9 +52,6 @@ func (c *Completion) ClusterListCompletion(cmd *cobra.Command, args []string, to
 }
 
 func (c *Completion) ClusterNameCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) != 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
 	request := cluster.NewListClustersParams()
 	response, err := c.cloud.Cluster.ListClusters(request, nil)
 	if err != nil {
@@ -100,9 +94,6 @@ func (c *Completion) clusterMachineListCompletion(clusterIDs []string, includeMa
 }
 
 func (c *Completion) ProjectListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) != 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
 	request := project.NewListProjectsParams()
 	response, err := c.cloud.Project.ListProjects(request, nil)
 	if err != nil {
@@ -117,9 +108,6 @@ func (c *Completion) ProjectListCompletion(cmd *cobra.Command, args []string, to
 }
 
 func (c *Completion) PartitionListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) != 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
 	request := cluster.NewListConstraintsParams()
 	sc, err := c.cloud.Cluster.ListConstraints(request, nil)
 	if err != nil {
@@ -130,9 +118,6 @@ func (c *Completion) PartitionListCompletion(cmd *cobra.Command, args []string, 
 }
 
 func (c *Completion) TenantListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) != 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
 	request := tenant.NewListTenantsParams()
 	ts, err := c.cloud.Tenant.ListTenants(request, nil)
 	if err != nil {
@@ -149,9 +134,6 @@ func (c *Completion) TenantListCompletion(cmd *cobra.Command, args []string, toC
 }
 
 func (c *Completion) VolumeListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) != 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
 	request := volume.NewListVolumesParams()
 	response, err := c.cloud.Volume.ListVolumes(request, nil)
 	if err != nil {
@@ -170,9 +152,6 @@ func (c *Completion) VolumeListCompletion(cmd *cobra.Command, args []string, toC
 }
 
 func (c *Completion) NetworkListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) != 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
 	request := cluster.NewListConstraintsParams()
 	sc, err := c.cloud.Cluster.ListConstraints(request, nil)
 	if err != nil {
@@ -183,9 +162,6 @@ func (c *Completion) NetworkListCompletion(cmd *cobra.Command, args []string, to
 	return sc.Payload.Networks, cobra.ShellCompDirectiveNoFileComp
 }
 func (c *Completion) VersionListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) != 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
 	request := cluster.NewListConstraintsParams()
 	sc, err := c.cloud.Cluster.ListConstraints(request, nil)
 	if err != nil {
@@ -196,9 +172,6 @@ func (c *Completion) VersionListCompletion(cmd *cobra.Command, args []string, to
 }
 
 func (c *Completion) MachineTypeListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) != 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
 	request := cluster.NewListConstraintsParams()
 	sc, err := c.cloud.Cluster.ListConstraints(request, nil)
 	if err != nil {
@@ -209,9 +182,6 @@ func (c *Completion) MachineTypeListCompletion(cmd *cobra.Command, args []string
 }
 
 func (c *Completion) MachineImageListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) != 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
 	request := cluster.NewListConstraintsParams()
 	sc, err := c.cloud.Cluster.ListConstraints(request, nil)
 	if err != nil {
@@ -227,9 +197,6 @@ func (c *Completion) MachineImageListCompletion(cmd *cobra.Command, args []strin
 }
 
 func (c *Completion) FirewallTypeListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) != 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
 	request := cluster.NewListConstraintsParams()
 	sc, err := c.cloud.Cluster.ListConstraints(request, nil)
 	if err != nil {
@@ -240,9 +207,6 @@ func (c *Completion) FirewallTypeListCompletion(cmd *cobra.Command, args []strin
 }
 
 func (c *Completion) FirewallImageListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) != 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
 	request := cluster.NewListConstraintsParams()
 	sc, err := c.cloud.Cluster.ListConstraints(request, nil)
 	if err != nil {
@@ -253,9 +217,6 @@ func (c *Completion) FirewallImageListCompletion(cmd *cobra.Command, args []stri
 }
 
 func (c *Completion) FirewallControllerVersionListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) != 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
 	request := cluster.NewListConstraintsParams()
 	sc, err := c.cloud.Cluster.ListConstraints(request, nil)
 	if err != nil {
@@ -273,9 +234,6 @@ func (c *Completion) FirewallControllerVersionListCompletion(cmd *cobra.Command,
 }
 
 func (c *Completion) S3ListPartitionsCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) != 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
 	request := s3.NewLists3partitionsParams()
 	response, err := c.cloud.S3.Lists3partitions(request, nil)
 	if err != nil {
@@ -289,9 +247,6 @@ func (c *Completion) S3ListPartitionsCompletion(cmd *cobra.Command, args []strin
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
 func (c *Completion) PostgresListPartitionsCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) != 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
 	request := database.NewGetPostgresPartitionsParams()
 	response, err := c.cloud.Database.GetPostgresPartitions(request, nil)
 	if err != nil {
@@ -306,9 +261,6 @@ func (c *Completion) PostgresListPartitionsCompletion(cmd *cobra.Command, args [
 }
 
 func (c *Completion) PostgresListVersionsCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) != 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
 	request := database.NewGetPostgresVersionsParams()
 	response, err := c.cloud.Database.GetPostgresVersions(request, nil)
 	if err != nil {
