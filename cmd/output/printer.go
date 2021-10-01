@@ -4,24 +4,29 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"text/template"
 
+	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/pkg/api"
+	"github.com/spf13/viper"
 
 	"github.com/olekukonko/tablewriter"
 	"gopkg.in/yaml.v3"
 )
 
 type (
-	// Printer main Interface for implementations which spits out to stdout
+	// Printer main Interface for implementations which spits out to specified Writer
 	Printer interface {
 		Print(data interface{}) error
 		Type() string
 	}
-	TablePrinter struct {
+	tablePrinter struct {
 		table       *tablewriter.Table
+		format      string
 		wide        bool
 		order       string
 		noHeaders   bool
@@ -30,16 +35,21 @@ type (
 		wideHeader  []string
 		shortData   [][]string
 		wideData    [][]string
+		outWriter   io.Writer
 	}
-	// JSONPrinter returns the model in json format
-	JSONPrinter struct{}
-	// YAMLPrinter returns the model in yaml format
-	YAMLPrinter struct{}
+	// jsonPrinter returns the model in json format
+	jsonPrinter struct {
+		outWriter io.Writer
+	}
+	// yamlPrinter returns the model in yaml format
+	yamlPrinter struct {
+		outWriter io.Writer
+	}
 	// TablePrinter produces a human readable model representation
 )
 
 // render the table shortHeader and shortData are always expected.
-func (t *TablePrinter) render() {
+func (t *tablePrinter) render() {
 	if t.template == nil {
 		if !t.noHeaders {
 			if t.wide {
@@ -71,13 +81,13 @@ func (t *TablePrinter) render() {
 	}
 	t.table.ClearRows()
 }
-func (t *TablePrinter) addShortData(row []string, data interface{}) {
+func (t *tablePrinter) addShortData(row []string, data interface{}) {
 	if t.wide {
 		return
 	}
 	t.shortData = append(t.shortData, t.rowOrTemplate(row, data))
 }
-func (t *TablePrinter) addWideData(row []string, data interface{}) {
+func (t *tablePrinter) addWideData(row []string, data interface{}) {
 	if !t.wide {
 		return
 	}
@@ -85,7 +95,7 @@ func (t *TablePrinter) addWideData(row []string, data interface{}) {
 }
 
 // rowOrTemplate return either given row or the data rendered with the given template, depending if template is set.
-func (t *TablePrinter) rowOrTemplate(row []string, data interface{}) []string {
+func (t *tablePrinter) rowOrTemplate(row []string, data interface{}) []string {
 	tpl := t.template
 	if tpl != nil {
 		var buf bytes.Buffer
@@ -117,38 +127,62 @@ func genericObject(input interface{}) map[string]interface{} {
 
 }
 
-// NewPrinter returns a suitable stdout printer for the given format
-func NewPrinter(format, order, tpl string, noHeaders bool) (Printer, error) {
+// New returns a suitable stdout printer for the given format
+func New() Printer {
+	printer, err := newPrinter(
+		viper.GetString("output-format"),
+		viper.GetString("order"),
+		viper.GetString("template"),
+		viper.GetBool("no-headers"),
+		os.Stdout,
+	)
+	if err != nil {
+		log.Fatalf("unable to initialize printer:%v", err)
+	}
+	return printer
+}
+
+// newPrinter returns a suitable stdout printer for the given format
+func newPrinter(format, order, tpl string, noHeaders bool, writer io.Writer) (Printer, error) {
+	if format == "" {
+		format = "table"
+	}
 	var printer Printer
 	switch format {
 	case "yaml":
-		printer = &YAMLPrinter{}
+		printer = &yamlPrinter{
+			outWriter: writer,
+		}
 	case "json":
-		printer = &JSONPrinter{}
+		printer = &jsonPrinter{
+			outWriter: writer,
+		}
 	case "table", "wide":
-		printer = newTablePrinter(format, order, noHeaders, nil)
+		printer = newTablePrinter(format, order, noHeaders, nil, writer)
 	case "template":
 		tmpl, err := template.New("").Parse(tpl)
 		if err != nil {
 			return nil, fmt.Errorf("template invalid:%w", err)
 		}
-		printer = newTablePrinter(format, order, true, tmpl)
+		printer = newTablePrinter(format, order, true, tmpl, writer)
 	default:
 		return nil, fmt.Errorf("unknown format:%s", format)
 	}
 	return printer, nil
 }
 
-func newTablePrinter(format, order string, noHeaders bool, template *template.Template) TablePrinter {
-	tp := TablePrinter{
+func newTablePrinter(format, order string, noHeaders bool, template *template.Template, writer io.Writer) tablePrinter {
+	tp := tablePrinter{
+		format:    format,
 		wide:      false,
 		order:     order,
 		noHeaders: noHeaders,
+		outWriter: writer,
 	}
-	table := tablewriter.NewWriter(os.Stdout)
 	if format == "wide" {
 		tp.wide = true
 	}
+	table := tablewriter.NewWriter(writer)
 	switch format {
 	case "template":
 		tp.template = template
@@ -167,30 +201,25 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 		table.SetTablePadding("\t") // pad with tabs
 		table.SetNoWhiteSpace(true) // no whitespace in front of every line
 	}
+
 	tp.table = table
 	return tp
 }
 
-func (t TablePrinter) Type() string {
+func (t tablePrinter) Type() string {
 	return "table"
 }
 
 // Print a model in a human readable table
-func (t TablePrinter) Print(data interface{}) error {
+func (t tablePrinter) Print(data interface{}) error {
 	switch d := data.(type) {
 	case *models.V1ClusterResponse:
 		ShootTablePrinter{t}.Print([]*models.V1ClusterResponse{d})
 	case []*models.V1ClusterResponse:
-		if t.order == "" {
-			t.order = "tenant,project,name"
-		}
 		ShootTablePrinter{t}.Print(d)
 	case ShootIssuesResponse:
 		ShootIssuesTablePrinter{t}.Print([]*models.V1ClusterResponse{d})
 	case ShootIssuesResponses:
-		if t.order == "" {
-			t.order = "tenant,project,name"
-		}
 		ShootIssuesTablePrinter{t}.Print(d)
 	case []*models.V1beta1Condition:
 		ShootConditionsTablePrinter{t}.Print(d)
@@ -201,9 +230,6 @@ func (t TablePrinter) Print(data interface{}) error {
 	case *models.V1ProjectResponse:
 		ProjectTablePrinter{t}.Print([]*models.V1ProjectResponse{d})
 	case []*models.V1ProjectResponse:
-		if t.order == "" {
-			t.order = "tenant,project"
-		}
 		ProjectTablePrinter{t}.Print(d)
 	case []*models.V1TenantResponse:
 		TenantTablePrinter{t}.Print(d)
@@ -214,39 +240,18 @@ func (t TablePrinter) Print(data interface{}) error {
 	case *models.ModelsV1IPResponse:
 		IPTablePrinter{t}.Print([]*models.ModelsV1IPResponse{d})
 	case *models.V1ContainerUsageResponse:
-		if t.order == "" {
-			t.order = "tenant,project,partition,cluster,namespace,pod,container"
-		}
 		ContainerBillingTablePrinter{t}.Print(d)
 	case *models.V1ClusterUsageResponse:
-		if t.order == "" {
-			t.order = "tenant,project,partition,name,id"
-		}
 		ClusterBillingTablePrinter{t}.Print(d)
 	case *models.V1IPUsageResponse:
-		if t.order == "" {
-			t.order = "tenant,project,ip"
-		}
 		IPBillingTablePrinter{t}.Print(d)
 	case *models.V1NetworkUsageResponse:
-		if t.order == "" {
-			t.order = "tenant,project,partition,cluster,device"
-		}
 		NetworkTrafficBillingTablePrinter{t}.Print(d)
 	case *models.V1S3UsageResponse:
-		if t.order == "" {
-			t.order = "tenant,project,partition,user,bucket,bucket_id"
-		}
 		S3BillingTablePrinter{t}.Print(d)
 	case *models.V1VolumeUsageResponse:
-		if t.order == "" {
-			t.order = "tenant,project,partition,cluster,name"
-		}
 		VolumeBillingTablePrinter{t}.Print(d)
 	case *models.V1PostgresUsageResponse:
-		if t.order == "" {
-			t.order = "tenant,project,id"
-		}
 		PostgresBillingTablePrinter{t}.Print(d)
 	case []*models.ModelsV1MachineResponse:
 		MachineTablePrinter{t}.Print(d)
@@ -271,19 +276,23 @@ func (t TablePrinter) Print(data interface{}) error {
 	case *models.V1PostgresBackupConfigResponse:
 		PostgresBackupsTablePrinter{t}.Print([]*models.V1PostgresBackupConfigResponse{d})
 	case []*models.V1PostgresBackupEntry:
-		if t.order == "" {
-			t.order = "date"
-		}
 		PostgresBackupEntryTablePrinter{t}.Print(d)
 	case []*models.V1S3PartitionResponse:
-		if t.order == "" {
-			t.order = "id"
-		}
 		S3PartitionTablePrinter{t}.Print(d)
+	case *models.V1S3CredentialsResponse, *models.V1S3Response:
+		return yamlPrinter{
+			outWriter: t.outWriter,
+		}.Print(d)
 	case *api.Contexts:
 		ContextPrinter{t}.Print(d)
 	case api.Version:
-		return YAMLPrinter{}.Print(d)
+		return yamlPrinter{
+			outWriter: t.outWriter,
+		}.Print(d)
+	case *cluster.ListConstraintsOK:
+		return yamlPrinter{
+			outWriter: t.outWriter,
+		}.Print(d)
 	default:
 		return fmt.Errorf("unknown table printer for type: %T", d)
 	}
@@ -291,29 +300,29 @@ func (t TablePrinter) Print(data interface{}) error {
 }
 
 // Print a model in json format
-func (j JSONPrinter) Print(data interface{}) error {
+func (j jsonPrinter) Print(data interface{}) error {
 	json, err := json.MarshalIndent(data, "", "    ")
 	if err != nil {
 		return fmt.Errorf("unable to marshal to json:%w", err)
 	}
-	fmt.Printf("%s\n", string(json))
+	fmt.Fprintf(j.outWriter, "%s\n", string(json))
 	return nil
 }
 
-func (j JSONPrinter) Type() string {
+func (j jsonPrinter) Type() string {
 	return "json"
 }
 
 // Print a model in yaml format
-func (y YAMLPrinter) Print(data interface{}) error {
+func (y yamlPrinter) Print(data interface{}) error {
 	yml, err := yaml.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("unable to marshal to yaml:%w", err)
 	}
-	fmt.Printf("%s", string(yml))
+	fmt.Fprintf(y.outWriter, "%s", string(yml))
 	return nil
 }
 
-func (y YAMLPrinter) Type() string {
+func (y yamlPrinter) Type() string {
 	return "yaml"
 }

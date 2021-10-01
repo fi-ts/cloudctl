@@ -14,10 +14,10 @@ import (
 type (
 	// VolumeTablePrinter prints volumes in a table
 	VolumeTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 	VolumeClusterInfoTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 )
 

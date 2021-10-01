@@ -11,7 +11,7 @@ import (
 type (
 	// IPTablePrinter prints ips in a table
 	IPTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 )
 
