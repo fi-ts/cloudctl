@@ -84,3 +84,12 @@ jobs:
           asset_path: result/cloudctl-darwin-amd64.md5
           asset_name: cloudctl-darwin-amd64.md5
           asset_content_type: application/octet-stream
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: result/cloudctl-darwin-arm64.md5
+          asset_name: cloudctl-darwin-arm64.md5
+          asset_content_type: application/octet-stream
