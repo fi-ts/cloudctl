@@ -250,7 +250,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().String("project", "", "project where this cluster should belong to. [required]")
 	clusterCreateCmd.Flags().String("partition", "", "partition of the cluster. [required]")
 	clusterCreateCmd.Flags().String("seed", "", "name of seed where this cluster should be scheduled. [optional]")
-	clusterUpdateCmd.Flags().String("purpose", "", fmt.Sprintf("purpose of the cluster, can be one of %s. SLA is only given on production clusters. [optional]", strings.Join(completion.ClusterPurposes, "|")))
+	clusterCreateCmd.Flags().String("purpose", "evaluation", fmt.Sprintf("purpose of the cluster, can be one of %s. SLA is only given on production clusters. [optional]", strings.Join(completion.ClusterPurposes, "|")))
 	clusterCreateCmd.Flags().String("version", "", "kubernetes version of the cluster. defaults to latest available, check cluster inputs for possible values. [optional]")
 	clusterCreateCmd.Flags().String("machinetype", "", "machine type to use for the nodes. [optional]")
 	clusterCreateCmd.Flags().String("machineimage", "", "machine image to use for the nodes, must be in the form of <name>-<version> [optional]")
