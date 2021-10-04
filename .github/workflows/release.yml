@@ -14,13 +14,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@master
+
       - name: Make tag
         run: echo "TAG_NAME=${GITHUB_REF##*/}" >> $GITHUB_ENV
-      - name: Get release
-        id: get_release
-        uses: bruceadams/get-release@v1.2.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build
         uses: metal-stack/action-docker-make@master
         with:
@@ -33,9 +30,8 @@ jobs:
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           files: |
             result/cloudctl-*
