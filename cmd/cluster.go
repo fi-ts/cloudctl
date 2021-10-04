@@ -268,6 +268,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().String("audit", "on", "audit logging of cluster API access; can be off, on (default) or splunk (logging to a predefined or custom splunk endpoint). [optional]")
 	clusterCreateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced. [optional]")
 	clusterCreateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. [optional]")
+	clusterCreateCmd.Flags().BoolP("reversed-vpn", "", false, "enables usage of reversed-vpn instead of konnectivity tunnel for worker connectivity. [optional]")
 
 	must(clusterCreateCmd.MarkFlagRequired("name"))
 	must(clusterCreateCmd.MarkFlagRequired("project"))
@@ -327,6 +328,8 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().String("maxunavailable", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
+	clusterUpdateCmd.Flags().BoolP("reversed-vpn", "", false, "enables usage of reversed-vpn instead of konnectivity tunnel for worker connectivity.")
+
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewalltype", c.comp.FirewallTypeListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewallimage", c.comp.FirewallImageListCompletion))
@@ -445,6 +448,8 @@ func (c *config) clusterCreate() error {
 	maintenanceBegin := "220000+0100"
 	maintenanceEnd := "233000+0100"
 
+	reversedVPN := strconv.FormatBool(viper.GetBool("reversed-vpn"))
+
 	version := viper.GetString("version")
 	if version == "" {
 		request := cluster.NewListConstraintsParams()
@@ -537,6 +542,9 @@ func (c *config) clusterCreate() error {
 		},
 		AdditionalNetworks: networks,
 		PartitionID:        &partition,
+		ClusterFeatures: &models.V1ClusterFeatures{
+			ReversedVPN: &reversedVPN,
+		},
 	}
 	if seed != "" {
 		scr.SeedName = seed
@@ -752,6 +760,8 @@ func (c *config) updateCluster(args []string) error {
 	maxsurge := viper.GetString("maxsurge")
 	maxunavailable := viper.GetString("maxunavailable")
 
+	reversedVPN := strconv.FormatBool(viper.GetBool("reversed-vpn"))
+
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
 	resp, err := c.cloud.Cluster.FindCluster(findRequest, nil)
@@ -771,6 +781,9 @@ func (c *config) updateCluster(args []string) error {
 				KubernetesVersion: current.Maintenance.AutoUpdate.KubernetesVersion,
 				MachineImage:      current.Maintenance.AutoUpdate.MachineImage,
 			},
+		},
+		ClusterFeatures: &models.V1ClusterFeatures{
+			ReversedVPN: &reversedVPN,
 		},
 	}
 
