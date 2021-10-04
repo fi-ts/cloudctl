@@ -85,6 +85,7 @@ func newProjectCmd(c *config) *cobra.Command {
 	projectCreateCmd.Flags().Int32("machine-quota", 0, "machine quota")
 	projectCreateCmd.Flags().Int32("ip-quota", 0, "ip quota")
 	must(projectCreateCmd.MarkFlagRequired("name"))
+	must(projectCreateCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
 
 	projectApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
 	Example project update:
