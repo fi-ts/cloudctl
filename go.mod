@@ -9,7 +9,6 @@ require (
 	github.com/fi-ts/cloud-go v0.17.21
 	github.com/gardener/gardener v1.22.6
 	github.com/gizak/termui/v3 v3.1.0
-	github.com/go-openapi/errors v0.20.1 // indirect
 	github.com/go-openapi/strfmt v0.20.2
 	github.com/go-playground/validator/v10 v10.9.0
 	github.com/gosimple/slug v1.10.0
@@ -24,7 +23,6 @@ require (
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/viper v1.9.0
 	github.com/stretchr/testify v1.7.0
-	github.com/tidwall/pretty v1.2.0 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 	k8s.io/api v0.20.9
