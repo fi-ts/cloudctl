@@ -32,6 +32,5 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          upload_url: ${{ steps.get_release.outputs.upload_url }}
           files: |
             result/cloudctl-*
