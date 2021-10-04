@@ -14,6 +14,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	ClusterPurposes = []string{"production", "development", "evaluation", "infrastructure"}
+)
+
 type Completion struct {
 	cloud *client.CloudAPI
 }
@@ -64,12 +68,19 @@ func (c *Completion) ClusterNameCompletion(cmd *cobra.Command, args []string, to
 	sort.Strings(names)
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
+
 func (c *Completion) ClusterMachineListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	return c.clusterMachineListCompletion(args, true)
 }
+
 func (c *Completion) ClusterFirewallListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	return c.clusterMachineListCompletion(args, false)
 }
+
+func (c *Completion) ClusterPurposeListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return ClusterPurposes, cobra.ShellCompDirectiveNoFileComp
+}
+
 func (c *Completion) clusterMachineListCompletion(clusterIDs []string, includeMachines bool) ([]string, cobra.ShellCompDirective) {
 	if len(clusterIDs) != 1 {
 		return []string{"no clusterid given"}, cobra.ShellCompDirectiveNoFileComp

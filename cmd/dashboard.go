@@ -57,9 +57,7 @@ func newDashboardCmd(c *config) *cobra.Command {
 
 	must(dashboardCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 	must(dashboardCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
-	must(dashboardCmd.RegisterFlagCompletionFunc("purpose", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"production", "development", "evaluation"}, cobra.ShellCompDirectiveNoFileComp
-	}))
+	must(dashboardCmd.RegisterFlagCompletionFunc("purpose", c.comp.ClusterPurposeListCompletion))
 	must(dashboardCmd.RegisterFlagCompletionFunc("color-theme", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{
 			"default\twith bright fonts, optimized for dark terminal backgrounds",
@@ -434,8 +432,7 @@ func (d *dashboardClusterPane) Render() error {
 		partition = viper.GetString("partition")
 		purpose   = viper.GetString("purpose")
 
-		clusters    []*models.V1ClusterResponse
-		filteredOut int
+		clusters []*models.V1ClusterResponse
 
 		succeeded  int
 		processing int
@@ -456,6 +453,7 @@ func (d *dashboardClusterPane) Render() error {
 	resp, err := d.cloud.Cluster.FindClusters(cluster.NewFindClustersParams().WithBody(&models.V1ClusterFindRequest{
 		PartitionID: output.StrDeref(partition),
 		Tenant:      output.StrDeref(tenant),
+		Purpose:     output.StrDeref(purpose),
 	}).WithReturnMachines(pointer.BoolPtr(false)).WithContext(ctx), nil)
 	if err != nil {
 		return err
@@ -463,10 +461,6 @@ func (d *dashboardClusterPane) Render() error {
 	clusters = resp.Payload
 
 	for _, c := range clusters {
-		if c.Purpose == nil || (purpose != "" && *c.Purpose != purpose) {
-			filteredOut++
-			continue
-		}
 		if c.Status == nil || c.Status.LastOperation == nil || c.Status.LastOperation.State == nil || *c.Status.LastOperation.State == "" {
 			unhealthy++
 			continue
@@ -531,7 +525,7 @@ func (d *dashboardClusterPane) Render() error {
 		}
 	}
 
-	processedClusters := len(clusters) - filteredOut
+	processedClusters := len(clusters)
 	if processedClusters <= 0 {
 		return nil
 	}

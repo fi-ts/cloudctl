@@ -35,7 +35,8 @@ func newTenantCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.tenantDescribe(args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: c.comp.TenantListCompletion,
 	}
 	tenantEditCmd := &cobra.Command{
 		Use:   "edit <tenantID>",
@@ -43,7 +44,8 @@ func newTenantCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.tenantEdit(args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: c.comp.TenantListCompletion,
 	}
 	tenantApplyCmd := &cobra.Command{
 		Use:   "apply",
