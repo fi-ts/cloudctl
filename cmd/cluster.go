@@ -448,7 +448,7 @@ func (c *config) clusterCreate() error {
 	maintenanceBegin := "220000+0100"
 	maintenanceEnd := "233000+0100"
 
-	reversedVPN := fmt.Sprintf("%t", viper.GetBool("reversed-vpn"))
+	reversedVPN := strconv.FormatBool(viper.GetBool("reversed-vpn"))
 
 	version := viper.GetString("version")
 	if version == "" {
@@ -760,7 +760,7 @@ func (c *config) updateCluster(args []string) error {
 	maxsurge := viper.GetString("maxsurge")
 	maxunavailable := viper.GetString("maxunavailable")
 
-	reversedVPN := fmt.Sprintf("%t", viper.GetBool("reversed-vpn"))
+	reversedVPN := strconv.FormatBool(viper.GetBool("reversed-vpn"))
 
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
