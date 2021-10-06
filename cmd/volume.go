@@ -74,9 +74,12 @@ func newVolumeCmd(c *config) *cobra.Command {
 	volumeListCmd.Flags().StringP("volumeid", "", "", "volumeid to filter [optional]")
 	volumeListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
 	volumeListCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
+	volumeListCmd.Flags().StringP("tenant", "", "", "tenant to filter [optional]")
+	volumeListCmd.Flags().Bool("only-unbound", false, "show only unbound volumes that are not connected to any hosts [optional]")
 
 	must(volumeListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	must(volumeListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	must(volumeListCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
 
 	volumeManifestCmd.Flags().StringP("name", "", "restored-pv", "name of the PersistentVolume")
 	volumeManifestCmd.Flags().StringP("namespace", "", "default", "namespace for the PersistentVolume")
@@ -88,25 +91,45 @@ func newVolumeCmd(c *config) *cobra.Command {
 }
 
 func (c *config) volumeFind() error {
-	if helper.AtLeastOneViperStringFlagGiven("volumeid", "project", "partition") {
+	if helper.AtLeastOneViperStringFlagGiven("volumeid", "project", "partition", "tenant") {
 		params := volume.NewFindVolumesParams()
 		ifr := &models.V1VolumeFindRequest{
 			VolumeID:    helper.ViperString("volumeid"),
 			ProjectID:   helper.ViperString("project"),
 			PartitionID: helper.ViperString("partition"),
+			TenantID:    helper.ViperString("tenant"),
 		}
 		params.SetBody(ifr)
 		resp, err := c.cloud.Volume.FindVolumes(params, nil)
 		if err != nil {
 			return err
 		}
-		return output.New().Print(resp.Payload)
+		volumes := resp.Payload
+		if viper.GetBool("only-unbound") {
+			volumes = onlyUnboundVolumes(volumes)
+		}
+		return output.New().Print(volumes)
 	}
 	resp, err := c.cloud.Volume.ListVolumes(nil, nil)
 	if err != nil {
 		return err
 	}
-	return output.New().Print(resp.Payload)
+	volumes := resp.Payload
+	if viper.GetBool("only-unbound") {
+		volumes = onlyUnboundVolumes(volumes)
+	}
+	return output.New().Print(volumes)
+}
+
+func onlyUnboundVolumes(volumes []*models.V1VolumeResponse) (result []*models.V1VolumeResponse) {
+	for _, v := range volumes {
+		if len(v.ConnectedHosts) > 0 {
+			continue
+		}
+		v := v
+		result = append(result, v)
+	}
+	return result
 }
 
 func (c *config) volumeDescribe(args []string) error {
