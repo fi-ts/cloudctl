@@ -314,6 +314,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().Int32("minsize", 0, "minimal workers of the cluster.")
 	clusterUpdateCmd.Flags().Int32("maxsize", 0, "maximal workers of the cluster.")
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
+	clusterUpdateCmd.Flags().String("seed", "", "name of seed where this cluster should be scheduled. [optional]")
 	clusterUpdateCmd.Flags().String("firewalltype", "", "machine type to use for the firewall.")
 	clusterUpdateCmd.Flags().String("firewallimage", "", "machine image to use for the firewall.")
 	clusterUpdateCmd.Flags().String("firewallcontroller", "", "version of the firewall-controller to use.")
@@ -768,6 +769,7 @@ func (c *config) updateCluster(args []string) error {
 	minsize := viper.GetInt32("minsize")
 	maxsize := viper.GetInt32("maxsize")
 	version := viper.GetString("version")
+	seed := viper.GetString("seed")
 	firewallType := viper.GetString("firewalltype")
 	firewallImage := viper.GetString("firewallimage")
 	firewallController := viper.GetString("firewallcontroller")
@@ -920,6 +922,10 @@ func (c *config) updateCluster(args []string) error {
 
 	if purpose != "" {
 		cur.Purpose = &purpose
+	}
+
+	if seed != "" {
+		cur.SeedName = &seed
 	}
 
 	if len(addLabels) > 0 || len(removeLabels) > 0 {
