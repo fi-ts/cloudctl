@@ -71,6 +71,7 @@ func newRootCmd() *cobra.Command {
 	rootCmd.AddCommand(newPostgresCmd(cfg))
 	rootCmd.AddCommand(newIPCmd(cfg))
 	rootCmd.AddCommand(newBillingCmd(cfg))
+	rootCmd.AddCommand(newHealthCmd(cfg))
 
 	return rootCmd
 }
