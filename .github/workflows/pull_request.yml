@@ -26,8 +26,3 @@ jobs:
             --no-push
             -x rule2,rule3
             --summary
-      - name: Prepare upload
-        run: |
-          mkdir -p cloudctl/pull-requests/${TAG_NAME}
-          sudo chown -R $(id -u):$(id -g) result
-          mv result/* cloudctl/pull-requests/${TAG_NAME}

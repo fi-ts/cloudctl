@@ -1,6 +1,8 @@
 package output
 
 import (
+	"sort"
+
 	"github.com/fi-ts/cloud-go/api/models"
 )
 
@@ -35,7 +37,15 @@ func (p HealthTablePrinter) PrintServices(services map[string]models.RestHealthR
 	p.wideHeader = []string{"Service", "Status", "Message"}
 	p.shortHeader = p.wideHeader
 
-	for name, s := range services {
+	keys := make([]string, 0, len(services))
+	for k := range services {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, name := range keys {
+		s := services[name]
+
 		status := "unknown"
 		if s.Status != nil && *s.Status != "" {
 			status = *s.Status
