@@ -235,6 +235,10 @@ func (t tablePrinter) Print(data interface{}) error {
 		TenantTablePrinter{t}.Print(d)
 	case *models.V1TenantResponse:
 		TenantTablePrinter{t}.Print([]*models.V1TenantResponse{d})
+	case *models.RestHealthResponse:
+		HealthTablePrinter{t}.Print(d)
+	case map[string]models.RestHealthResult:
+		HealthTablePrinter{t}.PrintServices(d)
 	case []*models.ModelsV1IPResponse:
 		IPTablePrinter{t}.Print(d)
 	case *models.ModelsV1IPResponse:
