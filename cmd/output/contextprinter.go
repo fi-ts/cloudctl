@@ -7,7 +7,7 @@ import (
 type (
 	// ContextPrinter print a Context in a Table
 	ContextPrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 )
 

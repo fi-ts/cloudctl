@@ -82,6 +82,13 @@ func strValue(strPtr *string) string {
 	return ""
 }
 
+func StrDeref(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
 func int64Value(i *int64) int64 {
 	if i != nil {
 		return *i

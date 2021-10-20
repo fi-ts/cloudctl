@@ -1,14 +1,12 @@
 package output
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/dustin/go-humanize"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
-	"github.com/ghodss/yaml"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -16,17 +14,17 @@ import (
 type (
 	// VolumeTablePrinter prints volumes in a table
 	VolumeTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 	VolumeClusterInfoTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 )
 
 // Print an volume as table
 func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
-	p.wideHeader = []string{"ID", "Name", "Size", "Usage", "Replicas", "StorageClass", "Project", "Tenant", "Partition", "Nodes"}
-	p.shortHeader = p.wideHeader
+	p.shortHeader = []string{"ID", "Name", "Size", "Usage", "Replicas", "StorageClass", "Project", "Tenant", "Partition"}
+	p.wideHeader = append(p.shortHeader, "Nodes")
 
 	for _, vol := range data {
 		volumeID := ""
@@ -68,8 +66,8 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 
 		nodes := ConnectedHosts(vol)
 
-		wide := []string{volumeID, name, size, usage, replica, sc, project, tenant, partition, strings.Join(nodes, "\n")}
-		short := wide
+		short := []string{volumeID, name, size, usage, replica, sc, project, tenant, partition}
+		wide := append(short, strings.Join(nodes, "\n"))
 
 		p.addWideData(wide, vol)
 		p.addShortData(short, vol)
@@ -154,20 +152,13 @@ func VolumeManifest(v models.V1VolumeResponse, name, namespace string) error {
 			},
 		},
 	}
-	js, err := json.Marshal(pv)
-	if err != nil {
-		return fmt.Errorf("unable to marshal to yaml:%w", err)
-	}
-	y, err := yaml.JSONToYAML(js)
-	if err != nil {
-		return fmt.Errorf("unable to marshal to yaml:%w", err)
-	}
+
 	if len(v.ConnectedHosts) > 0 {
 		nodes := ConnectedHosts(&v)
 		fmt.Printf("# be cautios! at the time being your volume:%s is still attached to worker node:%s, you can not mount it twice\n", *v.VolumeID, strings.Join(nodes, ","))
 	}
 
-	fmt.Printf("%s\n", string(y))
+	helper.MustPrintKubernetesResource(pv)
 	return nil
 }
 

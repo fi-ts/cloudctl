@@ -11,7 +11,7 @@ import (
 type (
 	// ProjectTablePrinter print a Project in a Table
 	ProjectTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 )
 
@@ -19,6 +19,9 @@ type (
 func (p ProjectTablePrinter) Print(data []*models.V1ProjectResponse) {
 	p.wideHeader = []string{"UID", "Tenant", "Name", "Description", "Clusters", "Machines", "IPs", "Labels", "Annotations"}
 	p.shortHeader = p.wideHeader
+	if p.order == "" {
+		p.order = "tenant,project"
+	}
 	p.Order(data)
 	for _, pr := range data {
 		clusterQuota := ""

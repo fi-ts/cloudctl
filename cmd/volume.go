@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/fi-ts/cloud-go/api/client/volume"
 
@@ -13,126 +12,165 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	volumeCmd = &cobra.Command{
+func newVolumeCmd(c *config) *cobra.Command {
+	volumeCmd := &cobra.Command{
 		Use:   "volume",
 		Short: "manage volume",
 		Long:  "list/find/delete pvc volumes",
 	}
-	volumeListCmd = &cobra.Command{
+	volumeListCmd := &cobra.Command{
 		Use:     "list",
 		Short:   "list volume",
 		Aliases: []string{"ls"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return volumeFind()
+			return c.volumeFind()
 		},
 		PreRun: bindPFlags,
 	}
-	volumeDeleteCmd = &cobra.Command{
+	volumeDescribeCmd := &cobra.Command{
+		Use:   "describe <volume>",
+		Short: "describes a volume",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.volumeDescribe(args)
+		},
+		ValidArgsFunction: c.comp.VolumeListCompletion,
+		PreRun:            bindPFlags,
+	}
+	volumeDeleteCmd := &cobra.Command{
 		Use:     "delete <volume>",
 		Aliases: []string{"rm", "destroy", "remove", "delete"},
 		Short:   "delete a volume",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return volumeDelete(args)
+			return c.volumeDelete(args)
 		},
-		PreRun: bindPFlags,
+		ValidArgsFunction: c.comp.VolumeListCompletion,
+		PreRun:            bindPFlags,
 	}
-	volumeManifestCmd = &cobra.Command{
+	volumeManifestCmd := &cobra.Command{
 		Use:   "manifest <volume>",
 		Short: "print a manifest for a volume",
 		Long:  "this is only useful for volumes which are not used in any k8s cluster. With the PersistenVolumeClaim given you can reuse it in a new cluster.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return volumeManifest(args)
+			return c.volumeManifest(args)
 		},
-		PreRun: bindPFlags,
+		ValidArgsFunction: c.comp.VolumeListCompletion,
+		PreRun:            bindPFlags,
 	}
-	volumeClusterInfoCmd = &cobra.Command{
+	volumeClusterInfoCmd := &cobra.Command{
 		Use:   "clusterinfo",
 		Short: "show storage cluster infos",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return volumeClusterInfo()
+			return c.volumeClusterInfo()
 		},
 		PreRun: bindPFlags,
 	}
-)
-
-func init() {
-	rootCmd.AddCommand(volumeCmd)
 
 	volumeCmd.AddCommand(volumeListCmd)
 	volumeCmd.AddCommand(volumeDeleteCmd)
+	volumeCmd.AddCommand(volumeDescribeCmd)
 	volumeCmd.AddCommand(volumeManifestCmd)
 	volumeCmd.AddCommand(volumeClusterInfoCmd)
 
 	volumeListCmd.Flags().StringP("volumeid", "", "", "volumeid to filter [optional]")
 	volumeListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
 	volumeListCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
+	volumeListCmd.Flags().StringP("tenant", "", "", "tenant to filter [optional]")
+	volumeListCmd.Flags().Bool("only-unbound", false, "show only unbound volumes that are not connected to any hosts [optional]")
+
+	must(volumeListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	must(volumeListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	must(volumeListCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
 
 	volumeManifestCmd.Flags().StringP("name", "", "restored-pv", "name of the PersistentVolume")
 	volumeManifestCmd.Flags().StringP("namespace", "", "default", "namespace for the PersistentVolume")
 
-	err := volumeListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return projectListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	volumeClusterInfoCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
+	must(volumeClusterInfoCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 
-	err = volumeListCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return partitionListCompletion()
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	return volumeCmd
 }
 
-func volumeFind() error {
-	if helper.AtLeastOneViperStringFlagGiven("volumeid", "project", "partition") {
+func (c *config) volumeFind() error {
+	if helper.AtLeastOneViperStringFlagGiven("volumeid", "project", "partition", "tenant") {
 		params := volume.NewFindVolumesParams()
 		ifr := &models.V1VolumeFindRequest{
 			VolumeID:    helper.ViperString("volumeid"),
 			ProjectID:   helper.ViperString("project"),
 			PartitionID: helper.ViperString("partition"),
+			TenantID:    helper.ViperString("tenant"),
 		}
 		params.SetBody(ifr)
-		resp, err := cloud.Volume.FindVolumes(params, nil)
+		resp, err := c.cloud.Volume.FindVolumes(params, nil)
 		if err != nil {
 			return err
 		}
-		return printer.Print(resp.Payload)
+		volumes := resp.Payload
+		if viper.GetBool("only-unbound") {
+			volumes = onlyUnboundVolumes(volumes)
+		}
+		return output.New().Print(volumes)
 	}
-	resp, err := cloud.Volume.ListVolumes(nil, nil)
+	resp, err := c.cloud.Volume.ListVolumes(nil, nil)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Payload)
+	volumes := resp.Payload
+	if viper.GetBool("only-unbound") {
+		volumes = onlyUnboundVolumes(volumes)
+	}
+	return output.New().Print(volumes)
 }
 
-func volumeDelete(args []string) error {
-	vol, err := getVolumeFromArgs(args)
-	if err != nil {
-		return err
+func onlyUnboundVolumes(volumes []*models.V1VolumeResponse) (result []*models.V1VolumeResponse) {
+	for _, v := range volumes {
+		if len(v.ConnectedHosts) > 0 {
+			continue
+		}
+		v := v
+		result = append(result, v)
 	}
-
-	resp, err := cloud.Volume.DeleteVolume(volume.NewDeleteVolumeParams().WithID(*vol.VolumeID), nil)
-	if err != nil {
-		return err
-	}
-
-	return printer.Print(resp.Payload)
+	return result
 }
 
-func volumeClusterInfo() error {
-	params := volume.NewClusterInfoParams()
-	resp, err := cloud.Volume.ClusterInfo(params, nil)
+func (c *config) volumeDescribe(args []string) error {
+	vol, err := c.getVolumeFromArgs(args)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Payload)
+
+	resp, err := c.cloud.Volume.GetVolume(volume.NewGetVolumeParams().WithID(*vol.VolumeID), nil)
+	if err != nil {
+		return err
+	}
+
+	return output.New().Print(resp.Payload)
 }
 
-func volumeManifest(args []string) error {
-	volume, err := getVolumeFromArgs(args)
+func (c *config) volumeDelete(args []string) error {
+	vol, err := c.getVolumeFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.cloud.Volume.DeleteVolume(volume.NewDeleteVolumeParams().WithID(*vol.VolumeID), nil)
+	if err != nil {
+		return err
+	}
+
+	return output.New().Print(resp.Payload)
+}
+
+func (c *config) volumeClusterInfo() error {
+	params := volume.NewClusterInfoParams().WithPartitionid(helper.ViperString("partition"))
+	resp, err := c.cloud.Volume.ClusterInfo(params, nil)
+	if err != nil {
+		return err
+	}
+	return output.New().Print(resp.Payload)
+}
+
+func (c *config) volumeManifest(args []string) error {
+	volume, err := c.getVolumeFromArgs(args)
 	if err != nil {
 		return err
 	}
@@ -141,7 +179,7 @@ func volumeManifest(args []string) error {
 
 	return output.VolumeManifest(*volume, name, namespace)
 }
-func getVolumeFromArgs(args []string) (*models.V1VolumeResponse, error) {
+func (c *config) getVolumeFromArgs(args []string) (*models.V1VolumeResponse, error) {
 	if len(args) < 1 {
 		return nil, fmt.Errorf("no volume given")
 	}
@@ -152,7 +190,7 @@ func getVolumeFromArgs(args []string) (*models.V1VolumeResponse, error) {
 		VolumeID: &volumeID,
 	}
 	params.SetBody(ifr)
-	resp, err := cloud.Volume.FindVolumes(params, nil)
+	resp, err := c.cloud.Volume.FindVolumes(params, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -35,6 +35,7 @@ Download locations:
 
 - [cloudctl-linux-amd64](https://github.com/fi-ts/cloudctl/releases/latest/download/cloudctl-linux-amd64)
 - [cloudctl-darwin-amd64](https://github.com/fi-ts/cloudctl/releases/latest/download/cloudctl-darwin-amd64)
+- [cloudctl-darwin-arm64](https://github.com/fi-ts/cloudctl/releases/latest/download/cloudctl-darwin-arm64)
 - [cloudctl-windows-amd64](https://github.com/fi-ts/cloudctl/releases/latest/download/cloudctl-windows-amd64)
 
 ### Installation on Linux
@@ -47,11 +48,33 @@ sudo mv cloudctl-linux-amd64 /usr/local/bin/cloudctl
 
 ### Installation on MacOS
 
+For x86 based Macs:
+
 ```bash
 curl -LO https://github.com/fi-ts/cloudctl/releases/latest/download/cloudctl-darwin-amd64
 chmod +x cloudctl-darwin-amd64
 sudo mv cloudctl-darwin-amd64 /usr/local/bin/cloudctl
 ```
+
+For Apple Silicon (M1) based Macs:
+
+```bash
+curl -LO https://github.com/fi-ts/cloudctl/releases/latest/download/cloudctl-darwin-arm64
+chmod +x cloudctl-darwin-arm64
+sudo mv cloudctl-darwin-arm64 /usr/local/bin/cloudctl
+```
+
+### Usage with Nix on Linux or MacOS
+
+`fits-cloudctl` is packaged in [nixpkgs](https://github.com/NixOS/nixpkgs) and
+can be installed using the [Nix Package Manager](https://nixos.org/) on Linux,
+MacOS and NixOS.
+
+```bash
+$ nix-shell -p fits-cloudctl
+```
+
+The package can also be installed eg. with 'nix-env -i fits-cloudctl'.
 
 ### Installation on Windows
 
@@ -108,7 +131,7 @@ contexts:
     client_secret: my-secret
 ```
 
-If you must specify special scopes for your issuer, you can use `custom_scopes`: 
+If you must specify special scopes for your issuer, you can use `custom_scopes`:
 ```yaml
 contexts:
   prod:

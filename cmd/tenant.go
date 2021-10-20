@@ -1,10 +1,13 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
+	"github.com/fi-ts/cloudctl/cmd/output"
 	"gopkg.in/yaml.v3"
 
 	"github.com/fi-ts/cloud-go/api/client/tenant"
@@ -12,47 +15,47 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	tenantCmd = &cobra.Command{
+func newTenantCmd(c *config) *cobra.Command {
+	tenantCmd := &cobra.Command{
 		Use:   "tenant",
 		Short: "manage tenants",
 	}
-	tenantListCmd = &cobra.Command{
+	tenantListCmd := &cobra.Command{
 		Use:     "list",
 		Short:   "lists tenants",
 		Aliases: []string{"ls"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return tenantList()
+			return c.tenantList()
 		},
 		PreRun: bindPFlags,
 	}
-	tenantDescribeCmd = &cobra.Command{
+	tenantDescribeCmd := &cobra.Command{
 		Use:   "describe <tenantID>",
 		Short: "describe a tenant",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return tenantDescribe(args)
+			return c.tenantDescribe(args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: c.comp.TenantListCompletion,
 	}
-	tenantEditCmd = &cobra.Command{
+	tenantEditCmd := &cobra.Command{
 		Use:   "edit <tenantID>",
 		Short: "edit a tenant",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return tenantEdit(args)
+			return c.tenantEdit(args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: c.comp.TenantListCompletion,
 	}
-	tenantApplyCmd = &cobra.Command{
+	tenantApplyCmd := &cobra.Command{
 		Use:   "apply",
 		Short: "create/update a tenant",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return tenantApply()
+			return c.tenantApply()
 		},
 		PreRun: bindPFlags,
 	}
-)
 
-func init() {
 	tenantCmd.AddCommand(tenantDescribeCmd)
 	tenantCmd.AddCommand(tenantEditCmd)
 	tenantCmd.AddCommand(tenantListCmd)
@@ -68,9 +71,10 @@ func init() {
 	`)
 	tenantCmd.AddCommand(tenantApplyCmd)
 
+	return tenantCmd
 }
 
-func tenantID(verb string, args []string) (string, error) {
+func (c *config) tenantID(verb string, args []string) (string, error) {
 	if len(args) == 0 {
 		return "", fmt.Errorf("tenant %s requires tenantID as argument", verb)
 	}
@@ -80,30 +84,30 @@ func tenantID(verb string, args []string) (string, error) {
 	return "", fmt.Errorf("tenant %s requires exactly one tenantID as argument", verb)
 }
 
-func tenantDescribe(args []string) error {
-	id, err := tenantID("edit", args)
+func (c *config) tenantDescribe(args []string) error {
+	id, err := c.tenantID("edit", args)
 	if err != nil {
 		return err
 	}
 	request := tenant.NewGetTenantParams()
 	request.SetID(id)
-	resp, err := cloud.Tenant.GetTenant(request, nil)
+	resp, err := c.cloud.Tenant.GetTenant(request, nil)
 	if err != nil {
 		return fmt.Errorf("tenant describe error:%w", err)
 	}
-	return printer.Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 
-func tenantList() error {
+func (c *config) tenantList() error {
 	request := tenant.NewListTenantsParams()
-	resp, err := cloud.Tenant.ListTenants(request, nil)
+	resp, err := c.cloud.Tenant.ListTenants(request, nil)
 	if err != nil {
 		return fmt.Errorf("tenant list error:%w", err)
 	}
-	return printer.Print(resp.Payload)
+	return output.New().Print(resp.Payload)
 }
 
-func tenantApply() error {
+func (c *config) tenantApply() error {
 	var tars []models.V1Tenant
 	var tar models.V1Tenant
 	err := helper.ReadFrom(viper.GetString("file"), &tar, func(data interface{}) {
@@ -120,17 +124,23 @@ func tenantApply() error {
 	for i, tar := range tars {
 		request := tenant.NewGetTenantParams()
 		request.SetID(tar.Meta.ID)
-		t, err := cloud.Tenant.GetTenant(request, nil)
+		t, err := c.cloud.Tenant.GetTenant(request, nil)
 		if err != nil {
-			return err
+			var r *tenant.GetTenantDefault
+			if !errors.As(err, &r) {
+				return err
+			}
+			if r.Code() != http.StatusNotFound {
+				return err
+			}
 		}
-		if t.Payload == nil {
+		if t == nil || t.Payload == nil {
 			return fmt.Errorf("only tenant update is supported")
 		}
 		if t.Payload.Meta != nil {
 			params := tenant.NewUpdateTenantParams()
 			params.SetBody(&models.V1TenantUpdateRequest{Tenant: &tars[i]})
-			resp, err := cloud.Tenant.UpdateTenant(params, nil)
+			resp, err := c.cloud.Tenant.UpdateTenant(params, nil)
 			if err != nil {
 				return err
 			}
@@ -138,11 +148,11 @@ func tenantApply() error {
 			continue
 		}
 	}
-	return printer.Print(response)
+	return output.New().Print(response)
 }
 
-func tenantEdit(args []string) error {
-	id, err := tenantID("edit", args)
+func (c *config) tenantEdit(args []string) error {
+	id, err := c.tenantID("edit", args)
 	if err != nil {
 		return err
 	}
@@ -150,7 +160,7 @@ func tenantEdit(args []string) error {
 	getFunc := func(id string) ([]byte, error) {
 		request := tenant.NewGetTenantParams()
 		request.SetID(id)
-		resp, err := cloud.Tenant.GetTenant(request, nil)
+		resp, err := c.cloud.Tenant.GetTenant(request, nil)
 		if err != nil {
 			return nil, fmt.Errorf("tenant describe error:%w", err)
 		}
@@ -170,11 +180,11 @@ func tenantEdit(args []string) error {
 		}
 		pup := tenant.NewUpdateTenantParams()
 		pup.Body = &models.V1TenantUpdateRequest{Tenant: &purs[0]}
-		uresp, err := cloud.Tenant.UpdateTenant(pup, nil)
+		uresp, err := c.cloud.Tenant.UpdateTenant(pup, nil)
 		if err != nil {
 			return err
 		}
-		return printer.Print(uresp.Payload)
+		return output.New().Print(uresp.Payload)
 	}
 
 	return helper.Edit(id, getFunc, updateFunc)

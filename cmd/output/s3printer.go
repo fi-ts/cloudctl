@@ -8,11 +8,11 @@ import (
 type (
 	// S3TablePrinter print S3 storage in a Table
 	S3TablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 
 	S3PartitionTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 )
 
@@ -58,6 +58,9 @@ func (p S3TablePrinter) Print(data []*models.V1S3Response) {
 func (p S3PartitionTablePrinter) Print(data []*models.V1S3PartitionResponse) {
 	p.wideHeader = []string{"Name", "Endpoint", "Ready"}
 	p.shortHeader = p.wideHeader
+	if p.order == "" {
+		p.order = "id"
+	}
 	p.Order(data)
 
 	for _, partition := range data {

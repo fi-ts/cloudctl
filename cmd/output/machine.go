@@ -12,7 +12,7 @@ import (
 type (
 	// MachineTablePrinter print machines of Shoot Cluster in a Table
 	MachineTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 )
 

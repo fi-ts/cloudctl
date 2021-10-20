@@ -1,19 +1,20 @@
-package cmd
+package api
 
 import (
 	"fmt"
+
 	"github.com/metal-stack/metal-lib/auth"
 )
 
-const cloudContext = "cloudctl"
+const CloudContext = "cloudctl"
 
 // getAuthContext reads AuthContext from given kubeconfig
-func getAuthContext(kubeconfig string) (*auth.AuthContext, error) {
-	cs, err := getContexts()
+func GetAuthContext(kubeconfig string) (*auth.AuthContext, error) {
+	cs, err := GetContexts()
 	if err != nil {
 		return nil, err
 	}
-	authContext, err := auth.GetAuthContext(kubeconfig, formatContextName(cloudContext, cs.CurrentContext))
+	authContext, err := auth.GetAuthContext(kubeconfig, FormatContextName(CloudContext, cs.CurrentContext))
 	if err != nil {
 		return nil, err
 	}
@@ -26,10 +27,10 @@ func getAuthContext(kubeconfig string) (*auth.AuthContext, error) {
 }
 
 // formatContextName returns the contextName for the given suffix. suffix can be empty.
-func formatContextName(prefix string, suffix string) string {
+func FormatContextName(prefix string, suffix string) string {
 	contextName := prefix
 	if suffix != "" {
-		contextName = fmt.Sprintf("%s-%s", cloudContext, suffix)
+		contextName = fmt.Sprintf("%s-%s", CloudContext, suffix)
 	}
 	return contextName
 }

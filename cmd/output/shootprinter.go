@@ -16,22 +16,22 @@ type (
 	ShootIssuesResponses []*models.V1ClusterResponse
 	// ShootTablePrinter print a Shoot Cluster in a Table
 	ShootTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 	ShootIssuesTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 	// ShootConditionsTablePrinter print the Conditions of a Shoot Cluster in a Table
 	ShootConditionsTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 
 	ShootLastErrorsTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 
 	ShootLastOperationTablePrinter struct {
-		TablePrinter
+		tablePrinter
 	}
 )
 
@@ -100,9 +100,12 @@ func (s ShootLastOperationTablePrinter) Print(data *models.V1beta1LastOperation)
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall", "Firewall Controller", "Egress IPs"}
+	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Audit", "Runtime", "Firewall", "Firewall Controller", "Egress IPs"}
 	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
+	if s.order == "" {
+		s.order = "tenant,project,name"
+	}
 	s.Order(data)
 
 	var short []string
@@ -119,6 +122,9 @@ func (s ShootIssuesTablePrinter) Print(data []*models.V1ClusterResponse) {
 	s.wideHeader = []string{"UID", "", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall", "Firewall Controller", "Egress IPs"}
 	s.shortHeader = []string{"UID", "", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
+	if s.order == "" {
+		s.order = "tenant,project,name"
+	}
 	s.Order(data)
 
 	var short []string
@@ -167,16 +173,6 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 	if expires != nil {
 		issues = append(issues, expires.Error())
 	}
-	mcmMigrated := false
-	for _, feature := range shoot.ControlPlaneFeatureGates {
-		if feature == "machineControllerManagerOOT" {
-			mcmMigrated = true
-			break
-		}
-	}
-	if !mcmMigrated {
-		issues = append(issues, "Cluster requires migration to out-of-tree machine-controller-manager, please enable via shoot spec")
-	}
 
 	if len(issues) > 0 {
 		maintainEmoji = "⚠️"
@@ -213,6 +209,25 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 	privileged := ""
 	if shoot.Kubernetes.AllowPrivilegedContainers != nil {
 		privileged = fmt.Sprintf("%t", *shoot.Kubernetes.AllowPrivilegedContainers)
+	}
+
+	audit := "Off"
+	if shoot.ControlPlaneFeatureGates != nil {
+		var ca, as bool
+		for _, featureGate := range shoot.ControlPlaneFeatureGates {
+			switch featureGate {
+			case "clusterAudit":
+				ca = true
+			case "auditToSplunk":
+				as = true
+			}
+		}
+		if ca {
+			audit = "On"
+		}
+		if as {
+			audit = audit + ",Splunk"
+		}
 	}
 
 	runtimes := []string{}
@@ -273,6 +288,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		age,
 		purpose,
 		privileged,
+		audit,
 		strings.Join(uniqueStringSlice(runtimes), "\n"),
 		firewallImage,
 		firewallController,
