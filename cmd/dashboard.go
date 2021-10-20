@@ -284,9 +284,11 @@ func (d *dashboard) Render() {
 	defer func() {
 		var coloredHealth string
 		switch apiHealth {
-		case rest.HealthStatusHealthy:
+		case string(rest.HealthStatusHealthy):
 			coloredHealth = "[" + apiHealth + "](fg:green)"
-		case rest.HealthStatusUnhealthy:
+		case string(rest.HealthStatusDegraded), string(rest.HealthStatusPartiallyUnhealthy):
+			coloredHealth = "[" + apiHealth + "](fg:yellow)"
+		case string(rest.HealthStatusUnhealthy):
 			if apiHealthMessage != "" {
 				coloredHealth = "[" + apiHealth + fmt.Sprintf(" (%s)](fg:red)", apiHealthMessage)
 			} else {
@@ -317,11 +319,18 @@ func (d *dashboard) Render() {
 	}
 	apiVersion = *infoResp.Payload.Version
 
-	var healthResp *health.HealthOK
-	healthResp, lastErr = d.cloud.Health.Health(health.NewHealthParams().WithContext(ctx), nil)
-	if lastErr != nil {
-		return
+	healthResp, err := d.cloud.Health.Health(health.NewHealthParams().WithContext(ctx), nil)
+	if err != nil {
+		var r *health.HealthInternalServerError
+		if errors.As(err, &r) {
+			healthResp = health.NewHealthOK()
+			healthResp.Payload = r.Payload
+		} else {
+			lastErr = err
+			return
+		}
 	}
+
 	apiHealth = *healthResp.Payload.Status
 	apiHealthMessage = *healthResp.Payload.Message
 
