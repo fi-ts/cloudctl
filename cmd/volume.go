@@ -152,6 +152,21 @@ func (c *config) volumeDelete(args []string) error {
 		return err
 	}
 
+	if len(vol.ConnectedHosts) > 0 {
+		return fmt.Errorf("volume is still connected to this node:%s", vol.ConnectedHosts)
+	}
+
+	if !viper.GetBool("yes-i-really-mean-it") {
+		fmt.Printf(`
+delete volume: %q, all data will be lost forever.
+If used in cronjob for example, volume might not be connected now, but required at a later point in time.
+`, *vol.VolumeID)
+		err = helper.Prompt("Are you sure? (y/n)", "y")
+		if err != nil {
+			return err
+		}
+	}
+
 	resp, err := c.cloud.Volume.DeleteVolume(volume.NewDeleteVolumeParams().WithID(*vol.VolumeID), nil)
 	if err != nil {
 		return err
