@@ -75,7 +75,7 @@ func newVolumeCmd(c *config) *cobra.Command {
 	volumeListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
 	volumeListCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
 	volumeListCmd.Flags().StringP("tenant", "", "", "tenant to filter [optional]")
-	volumeListCmd.Flags().Bool("only-unbound", false, "show only unbound volumes that are not connected to any hosts [optional]")
+	volumeListCmd.Flags().Bool("only-unbound", false, "show only unbound volumes that are not connected to any hosts, pv may be still present. [optional]")
 
 	must(volumeListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	must(volumeListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
