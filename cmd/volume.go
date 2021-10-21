@@ -159,7 +159,7 @@ func (c *config) volumeDelete(args []string) error {
 	if !viper.GetBool("yes-i-really-mean-it") {
 		fmt.Printf(`
 delete volume: %q, all data will be lost forever.
-If used in cronjob for example, volume might be connected now but required at a later point in time.
+If used in cronjob for example, volume might not be connected now, but required at a later point in time.
 `, *vol.VolumeID)
 		err = helper.Prompt("Are you sure? (y/n)", "y")
 		if err != nil {
