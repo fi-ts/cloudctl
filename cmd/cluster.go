@@ -326,8 +326,8 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().String("purpose", "", fmt.Sprintf("purpose of the cluster, can be one of %s. SLA is only given on production clusters.", strings.Join(completion.ClusterPurposes, "|")))
 	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]. Use --egress none to remove all ingress rules.")
 	clusterUpdateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
-	clusterUpdateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced.")
-	clusterUpdateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted.")
+	clusterUpdateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced. (0 = provider-default)")
+	clusterUpdateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. (0 = provider-default)")
 	clusterUpdateCmd.Flags().String("maxsurge", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers created during a update of the cluster.")
 	clusterUpdateCmd.Flags().String("maxunavailable", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster")
@@ -808,7 +808,7 @@ func (c *config) updateCluster(args []string) error {
 		},
 	}
 
-	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" || healthtimeout != 0 || draintimeout != 0 || maxsurge != "" || maxunavailable != "" {
+	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" || viper.IsSet("healthtimeout") || viper.IsSet("draintimeout") || maxsurge != "" || maxunavailable != "" {
 		workers := current.Workers
 
 		var worker *models.V1Worker
@@ -861,14 +861,14 @@ func (c *config) updateCluster(args []string) error {
 			}
 		}
 
-		if healthtimeout != 0 {
+		if viper.IsSet("healthtimeout") {
 			if !mcmMigrated {
 				log.Fatal("custom healthtimeout requires feature: machineControllerManagerOOT")
 			}
 			worker.HealthTimeout = int64(healthtimeout)
 		}
 
-		if draintimeout != 0 {
+		if viper.IsSet("draintimeout") {
 			if !mcmMigrated {
 				log.Fatal("custom draintimeout requires feature: machineControllerManagerOOT")
 			}
