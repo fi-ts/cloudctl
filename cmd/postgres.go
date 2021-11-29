@@ -73,6 +73,14 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
+	postgresCreateStandbyCmd := &cobra.Command{
+		Use:   "create-standby",
+		Short: "create postgres standby",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.postgresCreateStandby()
+		},
+		PreRun: bindPFlags,
+	}
 	postgresApplyCmd := &cobra.Command{
 		Use:   "apply",
 		Short: "apply postgres",
@@ -198,6 +206,7 @@ postgres=#
 	postgresCmd.AddCommand(postgresBackupCmd)
 
 	postgresCmd.AddCommand(postgresCreateCmd)
+	postgresCmd.AddCommand(postgresCreateStandbyCmd)
 	postgresCmd.AddCommand(postgresApplyCmd)
 	postgresCmd.AddCommand(postgresEditCmd)
 	postgresCmd.AddCommand(postgresListCmd)
@@ -231,8 +240,23 @@ postgres=#
 	must(postgresCreateCmd.MarkFlagRequired("project"))
 	must(postgresCreateCmd.MarkFlagRequired("partition"))
 	must(postgresCreateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-	must(postgresCreateCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	must(postgresCreateCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
 	must(postgresCreateCmd.RegisterFlagCompletionFunc("version", c.comp.PostgresListVersionsCompletion))
+
+	// CreateStandby
+	postgresCreateStandbyCmd.Flags().StringP("primary-postgres-id", "", "", "if of the primary database")
+	postgresCreateStandbyCmd.Flags().StringP("description", "", "", "description of the database")
+	postgresCreateStandbyCmd.Flags().StringP("partition", "", "", "partition where the database should be created")
+	postgresCreateStandbyCmd.Flags().IntP("replicas", "", 1, "replicas of the database")
+	postgresCreateStandbyCmd.Flags().StringSliceP("sources", "", []string{"0.0.0.0/0"}, "networks which should be allowed to connect in CIDR notation")
+	postgresCreateStandbyCmd.Flags().StringSliceP("labels", "", []string{}, "labels to add to that postgres database")
+	postgresCreateStandbyCmd.Flags().StringP("backup-config", "", "", "backup to use")
+	postgresCreateStandbyCmd.Flags().StringSliceP("maintenance", "", []string{"Sun:22:00-23:00"}, "time specification of the automatic maintenance in the form Weekday:HH:MM-HH-MM [optional]")
+	must(postgresCreateStandbyCmd.MarkFlagRequired("primary-postgres-id"))
+	must(postgresCreateStandbyCmd.MarkFlagRequired("description"))
+	must(postgresCreateStandbyCmd.MarkFlagRequired("partition"))
+	must(postgresCreateStandbyCmd.RegisterFlagCompletionFunc("primary-postgres-id", c.comp.PostgresListCompletion))
+	must(postgresCreateStandbyCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
 
 	// List
 	postgresListCmd.Flags().StringP("id", "", "", "postgres id to filter [optional]")
@@ -335,6 +359,41 @@ func (c *config) postgresCreate() error {
 	request.SetBody(pcr)
 
 	response, err := c.cloud.Database.CreatePostgres(request, nil)
+	if err != nil {
+		return err
+	}
+
+	return output.New().Print(response.Payload)
+}
+
+func (c *config) postgresCreateStandby() error {
+	primaryPostgresID := viper.GetString("primary-postgres-id")
+	desc := viper.GetString("description")
+	partition := viper.GetString("partition")
+	sources := viper.GetStringSlice("sources")
+	labels := viper.GetStringSlice("labels")
+	backupConfig := viper.GetString("backup-config")
+	maintenance := viper.GetStringSlice("maintenance")
+
+	labelMap, err := helper.LabelsToMap(labels)
+	if err != nil {
+		return err
+	}
+	pcsr := &models.V1PostgresCreateStandbyRequest{
+		PrimaryID:   &primaryPostgresID,
+		Description: desc,
+		PartitionID: partition,
+		Backup:      backupConfig,
+		AccessList: &models.V1AccessList{
+			SourceRanges: sources,
+		},
+		Maintenance: maintenance,
+		Labels:      labelMap,
+	}
+	request := database.NewCreatePostgresStandbyParams()
+	request.SetBody(pcsr)
+
+	response, err := c.cloud.Database.CreatePostgresStandby(request, nil)
 	if err != nil {
 		return err
 	}
