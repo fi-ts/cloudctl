@@ -247,6 +247,7 @@ postgres=#
 	postgresCreateStandbyCmd.Flags().StringP("primary-postgres-id", "", "", "if of the primary database")
 	postgresCreateStandbyCmd.Flags().StringP("description", "", "", "description of the database")
 	postgresCreateStandbyCmd.Flags().StringP("partition", "", "", "partition where the database should be created")
+	postgresCreateStandbyCmd.Flags().StringP("project", "", "", "project of the database")
 	postgresCreateStandbyCmd.Flags().IntP("replicas", "", 1, "replicas of the database")
 	postgresCreateStandbyCmd.Flags().StringSliceP("sources", "", []string{"0.0.0.0/0"}, "networks which should be allowed to connect in CIDR notation")
 	postgresCreateStandbyCmd.Flags().StringSliceP("labels", "", []string{}, "labels to add to that postgres database")
@@ -257,6 +258,7 @@ postgres=#
 	must(postgresCreateStandbyCmd.MarkFlagRequired("partition"))
 	must(postgresCreateStandbyCmd.RegisterFlagCompletionFunc("primary-postgres-id", c.comp.PostgresListCompletion))
 	must(postgresCreateStandbyCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
+	must(postgresCreateStandbyCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 
 	// List
 	postgresListCmd.Flags().StringP("id", "", "", "postgres id to filter [optional]")
@@ -370,6 +372,7 @@ func (c *config) postgresCreateStandby() error {
 	primaryPostgresID := viper.GetString("primary-postgres-id")
 	desc := viper.GetString("description")
 	partition := viper.GetString("partition")
+	project := viper.GetString("project")
 	sources := viper.GetStringSlice("sources")
 	labels := viper.GetStringSlice("labels")
 	backupConfig := viper.GetString("backup-config")
@@ -383,6 +386,7 @@ func (c *config) postgresCreateStandby() error {
 		PrimaryID:   &primaryPostgresID,
 		Description: desc,
 		PartitionID: partition,
+		ProjectID:   project,
 		Backup:      backupConfig,
 		AccessList: &models.V1AccessList{
 			SourceRanges: sources,
