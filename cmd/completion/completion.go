@@ -292,7 +292,7 @@ func (c *Completion) PostgresListCompletion(cmd *cobra.Command, args []string, t
 	}
 	var names []string
 	for _, p := range response.Payload {
-		names = append(names, *p.ID+"\t"+*&p.Description)
+		names = append(names, *p.ID+"\t"+p.Description)
 	}
 	sort.Strings(names)
 	return names, cobra.ShellCompDirectiveNoFileComp
