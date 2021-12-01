@@ -246,6 +246,8 @@ github.com/fi-ts/cloud-go v0.18.2-0.20211129210630-ea571f16e0e1 h1:PiXUCXBZxCTTd
 github.com/fi-ts/cloud-go v0.18.2-0.20211129210630-ea571f16e0e1/go.mod h1:i/KwdI9NFkNrFwi09MVUn/PZ7XGnYSlu774O7wMgIRE=
 github.com/fi-ts/cloud-go v0.18.2-0.20211130135649-476f03da1e26 h1:F6lueFgn6ROHzfidBvcE3QQXqMeqRZVCXrntu69cB3k=
 github.com/fi-ts/cloud-go v0.18.2-0.20211130135649-476f03da1e26/go.mod h1:i/KwdI9NFkNrFwi09MVUn/PZ7XGnYSlu774O7wMgIRE=
+github.com/fi-ts/cloud-go v0.18.2-0.20211130203539-4f8a417db6df h1:ezZ+vb5f90w7E+i0e3XOfZdT3bPBC40cvpwl44cnYho=
+github.com/fi-ts/cloud-go v0.18.2-0.20211130203539-4f8a417db6df/go.mod h1:i/KwdI9NFkNrFwi09MVUn/PZ7XGnYSlu774O7wMgIRE=
 github.com/fogleman/gg v1.2.1-0.20190220221249-0403632d5b90/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
 github.com/form3tech-oss/jwt-go v3.2.2+incompatible/go.mod h1:pbq4aXjuKjdthFRnoDwaVPLA+WlJuPGy+QneDUgJi2k=
 github.com/frankban/quicktest v1.5.0/go.mod h1:jaStnuzAqU1AJdCO0l53JDCJrVDKcS03DbaAcR7Ks/o=
