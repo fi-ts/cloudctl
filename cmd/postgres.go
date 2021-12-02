@@ -370,7 +370,6 @@ func (c *config) postgresCreateStandby() error {
 	primaryPostgresID := viper.GetString("primary-postgres-id")
 	desc := viper.GetString("description")
 	partition := viper.GetString("partition")
-	sources := viper.GetStringSlice("sources")
 	labels := viper.GetStringSlice("labels")
 	backupConfig := viper.GetString("backup-config")
 	maintenance := viper.GetStringSlice("maintenance")
@@ -384,9 +383,6 @@ func (c *config) postgresCreateStandby() error {
 		Description: desc,
 		PartitionID: partition,
 		Backup:      backupConfig,
-		AccessList: &models.V1AccessList{
-			SourceRanges: sources,
-		},
 		Maintenance: maintenance,
 		Labels:      labelMap,
 	}
