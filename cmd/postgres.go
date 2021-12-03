@@ -239,6 +239,7 @@ postgres=#
 	must(postgresCreateCmd.MarkFlagRequired("description"))
 	must(postgresCreateCmd.MarkFlagRequired("project"))
 	must(postgresCreateCmd.MarkFlagRequired("partition"))
+	must(postgresCreateCmd.MarkFlagRequired("backup-config"))
 	must(postgresCreateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	must(postgresCreateCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
 	must(postgresCreateCmd.RegisterFlagCompletionFunc("version", c.comp.PostgresListVersionsCompletion))
@@ -255,6 +256,7 @@ postgres=#
 	must(postgresCreateStandbyCmd.MarkFlagRequired("primary-postgres-id"))
 	must(postgresCreateStandbyCmd.MarkFlagRequired("description"))
 	must(postgresCreateStandbyCmd.MarkFlagRequired("partition"))
+	must(postgresCreateStandbyCmd.MarkFlagRequired("backup-config"))
 	must(postgresCreateStandbyCmd.RegisterFlagCompletionFunc("primary-postgres-id", c.comp.PostgresListCompletion))
 	must(postgresCreateStandbyCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
 
