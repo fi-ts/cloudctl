@@ -242,12 +242,6 @@ github.com/fatih/color v1.9.0/go.mod h1:eQcE1qtQxscV5RaZvpXrrb8Drkc3/DdQ+uUYCNjL
 github.com/fatih/color v1.10.0/go.mod h1:ELkj/draVOlAH/xkhN6mQ50Qd0MPOk5AAr3maGEBuJM=
 github.com/fatih/color v1.13.0 h1:8LOYc1KYPPmyKMuN8QV2DNRWNbLo6LZ0iLs8+mlH53w=
 github.com/fatih/color v1.13.0/go.mod h1:kLAiJbzzSOZDVNGyDpeOxJ47H46qBXwg5ILebYFFOfk=
-github.com/fi-ts/cloud-go v0.18.2-0.20211130203539-4f8a417db6df h1:ezZ+vb5f90w7E+i0e3XOfZdT3bPBC40cvpwl44cnYho=
-github.com/fi-ts/cloud-go v0.18.2-0.20211130203539-4f8a417db6df/go.mod h1:i/KwdI9NFkNrFwi09MVUn/PZ7XGnYSlu774O7wMgIRE=
-github.com/fi-ts/cloud-go v0.18.2-0.20211202173352-23ef06ab3fb2 h1:C3AGDM/vHAE7Io9BPKY5Dw05DZD4ecwsygMxUFKIdkY=
-github.com/fi-ts/cloud-go v0.18.2-0.20211202173352-23ef06ab3fb2/go.mod h1:i/KwdI9NFkNrFwi09MVUn/PZ7XGnYSlu774O7wMgIRE=
-github.com/fi-ts/cloud-go v0.18.2-0.20211202180314-0bd0ad3cc0c7 h1:IeH5vaXwKHdARQCMLRD4s8BhNI3/IZ2BIxHH9rW6OU8=
-github.com/fi-ts/cloud-go v0.18.2-0.20211202180314-0bd0ad3cc0c7/go.mod h1:i/KwdI9NFkNrFwi09MVUn/PZ7XGnYSlu774O7wMgIRE=
 github.com/fi-ts/cloud-go v0.18.3 h1:Ps7BKW+p2r8yHuOs7uXj3ZoE6a6NqRFJxSJZPV/mEsY=
 github.com/fi-ts/cloud-go v0.18.3/go.mod h1:i/KwdI9NFkNrFwi09MVUn/PZ7XGnYSlu774O7wMgIRE=
 github.com/fogleman/gg v1.2.1-0.20190220221249-0403632d5b90/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
