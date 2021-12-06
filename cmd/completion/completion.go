@@ -284,3 +284,16 @@ func (c *Completion) PostgresListVersionsCompletion(cmd *cobra.Command, args []s
 	sort.Strings(names)
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
+func (c *Completion) PostgresListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	request := database.NewListPostgresParams()
+	response, err := c.cloud.Database.ListPostgres(request, nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for _, p := range response.Payload {
+		names = append(names, *p.ID+"\t"+p.Description)
+	}
+	sort.Strings(names)
+	return names, cobra.ShellCompDirectiveNoFileComp
+}
