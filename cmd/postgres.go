@@ -249,7 +249,6 @@ postgres=#
 	postgresCreateStandbyCmd.Flags().StringP("description", "", "", "description of the database")
 	postgresCreateStandbyCmd.Flags().StringP("partition", "", "", "partition where the database should be created")
 	postgresCreateStandbyCmd.Flags().IntP("replicas", "", 1, "replicas of the database")
-	postgresCreateStandbyCmd.Flags().StringSliceP("sources", "", []string{"0.0.0.0/0"}, "networks which should be allowed to connect in CIDR notation")
 	postgresCreateStandbyCmd.Flags().StringSliceP("labels", "", []string{}, "labels to add to that postgres database")
 	postgresCreateStandbyCmd.Flags().StringP("backup-config", "", "", "backup to use")
 	postgresCreateStandbyCmd.Flags().StringSliceP("maintenance", "", []string{"Sun:22:00-23:00"}, "time specification of the automatic maintenance in the form Weekday:HH:MM-HH-MM [optional]")
