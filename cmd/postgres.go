@@ -106,6 +106,14 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
+	postgresAcceptRestoreCmd := &cobra.Command{
+		Use:   "restore-accepted",
+		Short: "confirm the restore of a database",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.postgresAcceptRestore(args)
+		},
+		PreRun: bindPFlags,
+	}
 	postgresListCmd := &cobra.Command{
 		Use:     "list",
 		Short:   "list postgres",
@@ -219,6 +227,7 @@ postgres=#
 	postgresCmd.AddCommand(postgresRestoreCmd)
 	postgresCmd.AddCommand(postgresApplyCmd)
 	postgresCmd.AddCommand(postgresEditCmd)
+	postgresCmd.AddCommand(postgresAcceptRestoreCmd)
 	postgresCmd.AddCommand(postgresListCmd)
 	postgresCmd.AddCommand(postgresListBackupsCmd)
 	postgresCmd.AddCommand(postgresDeleteCmd)
@@ -560,6 +569,29 @@ func (c *config) postgresEdit(args []string) error {
 		return output.New().Print(uresp.Payload)
 	}
 	return helper.Edit(id, getFunc, updateFunc)
+}
+
+func (c *config) postgresAcceptRestore(args []string) error {
+	pg, err := c.getPostgresFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	must(output.New().Print(pg))
+
+	fmt.Println("Has the cloning finished successfully")
+	err = helper.Prompt("(type yes to proceed):", "yes")
+	if err != nil {
+		return err
+	}
+
+	params := database.NewAcceptPostgresRestoreParams().WithID(*pg.ID)
+	resp, err := c.cloud.Database.AcceptPostgresRestore(params, nil)
+	if err != nil {
+		return err
+	}
+
+	return output.New().Print(resp.Payload)
 }
 
 func readPostgresUpdateRequests(filename string) ([]models.V1PostgresUpdateRequest, error) {
