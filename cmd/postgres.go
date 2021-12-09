@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/fi-ts/cloud-go/api/client/database"
 	"github.com/fi-ts/cloud-go/api/models"
@@ -270,10 +271,10 @@ postgres=#
 
 	// Restore
 	postgresRestoreCmd.Flags().StringP("source-postgres-id", "", "", "if of the primary database")
-	postgresRestoreCmd.Flags().StringP("timestamp", "", "", "point-in-time to restore to, e.g. 2021-12-09T13:15:00+01:00")
+	postgresRestoreCmd.Flags().StringP("timestamp", "", time.Now().Format(time.RFC3339), "point-in-time to restore to")
 	postgresRestoreCmd.Flags().StringP("version", "", "", "postgres version of the database")
 	postgresRestoreCmd.Flags().StringP("description", "", "", "description of the database")
-	postgresRestoreCmd.Flags().StringP("partition", "", "", "partition where the database should be created")
+	postgresRestoreCmd.Flags().StringP("partition", "", "", "partition where the database should be created. Changing the partition compared to the source database requires administrative privileges")
 	postgresRestoreCmd.Flags().StringSliceP("labels", "", []string{}, "labels to add to that postgres database")
 	postgresRestoreCmd.Flags().StringSliceP("maintenance", "", []string{"Sun:22:00-23:00"}, "time specification of the automatic maintenance in the form Weekday:HH:MM-HH-MM [optional]")
 	must(postgresRestoreCmd.MarkFlagRequired("source-postgres-id"))
