@@ -579,7 +579,7 @@ func (c *config) postgresAcceptRestore(args []string) error {
 
 	must(output.New().Print(pg))
 
-	fmt.Println("Has the cloning finished successfully")
+	fmt.Println("Has the restore finished successfully?")
 	err = helper.Prompt("(type yes to proceed):", "yes")
 	if err != nil {
 		return err
