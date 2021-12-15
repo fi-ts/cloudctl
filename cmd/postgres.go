@@ -255,6 +255,7 @@ postgres=#
 	postgresCreateCmd.Flags().StringP("storage", "", "10Gi", "storage for the database")
 	postgresCreateCmd.Flags().StringP("backup-config", "", "", "backup to use")
 	postgresCreateCmd.Flags().StringSliceP("maintenance", "", []string{"Sun:22:00-23:00"}, "time specification of the automatic maintenance in the form Weekday:HH:MM-HH-MM [optional]")
+	postgresCreateCmd.Flags().BoolP("audit-logs", "", true, "enable audit logs for the database")
 	must(postgresCreateCmd.MarkFlagRequired("description"))
 	must(postgresCreateCmd.MarkFlagRequired("project"))
 	must(postgresCreateCmd.MarkFlagRequired("partition"))
@@ -364,6 +365,7 @@ func (c *config) postgresCreate() error {
 	backupConfig := viper.GetString("backup-config")
 	storage := viper.GetString("storage")
 	maintenance := viper.GetStringSlice("maintenance")
+	auditLogs := viper.GetBool("audit-logs")
 
 	labelMap, err := helper.LabelsToMap(labels)
 	if err != nil {
@@ -386,6 +388,7 @@ func (c *config) postgresCreate() error {
 		},
 		Maintenance: maintenance,
 		Labels:      labelMap,
+		AuditLogs:   auditLogs,
 	}
 	request := database.NewCreatePostgresParams()
 	request.SetBody(pcr)
