@@ -72,8 +72,8 @@ func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
 		replicas := fmt.Sprintf("%d", pg.NumberOfInstances)
 
 		mode := ""
-		if pg.Clone != nil {
-			mode = "Clone"
+		if pg.Restore != nil {
+			mode = "Restore"
 		} else if pg.Connection != nil {
 			if pg.Connection.LocalSideIsPrimary {
 				mode = "Primary"
