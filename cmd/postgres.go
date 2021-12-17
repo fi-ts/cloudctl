@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/fi-ts/cloud-go/api/client/database"
 	"github.com/fi-ts/cloud-go/api/models"
@@ -81,6 +82,14 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
+	postgresRestoreCmd := &cobra.Command{
+		Use:   "restore",
+		Short: "restore postgres from existing one",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.postgresRestore()
+		},
+		PreRun: bindPFlags,
+	}
 	postgresApplyCmd := &cobra.Command{
 		Use:   "apply",
 		Short: "apply postgres",
@@ -94,6 +103,14 @@ postgres=#
 		Short: "edit postgres",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresEdit(args)
+		},
+		PreRun: bindPFlags,
+	}
+	postgresAcceptRestoreCmd := &cobra.Command{
+		Use:   "restore-accepted",
+		Short: "confirm the restore of a database",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.postgresAcceptRestore(args)
 		},
 		PreRun: bindPFlags,
 	}
@@ -207,8 +224,10 @@ postgres=#
 
 	postgresCmd.AddCommand(postgresCreateCmd)
 	postgresCmd.AddCommand(postgresCreateStandbyCmd)
+	postgresCmd.AddCommand(postgresRestoreCmd)
 	postgresCmd.AddCommand(postgresApplyCmd)
 	postgresCmd.AddCommand(postgresEditCmd)
+	postgresCmd.AddCommand(postgresAcceptRestoreCmd)
 	postgresCmd.AddCommand(postgresListCmd)
 	postgresCmd.AddCommand(postgresListBackupsCmd)
 	postgresCmd.AddCommand(postgresDeleteCmd)
@@ -236,6 +255,7 @@ postgres=#
 	postgresCreateCmd.Flags().StringP("storage", "", "10Gi", "storage for the database")
 	postgresCreateCmd.Flags().StringP("backup-config", "", "", "backup to use")
 	postgresCreateCmd.Flags().StringSliceP("maintenance", "", []string{"Sun:22:00-23:00"}, "time specification of the automatic maintenance in the form Weekday:HH:MM-HH-MM [optional]")
+	postgresCreateCmd.Flags().BoolP("audit-logs", "", true, "enable audit logs for the database")
 	must(postgresCreateCmd.MarkFlagRequired("description"))
 	must(postgresCreateCmd.MarkFlagRequired("project"))
 	must(postgresCreateCmd.MarkFlagRequired("partition"))
@@ -258,6 +278,18 @@ postgres=#
 	must(postgresCreateStandbyCmd.MarkFlagRequired("backup-config"))
 	must(postgresCreateStandbyCmd.RegisterFlagCompletionFunc("primary-postgres-id", c.comp.PostgresListCompletion))
 	must(postgresCreateStandbyCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
+
+	// Restore
+	postgresRestoreCmd.Flags().StringP("source-postgres-id", "", "", "if of the primary database")
+	postgresRestoreCmd.Flags().StringP("timestamp", "", time.Now().Format(time.RFC3339), "point-in-time to restore to")
+	postgresRestoreCmd.Flags().StringP("version", "", "", "postgres version of the database")
+	postgresRestoreCmd.Flags().StringP("description", "", "", "description of the database")
+	postgresRestoreCmd.Flags().StringP("partition", "", "", "partition where the database should be created. Changing the partition compared to the source database requires administrative privileges")
+	postgresRestoreCmd.Flags().StringSliceP("labels", "", []string{}, "labels to add to that postgres database")
+	postgresRestoreCmd.Flags().StringSliceP("maintenance", "", []string{"Sun:22:00-23:00"}, "time specification of the automatic maintenance in the form Weekday:HH:MM-HH-MM [optional]")
+	must(postgresRestoreCmd.MarkFlagRequired("source-postgres-id"))
+	must(postgresRestoreCmd.RegisterFlagCompletionFunc("source-postgres-id", c.comp.PostgresListCompletion))
+	must(postgresRestoreCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
 
 	// List
 	postgresListCmd.Flags().StringP("id", "", "", "postgres id to filter [optional]")
@@ -333,6 +365,7 @@ func (c *config) postgresCreate() error {
 	backupConfig := viper.GetString("backup-config")
 	storage := viper.GetString("storage")
 	maintenance := viper.GetStringSlice("maintenance")
+	auditLogs := viper.GetBool("audit-logs")
 
 	labelMap, err := helper.LabelsToMap(labels)
 	if err != nil {
@@ -355,6 +388,7 @@ func (c *config) postgresCreate() error {
 		},
 		Maintenance: maintenance,
 		Labels:      labelMap,
+		AuditLogs:   auditLogs,
 	}
 	request := database.NewCreatePostgresParams()
 	request.SetBody(pcr)
@@ -391,6 +425,39 @@ func (c *config) postgresCreateStandby() error {
 	request.SetBody(pcsr)
 
 	response, err := c.cloud.Database.CreatePostgresStandby(request, nil)
+	if err != nil {
+		return err
+	}
+
+	return output.New().Print(response.Payload)
+}
+
+func (c *config) postgresRestore() error {
+	srcID := viper.GetString("source-postgres-id")
+	desc := viper.GetString("description")
+	partition := viper.GetString("partition")
+	labels := viper.GetStringSlice("labels")
+	version := viper.GetString("version")
+	maintenance := viper.GetStringSlice("maintenance")
+	timestamp := viper.GetString("timestamp")
+
+	labelMap, err := helper.LabelsToMap(labels)
+	if err != nil {
+		return err
+	}
+	pcsr := &models.V1PostgresRestoreRequest{
+		SourceID:    &srcID,
+		Description: desc,
+		PartitionID: partition,
+		Version:     version,
+		Maintenance: maintenance,
+		Labels:      labelMap,
+		Timestamp:   timestamp,
+	}
+	request := database.NewRestorePostgresParams()
+	request.SetBody(pcsr)
+
+	response, err := c.cloud.Database.RestorePostgres(request, nil)
 	if err != nil {
 		return err
 	}
@@ -505,6 +572,29 @@ func (c *config) postgresEdit(args []string) error {
 		return output.New().Print(uresp.Payload)
 	}
 	return helper.Edit(id, getFunc, updateFunc)
+}
+
+func (c *config) postgresAcceptRestore(args []string) error {
+	pg, err := c.getPostgresFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	must(output.New().Print(pg))
+
+	fmt.Println("Has the restore finished successfully?")
+	err = helper.Prompt("(type yes to proceed):", "yes")
+	if err != nil {
+		return err
+	}
+
+	params := database.NewAcceptPostgresRestoreParams().WithID(*pg.ID)
+	resp, err := c.cloud.Database.AcceptPostgresRestore(params, nil)
+	if err != nil {
+		return err
+	}
+
+	return output.New().Print(resp.Payload)
 }
 
 func readPostgresUpdateRequests(filename string) ([]models.V1PostgresUpdateRequest, error) {
