@@ -82,6 +82,22 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
+	postgresPromoteToPrimaryCmd := &cobra.Command{
+		Use:   "promote-to-primary",
+		Short: "promote a standby instance to become a replication primary",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.postgresPromoteToPrimary(args)
+		},
+		PreRun: bindPFlags,
+	}
+	postgresDemoteToStandbyCmd := &cobra.Command{
+		Use:   "demote-to-standby",
+		Short: "demote a the replication primary to become a standby instance",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.postgresDemoteToStandby(args)
+		},
+		PreRun: bindPFlags,
+	}
 	postgresRestoreCmd := &cobra.Command{
 		Use:   "restore",
 		Short: "restore postgres from existing one",
@@ -224,6 +240,8 @@ postgres=#
 
 	postgresCmd.AddCommand(postgresCreateCmd)
 	postgresCmd.AddCommand(postgresCreateStandbyCmd)
+	postgresCmd.AddCommand(postgresPromoteToPrimaryCmd)
+	postgresCmd.AddCommand(postgresDemoteToStandbyCmd)
 	postgresCmd.AddCommand(postgresRestoreCmd)
 	postgresCmd.AddCommand(postgresApplyCmd)
 	postgresCmd.AddCommand(postgresEditCmd)
@@ -265,7 +283,7 @@ postgres=#
 	must(postgresCreateCmd.RegisterFlagCompletionFunc("version", c.comp.PostgresListVersionsCompletion))
 
 	// CreateStandby
-	postgresCreateStandbyCmd.Flags().StringP("primary-postgres-id", "", "", "if of the primary database")
+	postgresCreateStandbyCmd.Flags().StringP("primary-postgres-id", "", "", "id of the primary database")
 	postgresCreateStandbyCmd.Flags().StringP("description", "", "", "description of the database")
 	postgresCreateStandbyCmd.Flags().StringP("partition", "", "", "partition where the database should be created")
 	postgresCreateStandbyCmd.Flags().IntP("replicas", "", 1, "replicas of the database")
@@ -278,6 +296,9 @@ postgres=#
 	must(postgresCreateStandbyCmd.MarkFlagRequired("backup-config"))
 	must(postgresCreateStandbyCmd.RegisterFlagCompletionFunc("primary-postgres-id", c.comp.PostgresListCompletion))
 	must(postgresCreateStandbyCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
+
+	// PromoteToPrimary
+	postgresPromoteToPrimaryCmd.Flags().BoolP("synchronous", "", false, "make the replication synchronous")
 
 	// Restore
 	postgresRestoreCmd.Flags().StringP("source-postgres-id", "", "", "if of the primary database")
@@ -430,6 +451,80 @@ func (c *config) postgresCreateStandby() error {
 	}
 
 	return output.New().Print(response.Payload)
+}
+
+func (c *config) postgresPromoteToPrimary(args []string) error {
+	id, err := c.postgresID("promote-to-primary", args)
+	if err != nil {
+		return err
+	}
+
+	params := database.NewGetPostgresParams().WithID(id)
+	resp, err := c.cloud.Database.GetPostgres(params, nil)
+	if err != nil {
+		return err
+	}
+	current := resp.Payload
+
+	// copy the (minimum) current config
+	body := &models.V1PostgresUpdateRequest{
+		ProjectID:  current.ProjectID,
+		ID:         current.ID,
+		Connection: current.Connection,
+	}
+
+	// promote to primary
+	if body.Connection != nil {
+		body.Connection.LocalSideIsPrimary = true
+		if viper.IsSet("synchronous") {
+			// also set the sync flag if given
+			body.Connection.Synchronous = viper.GetBool("synchronous")
+		}
+	}
+
+	// send the update request
+	req := database.NewUpdatePostgresParams()
+	req.Body = body
+	uresp, err := c.cloud.Database.UpdatePostgres(req, nil)
+	if err != nil {
+		return err
+	}
+	return output.New().Print(uresp.Payload)
+}
+
+func (c *config) postgresDemoteToStandby(args []string) error {
+	id, err := c.postgresID("demote-to-standby", args)
+	if err != nil {
+		return err
+	}
+
+	params := database.NewGetPostgresParams().WithID(id)
+	resp, err := c.cloud.Database.GetPostgres(params, nil)
+	if err != nil {
+		return err
+	}
+	current := resp.Payload
+
+	// copy the (minimum) current config
+	body := &models.V1PostgresUpdateRequest{
+		ProjectID:  current.ProjectID,
+		ID:         current.ID,
+		Connection: current.Connection,
+	}
+
+	// demote to standby
+	if body.Connection != nil {
+		body.Connection.LocalSideIsPrimary = false
+	}
+
+	// send the update request
+	req := database.NewUpdatePostgresParams()
+	req.Body = body
+	uresp, err := c.cloud.Database.UpdatePostgres(req, nil)
+	if err != nil {
+		return err
+	}
+	return output.New().Print(uresp.Payload)
 }
 
 func (c *config) postgresRestore() error {
