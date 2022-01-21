@@ -473,13 +473,16 @@ func (c *config) postgresPromoteToPrimary(args []string) error {
 		Connection: current.Connection,
 	}
 
+	// abort if there is no configured connection
+	if body.Connection == nil {
+		return fmt.Errorf("standalone postgres cluster detected, cannot be promoted to primary")
+	}
+
 	// promote to primary
-	if body.Connection != nil {
-		body.Connection.LocalSideIsPrimary = true
-		if viper.IsSet("synchronous") {
-			// also set the sync flag if given
-			body.Connection.Synchronous = viper.GetBool("synchronous")
-		}
+	body.Connection.LocalSideIsPrimary = true
+	if viper.IsSet("synchronous") {
+		// also set the sync flag if given
+		body.Connection.Synchronous = viper.GetBool("synchronous")
 	}
 
 	// send the update request
@@ -512,10 +515,13 @@ func (c *config) postgresDemoteToStandby(args []string) error {
 		Connection: current.Connection,
 	}
 
-	// demote to standby
-	if body.Connection != nil {
-		body.Connection.LocalSideIsPrimary = false
+	// abort if there is no configured connection
+	if body.Connection == nil {
+		return fmt.Errorf("standalone postgres cluster detected, cannot be demoted to standby")
 	}
+
+	// demote to standby
+	body.Connection.LocalSideIsPrimary = false
 
 	// send the update request
 	req := database.NewUpdatePostgresParams()
