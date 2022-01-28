@@ -38,6 +38,8 @@ Download locations:
 - [cloudctl-darwin-arm64](https://github.com/fi-ts/cloudctl/releases/latest/download/cloudctl-darwin-arm64)
 - [cloudctl-windows-amd64](https://github.com/fi-ts/cloudctl/releases/latest/download/cloudctl-windows-amd64)
 
+[![Packaging status](https://repology.org/badge/vertical-allrepos/fits-cloudctl.svg)](https://repology.org/project/fits-cloudctl/versions)
+
 ### Installation on Linux
 
 ```bash
@@ -74,7 +76,7 @@ MacOS and NixOS.
 $ nix-shell -p fits-cloudctl
 ```
 
-The package can also be installed eg. with 'nix-env -i fits-cloudctl'.
+The package can also be installed eg. with `nix-env -i fits-cloudctl`.
 
 ### Installation on Windows
 
