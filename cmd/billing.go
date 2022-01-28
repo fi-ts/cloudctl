@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/fi-ts/cloud-go/api/client/accounting"
@@ -12,6 +14,8 @@ import (
 	"github.com/jinzhu/now"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/xuri/excelize/v2"
 )
 
 type BillingOpts struct {
@@ -24,6 +28,9 @@ type BillingOpts struct {
 	ClusterID  string
 	Device     string
 	Namespace  string
+	Month      string
+	Year       string
+	Filename   string
 	CSV        bool
 }
 
@@ -36,6 +43,21 @@ func newBillingCmd(c *config) *cobra.Command {
 		Use:   "billing",
 		Short: "manage bills",
 		Long:  "TODO",
+	}
+	excelBillingCmd := &cobra.Command{
+		Use:   "excel",
+		Short: "create excel file with monthly billing information for all ressources",
+		Example: `
+		cloudctl billing excel
+		`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			err := initBillingOpts()
+			if err != nil {
+				return err
+			}
+			return c.excel()
+		},
+		PreRun: bindPFlags,
 	}
 	containerBillingCmd := &cobra.Command{
 		Use:   "container",
@@ -162,6 +184,7 @@ func newBillingCmd(c *config) *cobra.Command {
 		PreRun: bindPFlags,
 	}
 
+	billingCmd.AddCommand(excelBillingCmd)
 	billingCmd.AddCommand(containerBillingCmd)
 	billingCmd.AddCommand(clusterBillingCmd)
 	billingCmd.AddCommand(ipBillingCmd)
@@ -171,6 +194,13 @@ func newBillingCmd(c *config) *cobra.Command {
 	billingCmd.AddCommand(postgresBillingCmd)
 
 	billingOpts = &BillingOpts{}
+
+	excelBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
+	excelBillingCmd.Flags().StringVarP(&billingOpts.Month, "month", "m", "", "requested month")
+	excelBillingCmd.Flags().StringVarP(&billingOpts.Year, "year", "y", "", "requested year")
+	excelBillingCmd.Flags().StringVarP(&billingOpts.Filename, "file", "f", "", "excel filename")
+
+	must(viper.BindPFlags(excelBillingCmd.Flags()))
 
 	containerBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
 	containerBillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
@@ -319,6 +349,422 @@ func (c *config) clusterUsageCSV(cur *models.V1ClusterUsageRequest) error {
 	}
 
 	fmt.Println(response.Payload)
+	return nil
+}
+
+func (c *config) excel() error {
+	month := int(time.Now().Month())
+	year := int(time.Now().Year())
+
+	var err error
+	if billingOpts.Month != "" {
+		if month, err = strconv.Atoi(billingOpts.Month); err != nil {
+			return err
+		}
+	}
+	if billingOpts.Year != "" {
+		if year, err = strconv.Atoi(billingOpts.Year); err != nil {
+			return err
+		}
+	}
+	if billingOpts.Year == "" && int(time.Now().Month()) < month {
+		year--
+	}
+
+	from := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	fromDT := strfmt.DateTime(from)
+	to := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC).AddDate(0, 1, 0)
+
+	f := excelize.NewFile()
+
+	f.SetSheetName("Sheet1", "Parameter")
+
+	clusterSheetName := fmt.Sprintf("%04d-%02d", year, month) + " Cluster"
+	f.NewSheet(clusterSheetName)
+	containerSheetName := fmt.Sprintf("%04d-%02d", year, month) + " Container"
+	f.NewSheet(containerSheetName)
+	volumeSheetName := fmt.Sprintf("%04d-%02d", year, month) + " Volume"
+	f.NewSheet(volumeSheetName)
+	ipSheetName := fmt.Sprintf("%04d-%02d", year, month) + " IPs"
+	f.NewSheet(ipSheetName)
+	networkSheetName := fmt.Sprintf("%04d-%02d", year, month) + " Network traffic"
+	f.NewSheet(networkSheetName)
+	s3SheetName := fmt.Sprintf("%04d-%02d", year, month) + " S3"
+	f.NewSheet(s3SheetName)
+	postgresSheetName := fmt.Sprintf("%04d-%02d", year, month) + " Postgres"
+	f.NewSheet(postgresSheetName)
+
+	// Parameter
+	f.SetCellValue("Parameter", "A1", "Finance Cloud Native billing")
+	if billingOpts.Tenant != "" {
+		f.SetCellValue("Parameter", "A3", "Tenant")
+		f.SetCellValue("Parameter", "B3", billingOpts.Tenant)
+	}
+	f.SetCellValue("Parameter", "A4", "Period Start")
+	f.SetCellValue("Parameter", "B4", from)
+	f.SetCellValue("Parameter", "A5", "Period End")
+	if time.Now().Before(to) {
+		f.SetCellValue("Parameter", "B5", time.Now())
+	} else {
+		f.SetCellValue("Parameter", "B5", to)
+	}
+	f.SetCellValue("Parameter", "A7", "CPU included")
+	f.SetCellValue("Parameter", "B7", 64)
+	f.SetCellValue("Parameter", "A8", "RAM included")
+	f.SetCellValue("Parameter", "B8", 128)
+	f.SetCellValue("Parameter", "A9", "Local vol included")
+	f.SetCellValue("Parameter", "B9", 512)
+	f.SetColWidth("Parameter", "A", "B", 14)
+	f.SetCellValue("Parameter", "A11", "* Lifetime[s] is always calculated for the given period")
+
+	// Cluster Billing
+	curCluster := models.V1ClusterUsageRequest{
+		From: &fromDT,
+		To:   strfmt.DateTime(to),
+	}
+	if billingOpts.Tenant != "" {
+		curCluster.Tenant = billingOpts.Tenant
+	}
+
+	requestCluster := accounting.NewClusterUsageParams()
+	requestCluster.SetBody(&curCluster)
+
+	responseCluster, err := c.cloud.Accounting.ClusterUsage(requestCluster, nil)
+	if err != nil {
+		return err
+	}
+
+	f.SetCellValue(clusterSheetName, "A1", "Tenant")
+	f.SetCellValue(clusterSheetName, "B1", "Project ID")
+	f.SetColWidth(clusterSheetName, "B", "B", 0)
+	f.SetCellValue(clusterSheetName, "C1", "Project")
+	f.SetCellValue(clusterSheetName, "D1", "Cluster ID")
+	f.SetColWidth(clusterSheetName, "D", "D", 0)
+	f.SetCellValue(clusterSheetName, "E1", "Cluster")
+	f.SetCellValue(clusterSheetName, "F1", "Start")
+	f.SetColWidth(clusterSheetName, "F", "F", 14)
+	f.SetCellValue(clusterSheetName, "G1", "Lifetime[s]")
+	f.SetCellValue(clusterSheetName, "H1", "CPUs used [CPU*h]")
+	f.SetCellValue(clusterSheetName, "I1", "CPUs on top [CPU*h]")
+	f.SetCellValue(clusterSheetName, "J1", "CPUs avg [CPU]")
+	f.SetCellValue(clusterSheetName, "K1", "Memory used [GiB*h]")
+	f.SetCellValue(clusterSheetName, "L1", "Memory on top [GiB*h]")
+	f.SetCellValue(clusterSheetName, "M1", "Memory avg [GiB]")
+	f.SetCellValue(clusterSheetName, "N1", "Local vol used [GiB*h]")
+	f.SetCellValue(clusterSheetName, "O1", "Local vol on top [GiB*h]")
+	f.SetCellValue(clusterSheetName, "P1", "Local vol avg [GiB]")
+	f.SetColWidth(clusterSheetName, "H", "P", 15)
+	for i, v := range responseCluster.Payload.Usage {
+		f.SetCellValue(clusterSheetName, "A"+fmt.Sprint(i+2), *v.Tenant)
+		f.SetCellValue(clusterSheetName, "B"+fmt.Sprint(i+2), *v.Projectid)
+		f.SetCellValue(clusterSheetName, "C"+fmt.Sprint(i+2), *v.Projectname)
+		f.SetCellValue(clusterSheetName, "D"+fmt.Sprint(i+2), *v.Clusterid)
+		f.SetCellValue(clusterSheetName, "E"+fmt.Sprint(i+2), *v.Clustername)
+		start := time.Time(*v.Clusterstart)
+		f.SetCellValue(clusterSheetName, "F"+fmt.Sprint(i+2), start)
+		f.SetCellValue(clusterSheetName, "G"+fmt.Sprint(i+2), *v.Lifetime/1000000000)
+		f.SetCellFormula(clusterSheetName, "H"+fmt.Sprint(i+2), "=SUMIF('"+containerSheetName+"'!D$1:D$9999,D"+fmt.Sprint(i+2)+",'"+containerSheetName+"'!M$1:M$99999)/3600")
+		f.SetCellFormula(clusterSheetName, "I"+fmt.Sprint(i+2), "=MAX(H"+fmt.Sprint(i+2)+"*3600-Parameter!B7*G"+fmt.Sprint(i+2)+",0)")
+		f.SetCellFormula(clusterSheetName, "J"+fmt.Sprint(i+2), "=H"+fmt.Sprint(i+2)+"/G"+fmt.Sprint(i+2)+"*3600")
+		f.SetCellFormula(clusterSheetName, "K"+fmt.Sprint(i+2), "=SUMIF('"+containerSheetName+"'!D$1:D$9999,D"+fmt.Sprint(i+2)+",'"+containerSheetName+"'!N$1:N$9999)/3600")
+		f.SetCellFormula(clusterSheetName, "L"+fmt.Sprint(i+2), "=MAX(K"+fmt.Sprint(i+2)+"*3600-Parameter!B8*G"+fmt.Sprint(i+2)+",0)")
+		f.SetCellFormula(clusterSheetName, "M"+fmt.Sprint(i+2), "=K"+fmt.Sprint(i+2)+"/G"+fmt.Sprint(i+2)+"*3600")
+		f.SetCellFormula(clusterSheetName, "N"+fmt.Sprint(i+2), "=SUMIF('"+volumeSheetName+"'!D$1:D$9999,D"+fmt.Sprint(i+2)+",'"+volumeSheetName+"'!M$1:M$9999)/3600")
+		f.SetCellFormula(clusterSheetName, "O"+fmt.Sprint(i+2), "=MAX(N"+fmt.Sprint(i+2)+"*3600-Parameter!B9*G"+fmt.Sprint(i+2)+",0)")
+		f.SetCellFormula(clusterSheetName, "P"+fmt.Sprint(i+2), "=N"+fmt.Sprint(i+2)+"/G"+fmt.Sprint(i+2)+"*3600")
+	}
+
+	// Container Billing
+	curContainer := models.V1ContainerUsageRequest{
+		From: &fromDT,
+		To:   strfmt.DateTime(to),
+	}
+	if billingOpts.Tenant != "" {
+		curContainer.Tenant = billingOpts.Tenant
+	}
+
+	requestContainer := accounting.NewContainerUsageParams()
+	requestContainer.SetBody(&curContainer)
+
+	responseContainer, err := c.cloud.Accounting.ContainerUsage(requestContainer, nil)
+	if err != nil {
+		return err
+	}
+	f.SetCellValue(containerSheetName, "A1", "Tenant")
+	f.SetCellValue(containerSheetName, "B1", "Project ID")
+	f.SetColWidth(containerSheetName, "B", "B", 0)
+	f.SetCellValue(containerSheetName, "C1", "Project")
+	f.SetCellValue(containerSheetName, "D1", "Cluster ID")
+	f.SetColWidth(containerSheetName, "D", "D", 0)
+	f.SetCellValue(containerSheetName, "E1", "Cluster")
+	f.SetCellValue(containerSheetName, "F1", "Namespace")
+	f.SetCellValue(containerSheetName, "G1", "Pod ID")
+	f.SetColWidth(containerSheetName, "G", "G", 0)
+	f.SetCellValue(containerSheetName, "H1", "Podname")
+	f.SetCellValue(containerSheetName, "I1", "Containername")
+	f.SetCellValue(containerSheetName, "J1", "Containerimage")
+	f.SetCellValue(containerSheetName, "K1", "Start")
+	f.SetColWidth(containerSheetName, "K", "K", 14)
+	f.SetCellValue(containerSheetName, "L1", "Lifetime[s]")
+	f.SetCellValue(containerSheetName, "M1", "CPU[CPU*s]")
+	f.SetCellValue(containerSheetName, "N1", "Memory[GiB*s]")
+	f.SetCellValue(containerSheetName, "O1", "Annotations")
+	for i, v := range responseContainer.Payload.Usage {
+		f.SetCellValue(containerSheetName, "A"+fmt.Sprint(i+2), *v.Tenant)
+		f.SetCellValue(containerSheetName, "B"+fmt.Sprint(i+2), *v.Projectid)
+		f.SetCellValue(containerSheetName, "C"+fmt.Sprint(i+2), *v.Projectname)
+		f.SetCellValue(containerSheetName, "D"+fmt.Sprint(i+2), *v.Clusterid)
+		f.SetCellValue(containerSheetName, "E"+fmt.Sprint(i+2), *v.Clustername)
+		f.SetCellValue(containerSheetName, "F"+fmt.Sprint(i+2), *v.Namespace)
+		f.SetCellValue(containerSheetName, "G"+fmt.Sprint(i+2), *v.Poduuid)
+		f.SetCellValue(containerSheetName, "H"+fmt.Sprint(i+2), *v.Podname)
+		f.SetCellValue(containerSheetName, "I"+fmt.Sprint(i+2), *v.Containername)
+		f.SetCellValue(containerSheetName, "J"+fmt.Sprint(i+2), *v.Containerimage)
+		start := time.Time(*v.Podstart)
+		f.SetCellValue(containerSheetName, "K"+fmt.Sprint(i+2), start)
+		f.SetCellValue(containerSheetName, "L"+fmt.Sprint(i+2), *v.Lifetime/1000000000)
+		cpuseconds, _ := strconv.Atoi(*v.Cpuseconds)
+		f.SetCellValue(containerSheetName, "M"+fmt.Sprint(i+2), cpuseconds)
+		memoryseconds, _ := strconv.Atoi(*v.Memoryseconds)
+		f.SetCellValue(containerSheetName, "N"+fmt.Sprint(i+2), memoryseconds/1024/1024/1024)
+		f.SetCellValue(containerSheetName, "O"+fmt.Sprint(i+2), strings.Join(v.Annotations, "; "))
+	}
+
+	// Volume Billing
+	curVolume := models.V1VolumeUsageRequest{
+		From: &fromDT,
+		To:   strfmt.DateTime(to),
+	}
+	if billingOpts.Tenant != "" {
+		curVolume.Tenant = billingOpts.Tenant
+	}
+
+	requestVolume := accounting.NewVolumeUsageParams()
+	requestVolume.SetBody(&curVolume)
+
+	responseVolume, err := c.cloud.Accounting.VolumeUsage(requestVolume, nil)
+	if err != nil {
+		return err
+	}
+	f.SetCellValue(volumeSheetName, "A1", "Tenant")
+	f.SetCellValue(volumeSheetName, "B1", "Project ID")
+	f.SetColWidth(volumeSheetName, "B", "B", 0)
+	f.SetCellValue(volumeSheetName, "C1", "Project")
+	f.SetCellValue(volumeSheetName, "D1", "Cluster ID")
+	f.SetColWidth(volumeSheetName, "D", "D", 0)
+	f.SetCellValue(volumeSheetName, "E1", "Cluster")
+	f.SetCellValue(volumeSheetName, "F1", "Volume ID")
+	f.SetColWidth(volumeSheetName, "F", "F", 0)
+	f.SetCellValue(volumeSheetName, "G1", "Volume")
+	f.SetCellValue(volumeSheetName, "H1", "Class")
+	f.SetCellValue(volumeSheetName, "I1", "Type")
+	f.SetCellValue(volumeSheetName, "J1", "Start")
+	f.SetColWidth(volumeSheetName, "J", "J", 14)
+	f.SetCellValue(volumeSheetName, "K1", "Lifetime[s]")
+	f.SetCellValue(volumeSheetName, "L1", "Capacity[GiB*s]")
+	f.SetCellValue(volumeSheetName, "M1", "Local[GiB*s]")
+	f.SetCellValue(volumeSheetName, "N1", "Block[GiB*s]")
+	for i, v := range responseVolume.Payload.Usage {
+		f.SetCellValue(volumeSheetName, "A"+fmt.Sprint(i+2), *v.Tenant)
+		f.SetCellValue(volumeSheetName, "B"+fmt.Sprint(i+2), *v.Projectid)
+		f.SetCellValue(volumeSheetName, "C"+fmt.Sprint(i+2), *v.Projectname)
+		f.SetCellValue(volumeSheetName, "D"+fmt.Sprint(i+2), *v.Clusterid)
+		f.SetCellValue(volumeSheetName, "E"+fmt.Sprint(i+2), *v.Clustername)
+		f.SetCellValue(volumeSheetName, "F"+fmt.Sprint(i+2), *v.UUID)
+		f.SetCellValue(volumeSheetName, "G"+fmt.Sprint(i+2), *v.Name)
+		f.SetCellValue(volumeSheetName, "H"+fmt.Sprint(i+2), *v.Class)
+		f.SetCellValue(volumeSheetName, "I"+fmt.Sprint(i+2), *v.Type)
+		start := time.Time(*v.Start)
+		f.SetCellValue(volumeSheetName, "J"+fmt.Sprint(i+2), start)
+		f.SetCellValue(volumeSheetName, "K"+fmt.Sprint(i+2), *v.Lifetime/1000000000)
+		capacityseconds, _ := strconv.Atoi(*v.Capacityseconds)
+		f.SetCellValue(volumeSheetName, "L"+fmt.Sprint(i+2), capacityseconds/1024/1024/1024)
+		f.SetCellFormula(volumeSheetName, "M"+fmt.Sprint(i+2), "=IF(LEFT(H"+fmt.Sprint(i+2)+",7)=\"csi-lvm\",K"+fmt.Sprint(i+2)+",0)")
+		f.SetCellFormula(volumeSheetName, "N"+fmt.Sprint(i+2), "=IF(LEFT(H"+fmt.Sprint(i+2)+",10)=\"partition-\",K"+fmt.Sprint(i+2)+",0)")
+	}
+
+	// IP Billing
+	curIP := models.V1IPUsageRequest{
+		From: &fromDT,
+		To:   strfmt.DateTime(to),
+	}
+	if billingOpts.Tenant != "" {
+		curIP.Tenant = billingOpts.Tenant
+	}
+
+	requestIP := accounting.NewIPUsageParams()
+	requestIP.SetBody(&curIP)
+
+	responseIP, err := c.cloud.Accounting.IPUsage(requestIP, nil)
+	if err != nil {
+		return err
+	}
+	f.SetCellValue(ipSheetName, "A1", "Tenant")
+	f.SetCellValue(ipSheetName, "B1", "Project ID")
+	f.SetColWidth(ipSheetName, "B", "B", 0)
+	f.SetCellValue(ipSheetName, "C1", "Project")
+	f.SetCellValue(ipSheetName, "D1", "IP")
+	f.SetColWidth(ipSheetName, "D", "D", 14)
+	f.SetCellValue(ipSheetName, "E1", "Lifetime[s]")
+	for i, v := range responseIP.Payload.Usage {
+		f.SetCellValue(ipSheetName, "A"+fmt.Sprint(i+2), *v.Tenant)
+		f.SetCellValue(ipSheetName, "B"+fmt.Sprint(i+2), *v.Projectid)
+		f.SetCellValue(ipSheetName, "C"+fmt.Sprint(i+2), *v.Projectname)
+		f.SetCellValue(ipSheetName, "D"+fmt.Sprint(i+2), *v.IP)
+		f.SetCellValue(ipSheetName, "E"+fmt.Sprint(i+2), *v.Lifetime/1000000000)
+	}
+
+	// network-traffic Billing
+	curNetwork := models.V1NetworkUsageRequest{
+		From: &fromDT,
+		To:   strfmt.DateTime(to),
+	}
+	if billingOpts.Tenant != "" {
+		curNetwork.Tenant = billingOpts.Tenant
+	}
+
+	requestNetwork := accounting.NewNetworkUsageParams()
+	requestNetwork.SetBody(&curNetwork)
+
+	responseNetwork, err := c.cloud.Accounting.NetworkUsage(requestNetwork, nil)
+	if err != nil {
+		return err
+	}
+	f.SetCellValue(networkSheetName, "A1", "Tenant")
+	f.SetCellValue(networkSheetName, "B1", "Project ID")
+	f.SetColWidth(networkSheetName, "B", "B", 0)
+	f.SetCellValue(networkSheetName, "C1", "Project")
+	f.SetCellValue(networkSheetName, "D1", "Cluster ID")
+	f.SetColWidth(networkSheetName, "D", "D", 0)
+	f.SetCellValue(networkSheetName, "E1", "Cluster")
+	f.SetCellValue(networkSheetName, "F1", "Device")
+	f.SetCellValue(networkSheetName, "G1", "In[GiB]")
+	f.SetCellValue(networkSheetName, "H1", "Out[GiB]")
+	f.SetCellValue(networkSheetName, "I1", "Total[GiB]")
+	for i, v := range responseNetwork.Payload.Usage {
+		f.SetCellValue(networkSheetName, "A"+fmt.Sprint(i+2), *v.Tenant)
+		f.SetCellValue(networkSheetName, "B"+fmt.Sprint(i+2), *v.Projectid)
+		f.SetCellValue(networkSheetName, "C"+fmt.Sprint(i+2), *v.Projectname)
+		f.SetCellValue(networkSheetName, "D"+fmt.Sprint(i+2), *v.Clusterid)
+		f.SetCellValue(networkSheetName, "E"+fmt.Sprint(i+2), *v.Clustername)
+		f.SetCellValue(networkSheetName, "F"+fmt.Sprint(i+2), *v.Device)
+		in, _ := strconv.Atoi(*v.In)
+		f.SetCellValue(networkSheetName, "G"+fmt.Sprint(i+2), in/1024/1024/1024)
+		out, _ := strconv.Atoi(*v.Out)
+		f.SetCellValue(networkSheetName, "H"+fmt.Sprint(i+2), out/1024/1024/1024)
+		total, _ := strconv.Atoi(*v.Total)
+		f.SetCellValue(networkSheetName, "I"+fmt.Sprint(i+2), total/1024/1024/1024)
+	}
+
+	// S3 Billing
+	curS3 := models.V1S3UsageRequest{
+		From: &fromDT,
+		To:   strfmt.DateTime(to),
+	}
+	if billingOpts.Tenant != "" {
+		curS3.Tenant = billingOpts.Tenant
+	}
+
+	requestS3 := accounting.NewS3UsageParams()
+	requestS3.SetBody(&curS3)
+
+	responseS3, err := c.cloud.Accounting.S3Usage(requestS3, nil)
+	if err != nil {
+		return err
+	}
+	f.SetCellValue(s3SheetName, "A1", "Tenant")
+	f.SetCellValue(s3SheetName, "B1", "Project ID")
+	f.SetColWidth(s3SheetName, "B", "B", 0)
+	f.SetCellValue(s3SheetName, "C1", "Project")
+	f.SetCellValue(s3SheetName, "D1", "Partition")
+	f.SetCellValue(s3SheetName, "E1", "User")
+	f.SetCellValue(s3SheetName, "F1", "Bucket ID")
+	f.SetColWidth(s3SheetName, "F", "F", 0)
+	f.SetCellValue(s3SheetName, "G1", "Bucket")
+	f.SetCellValue(s3SheetName, "H1", "Objects")
+	f.SetCellValue(s3SheetName, "I1", "Capacity[GiB*s]")
+	f.SetCellValue(s3SheetName, "J1", "Lifetime[s]")
+	for i, v := range responseS3.Payload.Usage {
+		f.SetCellValue(s3SheetName, "A"+fmt.Sprint(i+2), *v.Tenant)
+		f.SetCellValue(s3SheetName, "B"+fmt.Sprint(i+2), *v.Projectid)
+		f.SetCellValue(s3SheetName, "C"+fmt.Sprint(i+2), *v.Projectname)
+		f.SetCellValue(s3SheetName, "D"+fmt.Sprint(i+2), *v.Partition)
+		f.SetCellValue(s3SheetName, "E"+fmt.Sprint(i+2), *v.User)
+		f.SetCellValue(s3SheetName, "F"+fmt.Sprint(i+2), *v.Bucketid)
+		f.SetCellValue(s3SheetName, "G"+fmt.Sprint(i+2), *v.Bucketname)
+		objects, _ := strconv.Atoi(*v.Currentnumberofobjects)
+		f.SetCellValue(s3SheetName, "H"+fmt.Sprint(i+2), objects)
+		capacityseconds, _ := strconv.Atoi(*v.Storageseconds)
+		f.SetCellValue(s3SheetName, "I"+fmt.Sprint(i+2), capacityseconds/1024/1024/1024)
+		f.SetCellValue(s3SheetName, "J"+fmt.Sprint(i+2), *v.Lifetime/1000000000)
+	}
+
+	// Postgres Billing
+	curPostgres := models.V1PostgresUsageRequest{
+		From: &fromDT,
+		To:   strfmt.DateTime(to),
+	}
+	if billingOpts.Tenant != "" {
+		curPostgres.Tenant = billingOpts.Tenant
+	}
+
+	requestPostgres := accounting.NewPostgresUsageParams()
+	requestPostgres.SetBody(&curPostgres)
+
+	responsePostgres, err := c.cloud.Accounting.PostgresUsage(requestPostgres, nil)
+	if err != nil {
+		return err
+	}
+	f.SetCellValue(postgresSheetName, "A1", "Tenant")
+	f.SetCellValue(postgresSheetName, "B1", "Project ID")
+	f.SetColWidth(postgresSheetName, "B", "B", 0)
+	f.SetCellValue(postgresSheetName, "C1", "Project")
+	f.SetCellValue(postgresSheetName, "D1", "Postgres ID")
+	f.SetColWidth(postgresSheetName, "D", "D", 0)
+	f.SetCellValue(postgresSheetName, "E1", "Description")
+	f.SetCellValue(postgresSheetName, "F1", "Start")
+	f.SetColWidth(postgresSheetName, "F", "F", 14)
+	f.SetCellValue(postgresSheetName, "G1", "CPU[CPU*s]")
+	f.SetCellValue(postgresSheetName, "H1", "Memory[GiB*s]")
+	f.SetCellValue(postgresSheetName, "I1", "Storage[GiB*s]")
+	f.SetCellValue(postgresSheetName, "J1", "Lifetime[s]")
+	for i, v := range responsePostgres.Payload.Usage {
+		f.SetCellValue(postgresSheetName, "A"+fmt.Sprint(i+2), *v.Tenant)
+		f.SetCellValue(postgresSheetName, "B"+fmt.Sprint(i+2), *v.Projectid)
+		f.SetCellValue(postgresSheetName, "C"+fmt.Sprint(i+2), "")
+		f.SetCellValue(postgresSheetName, "D"+fmt.Sprint(i+2), *v.Postgresid)
+		f.SetCellValue(postgresSheetName, "E"+fmt.Sprint(i+2), *v.Postgresdescription)
+		start := time.Time(*v.Postgresstart)
+		f.SetCellValue(postgresSheetName, "F"+fmt.Sprint(i+2), start)
+		cpuseconds, _ := strconv.Atoi(*v.Cpuseconds)
+		f.SetCellValue(postgresSheetName, "G"+fmt.Sprint(i+2), cpuseconds)
+		memoryseconds, _ := strconv.Atoi(*v.Memoryseconds)
+		f.SetCellValue(postgresSheetName, "H"+fmt.Sprint(i+2), memoryseconds/1024/1024/1024)
+		storageseconds, _ := strconv.Atoi(*v.Storageseconds)
+		f.SetCellValue(postgresSheetName, "I"+fmt.Sprint(i+2), storageseconds/1024/1024/1024)
+		f.SetCellValue(postgresSheetName, "J"+fmt.Sprint(i+2), *v.Lifetime/1000000000)
+	}
+
+	filename := ""
+	if billingOpts.Filename != "" {
+		filename = billingOpts.Filename
+		if !strings.HasSuffix(filename, ".xlsx") {
+			filename = filename + ".xlsx"
+		}
+	} else {
+		if billingOpts.Tenant != "" {
+			filename = fmt.Sprintf("%04d-%02d-%s-billing.xlsx", year, month, billingOpts.Tenant)
+		} else {
+			filename = fmt.Sprintf("%04d-%02d-billing.xlsx", year, month)
+		}
+	}
+
+	if err := f.SaveAs(filename); err != nil {
+		return err
+	}
+
+	fmt.Println("Created " + filename)
+
 	return nil
 }
 
