@@ -1389,6 +1389,7 @@ func ssh(args ...string) error {
 	if err != nil {
 		return fmt.Errorf("unable to locate ssh in path")
 	}
+	args = append(args, "-o", "StrictHostKeyChecking=No")
 	fmt.Printf("%s %s\n", path, strings.Join(args, " "))
 	cmd := exec.Command(path, args...)
 	cmd.Stdin = os.Stdin
