@@ -811,12 +811,10 @@ func (c *config) updateCluster(args []string) error {
 	}
 
 	if defaultStorageClass != "" {
-		customDefaultStorageClass.ClassName = &defaultStorageClass
-	}
-
-	customDefaultStorageClass = &models.V1CustomDefaultStorageClass{
-		ClassName: &defaultStorageClass,
-		Enabled:   pointer.Bool(!disableDefaultStorageClass),
+		customDefaultStorageClass = &models.V1CustomDefaultStorageClass{
+			ClassName: &defaultStorageClass,
+			Enabled:   pointer.Bool(!disableDefaultStorageClass),
+		}
 	}
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
