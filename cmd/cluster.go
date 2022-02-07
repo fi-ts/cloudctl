@@ -270,6 +270,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced. [optional]")
 	clusterCreateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. [optional]")
 	clusterCreateCmd.Flags().BoolP("reversed-vpn", "", false, "enables usage of reversed-vpn instead of konnectivity tunnel for worker connectivity. [optional]")
+	clusterCreateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
 
 	must(clusterCreateCmd.MarkFlagRequired("name"))
 	must(clusterCreateCmd.MarkFlagRequired("project"))
@@ -334,6 +335,8 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
 	clusterUpdateCmd.Flags().BoolP("reversed-vpn", "", false, "enables usage of reversed-vpn instead of konnectivity tunnel for worker connectivity.")
+	clusterUpdateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
+	clusterUpdateCmd.Flags().BoolP("disable-custom-default-storage-class", "", false, "if set to true, no default class is deployed, you have to set one of your storageclasses manually to default")
 
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewalltype", c.comp.FirewallTypeListCompletion))
@@ -515,6 +518,14 @@ func (c *config) clusterCreate() error {
 		return fmt.Errorf("audit value %s is not supported; choose one of %v", audit, auditConfigOptions.Names(false))
 	}
 
+	var customDefaultStorageClass *models.V1CustomDefaultStorageClass
+	if viper.IsSet("default-storage-class") {
+		class := viper.GetString("default-storage-class")
+		customDefaultStorageClass = &models.V1CustomDefaultStorageClass{
+			ClassName: &class,
+		}
+	}
+
 	scr := &models.V1ClusterCreateRequest{
 		ProjectID:   &project,
 		Name:        &name,
@@ -551,6 +562,7 @@ func (c *config) clusterCreate() error {
 		ClusterFeatures: &models.V1ClusterFeatures{
 			ReversedVPN: &reversedVPN,
 		},
+		CustomDefaultStorageClass: customDefaultStorageClass,
 	}
 	if seed != "" {
 		scr.SeedName = seed
@@ -783,6 +795,9 @@ func (c *config) updateCluster(args []string) error {
 	maxsurge := viper.GetString("maxsurge")
 	maxunavailable := viper.GetString("maxunavailable")
 
+	defaultStorageClass := viper.GetString("default-storage-class")
+	disableDefaultStorageClass := viper.GetBool("disable-custom-default-storage-class")
+
 	reversedVPN := strconv.FormatBool(viper.GetBool("reversed-vpn"))
 
 	findRequest := cluster.NewFindClusterParams()
@@ -796,6 +811,20 @@ func (c *config) updateCluster(args []string) error {
 	healthtimeout := viper.GetDuration("healthtimeout")
 	draintimeout := viper.GetDuration("draintimeout")
 
+	customDefaultStorageClass := current.CustomDefaultStorageClass
+	if viper.IsSet("default-storage-class") && disableDefaultStorageClass {
+		return fmt.Errorf("either default-storage-class or disable-custom-default-storage-class may be specified, not both")
+	}
+
+	if disableDefaultStorageClass {
+		customDefaultStorageClass = nil
+	}
+
+	if viper.IsSet("default-storage-class") {
+		customDefaultStorageClass = &models.V1CustomDefaultStorageClass{
+			ClassName: &defaultStorageClass,
+		}
+	}
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
 		ID: &ci,
@@ -808,6 +837,7 @@ func (c *config) updateCluster(args []string) error {
 		ClusterFeatures: &models.V1ClusterFeatures{
 			ReversedVPN: &reversedVPN,
 		},
+		CustomDefaultStorageClass: customDefaultStorageClass,
 	}
 
 	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" || viper.IsSet("healthtimeout") || viper.IsSet("draintimeout") || maxsurge != "" || maxunavailable != "" {
