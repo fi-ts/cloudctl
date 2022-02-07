@@ -336,7 +336,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
 	clusterUpdateCmd.Flags().BoolP("reversed-vpn", "", false, "enables usage of reversed-vpn instead of konnectivity tunnel for worker connectivity.")
 	clusterUpdateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
-	clusterUpdateCmd.Flags().BoolP("disable-default-storage-class", "", false, "if set to true, no default class is deployed, you have to set one of your storageclasses manually to default")
+	clusterUpdateCmd.Flags().BoolP("disable-custom-default-storage-class", "", false, "if set to true, no default class is deployed, you have to set one of your storageclasses manually to default")
 
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewalltype", c.comp.FirewallTypeListCompletion))
@@ -796,7 +796,7 @@ func (c *config) updateCluster(args []string) error {
 	maxunavailable := viper.GetString("maxunavailable")
 
 	defaultStorageClass := viper.GetString("default-storage-class")
-	disableDefaultStorageClass := viper.GetBool("disable-default-storage-class")
+	disableDefaultStorageClass := viper.GetBool("disable-custom-default-storage-class")
 
 	reversedVPN := strconv.FormatBool(viper.GetBool("reversed-vpn"))
 
@@ -813,7 +813,7 @@ func (c *config) updateCluster(args []string) error {
 
 	customDefaultStorageClass := current.CustomDefaultStorageClass
 	if viper.IsSet("default-storage-class") && disableDefaultStorageClass {
-		return fmt.Errorf("either default-storage-class or disable-default-storage-class may be specified, not both")
+		return fmt.Errorf("either default-storage-class or disable-custom-default-storage-class may be specified, not both")
 	}
 
 	if disableDefaultStorageClass {
