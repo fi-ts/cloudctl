@@ -802,7 +802,7 @@ func (c *config) updateCluster(args []string) error {
 	draintimeout := viper.GetDuration("draintimeout")
 
 	customDefaultStorageClass := current.CustomDefaultStorageClass
-	if defaultStorageClass != "" && disableDefaultStorageClass {
+	if viper.IsSet("default-storage-class") && disableDefaultStorageClass {
 		return fmt.Errorf("either default-storage-class or disable-default-storage-class may be specified, not both")
 	}
 
@@ -810,7 +810,7 @@ func (c *config) updateCluster(args []string) error {
 		customDefaultStorageClass = nil
 	}
 
-	if defaultStorageClass != "" {
+	if viper.IsSet("default-storage-class") {
 		customDefaultStorageClass = &models.V1CustomDefaultStorageClass{
 			ClassName: &defaultStorageClass,
 			Enabled:   pointer.Bool(true),
