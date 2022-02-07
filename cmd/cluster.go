@@ -788,14 +788,6 @@ func (c *config) updateCluster(args []string) error {
 	defaultStorageClass := viper.GetString("default-storage-class")
 	disableDefaultStorageClass := viper.GetBool("disable-default-storage-class")
 
-	var customDefaultStorageClass *models.V1CustomDefaultStorageClass
-	if defaultStorageClass != "" || disableDefaultStorageClass == true {
-		customDefaultStorageClass = &models.V1CustomDefaultStorageClass{
-			ClassName: &defaultStorageClass,
-			Enabled:   pointer.Bool(!disableDefaultStorageClass),
-		}
-	}
-
 	reversedVPN := strconv.FormatBool(viper.GetBool("reversed-vpn"))
 
 	findRequest := cluster.NewFindClusterParams()
@@ -809,6 +801,23 @@ func (c *config) updateCluster(args []string) error {
 	healthtimeout := viper.GetDuration("healthtimeout")
 	draintimeout := viper.GetDuration("draintimeout")
 
+	customDefaultStorageClass := current.CustomDefaultStorageClass
+	if defaultStorageClass != "" && disableDefaultStorageClass {
+		return fmt.Errorf("either default-storage-class or disable-default-storage-class may be specified, not both")
+	}
+
+	if disableDefaultStorageClass {
+		customDefaultStorageClass = nil
+	}
+
+	if defaultStorageClass != "" {
+		customDefaultStorageClass.ClassName = &defaultStorageClass
+	}
+
+	customDefaultStorageClass = &models.V1CustomDefaultStorageClass{
+		ClassName: &defaultStorageClass,
+		Enabled:   pointer.Bool(!disableDefaultStorageClass),
+	}
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
 		ID: &ci,
