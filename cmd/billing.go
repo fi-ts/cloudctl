@@ -196,6 +196,7 @@ func newBillingCmd(c *config) *cobra.Command {
 	billingOpts = &BillingOpts{}
 
 	excelBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
+	excelBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
 	excelBillingCmd.Flags().StringVarP(&billingOpts.Month, "month", "m", "", "requested month")
 	excelBillingCmd.Flags().StringVarP(&billingOpts.Year, "year", "y", "", "requested year")
 	excelBillingCmd.Flags().StringVarP(&billingOpts.Filename, "file", "f", "", "excel filename")
@@ -400,6 +401,10 @@ func (c *config) excel() error {
 		f.SetCellValue("Parameter", "A3", "Tenant")
 		f.SetCellValue("Parameter", "B3", billingOpts.Tenant)
 	}
+	if billingOpts.ProjectID != "" {
+		f.SetCellValue("Parameter", "C3", "ProjectID")
+		f.SetCellValue("Parameter", "D3", billingOpts.ProjectID)
+	}
 	f.SetCellValue("Parameter", "A4", "Period Start")
 	f.SetCellValue("Parameter", "B4", from)
 	f.SetCellValue("Parameter", "A5", "Period End")
@@ -424,6 +429,9 @@ func (c *config) excel() error {
 	}
 	if billingOpts.Tenant != "" {
 		curCluster.Tenant = billingOpts.Tenant
+	}
+	if billingOpts.ProjectID != "" {
+		curCluster.Projectid = billingOpts.ProjectID
 	}
 
 	requestCluster := accounting.NewClusterUsageParams()
@@ -482,6 +490,9 @@ func (c *config) excel() error {
 	if billingOpts.Tenant != "" {
 		curContainer.Tenant = billingOpts.Tenant
 	}
+	if billingOpts.ProjectID != "" {
+		curContainer.Projectid = billingOpts.ProjectID
+	}
 
 	requestContainer := accounting.NewContainerUsageParams()
 	requestContainer.SetBody(&curContainer)
@@ -538,6 +549,9 @@ func (c *config) excel() error {
 	if billingOpts.Tenant != "" {
 		curVolume.Tenant = billingOpts.Tenant
 	}
+	if billingOpts.ProjectID != "" {
+		curVolume.Projectid = billingOpts.ProjectID
+	}
 
 	requestVolume := accounting.NewVolumeUsageParams()
 	requestVolume.SetBody(&curVolume)
@@ -591,6 +605,9 @@ func (c *config) excel() error {
 	if billingOpts.Tenant != "" {
 		curIP.Tenant = billingOpts.Tenant
 	}
+	if billingOpts.ProjectID != "" {
+		curIP.Projectid = billingOpts.ProjectID
+	}
 
 	requestIP := accounting.NewIPUsageParams()
 	requestIP.SetBody(&curIP)
@@ -621,6 +638,9 @@ func (c *config) excel() error {
 	}
 	if billingOpts.Tenant != "" {
 		curNetwork.Tenant = billingOpts.Tenant
+	}
+	if billingOpts.ProjectID != "" {
+		curNetwork.Tenant = billingOpts.ProjectID
 	}
 
 	requestNetwork := accounting.NewNetworkUsageParams()
@@ -664,6 +684,9 @@ func (c *config) excel() error {
 	if billingOpts.Tenant != "" {
 		curS3.Tenant = billingOpts.Tenant
 	}
+	if billingOpts.ProjectID != "" {
+		curS3.Projectid = billingOpts.ProjectID
+	}
 
 	requestS3 := accounting.NewS3UsageParams()
 	requestS3.SetBody(&curS3)
@@ -706,6 +729,9 @@ func (c *config) excel() error {
 	}
 	if billingOpts.Tenant != "" {
 		curPostgres.Tenant = billingOpts.Tenant
+	}
+	if billingOpts.ProjectID != "" {
+		curPostgres.Projectid = billingOpts.ProjectID
 	}
 
 	requestPostgres := accounting.NewPostgresUsageParams()
