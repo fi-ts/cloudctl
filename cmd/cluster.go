@@ -270,6 +270,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced. [optional]")
 	clusterCreateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. [optional]")
 	clusterCreateCmd.Flags().BoolP("reversed-vpn", "", false, "enables usage of reversed-vpn instead of konnectivity tunnel for worker connectivity. [optional]")
+	clusterUpdateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
 
 	must(clusterCreateCmd.MarkFlagRequired("name"))
 	must(clusterCreateCmd.MarkFlagRequired("project"))
@@ -517,6 +518,14 @@ func (c *config) clusterCreate() error {
 		return fmt.Errorf("audit value %s is not supported; choose one of %v", audit, auditConfigOptions.Names(false))
 	}
 
+	var customDefaultStorageClass *models.V1CustomDefaultStorageClass
+	if viper.IsSet("default-storage-class") {
+		class := viper.GetString("default-storage-class")
+		customDefaultStorageClass = &models.V1CustomDefaultStorageClass{
+			ClassName: &class,
+		}
+	}
+
 	scr := &models.V1ClusterCreateRequest{
 		ProjectID:   &project,
 		Name:        &name,
@@ -553,6 +562,7 @@ func (c *config) clusterCreate() error {
 		ClusterFeatures: &models.V1ClusterFeatures{
 			ReversedVPN: &reversedVPN,
 		},
+		CustomDefaultStorageClass: customDefaultStorageClass,
 	}
 	if seed != "" {
 		scr.SeedName = seed
@@ -813,7 +823,6 @@ func (c *config) updateCluster(args []string) error {
 	if viper.IsSet("default-storage-class") {
 		customDefaultStorageClass = &models.V1CustomDefaultStorageClass{
 			ClassName: &defaultStorageClass,
-			Enabled:   pointer.Bool(true),
 		}
 	}
 	request := cluster.NewUpdateClusterParams()
