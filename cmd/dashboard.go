@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	ui "github.com/dcorbe/termui-dpc"
+	"github.com/dcorbe/termui-dpc/widgets"
 	"github.com/fi-ts/cloud-go/api/client"
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/fi-ts/cloud-go/api/client/health"
@@ -20,8 +22,6 @@ import (
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	ui "github.com/gizak/termui/v3"
-	"github.com/gizak/termui/v3/widgets"
 	"github.com/metal-stack/metal-lib/rest"
 	"github.com/metal-stack/v"
 	"github.com/spf13/cobra"
@@ -626,6 +626,7 @@ func NewDashboardVolumePane(cloud *client.CloudAPI) *dashboardVolumePane {
 
 	d.compressionRatio = widgets.NewGauge()
 	d.compressionRatio.Title = "Compression Ratio"
+	d.compressionRatio.BarColor = ui.ColorMagenta
 
 	d.clusterState = widgets.NewBarChart()
 	d.clusterState.Labels = []string{"OK", "Warning", "Error", "Other"}

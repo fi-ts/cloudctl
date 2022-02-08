@@ -4,11 +4,11 @@ go 1.17
 
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
+	github.com/dcorbe/termui-dpc v0.0.0-20211125210512-9d2673a82dd6
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.13.0
 	github.com/fi-ts/cloud-go v0.18.6
 	github.com/gardener/gardener v1.24.3
-	github.com/gizak/termui/v3 v3.1.0
 	github.com/go-openapi/strfmt v0.21.1
 	github.com/go-playground/validator/v10 v10.10.0
 	github.com/gosimple/slug v1.12.0
