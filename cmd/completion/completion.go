@@ -128,6 +128,21 @@ func (c *Completion) PartitionListCompletion(cmd *cobra.Command, args []string, 
 	return sc.Payload.Partitions, cobra.ShellCompDirectiveNoFileComp
 }
 
+func (c *Completion) SeedListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	request := cluster.NewListConstraintsParams()
+	sc, err := c.cloud.Cluster.ListConstraints(request, nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+
+	var names []string
+	for _, seedNames := range sc.Payload.Seeds {
+		names = append(names, seedNames...)
+	}
+	sort.Strings(names)
+	return names, cobra.ShellCompDirectiveNoFileComp
+}
+
 func (c *Completion) TenantListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	request := tenant.NewListTenantsParams()
 	ts, err := c.cloud.Tenant.ListTenants(request, nil)
