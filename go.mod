@@ -6,7 +6,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.13.0
-	github.com/fi-ts/cloud-go v0.18.7-0.20220215122028-6b4e963dabd9
+	github.com/fi-ts/cloud-go v0.18.7
 	github.com/gardener/gardener v1.24.3
 	github.com/gizak/termui/v3 v3.1.0
 	github.com/go-openapi/strfmt v0.21.1
