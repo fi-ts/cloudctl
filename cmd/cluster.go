@@ -301,12 +301,14 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterListCmd.Flags().String("name", "", "show clusters of given name")
 	clusterListCmd.Flags().String("project", "", "show clusters of given project")
 	clusterListCmd.Flags().String("partition", "", "show clusters in partition")
+	clusterListCmd.Flags().String("seed", "", "show clusters in seed")
 	clusterListCmd.Flags().String("tenant", "", "show clusters of given tenant")
 	clusterListCmd.Flags().StringSlice("labels", nil, "show clusters of given labels")
 	clusterListCmd.Flags().String("purpose", "", "show clusters of given purpose")
 	must(clusterListCmd.RegisterFlagCompletionFunc("name", c.comp.ClusterNameCompletion))
 	must(clusterListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	must(clusterListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	must(clusterListCmd.RegisterFlagCompletionFunc("seed", c.comp.SeedListCompletion))
 	must(clusterListCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
 	must(clusterListCmd.RegisterFlagCompletionFunc("purpose", c.comp.ClusterPurposeListCompletion))
 
@@ -596,11 +598,12 @@ func (c *config) clusterList() error {
 	name := viper.GetString("name")
 	tenant := viper.GetString("tenant")
 	partition := viper.GetString("partition")
+	seed := viper.GetString("seed")
 	project := viper.GetString("project")
 	purpose := viper.GetString("purpose")
 	labels := viper.GetStringSlice("labels")
 	var cfr *models.V1ClusterFindRequest
-	if id != "" || name != "" || tenant != "" || partition != "" || project != "" || purpose != "" || len(labels) > 0 {
+	if id != "" || name != "" || tenant != "" || partition != "" || seed != "" || project != "" || purpose != "" || len(labels) > 0 {
 		cfr = &models.V1ClusterFindRequest{}
 
 		if id != "" {
@@ -617,6 +620,9 @@ func (c *config) clusterList() error {
 		}
 		if partition != "" {
 			cfr.PartitionID = &partition
+		}
+		if seed != "" {
+			cfr.SeedName = &seed
 		}
 		if purpose != "" {
 			cfr.Purpose = &purpose
