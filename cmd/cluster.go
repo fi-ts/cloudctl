@@ -272,13 +272,14 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().BoolP("reversed-vpn", "", false, "enables usage of reversed-vpn instead of konnectivity tunnel for worker connectivity. [optional]")
 	clusterCreateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster [optional]")
 	clusterCreateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes! [optional]")
+	clusterCreateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
 
 	must(clusterCreateCmd.MarkFlagRequired("name"))
 	must(clusterCreateCmd.MarkFlagRequired("project"))
 	must(clusterCreateCmd.MarkFlagRequired("partition"))
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-	must(clusterCreateCmd.RegisterFlagCompletionFunc("seed", c.comp.PartitionListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("seed", c.comp.SeedListCompletion))
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("external-networks", c.comp.NetworkListCompletion))
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("machinetype", c.comp.MachineTypeListCompletion))
@@ -302,12 +303,14 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterListCmd.Flags().String("name", "", "show clusters of given name")
 	clusterListCmd.Flags().String("project", "", "show clusters of given project")
 	clusterListCmd.Flags().String("partition", "", "show clusters in partition")
+	clusterListCmd.Flags().String("seed", "", "show clusters in seed")
 	clusterListCmd.Flags().String("tenant", "", "show clusters of given tenant")
 	clusterListCmd.Flags().StringSlice("labels", nil, "show clusters of given labels")
 	clusterListCmd.Flags().String("purpose", "", "show clusters of given purpose")
 	must(clusterListCmd.RegisterFlagCompletionFunc("name", c.comp.ClusterNameCompletion))
 	must(clusterListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	must(clusterListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	must(clusterListCmd.RegisterFlagCompletionFunc("seed", c.comp.SeedListCompletion))
 	must(clusterListCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
 	must(clusterListCmd.RegisterFlagCompletionFunc("purpose", c.comp.ClusterPurposeListCompletion))
 
@@ -316,6 +319,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().Int32("minsize", 0, "minimal workers of the cluster.")
 	clusterUpdateCmd.Flags().Int32("maxsize", 0, "maximal workers of the cluster.")
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
+	clusterUpdateCmd.Flags().String("seed", "", "name of seed where this cluster should be scheduled.")
 	clusterUpdateCmd.Flags().String("firewalltype", "", "machine type to use for the firewall.")
 	clusterUpdateCmd.Flags().String("firewallimage", "", "machine image to use for the firewall.")
 	clusterUpdateCmd.Flags().String("firewallcontroller", "", "version of the firewall-controller to use.")
@@ -326,19 +330,22 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster, please add --yes-i-really-mean-it")
 	clusterUpdateCmd.Flags().String("audit", "on", "audit logging of cluster API access; can be off, on or splunk (logging to a predefined or custom splunk endpoint).")
 	clusterUpdateCmd.Flags().String("purpose", "", fmt.Sprintf("purpose of the cluster, can be one of %s. SLA is only given on production clusters.", strings.Join(completion.ClusterPurposes, "|")))
-	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]. Use --egress none to remove all ingress rules.")
+	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]. Use --egress none to remove all egress rules.")
 	clusterUpdateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
-	clusterUpdateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced.")
-	clusterUpdateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted.")
+	clusterUpdateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced. (0 = provider-default)")
+	clusterUpdateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. (0 = provider-default)")
 	clusterUpdateCmd.Flags().String("maxsurge", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers created during a update of the cluster.")
 	clusterUpdateCmd.Flags().String("maxunavailable", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "set automatic updates of the kubernetes patch version of the cluster")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "set automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
 	clusterUpdateCmd.Flags().BoolP("reversed-vpn", "", false, "enables usage of reversed-vpn instead of konnectivity tunnel for worker connectivity.")
+	clusterUpdateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
+	clusterUpdateCmd.Flags().BoolP("disable-custom-default-storage-class", "", false, "if set to true, no default class is deployed, you have to set one of your storageclasses manually to default")
 
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewalltype", c.comp.FirewallTypeListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewallimage", c.comp.FirewallImageListCompletion))
+	must(clusterUpdateCmd.RegisterFlagCompletionFunc("seed", c.comp.SeedListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewallcontroller", c.comp.FirewallControllerVersionListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("machinetype", c.comp.MachineTypeListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("machineimage", c.comp.MachineImageListCompletion))
@@ -519,6 +526,14 @@ func (c *config) clusterCreate() error {
 		return fmt.Errorf("audit value %s is not supported; choose one of %v", audit, auditConfigOptions.Names(false))
 	}
 
+	var customDefaultStorageClass *models.V1CustomDefaultStorageClass
+	if viper.IsSet("default-storage-class") {
+		class := viper.GetString("default-storage-class")
+		customDefaultStorageClass = &models.V1CustomDefaultStorageClass{
+			ClassName: &class,
+		}
+	}
+
 	scr := &models.V1ClusterCreateRequest{
 		ProjectID:   &project,
 		Name:        &name,
@@ -559,7 +574,9 @@ func (c *config) clusterCreate() error {
 		ClusterFeatures: &models.V1ClusterFeatures{
 			ReversedVPN: &reversedVPN,
 		},
+		CustomDefaultStorageClass: customDefaultStorageClass,
 	}
+	
 	if seed != "" {
 		scr.SeedName = seed
 	}
@@ -591,11 +608,12 @@ func (c *config) clusterList() error {
 	name := viper.GetString("name")
 	tenant := viper.GetString("tenant")
 	partition := viper.GetString("partition")
+	seed := viper.GetString("seed")
 	project := viper.GetString("project")
 	purpose := viper.GetString("purpose")
 	labels := viper.GetStringSlice("labels")
 	var cfr *models.V1ClusterFindRequest
-	if id != "" || name != "" || tenant != "" || partition != "" || project != "" || purpose != "" || len(labels) > 0 {
+	if id != "" || name != "" || tenant != "" || partition != "" || seed != "" || project != "" || purpose != "" || len(labels) > 0 {
 		cfr = &models.V1ClusterFindRequest{}
 
 		if id != "" {
@@ -612,6 +630,9 @@ func (c *config) clusterList() error {
 		}
 		if partition != "" {
 			cfr.PartitionID = &partition
+		}
+		if seed != "" {
+			cfr.SeedName = &seed
 		}
 		if purpose != "" {
 			cfr.Purpose = &purpose
@@ -777,6 +798,7 @@ func (c *config) updateCluster(args []string) error {
 	minsize := viper.GetInt32("minsize")
 	maxsize := viper.GetInt32("maxsize")
 	version := viper.GetString("version")
+	seed := viper.GetString("seed")
 	firewallType := viper.GetString("firewalltype")
 	firewallImage := viper.GetString("firewallimage")
 	firewallController := viper.GetString("firewallcontroller")
@@ -789,6 +811,9 @@ func (c *config) updateCluster(args []string) error {
 	egress := viper.GetStringSlice("egress")
 	maxsurge := viper.GetString("maxsurge")
 	maxunavailable := viper.GetString("maxunavailable")
+
+	defaultStorageClass := viper.GetString("default-storage-class")
+	disableDefaultStorageClass := viper.GetBool("disable-custom-default-storage-class")
 
 	reversedVPN := strconv.FormatBool(viper.GetBool("reversed-vpn"))
 
@@ -803,6 +828,20 @@ func (c *config) updateCluster(args []string) error {
 	healthtimeout := viper.GetDuration("healthtimeout")
 	draintimeout := viper.GetDuration("draintimeout")
 
+	customDefaultStorageClass := current.CustomDefaultStorageClass
+	if viper.IsSet("default-storage-class") && disableDefaultStorageClass {
+		return fmt.Errorf("either default-storage-class or disable-custom-default-storage-class may be specified, not both")
+	}
+
+	if disableDefaultStorageClass {
+		customDefaultStorageClass = nil
+	}
+
+	if viper.IsSet("default-storage-class") {
+		customDefaultStorageClass = &models.V1CustomDefaultStorageClass{
+			ClassName: &defaultStorageClass,
+		}
+	}
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
 		ID: &ci,
@@ -815,9 +854,10 @@ func (c *config) updateCluster(args []string) error {
 		ClusterFeatures: &models.V1ClusterFeatures{
 			ReversedVPN: &reversedVPN,
 		},
+		CustomDefaultStorageClass: customDefaultStorageClass,
 	}
 
-	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" || healthtimeout != 0 || draintimeout != 0 || maxsurge != "" || maxunavailable != "" {
+	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" || viper.IsSet("healthtimeout") || viper.IsSet("draintimeout") || maxsurge != "" || maxunavailable != "" {
 		workers := current.Workers
 
 		var worker *models.V1Worker
@@ -870,14 +910,14 @@ func (c *config) updateCluster(args []string) error {
 			}
 		}
 
-		if healthtimeout != 0 {
+		if viper.IsSet("healthtimeout") {
 			if !mcmMigrated {
 				log.Fatal("custom healthtimeout requires feature: machineControllerManagerOOT")
 			}
 			worker.HealthTimeout = int64(healthtimeout)
 		}
 
-		if draintimeout != 0 {
+		if viper.IsSet("draintimeout") {
 			if !mcmMigrated {
 				log.Fatal("custom draintimeout requires feature: machineControllerManagerOOT")
 			}
@@ -929,6 +969,10 @@ func (c *config) updateCluster(args []string) error {
 
 	if purpose != "" {
 		cur.Purpose = &purpose
+	}
+
+	if seed != "" {
+		cur.SeedName = &seed
 	}
 
 	if len(addLabels) > 0 || len(removeLabels) > 0 {
@@ -1392,6 +1436,7 @@ func ssh(args ...string) error {
 	if err != nil {
 		return fmt.Errorf("unable to locate ssh in path")
 	}
+	args = append(args, "-o", "StrictHostKeyChecking=No")
 	fmt.Printf("%s %s\n", path, strings.Join(args, " "))
 	cmd := exec.Command(path, args...)
 	cmd.Stdin = os.Stdin

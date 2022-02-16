@@ -32,7 +32,7 @@ type (
 
 func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
 	p.shortHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Backup-Config", "Replicas", "Version", "Age", "Status"}
-	p.wideHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Backup-Config", "Replicas", "Version", "Address", "Age", "Status", "Maintenance", "Labels"}
+	p.wideHeader = []string{"ID", "Description", "Partition", "Tenant", "Project", "CPU", "Buffer", "Storage", "Backup-Config", "Replicas", "Version", "Mode", "Address", "Age", "Status", "Maintenance", "Labels"}
 
 	for _, pg := range data {
 		id := ""
@@ -70,8 +70,23 @@ func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
 		maint := strings.Join(pg.Maintenance, "\n")
 
 		replicas := fmt.Sprintf("%d", pg.NumberOfInstances)
+
+		mode := ""
+		if pg.Restore != nil {
+			mode = "Restore"
+		} else if pg.Connection != nil {
+			if pg.Connection.LocalSideIsPrimary {
+				mode = "Primary"
+				if pg.Connection.Synchronous {
+					mode += " (Sync)"
+				}
+			} else {
+				mode = "Standby"
+			}
+		}
+
 		short := []string{id, description, partitionID, tenant, projectID, cpu, buffer, storage, backup, replicas, pg.Version, age, status}
-		wide := []string{id, description, partitionID, tenant, projectID, cpu, buffer, storage, backup, replicas, pg.Version, address, age, status, maint, lbls}
+		wide := []string{id, description, partitionID, tenant, projectID, cpu, buffer, storage, backup, replicas, pg.Version, mode, address, age, status, maint, lbls}
 
 		p.addWideData(wide, pg)
 		p.addShortData(short, pg)
