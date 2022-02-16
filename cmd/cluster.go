@@ -562,7 +562,6 @@ func (c *config) clusterCreate() error {
 				End:   &maintenanceEnd,
 			},
 		},
-
 		AdditionalNetworks: networks,
 		PartitionID:        &partition,
 		ClusterFeatures: &models.V1ClusterFeatures{
