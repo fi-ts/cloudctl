@@ -336,8 +336,8 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. (0 = provider-default)")
 	clusterUpdateCmd.Flags().String("maxsurge", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers created during a update of the cluster.")
 	clusterUpdateCmd.Flags().String("maxunavailable", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
-	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "set automatic updates of the kubernetes patch version of the cluster")
-	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "set automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
+	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster")
+	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
 	clusterUpdateCmd.Flags().BoolP("reversed-vpn", "", false, "enables usage of reversed-vpn instead of konnectivity tunnel for worker connectivity.")
 	clusterUpdateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
 	clusterUpdateCmd.Flags().BoolP("disable-custom-default-storage-class", "", false, "if set to true, no default class is deployed, you have to set one of your storageclasses manually to default")
@@ -451,9 +451,6 @@ func (c *config) clusterCreate() error {
 	healthtimeout := viper.GetDuration("healthtimeout")
 	draintimeout := viper.GetDuration("draintimeout")
 
-	autoupdateKubernetes := viper.GetBool("autoupdate-kubernetes")
-	autoupdateMachines := viper.GetBool("autoupdate-machinimages")
-
 	allowprivileged := viper.GetBool("allowprivileged")
 	audit := viper.GetString("audit")
 
@@ -564,11 +561,8 @@ func (c *config) clusterCreate() error {
 				Begin: &maintenanceBegin,
 				End:   &maintenanceEnd,
 			},
-			AutoUpdate: &models.V1MaintenanceAutoUpdate{
-				KubernetesVersion: &autoupdateKubernetes,
-				MachineImage:      &autoupdateMachines,
-			},
 		},
+
 		AdditionalNetworks: networks,
 		PartitionID:        &partition,
 		ClusterFeatures: &models.V1ClusterFeatures{
@@ -576,7 +570,19 @@ func (c *config) clusterCreate() error {
 		},
 		CustomDefaultStorageClass: customDefaultStorageClass,
 	}
-	
+
+	if viper.IsSet("autoupdate-kubernetes") || viper.IsSet("autoupdate-machineimages") {
+		scr.Maintenance.AutoUpdate = &models.V1MaintenanceAutoUpdate{}
+		if viper.IsSet("autoupdate-kubernetes") {
+			auto := viper.GetBool("autoupdate-kubernetes")
+			scr.Maintenance.AutoUpdate.KubernetesVersion = &auto
+		}
+		if viper.IsSet("autoupdate-machineimages") {
+			auto := viper.GetBool("autoupdate-machineimages")
+			scr.Maintenance.AutoUpdate.MachineImage = &auto
+		}
+	}
+
 	if seed != "" {
 		scr.SeedName = seed
 	}
