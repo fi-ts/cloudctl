@@ -34,19 +34,19 @@ var (
 func newBillingCmd(c *config) *cobra.Command {
 	billingCmd := &cobra.Command{
 		Use:   "billing",
-		Short: "manage bills",
-		Long:  "TODO",
+		Short: "lookup resource consumption of your cloud resources",
 	}
 	containerBillingCmd := &cobra.Command{
 		Use:   "container",
 		Short: "look at container bills",
-		Example: `If you want to get the costs in Euro, then set two environment variables with the prices from your contract:
+		Long: `
+You may want to convert the usage to a price in Euro by using the prices from your contract. You can use the following environment variables:
 
-		export CLOUDCTL_COSTS_CPU_HOUR=0.01        # Costs in Euro per CPU Hour
-		export CLOUDCTL_COSTS_MEMORY_GI_HOUR=0.01  # Costs in Euro per Gi Memory Hour
+export CLOUDCTL_COSTS_CPU_HOUR=0.01        # costs per cpu hour
+export CLOUDCTL_COSTS_MEMORY_GI_HOUR=0.01  # costs per memory hour
 
-		cloudctl billing container
-		`,
+⚠ Please be aware that any costs calculated in this fashion can still be different from the final bill as it does not include contract specific details like minimum purchase, discounts, etc.
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := initBillingOpts()
 			if err != nil {
@@ -59,10 +59,13 @@ func newBillingCmd(c *config) *cobra.Command {
 	clusterBillingCmd := &cobra.Command{
 		Use:   "cluster",
 		Short: "look at cluster bills",
-		Example: `If you want to get the costs in Euro, then set two environment variables with the prices from your contract:
+		Long: `
+You may want to convert the usage to a price in Euro by using the prices from your contract. You can use the following environment variables:
 
-		cloudctl billing cluster
-		`,
+export CLOUDCTL_COSTS_HOUR=0.01        # costs per hour
+
+⚠ Please be aware that any costs calculated in this fashion can still be different from the final bill as it does not include contract specific details like minimum purchase, discounts, etc.
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := initBillingOpts()
 			if err != nil {
@@ -75,10 +78,13 @@ func newBillingCmd(c *config) *cobra.Command {
 	ipBillingCmd := &cobra.Command{
 		Use:   "ip",
 		Short: "look at ip bills",
-		Example: `If you want to get the costs in Euro, then set two environment variables with the prices from your contract:
+		Long: `
+You may want to convert the usage to a price in Euro by using the prices from your contract. You can use the following environment variables:
 
-		cloudctl billing ip
-		`,
+export CLOUDCTL_COSTS_HOUR=0.01        # costs per hour
+
+⚠ Please be aware that any costs calculated in this fashion can still be different from the final bill as it does not include contract specific details like minimum purchase, discounts, etc.
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := initBillingOpts()
 			if err != nil {
@@ -91,14 +97,15 @@ func newBillingCmd(c *config) *cobra.Command {
 	networkTrafficBillingCmd := &cobra.Command{
 		Use:   "network-traffic",
 		Short: "look at network traffic bills",
-		Example: `If you want to get the costs in Euro, then set two environment variables with the prices from your contract:
+		Long: `
+You may want to convert the usage to a price in Euro by using the prices from your contract. You can use the following environment variables:
 
-		export CLOUDCTL_COSTS_INCOMING_NETWORK_TRAFFIC_GI=0.01        # Costs in Euro per gi
-		export CLOUDCTL_COSTS_OUTGOING_NETWORK_TRAFFIC_GI=0.01        # Costs in Euro per gi
-		export CLOUDCTL_COSTS_TOTAL_NETWORK_TRAFFIC_GI=0.01           # Costs in Euro per gi
+export CLOUDCTL_COSTS_INCOMING_NETWORK_TRAFFIC_GI=0.01        # costs per gi
+export CLOUDCTL_COSTS_OUTGOING_NETWORK_TRAFFIC_GI=0.01        # costs per gi
+export CLOUDCTL_COSTS_TOTAL_NETWORK_TRAFFIC_GI=0.01           # costs per gi
 
-		cloudctl billing network-traffic
-		`,
+⚠ Please be aware that any costs calculated in this fashion can still be different from the final bill as it does not include contract specific details like minimum purchase, discounts, etc.
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := initBillingOpts()
 			if err != nil {
@@ -111,12 +118,13 @@ func newBillingCmd(c *config) *cobra.Command {
 	s3BillingCmd := &cobra.Command{
 		Use:   "s3",
 		Short: "look at s3 bills",
-		Example: `If you want to get the costs in Euro, then set two environment variables with the prices from your contract:
+		Long: `
+You may want to convert the usage to a price in Euro by using the prices from your contract. You can use the following environment variables:
 
-		export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01        # Costs in Euro per storage Hour
+export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01        # costs per storage hour
 
-		cloudctl billing s3
-		`,
+⚠ Please be aware that any costs calculated in this fashion can still be different from the final bill as it does not include contract specific details like minimum purchase, discounts, etc.
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := initBillingOpts()
 			if err != nil {
@@ -129,12 +137,13 @@ func newBillingCmd(c *config) *cobra.Command {
 	volumeBillingCmd := &cobra.Command{
 		Use:   "volume",
 		Short: "look at volume bills",
-		Example: `If you want to get the costs in Euro, then set two environment variables with the prices from your contract:
+		Long: `
+You may want to convert the usage to a price in Euro by using the prices from your contract. You can use the following environment variables:
 
-		export CLOUDCTL_COSTS_CAPACITY_HOUR=0.01        # Costs in Euro per capacity Hour
+export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01        # costs per capacity hour
 
-		cloudctl billing volume
-		`,
+⚠ Please be aware that any costs calculated in this fashion can still be different from the final bill as it does not include contract specific details like minimum purchase, discounts, etc.
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := initBillingOpts()
 			if err != nil {
@@ -147,11 +156,15 @@ func newBillingCmd(c *config) *cobra.Command {
 	postgresBillingCmd := &cobra.Command{
 		Use:   "postgres",
 		Short: "look at postgres bills",
-		//TODO set costs via env var?
-		Example: `If you want to get the costs in Euro, then set two environment variables with the prices from your contract:
+		Long: `
+You may want to convert the usage to a price in Euro by using the prices from your contract. You can use the following environment variables:
 
-		cloudctl billing postgres
-		`,
+export CLOUDCTL_COSTS_CPU_HOUR=0.01        # costs per cpu hour
+export CLOUDCTL_COSTS_MEMORY_GI_HOUR=0.01  # costs per memory hour
+export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01 # Costs per capacity hour
+
+⚠ Please be aware that any costs calculated in this fashion can still be different from the final bill as it does not include contract specific details like minimum purchase, discounts, etc.
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := initBillingOpts()
 			if err != nil {
