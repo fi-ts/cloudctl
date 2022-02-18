@@ -961,7 +961,8 @@ func (c *config) updateCluster(args []string) error {
 		cur.Purpose = &purpose
 	}
 
-	if seed != "" {
+	if seed != "" && current.Status.SeedName != seed {
+		updateCausesDowntime = true
 		cur.SeedName = &seed
 	}
 
