@@ -40,8 +40,8 @@ func newProjectCmd(c *config) *cobra.Command {
 		ValidArgsFunction: c.comp.ProjectListCompletion,
 	}
 	projectDeleteCmd := &cobra.Command{
-		Use:     "remove <projectID>",
-		Aliases: []string{"rm", "delete"},
+		Use:     "delete <projectID>",
+		Aliases: []string{"destroy", "rm", "remove"},
 		Short:   "delete a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.projectDelete(args)

@@ -38,7 +38,7 @@ func newVolumeCmd(c *config) *cobra.Command {
 	}
 	volumeDeleteCmd := &cobra.Command{
 		Use:     "delete <volume>",
-		Aliases: []string{"rm", "destroy", "remove", "delete"},
+		Aliases: []string{"destroy", "rm", "remove"},
 		Short:   "delete a volume",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.volumeDelete(args)
