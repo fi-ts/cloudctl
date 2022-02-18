@@ -44,9 +44,9 @@ func newIPCmd(c *config) *cobra.Command {
 		PreRun: bindPFlags,
 	}
 	ipFreeCmd := &cobra.Command{
-		Use:     "free <ip>",
-		Aliases: []string{"rm", "destroy", "remove", "delete"},
-		Short:   "free an ip",
+		Use:     "delete <ip>",
+		Aliases: []string{"destroy", "rm", "remove", "free"},
+		Short:   "delete an ip",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.ipFree(args)
 		},

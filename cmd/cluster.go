@@ -105,7 +105,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterDeleteCmd := &cobra.Command{
 		Use:     "delete <clusterid>",
 		Short:   "delete a cluster",
-		Aliases: []string{"rm"},
+		Aliases: []string{"destroy", "rm", "remove"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterDelete(args)
 		},
