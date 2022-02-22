@@ -832,6 +832,14 @@ func (c *config) updateCluster(args []string) error {
 			ClassName: &defaultStorageClass,
 		}
 	}
+
+	var clusterFeatures *models.V1ClusterFeatures
+	if viper.IsSet("reversed-vpn") {
+		clusterFeatures = &models.V1ClusterFeatures{
+			ReversedVPN: &reversedVPN,
+		}
+	}
+
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
 		ID: &ci,
@@ -841,9 +849,7 @@ func (c *config) updateCluster(args []string) error {
 				MachineImage:      current.Maintenance.AutoUpdate.MachineImage,
 			},
 		},
-		ClusterFeatures: &models.V1ClusterFeatures{
-			ReversedVPN: &reversedVPN,
-		},
+		ClusterFeatures:           clusterFeatures,
 		CustomDefaultStorageClass: customDefaultStorageClass,
 	}
 
