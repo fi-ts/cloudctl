@@ -100,7 +100,7 @@ func (s ShootLastOperationTablePrinter) Print(data *models.V1beta1LastOperation)
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Audit", "Runtime", "Firewall", "Firewall Controller", "Egress IPs"}
+	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Seed", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Audit", "Runtime", "Firewall", "Firewall Controller", "Egress IPs"}
 	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
 	if s.order == "" {
@@ -119,7 +119,7 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 }
 
 func (s ShootIssuesTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "", "Name", "Version", "Partition", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall", "Firewall Controller", "Egress IPs"}
+	s.wideHeader = []string{"UID", "", "Name", "Version", "Partition", "Seed", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall", "Firewall Controller", "Egress IPs"}
 	s.shortHeader = []string{"UID", "", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
 	if s.order == "" {
@@ -262,6 +262,11 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		firewallImage = *shoot.FirewallImage
 	}
 
+	seed := ""
+	if shoot.Status != nil {
+		seed = shoot.Status.SeedName
+	}
+
 	egressIPs := []string{}
 	for _, e := range shoot.EgressRules {
 		if e == nil {
@@ -280,7 +285,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 	wide := []string{
 		*shoot.ID,
 		*shoot.Name,
-		version, partition, dnsdomain,
+		version, partition, seed, dnsdomain,
 		operation,
 		progress,
 		shootStats.apiServer, shootStats.controlPlane, shootStats.nodes, shootStats.system,
