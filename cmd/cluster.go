@@ -892,25 +892,11 @@ func (c *config) updateCluster(args []string) error {
 			worker.MachineType = &machineType
 		}
 
-		mcmMigrated := false
-		for _, feature := range current.ControlPlaneFeatureGates {
-			if feature == "machineControllerManagerOOT" {
-				mcmMigrated = true
-				break
-			}
-		}
-
 		if viper.IsSet("healthtimeout") {
-			if !mcmMigrated {
-				log.Fatal("custom healthtimeout requires feature: machineControllerManagerOOT")
-			}
 			worker.HealthTimeout = int64(healthtimeout)
 		}
 
 		if viper.IsSet("draintimeout") {
-			if !mcmMigrated {
-				log.Fatal("custom draintimeout requires feature: machineControllerManagerOOT")
-			}
 			worker.DrainTimeout = int64(draintimeout)
 		}
 
