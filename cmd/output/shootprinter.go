@@ -199,6 +199,9 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 	version := ""
 	if shoot.Kubernetes.Version != nil {
 		version = *shoot.Kubernetes.Version
+		if shoot.Maintenance != nil && shoot.Maintenance.AutoUpdate != nil && shoot.Maintenance.AutoUpdate.KubernetesVersion != nil && *shoot.Maintenance.AutoUpdate.KubernetesVersion {
+			version = fmt.Sprintf("%s↑", version)
+		}
 	}
 	purpose := ""
 	if shoot.Purpose != nil {

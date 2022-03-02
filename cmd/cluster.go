@@ -32,6 +32,8 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 )
 
 type auditConfigOptionsMap map[string]struct {
@@ -270,6 +272,8 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced. [optional]")
 	clusterCreateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. [optional]")
 	clusterCreateCmd.Flags().BoolP("reversed-vpn", "", false, "enables usage of reversed-vpn instead of konnectivity tunnel for worker connectivity. [optional]")
+	clusterCreateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster [optional]")
+	clusterCreateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes! [optional]")
 	clusterCreateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
 
 	must(clusterCreateCmd.MarkFlagRequired("name"))
@@ -567,6 +571,24 @@ func (c *config) clusterCreate() error {
 		},
 		CustomDefaultStorageClass: customDefaultStorageClass,
 	}
+
+	if viper.IsSet("autoupdate-kubernetes") || viper.IsSet("autoupdate-machineimages") || purpose == string(v1beta1.ShootPurposeEvaluation) {
+		scr.Maintenance.AutoUpdate = &models.V1MaintenanceAutoUpdate{}
+
+		// default to true for evaluation clusters
+		if purpose == string(v1beta1.ShootPurposeEvaluation) {
+			scr.Maintenance.AutoUpdate.KubernetesVersion = pointer.Bool(true)
+		}
+		if viper.IsSet("autoupdate-kubernetes") {
+			auto := viper.GetBool("autoupdate-kubernetes")
+			scr.Maintenance.AutoUpdate.KubernetesVersion = &auto
+		}
+		if viper.IsSet("autoupdate-machineimages") {
+			auto := viper.GetBool("autoupdate-machineimages")
+			scr.Maintenance.AutoUpdate.MachineImage = &auto
+		}
+	}
+
 	if seed != "" {
 		scr.SeedName = seed
 	}
@@ -950,6 +972,9 @@ func (c *config) updateCluster(args []string) error {
 	}
 
 	if purpose != "" {
+		if *cur.Maintenance.AutoUpdate.KubernetesVersion && *current.Purpose == string(v1beta1.ShootPurposeEvaluation) && purpose != string(v1beta1.ShootPurposeEvaluation) {
+			fmt.Print("\nHint: Kubernetes auto updates will still be enabled after this update.\n\n")
+		}
 		cur.Purpose = &purpose
 	}
 
