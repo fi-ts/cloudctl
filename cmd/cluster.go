@@ -34,7 +34,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
-
 )
 
 type auditConfigOptionsMap map[string]struct {
