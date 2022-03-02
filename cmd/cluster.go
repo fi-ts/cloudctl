@@ -573,11 +573,11 @@ func (c *config) clusterCreate() error {
 		CustomDefaultStorageClass: customDefaultStorageClass,
 	}
 
-	if viper.IsSet("autoupdate-kubernetes") || viper.IsSet("autoupdate-machineimages") || purpose == string(v1beta1.ShootPurposeEvaluation){
+	if viper.IsSet("autoupdate-kubernetes") || viper.IsSet("autoupdate-machineimages") || purpose == string(v1beta1.ShootPurposeEvaluation) {
 		scr.Maintenance.AutoUpdate = &models.V1MaintenanceAutoUpdate{}
 
 		// default to true for evaluation clusters
-		if purpose == string(v1beta1.ShootPurposeEvaluation){
+		if purpose == string(v1beta1.ShootPurposeEvaluation) {
 			scr.Maintenance.AutoUpdate.KubernetesVersion = pointer.Bool(true)
 		}
 		if viper.IsSet("autoupdate-kubernetes") {
