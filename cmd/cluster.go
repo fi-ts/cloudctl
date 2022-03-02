@@ -986,6 +986,9 @@ func (c *config) updateCluster(args []string) error {
 	}
 
 	if purpose != "" {
+		if *cur.Maintenance.AutoUpdate.KubernetesVersion && *current.Purpose == string(v1beta1.ShootPurposeEvaluation) && purpose != string(v1beta1.ShootPurposeEvaluation) {
+			fmt.Print("\nHint: Kubernetes auto updates will still be enabled after this update.\n\n")
+		}
 		cur.Purpose = &purpose
 	}
 
