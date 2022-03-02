@@ -149,7 +149,7 @@ postgres=#
 	}
 	postgresDeleteCmd := &cobra.Command{
 		Use:     "delete <postgres>",
-		Aliases: []string{"rm", "destroy", "remove", "delete"},
+		Aliases: []string{"destroy", "rm", "remove"},
 		Short:   "delete a postgres",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresDelete(args)

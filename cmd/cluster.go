@@ -105,7 +105,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterDeleteCmd := &cobra.Command{
 		Use:     "delete <clusterid>",
 		Short:   "delete a cluster",
-		Aliases: []string{"rm"},
+		Aliases: []string{"destroy", "rm", "remove"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterDelete(args)
 		},
@@ -847,6 +847,14 @@ func (c *config) updateCluster(args []string) error {
 			ClassName: &defaultStorageClass,
 		}
 	}
+
+	var clusterFeatures *models.V1ClusterFeatures
+	if viper.IsSet("reversed-vpn") {
+		clusterFeatures = &models.V1ClusterFeatures{
+			ReversedVPN: &reversedVPN,
+		}
+	}
+
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
 		ID: &ci,
@@ -856,9 +864,7 @@ func (c *config) updateCluster(args []string) error {
 				MachineImage:      current.Maintenance.AutoUpdate.MachineImage,
 			},
 		},
-		ClusterFeatures: &models.V1ClusterFeatures{
-			ReversedVPN: &reversedVPN,
-		},
+		ClusterFeatures:           clusterFeatures,
 		CustomDefaultStorageClass: customDefaultStorageClass,
 	}
 
@@ -976,7 +982,8 @@ func (c *config) updateCluster(args []string) error {
 		cur.Purpose = &purpose
 	}
 
-	if seed != "" {
+	if seed != "" && current.Status.SeedName != seed {
+		updateCausesDowntime = true
 		cur.SeedName = &seed
 	}
 

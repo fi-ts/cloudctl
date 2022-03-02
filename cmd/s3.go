@@ -34,8 +34,8 @@ func newS3Cmd(c *config) *cobra.Command {
 		PreRun: bindPFlags,
 	}
 	s3DeleteCmd := &cobra.Command{
-		Use:     "remove",
-		Aliases: []string{"rm", "delete"},
+		Use:     "delete",
+		Aliases: []string{"destroy", "rm", "remove"},
 		Short:   "delete an s3 user",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.s3Delete()

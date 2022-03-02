@@ -129,7 +129,7 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 	}
 
 	footer := []string{"Total",
-		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)),
+		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)) + lifetimeCosts(*data.Accumulatedusage.Lifetime),
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
 	wideFooter := make([]string, len(s.wideHeader)-len(footer))
@@ -247,7 +247,7 @@ func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 
 	var capacity string
 	if data.Accumulatedusage.Capacityseconds != nil {
-		capacity = humanizeMemory(*data.Accumulatedusage.Capacityseconds)
+		capacity = humanizeMemory(*data.Accumulatedusage.Capacityseconds) + storageCosts(*data.Accumulatedusage.Capacityseconds)
 	}
 	var lifetime string
 	if data.Accumulatedusage.Lifetime != nil {
@@ -339,7 +339,7 @@ func (s IPBillingTablePrinter) Print(data *models.V1IPUsageResponse) {
 	}
 
 	footer := []string{"Total",
-		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)),
+		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)) + lifetimeCosts(*data.Accumulatedusage.Lifetime),
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
 	wideFooter := make([]string, len(s.wideHeader)-len(footer))
@@ -822,9 +822,9 @@ func (s PostgresBillingTablePrinter) Print(data *models.V1PostgresUsageResponse)
 	}
 
 	footer := []string{"Total",
-		humanizeCPU(*data.Accumulatedusage.Cpuseconds),
-		humanizeMemory(*data.Accumulatedusage.Memoryseconds),
-		humanizeMemory(*data.Accumulatedusage.Storageseconds),
+		humanizeCPU(*data.Accumulatedusage.Cpuseconds) + cpuCosts(*data.Accumulatedusage.Cpuseconds),
+		humanizeMemory(*data.Accumulatedusage.Memoryseconds) + memoryCosts(*data.Accumulatedusage.Memoryseconds),
+		humanizeMemory(*data.Accumulatedusage.Storageseconds) + storageCosts(*data.Accumulatedusage.Storageseconds),
 		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)),
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
@@ -855,6 +855,14 @@ func humanizeCPU(cpuSeconds string) string {
 		return humanizeDuration(time.Duration(duration) * time.Second)
 	}
 	return ""
+}
+
+func lifetimeCosts(lifetime int64) string {
+	perHour := viper.GetFloat64("costs-hour")
+	if perHour <= 0 {
+		return ""
+	}
+	return fmt.Sprintf(" (%.2f €)", time.Duration(lifetime).Hours()*perHour)
 }
 
 func cpuCosts(cpuSeconds string) string {
