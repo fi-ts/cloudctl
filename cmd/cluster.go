@@ -32,6 +32,9 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
+
 )
 
 type auditConfigOptionsMap map[string]struct {
@@ -570,8 +573,13 @@ func (c *config) clusterCreate() error {
 		CustomDefaultStorageClass: customDefaultStorageClass,
 	}
 
-	if viper.IsSet("autoupdate-kubernetes") || viper.IsSet("autoupdate-machineimages") {
+	if viper.IsSet("autoupdate-kubernetes") || viper.IsSet("autoupdate-machineimages") || purpose == string(v1beta1.ShootPurposeEvaluation){
 		scr.Maintenance.AutoUpdate = &models.V1MaintenanceAutoUpdate{}
+
+		// default to true for evaluation clusters
+		if purpose == string(v1beta1.ShootPurposeEvaluation){
+			scr.Maintenance.AutoUpdate.KubernetesVersion = pointer.Bool(true)
+		}
 		if viper.IsSet("autoupdate-kubernetes") {
 			auto := viper.GetBool("autoupdate-kubernetes")
 			scr.Maintenance.AutoUpdate.KubernetesVersion = &auto
