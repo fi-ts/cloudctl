@@ -468,9 +468,11 @@ func (c *config) postgresPromoteToPrimary(args []string) error {
 
 	// copy the (minimum) current config
 	body := &models.V1PostgresUpdateRequest{
-		ProjectID:  current.ProjectID,
-		ID:         current.ID,
-		Connection: current.Connection,
+		ProjectID:      current.ProjectID,
+		ID:             current.ID,
+		Connection:     current.Connection,
+		AuditLogs:      current.AuditLogs,
+		PostgresParams: current.PostgresParams,
 	}
 
 	// abort if there is no configured connection
@@ -510,9 +512,11 @@ func (c *config) postgresDemoteToStandby(args []string) error {
 
 	// copy the (minimum) current config
 	body := &models.V1PostgresUpdateRequest{
-		ProjectID:  current.ProjectID,
-		ID:         current.ID,
-		Connection: current.Connection,
+		ProjectID:      current.ProjectID,
+		ID:             current.ID,
+		Connection:     current.Connection,
+		AuditLogs:      current.AuditLogs,
+		PostgresParams: current.PostgresParams,
 	}
 
 	// abort if there is no configured connection
