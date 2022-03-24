@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/fi-ts/cloud-go/api/models"
@@ -95,10 +94,6 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 		if u.Lifetime != nil {
 			lifetime = time.Duration(*u.Lifetime)
 		}
-		var warnings string
-		if u.Warnings != nil {
-			warnings = strings.Join(u.Warnings, ", ")
-		}
 		wide := []string{
 			tenant,
 			from,
@@ -111,7 +106,6 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 			clusterStart,
 			clusterEnd,
 			humanizeDuration(lifetime),
-			warnings,
 		}
 		short := []string{
 			tenant,
@@ -207,10 +201,6 @@ func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 		if u.Lifetime != nil {
 			lifetime = time.Duration(*u.Lifetime)
 		}
-		var warnings string
-		if u.Warnings != nil {
-			warnings = strings.Join(u.Warnings, ", ")
-		}
 		wide := []string{
 			tenant,
 			from,
@@ -227,7 +217,6 @@ func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 			volumeType,
 			capacity,
 			humanizeDuration(lifetime),
-			warnings,
 		}
 		short := []string{
 			tenant,
@@ -309,10 +298,6 @@ func (s IPBillingTablePrinter) Print(data *models.V1IPUsageResponse) {
 		if u.Lifetime != nil {
 			lifetime = time.Duration(*u.Lifetime)
 		}
-		var warnings string
-		if u.Warnings != nil {
-			warnings = strings.Join(u.Warnings, ", ")
-		}
 		wide := []string{
 			tenant,
 			from,
@@ -323,7 +308,6 @@ func (s IPBillingTablePrinter) Print(data *models.V1IPUsageResponse) {
 			start,
 			end,
 			humanizeDuration(lifetime),
-			warnings,
 		}
 		short := []string{
 			tenant,
@@ -409,10 +393,6 @@ func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResp
 		if u.Lifetime != nil {
 			lifetime = time.Duration(*u.Lifetime)
 		}
-		var warnings string
-		if u.Warnings != nil {
-			warnings = strings.Join(u.Warnings, ", ")
-		}
 		wide := []string{
 			tenant,
 			from,
@@ -427,7 +407,6 @@ func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResp
 			out,
 			total,
 			humanizeDuration(lifetime),
-			warnings,
 		}
 		short := []string{
 			tenant,
@@ -539,10 +518,6 @@ func (s S3BillingTablePrinter) Print(data *models.V1S3UsageResponse) {
 		if u.Lifetime != nil {
 			lifetime = time.Duration(*u.Lifetime)
 		}
-		var warnings string
-		if u.Warnings != nil {
-			warnings = strings.Join(u.Warnings, ", ")
-		}
 		wide := []string{
 			tenant,
 			from,
@@ -558,7 +533,6 @@ func (s S3BillingTablePrinter) Print(data *models.V1S3UsageResponse) {
 			objects,
 			storage,
 			humanizeDuration(lifetime),
-			warnings,
 		}
 		short := []string{
 			tenant,
@@ -681,10 +655,6 @@ func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageRespons
 		if u.Memoryseconds != nil {
 			memoryUsage = humanizeMemory(*u.Memoryseconds)
 		}
-		var warnings string
-		if u.Warnings != nil {
-			warnings = strings.Join(u.Warnings, ", ")
-		}
 		wide := []string{
 			tenant,
 			from,
@@ -704,7 +674,6 @@ func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageRespons
 			humanizeDuration(lifetime),
 			cpuUsage,
 			memoryUsage,
-			warnings,
 		}
 		short := []string{
 			tenant,
