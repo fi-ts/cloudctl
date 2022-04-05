@@ -1028,3 +1028,50 @@ func (p PostgresBackupEntryTablePrinter) Order(data []*models.V1PostgresBackupEn
 		})
 	}
 }
+
+// Order cluster
+func (s VolumeTablePrinter) Order(data []*models.V1VolumeResponse) {
+	cols := strings.Split(s.order, ",")
+	if len(cols) > 0 {
+		sort.SliceStable(data, func(i, j int) bool {
+			A := data[i]
+			B := data[j]
+			sizeA := A.Size
+			sizeB := B.Size
+			usageA := A.Statistics.LogicalUsedStorage
+			usageB := B.Statistics.LogicalUsedStorage
+			for _, order := range cols {
+				order = strings.ToLower(order)
+				switch order {
+				case "size":
+					if A.Size == nil {
+						return true
+					}
+					if B.Size == nil {
+						return false
+					}
+					if *sizeA < *sizeB {
+						return true
+					}
+					if *sizeA != *sizeB {
+						return false
+					}
+				case "usage":
+					if A.Statistics == nil || A.Statistics.LogicalUsedStorage == nil {
+						return true
+					}
+					if B.Statistics == nil || B.Statistics.LogicalUsedStorage == nil {
+						return false
+					}
+					if *usageA < *usageB {
+						return true
+					}
+					if *usageA != *usageB {
+						return false
+					}
+				}
+			}
+			return false
+		})
+	}
+}

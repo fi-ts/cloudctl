@@ -25,6 +25,7 @@ type (
 func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 	p.shortHeader = []string{"ID", "Name", "Size", "Usage", "Replicas", "StorageClass", "Project", "Tenant", "Partition"}
 	p.wideHeader = append(p.shortHeader, "Nodes")
+	p.Order(data)
 
 	for _, vol := range data {
 		volumeID := ""
@@ -72,6 +73,7 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 		p.addWideData(wide, vol)
 		p.addShortData(short, vol)
 	}
+	// mwen
 	p.render()
 }
 
