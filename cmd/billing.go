@@ -15,16 +15,18 @@ import (
 )
 
 type BillingOpts struct {
-	Tenant     string
-	FromString string
-	ToString   string
-	From       time.Time
-	To         time.Time
-	ProjectID  string
-	ClusterID  string
-	Device     string
-	Namespace  string
-	CSV        bool
+	Tenant      string
+	FromString  string
+	ToString    string
+	From        time.Time
+	To          time.Time
+	ProjectID   string
+	ClusterID   string
+	Device      string
+	Namespace   string
+	UUID        string
+	Annotations []string
+	CSV         bool
 }
 
 var (
@@ -192,6 +194,7 @@ export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01 # Costs per capacity hour
 	containerBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
 	containerBillingCmd.Flags().StringVarP(&billingOpts.ClusterID, "cluster-id", "c", "", "the cluster to account")
 	containerBillingCmd.Flags().StringVarP(&billingOpts.Namespace, "namespace", "n", "", "the namespace to account")
+	containerBillingCmd.Flags().StringSliceVar(&billingOpts.Annotations, "annotations", nil, "annotations filtering")
 	containerBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 
 	must(viper.BindPFlags(containerBillingCmd.Flags()))
@@ -213,6 +216,7 @@ export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01 # Costs per capacity hour
 	ipBillingCmd.Flags().StringVarP(&billingOpts.FromString, "from", "", "", "the start time in the accounting window to look at (optional, defaults to start of the month")
 	ipBillingCmd.Flags().StringVarP(&billingOpts.ToString, "to", "", "", "the end time in the accounting window to look at (optional, defaults to current system time)")
 	ipBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
+	ipBillingCmd.Flags().StringSliceVar(&billingOpts.Annotations, "annotations", nil, "annotations filtering")
 	ipBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 
 	must(viper.BindPFlags(ipBillingCmd.Flags()))
@@ -244,6 +248,7 @@ export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01 # Costs per capacity hour
 	volumeBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
 	volumeBillingCmd.Flags().StringVarP(&billingOpts.Namespace, "namespace", "n", "", "the namespace to account")
 	volumeBillingCmd.Flags().StringVarP(&billingOpts.ClusterID, "cluster-id", "c", "", "the cluster to account")
+	volumeBillingCmd.Flags().StringSliceVar(&billingOpts.Annotations, "annotations", nil, "annotations filtering")
 	volumeBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 
 	must(viper.BindPFlags(volumeBillingCmd.Flags()))
@@ -253,6 +258,8 @@ export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01 # Costs per capacity hour
 	postgresBillingCmd.Flags().StringVarP(&billingOpts.FromString, "from", "", "", "the start time in the accounting window to look at (optional, defaults to start of the month")
 	postgresBillingCmd.Flags().StringVarP(&billingOpts.ToString, "to", "", "", "the end time in the accounting window to look at (optional, defaults to current system time)")
 	postgresBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
+	postgresBillingCmd.Flags().StringVar(&billingOpts.UUID, "uuid", "", "the uuid to account")
+	postgresBillingCmd.Flags().StringSliceVar(&billingOpts.Annotations, "annotations", nil, "annotations filtering")
 	postgresBillingCmd.Flags().BoolVarP(&billingOpts.CSV, "csv", "", false, "let the server generate a csv file")
 
 	must(viper.BindPFlags(postgresBillingCmd.Flags()))
@@ -353,6 +360,9 @@ func (c *config) containerUsage() error {
 	if billingOpts.Namespace != "" {
 		cur.Namespace = billingOpts.Namespace
 	}
+	if len(billingOpts.Annotations) > 0 {
+		cur.Annotations = billingOpts.Annotations
+	}
 
 	if billingOpts.CSV {
 		return c.containerUsageCSV(&cur)
@@ -396,6 +406,9 @@ func (c *config) ipUsage() error {
 	}
 	if billingOpts.ProjectID != "" {
 		iur.Projectid = billingOpts.ProjectID
+	}
+	if len(billingOpts.Annotations) > 0 {
+		iur.Annotations = billingOpts.Annotations
 	}
 
 	if billingOpts.CSV {
@@ -541,6 +554,9 @@ func (c *config) volumeUsage() error {
 	if billingOpts.Namespace != "" {
 		vur.Clusterid = billingOpts.Namespace
 	}
+	if len(billingOpts.Annotations) > 0 {
+		vur.Annotations = billingOpts.Annotations
+	}
 
 	if billingOpts.CSV {
 		return c.volumeUsageCSV(&vur)
@@ -587,6 +603,12 @@ func (c *config) postgresUsage() error {
 	}
 	if billingOpts.ClusterID != "" {
 		cur.Clusterid = billingOpts.ClusterID
+	}
+	if billingOpts.UUID != "" {
+		cur.UUID = billingOpts.UUID
+	}
+	if len(billingOpts.Annotations) > 0 {
+		cur.Annotations = billingOpts.Annotations
 	}
 
 	if billingOpts.CSV {
