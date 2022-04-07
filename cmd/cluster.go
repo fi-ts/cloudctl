@@ -34,6 +34,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
 )
 
 type auditConfigOptionsMap map[string]struct {
@@ -903,6 +904,21 @@ func (c *config) updateCluster(args []string) error {
 			worker.Minimum = &minsize
 		}
 		if maxsize != 0 {
+			c := 0
+			for _, m := range current.Machines {
+				for _, t := range m.Tags {
+					if t == fmt.Sprintf("%s=%s", string(constants.LabelWorkerPool), *worker.Name) {
+						c++
+					}
+				}
+			}
+			if int(maxsize) < c {
+				fmt.Println("WARNING. New maxsize is lower than currently active machines. A random worker node which is still in use will be removed.")
+				err = helper.Prompt("Are you sure? (y/n)", "y")
+				if err != nil {
+					return err
+				}
+			}
 			worker.Maximum = &maxsize
 		}
 
