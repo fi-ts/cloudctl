@@ -73,7 +73,6 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 		p.addWideData(wide, vol)
 		p.addShortData(short, vol)
 	}
-	// mwen
 	p.render()
 }
 
