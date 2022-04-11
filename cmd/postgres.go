@@ -842,7 +842,7 @@ func (c *config) postgresConnectionString(args []string) error {
 	for user, password := range userpassword {
 		switch t {
 		case "jdbc":
-			fmt.Printf("jdbc:postgresql://%s:%d/postgres?user=%s&password=%s&ssl=true\n", ip, port, user, password)
+			fmt.Printf("jdbc:postgresql://%s:%d/postgres?user=%s&password=%s&ssl=true&tcpKeepAlive=true\n", ip, port, user, password)
 		case "psql":
 			fmt.Printf("PGPASSWORD=%s psql --host=%s --port=%d --username=%s\n", password, ip, port, user)
 		default:
