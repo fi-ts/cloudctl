@@ -8,7 +8,6 @@ import (
 
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/spf13/viper"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 type (
@@ -44,8 +43,8 @@ type (
 
 // Print a cluster usage as table
 func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
-	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "ClusterStart", "ClusterEnd", "Lifetime", "Avg Groups", "Workers"}
-	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterID", "ClusterName", "ClusterStart", "ClusterEnd", "Lifetime", "Avg Groups", "Workers"}
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "ClusterStart", "ClusterEnd", "Lifetime", "Group Avg", "Workers"}
+	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterID", "ClusterName", "ClusterStart", "ClusterEnd", "Lifetime", "Group Avg", "Workers"}
 	if s.order == "" {
 		s.order = "tenant,project,partition,name,id"
 	}
@@ -97,18 +96,27 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 		}
 		var averageGroups string
 		if u.Averageworkergroups != nil {
-			avg, err := resource.ParseQuantity(*u.Averageworkergroups)
-			if err == nil {
-				averageGroups = avg.String()
+			if s, err := strconv.ParseFloat(*u.Averageworkergroups, 64); err == nil {
+				averageGroups = fmt.Sprintf("%g", s)
 			}
+
 		}
-		var workers int64
+		workers := "-"
+		var workerCount int64
 		for _, w := range u.Workergroups {
 			if w.Machinecount == nil {
 				continue
 			}
-			workers += *w.Machinecount
+			workerCount += *w.Machinecount
 		}
+		if workerCount > 0 {
+			workerPlural := ""
+			if len(u.Workergroups) > 1 {
+				workerPlural = "s"
+			}
+			workers = fmt.Sprintf("%s (%d Group%s)", strconv.FormatInt(workerCount, 10), len(u.Workergroups), workerPlural)
+		}
+
 		wide := []string{
 			tenant,
 			from,
@@ -122,7 +130,7 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 			clusterEnd,
 			humanizeDuration(lifetime),
 			averageGroups,
-			strconv.FormatInt(workers, 10),
+			workers,
 		}
 		short := []string{
 			tenant,
@@ -134,7 +142,7 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 			clusterEnd,
 			humanizeDuration(lifetime),
 			averageGroups,
-			strconv.FormatInt(workers, 10),
+			workers,
 		}
 
 		s.addWideData(wide, data)
