@@ -40,8 +40,8 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 			size = humanize.IBytes(uint64(*vol.Size))
 		}
 		usage := ""
-		if vol.Statistics != nil && vol.Statistics.PhysicalUsedStorage != nil {
-			usage = humanize.IBytes(uint64(*vol.Statistics.PhysicalUsedStorage))
+		if vol.Statistics != nil && vol.Statistics.LogicalUsedStorage != nil {
+			usage = humanize.IBytes(uint64(*vol.Statistics.LogicalUsedStorage))
 		}
 		replica := ""
 		if vol.ReplicaCount != nil {
