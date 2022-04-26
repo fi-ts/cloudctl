@@ -150,7 +150,7 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 	}
 
 	footer := []string{"Total",
-		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)) + lifetimeCosts(*data.Accumulatedusage.Lifetime),
+		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)) + lifetimeCosts(*data.Accumulatedusage.Lifetime), "", "",
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
 	wideFooter := make([]string, len(s.wideHeader)-len(footer))
