@@ -56,9 +56,10 @@ func newTenantCmd(c *config) *cobra.Command {
 		PreRun: bindPFlags,
 	}
 
-	tenantCmd.AddCommand(tenantDescribeCmd)
-	tenantCmd.AddCommand(tenantEditCmd)
-	tenantCmd.AddCommand(tenantListCmd)
+	tenantListCmd.Flags().String("id", "", "show projects of given id")
+	tenantListCmd.Flags().String("name", "", "show projects of given name")
+	must(tenantListCmd.RegisterFlagCompletionFunc("id", c.comp.TenantListCompletion))
+
 	tenantApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
 	Example tenant update:
 
@@ -69,6 +70,10 @@ func newTenantCmd(c *config) *cobra.Command {
 	## or via file
 	# cloudctl tenant apply -f tenant1.yaml
 	`)
+
+	tenantCmd.AddCommand(tenantDescribeCmd)
+	tenantCmd.AddCommand(tenantEditCmd)
+	tenantCmd.AddCommand(tenantListCmd)
 	tenantCmd.AddCommand(tenantApplyCmd)
 
 	return tenantCmd
@@ -99,6 +104,22 @@ func (c *config) tenantDescribe(args []string) error {
 }
 
 func (c *config) tenantList() error {
+	id := viper.GetString("id")
+	name := viper.GetString("name")
+	if id != "" || name != "" {
+		tfr := tenant.NewFindTenantsParams().WithBody(&models.V1TenantFindRequest{
+			ID:   id,
+			Name: name,
+		})
+
+		response, err := c.cloud.Tenant.FindTenants(tfr, nil)
+		if err != nil {
+			return err
+		}
+
+		return output.New().Print(response.Payload)
+	}
+
 	request := tenant.NewListTenantsParams()
 	resp, err := c.cloud.Tenant.ListTenants(request, nil)
 	if err != nil {
