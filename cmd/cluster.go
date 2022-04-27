@@ -320,6 +320,7 @@ func newClusterCmd(c *config) *cobra.Command {
 
 	// Cluster update --------------------------------------------------------------------
 	clusterUpdateCmd.Flags().String("workergroup", "", "the name of the worker group to apply updates to, only required when there are multiple worker groups.")
+	clusterUpdateCmd.Flags().Bool("remove-workergroup", false, "if set, removes the targeted worker group")
 	clusterUpdateCmd.Flags().Int32("minsize", 0, "minimal workers of the cluster.")
 	clusterUpdateCmd.Flags().Int32("maxsize", 0, "maximal workers of the cluster.")
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
@@ -812,6 +813,7 @@ func (c *config) updateCluster(args []string) error {
 		return err
 	}
 	workergroupname := viper.GetString("workergroup")
+	removeworkergroup := viper.GetBool("remove-workergroup")
 	minsize := viper.GetInt32("minsize")
 	maxsize := viper.GetInt32("maxsize")
 	version := viper.GetString("version")
@@ -880,7 +882,7 @@ func (c *config) updateCluster(args []string) error {
 		CustomDefaultStorageClass: customDefaultStorageClass,
 	}
 
-	if minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" || viper.IsSet("healthtimeout") || viper.IsSet("draintimeout") || maxsurge != "" || maxunavailable != "" {
+	if workergroupname != "" || minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" || viper.IsSet("healthtimeout") || viper.IsSet("draintimeout") || maxsurge != "" || maxunavailable != "" {
 		workers := current.Workers
 
 		var worker *models.V1Worker
@@ -891,8 +893,21 @@ func (c *config) updateCluster(args []string) error {
 					break
 				}
 			}
-			if worker == nil {
-				return fmt.Errorf("no worker group found by name: %s", workergroupname)
+			if worker == nil && !removeworkergroup {
+				fmt.Println("Adding a new worker group to the cluster.")
+				err = helper.Prompt("Are you sure? (y/n)", "y")
+				if err != nil {
+					return err
+				}
+
+				worker = &models.V1Worker{
+					Name:           &workergroupname,
+					Minimum:        pointer.Int32(1),
+					Maximum:        pointer.Int32(1),
+					MaxSurge:       pointer.String("1"),
+					MaxUnavailable: pointer.String("1"),
+				}
+				workers = append(workers, worker)
 			}
 		} else if len(workers) == 1 {
 			worker = workers[0]
@@ -900,63 +915,82 @@ func (c *config) updateCluster(args []string) error {
 			return fmt.Errorf("there are multiple worker groups, please specify the worker group you want to update with --workergroup")
 		}
 
-		if minsize != 0 {
-			worker.Minimum = &minsize
-		}
-		if maxsize != 0 {
-			c := 0
-			for _, m := range current.Machines {
-				for _, t := range m.Tags {
-					if t == fmt.Sprintf("%s=%s", string(constants.LabelWorkerPool), *worker.Name) {
-						c++
+		if removeworkergroup {
+			fmt.Println("WARNING. Removing a worker group cannot be undone and causes the loss of local data on the deleted nodes.")
+			err = helper.Prompt("Are you sure? (y/n)", "y")
+			if err != nil {
+				return err
+			}
+
+			var newWorkers []*models.V1Worker
+			for _, w := range workers {
+				w := w
+				if w.Name != nil && *w.Name == *worker.Name {
+					continue
+				}
+				newWorkers = append(newWorkers, w)
+			}
+
+			cur.Workers = newWorkers
+		} else {
+			if minsize != 0 {
+				worker.Minimum = &minsize
+			}
+			if maxsize != 0 {
+				c := 0
+				for _, m := range current.Machines {
+					for _, t := range m.Tags {
+						if t == fmt.Sprintf("%s=%s", string(constants.LabelWorkerPool), *worker.Name) {
+							c++
+						}
 					}
 				}
-			}
-			if int(maxsize) < c {
-				fmt.Println("WARNING. New maxsize is lower than currently active machines. A random worker node which is still in use will be removed.")
-				err = helper.Prompt("Are you sure? (y/n)", "y")
-				if err != nil {
-					return err
+				if int(maxsize) < c {
+					fmt.Println("WARNING. New maxsize is lower than currently active machines. A random worker node which is still in use will be removed.")
+					err = helper.Prompt("Are you sure? (y/n)", "y")
+					if err != nil {
+						return err
+					}
 				}
+				worker.Maximum = &maxsize
 			}
-			worker.Maximum = &maxsize
-		}
 
-		if machineImageAndVersion != "" {
-			machineImage := models.V1MachineImage{}
-			machineImageParts := strings.Split(machineImageAndVersion, "-")
-			if len(machineImageParts) == 2 {
-				machineImage = models.V1MachineImage{
-					Name:    &machineImageParts[0],
-					Version: &machineImageParts[1],
+			if machineImageAndVersion != "" {
+				machineImage := models.V1MachineImage{}
+				machineImageParts := strings.Split(machineImageAndVersion, "-")
+				if len(machineImageParts) == 2 {
+					machineImage = models.V1MachineImage{
+						Name:    &machineImageParts[0],
+						Version: &machineImageParts[1],
+					}
+				} else {
+					log.Fatalf("given machineimage:%s is invalid must be in the form <name>-<version>", machineImageAndVersion)
 				}
-			} else {
-				log.Fatalf("given machineimage:%s is invalid must be in the form <name>-<version>", machineImageAndVersion)
+				worker.MachineImage = &machineImage
 			}
-			worker.MachineImage = &machineImage
-		}
 
-		if machineType != "" {
-			worker.MachineType = &machineType
-		}
+			if machineType != "" {
+				worker.MachineType = &machineType
+			}
 
-		if viper.IsSet("healthtimeout") {
-			worker.HealthTimeout = int64(healthtimeout)
-		}
+			if viper.IsSet("healthtimeout") {
+				worker.HealthTimeout = int64(healthtimeout)
+			}
 
-		if viper.IsSet("draintimeout") {
-			worker.DrainTimeout = int64(draintimeout)
-		}
+			if viper.IsSet("draintimeout") {
+				worker.DrainTimeout = int64(draintimeout)
+			}
 
-		if maxsurge != "" {
-			worker.MaxSurge = &maxsurge
-		}
+			if maxsurge != "" {
+				worker.MaxSurge = &maxsurge
+			}
 
-		if maxunavailable != "" {
-			worker.MaxUnavailable = &maxunavailable
-		}
+			if maxunavailable != "" {
+				worker.MaxUnavailable = &maxunavailable
+			}
 
-		cur.Workers = append(cur.Workers, workers...)
+			cur.Workers = append(cur.Workers, workers...)
+		}
 	}
 
 	if viper.IsSet("autoupdate-kubernetes") {
