@@ -43,8 +43,8 @@ type (
 
 // Print a cluster usage as table
 func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
-	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "ClusterStart", "ClusterEnd", "Lifetime", "Warnings"}
-	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterID", "ClusterName", "ClusterStart", "ClusterEnd", "Lifetime"}
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "ClusterStart", "ClusterEnd", "Lifetime", "Group Avg", "Workers"}
+	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterID", "ClusterName", "ClusterStart", "ClusterEnd", "Lifetime", "Group Avg", "Workers"}
 	if s.order == "" {
 		s.order = "tenant,project,partition,name,id"
 	}
@@ -94,6 +94,29 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 		if u.Lifetime != nil {
 			lifetime = time.Duration(*u.Lifetime)
 		}
+		var averageGroups string
+		if u.Averageworkergroups != nil {
+			if s, err := strconv.ParseFloat(*u.Averageworkergroups, 64); err == nil {
+				averageGroups = fmt.Sprintf("%g", s)
+			}
+
+		}
+		workers := "-"
+		var workerCount int64
+		for _, w := range u.Workergroups {
+			if w.Machinecount == nil {
+				continue
+			}
+			workerCount += *w.Machinecount
+		}
+		if workerCount > 0 {
+			workerPlural := ""
+			if len(u.Workergroups) > 1 {
+				workerPlural = "s"
+			}
+			workers = fmt.Sprintf("%s (%d Group%s)", strconv.FormatInt(workerCount, 10), len(u.Workergroups), workerPlural)
+		}
+
 		wide := []string{
 			tenant,
 			from,
@@ -106,6 +129,8 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 			clusterStart,
 			clusterEnd,
 			humanizeDuration(lifetime),
+			averageGroups,
+			workers,
 		}
 		short := []string{
 			tenant,
@@ -116,6 +141,8 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 			clusterStart,
 			clusterEnd,
 			humanizeDuration(lifetime),
+			averageGroups,
+			workers,
 		}
 
 		s.addWideData(wide, data)
@@ -123,7 +150,7 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 	}
 
 	footer := []string{"Total",
-		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)) + lifetimeCosts(*data.Accumulatedusage.Lifetime),
+		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)) + lifetimeCosts(*data.Accumulatedusage.Lifetime), "", "",
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
 	wideFooter := make([]string, len(s.wideHeader)-len(footer))
@@ -134,7 +161,7 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 
 // Print a volume usage as table
 func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
-	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Start", "End", "Class", "Name", "Type", "CapacitySeconds (Gi * h)", "Lifetime", "Warnings"}
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Start", "End", "Class", "Name", "Type", "CapacitySeconds (Gi * h)", "Lifetime"}
 	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "Class", "Name", "Type", "CapacitySeconds (Gi * h)", "Lifetime"}
 	if s.order == "" {
 		s.order = "tenant,project,partition,cluster,name"
@@ -255,7 +282,7 @@ func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 
 // Print a cluster usage as table
 func (s IPBillingTablePrinter) Print(data *models.V1IPUsageResponse) {
-	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "IP", "Start", "End", "Lifetime", "Warnings"}
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "IP", "Start", "End", "Lifetime"}
 	s.shortHeader = []string{"Tenant", "ProjectID", "IP", "Start", "End", "Lifetime"}
 	if s.order == "" {
 		s.order = "tenant,project,ip"
@@ -334,7 +361,7 @@ func (s IPBillingTablePrinter) Print(data *models.V1IPUsageResponse) {
 
 // Print a volume usage as table
 func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResponse) {
-	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Device", "In (Gi)", "Out (Gi)", "Total (Gi)", "Lifetime", "Warnings"}
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Device", "In (Gi)", "Out (Gi)", "Total (Gi)", "Lifetime"}
 	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "Device", "In (Gi)", "Out (Gi)", "Total (Gi)", "Lifetime"}
 	if s.order == "" {
 		s.order = "tenant,project,partition,cluster,device"
@@ -455,7 +482,7 @@ func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResp
 
 // Print a s3 usage as table
 func (s S3BillingTablePrinter) Print(data *models.V1S3UsageResponse) {
-	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "User", "Bucket Name", "Bucket ID", "Start", "End", "Objects", "StorageSeconds (Gi * h)", "Lifetime", "Warnings"}
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "User", "Bucket Name", "Bucket ID", "Start", "End", "Objects", "StorageSeconds (Gi * h)", "Lifetime"}
 	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "User", "Bucket Name", "Bucket ID", "Objects", "StorageSeconds (Gi * h)", "Lifetime"}
 	if s.order == "" {
 		s.order = "tenant,project,partition,user,bucket,bucket_id"
@@ -576,7 +603,7 @@ func (s S3BillingTablePrinter) Print(data *models.V1S3UsageResponse) {
 
 // Print a container usage as table
 func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageResponse) {
-	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Namespace", "PodUUID", "PodName", "PodStartDate", "PodEndDate", "ContainerName", "ContainerImage", "Lifetime", "CPUSeconds", "MemorySeconds", "Warnings"}
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Namespace", "PodUUID", "PodName", "PodStartDate", "PodEndDate", "ContainerName", "ContainerImage", "Lifetime", "CPUSeconds", "MemorySeconds"}
 	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "Namespace", "PodName", "ContainerName", "Lifetime", "CPU (1 * s)", "Memory (Gi * h)"}
 	if s.order == "" {
 		s.order = "tenant,project,partition,cluster,namespace,pod,container"
