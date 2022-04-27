@@ -87,6 +87,12 @@ func newProjectCmd(c *config) *cobra.Command {
 	must(projectCreateCmd.MarkFlagRequired("name"))
 	must(projectCreateCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
 
+	projectListCmd.Flags().String("id", "", "show projects of given id")
+	projectListCmd.Flags().String("name", "", "show projects of given name")
+	projectListCmd.Flags().String("tenant", "", "show projects of given tenant")
+	must(projectListCmd.RegisterFlagCompletionFunc("id", c.comp.ProjectListCompletion))
+	must(projectListCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
+
 	projectApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
 	Example project update:
 
@@ -193,6 +199,24 @@ func (c *config) projectDelete(args []string) error {
 }
 
 func (c *config) projectList() error {
+	id := viper.GetString("id")
+	name := viper.GetString("name")
+	tenant := viper.GetString("tenant")
+	if id != "" || name != "" || tenant != "" {
+		pfr := project.NewFindProjectsParams().WithBody(&models.V1ProjectFindRequest{
+			ID:       id,
+			Name:     name,
+			TenantID: tenant,
+		})
+
+		response, err := c.cloud.Project.FindProjects(pfr, nil)
+		if err != nil {
+			return err
+		}
+
+		return output.New().Print(response.Payload.Projects)
+	}
+
 	request := project.NewListProjectsParams()
 	response, err := c.cloud.Project.ListProjects(request, nil)
 	if err != nil {
