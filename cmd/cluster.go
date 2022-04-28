@@ -260,6 +260,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().String("firewalltype", "", "machine type to use for the firewall. [optional]")
 	clusterCreateCmd.Flags().String("firewallimage", "", "machine image to use for the firewall. [optional]")
 	clusterCreateCmd.Flags().String("firewallcontroller", "", "version of the firewall-controller to use. [optional]")
+	clusterCreateCmd.Flags().BoolP("logacceptedconns", "", false, "also log accepted connections on the cluster firewall [optional]")
 	clusterCreateCmd.Flags().String("cri", "", "container runtime to use, only docker|containerd supported as alternative actually. [optional]")
 	clusterCreateCmd.Flags().Int32("minsize", 1, "minimal workers of the cluster.")
 	clusterCreateCmd.Flags().Int32("maxsize", 1, "maximal workers of the cluster.")
@@ -328,6 +329,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().String("firewalltype", "", "machine type to use for the firewall.")
 	clusterUpdateCmd.Flags().String("firewallimage", "", "machine image to use for the firewall.")
 	clusterUpdateCmd.Flags().String("firewallcontroller", "", "version of the firewall-controller to use.")
+	clusterUpdateCmd.Flags().BoolP("logacceptedconns", "", false, "enables logging of accepted connections on the cluster firewall")
 	clusterUpdateCmd.Flags().String("machinetype", "", "machine type to use for the nodes.")
 	clusterUpdateCmd.Flags().String("machineimage", "", "machine image to use for the nodes, must be in the form of <name>-<version> ")
 	clusterUpdateCmd.Flags().StringSlice("addlabels", []string{}, "labels to add to the cluster")
@@ -445,6 +447,7 @@ func (c *config) clusterCreate() error {
 	firewallType := viper.GetString("firewalltype")
 	firewallImage := viper.GetString("firewallimage")
 	firewallController := viper.GetString("firewallcontroller")
+	logAcceptedConnections := strconv.FormatBool(viper.GetBool("logacceptedconns"))
 
 	cri := viper.GetString("cri")
 
@@ -570,7 +573,8 @@ func (c *config) clusterCreate() error {
 		AdditionalNetworks: networks,
 		PartitionID:        &partition,
 		ClusterFeatures: &models.V1ClusterFeatures{
-			ReversedVPN: &reversedVPN,
+			ReversedVPN:            &reversedVPN,
+			LogAcceptedConnections: &logAcceptedConnections,
 		},
 		CustomDefaultStorageClass: customDefaultStorageClass,
 	}
@@ -822,6 +826,7 @@ func (c *config) updateCluster(args []string) error {
 	firewallImage := viper.GetString("firewallimage")
 	firewallController := viper.GetString("firewallcontroller")
 	firewallNetworks := viper.GetStringSlice("external-networks")
+	logAcceptedConnections := strconv.FormatBool(viper.GetBool("logacceptedconns"))
 	machineType := viper.GetString("machinetype")
 	machineImageAndVersion := viper.GetString("machineimage")
 	purpose := viper.GetString("purpose")
@@ -864,9 +869,10 @@ func (c *config) updateCluster(args []string) error {
 
 	var clusterFeatures *models.V1ClusterFeatures
 	if viper.IsSet("reversed-vpn") {
-		clusterFeatures = &models.V1ClusterFeatures{
-			ReversedVPN: &reversedVPN,
-		}
+		clusterFeatures.ReversedVPN = &reversedVPN
+	}
+	if viper.IsSet("logacceptedconns") {
+		clusterFeatures.LogAcceptedConnections = &logAcceptedConnections
 	}
 
 	request := cluster.NewUpdateClusterParams()
