@@ -361,6 +361,7 @@ postgres=#
 	postgresBackupAutoCreateCmd.Flags().StringP("schedule", "", "30 00 * * *", "backup schedule in cron syntax")
 	postgresBackupAutoCreateCmd.Flags().Int32P("retention", "", int32(10), "number of backups per postgres to retain")
 	postgresBackupAutoCreateCmd.Flags().StringP("partition", "", "", "use this partition to create the backup bucket")
+	postgresBackupAutoCreateCmd.Flags().StringP("s3-encryptionkey", "", "", "s3 encryption key, enables sse (server side encryption) if given [optional]")
 	must(postgresBackupAutoCreateCmd.MarkFlagRequired("name"))
 	must(postgresBackupAutoCreateCmd.MarkFlagRequired("project"))
 	must(postgresBackupAutoCreateCmd.MarkFlagRequired("partition"))
@@ -874,6 +875,11 @@ func (c *config) postgresBackupCreate(autocreate bool) error {
 	if autocreate {
 		bcr.Autocreate = true
 		bcr.Partition = partition
+		if s3Encryptionkey != "" {
+			bcr.Secret = &models.V1PostgresBackupSecret{
+				S3encryptionkey: s3Encryptionkey,
+			}
+		}
 	} else {
 		bcr.S3Endpoint = s3Endpoint
 		bcr.S3BucketName = s3BucketName
