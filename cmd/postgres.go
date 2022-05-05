@@ -338,13 +338,11 @@ postgres=#
 		return []string{"jdbc", "psql"}, cobra.ShellCompDirectiveNoFileComp
 	}))
 
-	postgresBackupCreateCmd.Flags().StringP("name", "", "", "name of the database backup")
-	postgresBackupCreateCmd.Flags().StringP("project", "", "", "project of the database backup")
+	postgresBackupCreateCmd.Flags().StringP("name", "", "", "name of the backup config")
+	postgresBackupCreateCmd.Flags().StringP("project", "", "", "project of the backup config")
 	postgresBackupCreateCmd.Flags().StringP("schedule", "", "30 00 * * *", "backup schedule in cron syntax")
-	postgresBackupCreateCmd.Flags().Int32P("retention", "", int32(10), "number of backups per postgres to retain")
-	postgresBackupCreateCmd.Flags().BoolP("autocreate", "", false, "automatically create s3 backup bucket")
-	postgresBackupCreateCmd.Flags().StringP("partition", "", "", "if autocreate is set to true, use this partition to create the backup bucket")
-	postgresBackupCreateCmd.Flags().StringP("s3-endpoint", "", "", "s3 endpooint to backup to")
+	postgresBackupCreateCmd.Flags().Int32P("retention", "", int32(10), "number of backups per database to retain")
+	postgresBackupCreateCmd.Flags().StringP("s3-endpoint", "", "", "s3 endpoint to backup to")
 	postgresBackupCreateCmd.Flags().StringP("s3-region", "", "", "s3 region to backup to [optional]")
 	postgresBackupCreateCmd.Flags().StringP("s3-bucketname", "", "", "s3 bucketname to backup to")
 	postgresBackupCreateCmd.Flags().StringP("s3-accesskey", "", "", "s3-accesskey")
@@ -356,18 +354,18 @@ postgres=#
 	must(postgresBackupCreateCmd.MarkFlagRequired("s3-accesskey"))
 	must(postgresBackupCreateCmd.MarkFlagRequired("s3-secretkey"))
 
-	postgresBackupAutoCreateCmd.Flags().StringP("name", "", "", "name of the database backup")
-	postgresBackupAutoCreateCmd.Flags().StringP("project", "", "", "project of the database backup")
+	postgresBackupAutoCreateCmd.Flags().StringP("name", "", "", "name of the backup config")
+	postgresBackupAutoCreateCmd.Flags().StringP("project", "", "", "project of the backup config")
 	postgresBackupAutoCreateCmd.Flags().StringP("schedule", "", "30 00 * * *", "backup schedule in cron syntax")
-	postgresBackupAutoCreateCmd.Flags().Int32P("retention", "", int32(10), "number of backups per postgres to retain")
-	postgresBackupAutoCreateCmd.Flags().StringP("partition", "", "", "use this partition to create the backup bucket")
+	postgresBackupAutoCreateCmd.Flags().Int32P("retention", "", int32(10), "number of backups per database to retain")
+	postgresBackupAutoCreateCmd.Flags().StringP("partition", "", "", "the postgres partition this backup configuration is mainly used in. This e.g. automatically selects the recommended S3 partition for the (auto-created) S3 bucket.")
 	must(postgresBackupAutoCreateCmd.MarkFlagRequired("name"))
 	must(postgresBackupAutoCreateCmd.MarkFlagRequired("project"))
 	must(postgresBackupAutoCreateCmd.MarkFlagRequired("partition"))
 
 	postgresBackupUpdateCmd.Flags().StringP("id", "", "", "id of the database backup")
 	postgresBackupUpdateCmd.Flags().StringP("schedule", "", "", "backup schedule in cron syntax [optional]")
-	postgresBackupUpdateCmd.Flags().Int32P("retention", "", int32(0), "number of backups per postgres to retain [optional]")
+	postgresBackupUpdateCmd.Flags().Int32P("retention", "", int32(0), "number of backups per database to retain [optional]")
 	must(postgresBackupUpdateCmd.MarkFlagRequired("id"))
 
 	return postgresCmd
