@@ -949,7 +949,7 @@ func (c *config) postgresBackupDelete(args []string) error {
 	}
 	id := args[0]
 
-	// GetBackupConfigParams
+	// try to fetch that backup-config first
 	gbcp := database.NewGetBackupConfigParams().WithID(args[0])
 	_, err := c.cloud.Database.GetBackupConfig(gbcp, nil)
 	if err != nil {
