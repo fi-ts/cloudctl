@@ -222,7 +222,7 @@ postgres=#
 		Aliases: []string{"ls"},
 		Short:   "list backup configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.postgresBackupGet(args)
+			return c.postgresBackupGet()
 		},
 		PreRun: bindPFlags,
 	}
@@ -932,18 +932,9 @@ func (c *config) postgresBackupUpdate() error {
 	return output.New().Print(response.Payload)
 }
 
-func (c *config) postgresBackupGet(args []string) error {
-	if len(args) <= 0 {
-		request := database.NewListPostgresBackupConfigsParams()
-		resp, err := c.cloud.Database.ListPostgresBackupConfigs(request, nil)
-		if err != nil {
-			return err
-		}
-		return output.New().Print(resp.Payload)
-	}
-
-	request := database.NewGetPostgresBackupsParams().WithID(args[0])
-	resp, err := c.cloud.Database.GetPostgresBackups(request, nil)
+func (c *config) postgresBackupGet() error {
+	request := database.NewListPostgresBackupConfigsParams()
+	resp, err := c.cloud.Database.ListPostgresBackupConfigs(request, nil)
 	if err != nil {
 		return err
 	}
