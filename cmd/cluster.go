@@ -321,6 +321,8 @@ func newClusterCmd(c *config) *cobra.Command {
 	// Cluster update --------------------------------------------------------------------
 	clusterUpdateCmd.Flags().String("workergroup", "", "the name of the worker group to apply updates to, only required when there are multiple worker groups.")
 	clusterUpdateCmd.Flags().Bool("remove-workergroup", false, "if set, removes the targeted worker group")
+	clusterUpdateCmd.Flags().StringSlice("workerlabels", []string{}, "labels of the worker group (syncs to kubernetes node resource after some time, too)")
+	clusterUpdateCmd.Flags().StringSlice("workerannotations", []string{}, "annotations of the worker group (syncs to kubernetes node resource after some time, too)")
 	clusterUpdateCmd.Flags().Int32("minsize", 0, "minimal workers of the cluster.")
 	clusterUpdateCmd.Flags().Int32("maxsize", 0, "maximal workers of the cluster.")
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
@@ -814,6 +816,8 @@ func (c *config) updateCluster(args []string) error {
 	}
 	workergroupname := viper.GetString("workergroup")
 	removeworkergroup := viper.GetBool("remove-workergroup")
+	workerlabelslice := viper.GetStringSlice("workerlabels")
+	workerannotationsslice := viper.GetStringSlice("workerannotations")
 	minsize := viper.GetInt32("minsize")
 	maxsize := viper.GetInt32("maxsize")
 	version := viper.GetString("version")
@@ -835,6 +839,15 @@ func (c *config) updateCluster(args []string) error {
 	disableDefaultStorageClass := viper.GetBool("disable-custom-default-storage-class")
 
 	reversedVPN := strconv.FormatBool(viper.GetBool("reversed-vpn"))
+
+	workerlabels, err := helper.LabelsToMap(workerlabelslice)
+	if err != nil {
+		return err
+	}
+	workerannotations, err := helper.LabelsToMap(workerannotationsslice)
+	if err != nil {
+		return err
+	}
 
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
@@ -882,7 +895,12 @@ func (c *config) updateCluster(args []string) error {
 		CustomDefaultStorageClass: customDefaultStorageClass,
 	}
 
-	if workergroupname != "" || minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" || viper.IsSet("healthtimeout") || viper.IsSet("draintimeout") || maxsurge != "" || maxunavailable != "" {
+	if workergroupname != "" ||
+		minsize != 0 || maxsize != 0 || maxsurge != "" || maxunavailable != "" ||
+		machineImageAndVersion != "" || machineType != "" ||
+		viper.IsSet("healthtimeout") || viper.IsSet("draintimeout") ||
+		viper.IsSet("workerlabels") || viper.IsSet("workerannotations") {
+
 		workers := current.Workers
 
 		var worker *models.V1Worker
@@ -906,6 +924,8 @@ func (c *config) updateCluster(args []string) error {
 					Maximum:        pointer.Int32(1),
 					MaxSurge:       pointer.String("1"),
 					MaxUnavailable: pointer.String("1"),
+					Labels:         workerlabels,
+					Annotations:    workerannotations,
 				}
 				workers = append(workers, worker)
 			}
@@ -979,6 +999,14 @@ func (c *config) updateCluster(args []string) error {
 
 			if viper.IsSet("draintimeout") {
 				worker.DrainTimeout = int64(draintimeout)
+			}
+
+			if viper.IsSet("workerlabels") {
+				worker.Labels = workerlabels
+			}
+
+			if viper.IsSet("workerannotations") {
+				worker.Annotations = workerannotations
 			}
 
 			if maxsurge != "" {
