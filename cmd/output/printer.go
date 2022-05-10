@@ -243,6 +243,8 @@ func (t tablePrinter) Print(data interface{}) error {
 		IPTablePrinter{t}.Print(d)
 	case *models.ModelsV1IPResponse:
 		IPTablePrinter{t}.Print([]*models.ModelsV1IPResponse{d})
+	case []*models.V1ProjectInfoResponse:
+		ProjectBillingTablePrinter{t}.Print(d)
 	case *models.V1ContainerUsageResponse:
 		ContainerBillingTablePrinter{t}.Print(d)
 	case *models.V1ClusterUsageResponse:

@@ -11,6 +11,11 @@ import (
 )
 
 type (
+	// ProjectBillingTablePrinter print bills in a Table
+	ProjectBillingTablePrinter struct {
+		tablePrinter
+	}
+
 	// ClusterBillingTablePrinter print bills in a Table
 	ClusterBillingTablePrinter struct {
 		tablePrinter
@@ -40,6 +45,37 @@ type (
 		tablePrinter
 	}
 )
+
+// Print a cluster usage as table
+func (s ProjectBillingTablePrinter) Print(data []*models.V1ProjectInfoResponse) {
+	s.wideHeader = []string{"Tenant", "ProjectID"}
+	s.shortHeader = s.wideHeader
+	if s.order == "" {
+		s.order = "tenant,project"
+	}
+	s.Order(data)
+	for _, u := range data {
+		var tenant string
+		if u.Tenantid != nil {
+			tenant = *u.Tenantid
+		}
+		var projectID string
+		if u.Projectid != nil {
+			projectID = *u.Projectid
+		}
+
+		wide := []string{
+			tenant,
+			projectID,
+		}
+		short := wide
+
+		s.addWideData(wide, data)
+		s.addShortData(short, data)
+	}
+
+	s.render()
+}
 
 // Print a cluster usage as table
 func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
