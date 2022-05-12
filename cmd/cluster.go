@@ -265,7 +265,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().Int32("minsize", 1, "minimal workers of the cluster.")
 	clusterCreateCmd.Flags().Int32("maxsize", 1, "maximal workers of the cluster.")
 	clusterCreateCmd.Flags().String("maxsurge", "1", "max number (e.g. 1) or percentage (e.g. 10%) of workers created during a update of the cluster.")
-	clusterCreateCmd.Flags().String("maxunavailable", "1", "max number (e.g. 1) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
+	clusterCreateCmd.Flags().String("maxunavailable", "0", "max number (e.g. 0) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
 	clusterCreateCmd.Flags().StringSlice("labels", []string{}, "labels of the cluster")
 	clusterCreateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
 	clusterCreateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <network>:<ip>; e.g.: --egress internet:1.2.3.4,extnet:123.1.1.1 --egress internet:1.2.3.5 [optional]")
@@ -322,6 +322,8 @@ func newClusterCmd(c *config) *cobra.Command {
 	// Cluster update --------------------------------------------------------------------
 	clusterUpdateCmd.Flags().String("workergroup", "", "the name of the worker group to apply updates to, only required when there are multiple worker groups.")
 	clusterUpdateCmd.Flags().Bool("remove-workergroup", false, "if set, removes the targeted worker group")
+	clusterUpdateCmd.Flags().StringSlice("workerlabels", []string{}, "labels of the worker group (syncs to kubernetes node resource after some time, too)")
+	clusterUpdateCmd.Flags().StringSlice("workerannotations", []string{}, "annotations of the worker group (syncs to kubernetes node resource after some time, too)")
 	clusterUpdateCmd.Flags().Int32("minsize", 0, "minimal workers of the cluster.")
 	clusterUpdateCmd.Flags().Int32("maxsize", 0, "maximal workers of the cluster.")
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
@@ -342,7 +344,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced. (0 = provider-default)")
 	clusterUpdateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. (0 = provider-default)")
 	clusterUpdateCmd.Flags().String("maxsurge", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers created during a update of the cluster.")
-	clusterUpdateCmd.Flags().String("maxunavailable", "", "max number (e.g. 1) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
+	clusterUpdateCmd.Flags().String("maxunavailable", "", "max number (e.g. 0) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
 	clusterUpdateCmd.Flags().BoolP("reversed-vpn", "", false, "enables usage of reversed-vpn instead of konnectivity tunnel for worker connectivity.")
@@ -818,6 +820,8 @@ func (c *config) updateCluster(args []string) error {
 	}
 	workergroupname := viper.GetString("workergroup")
 	removeworkergroup := viper.GetBool("remove-workergroup")
+	workerlabelslice := viper.GetStringSlice("workerlabels")
+	workerannotationsslice := viper.GetStringSlice("workerannotations")
 	minsize := viper.GetInt32("minsize")
 	maxsize := viper.GetInt32("maxsize")
 	version := viper.GetString("version")
@@ -840,6 +844,15 @@ func (c *config) updateCluster(args []string) error {
 	disableDefaultStorageClass := viper.GetBool("disable-custom-default-storage-class")
 
 	reversedVPN := strconv.FormatBool(viper.GetBool("reversed-vpn"))
+
+	workerlabels, err := helper.LabelsToMap(workerlabelslice)
+	if err != nil {
+		return err
+	}
+	workerannotations, err := helper.LabelsToMap(workerannotationsslice)
+	if err != nil {
+		return err
+	}
 
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
@@ -888,7 +901,12 @@ func (c *config) updateCluster(args []string) error {
 		CustomDefaultStorageClass: customDefaultStorageClass,
 	}
 
-	if workergroupname != "" || minsize != 0 || maxsize != 0 || machineImageAndVersion != "" || machineType != "" || viper.IsSet("healthtimeout") || viper.IsSet("draintimeout") || maxsurge != "" || maxunavailable != "" {
+	if workergroupname != "" ||
+		minsize != 0 || maxsize != 0 || maxsurge != "" || maxunavailable != "" ||
+		machineImageAndVersion != "" || machineType != "" ||
+		viper.IsSet("healthtimeout") || viper.IsSet("draintimeout") ||
+		viper.IsSet("workerlabels") || viper.IsSet("workerannotations") {
+
 		workers := current.Workers
 
 		var worker *models.V1Worker
@@ -911,7 +929,9 @@ func (c *config) updateCluster(args []string) error {
 					Minimum:        pointer.Int32(1),
 					Maximum:        pointer.Int32(1),
 					MaxSurge:       pointer.String("1"),
-					MaxUnavailable: pointer.String("1"),
+					MaxUnavailable: pointer.String("0"),
+					Labels:         workerlabels,
+					Annotations:    workerannotations,
 				}
 				workers = append(workers, worker)
 			}
@@ -985,6 +1005,14 @@ func (c *config) updateCluster(args []string) error {
 
 			if viper.IsSet("draintimeout") {
 				worker.DrainTimeout = int64(draintimeout)
+			}
+
+			if viper.IsSet("workerlabels") {
+				worker.Labels = workerlabels
+			}
+
+			if viper.IsSet("workerannotations") {
+				worker.Annotations = workerannotations
 			}
 
 			if maxsurge != "" {
