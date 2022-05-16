@@ -38,6 +38,19 @@ func newBillingCmd(c *config) *cobra.Command {
 		Use:   "billing",
 		Short: "lookup resource consumption of your cloud resources",
 	}
+	projectBillingCmd := &cobra.Command{
+		Use:   "projects",
+		Short: "discover projects within a given time period",
+		Long:  "can be used to find all projects within a given time period, e.g. to narrow down queries that would become very big otherwise",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			err := initBillingOpts()
+			if err != nil {
+				return err
+			}
+			return c.projectsBilling()
+		},
+		PreRun: bindPFlags,
+	}
 	containerBillingCmd := &cobra.Command{
 		Use:   "container",
 		Short: "look at container bills",
@@ -177,6 +190,7 @@ export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01 # Costs per capacity hour
 		PreRun: bindPFlags,
 	}
 
+	billingCmd.AddCommand(projectBillingCmd)
 	billingCmd.AddCommand(containerBillingCmd)
 	billingCmd.AddCommand(clusterBillingCmd)
 	billingCmd.AddCommand(ipBillingCmd)
@@ -186,6 +200,9 @@ export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01 # Costs per capacity hour
 	billingCmd.AddCommand(postgresBillingCmd)
 
 	billingOpts = &BillingOpts{}
+
+	projectBillingCmd.Flags().StringVarP(&billingOpts.FromString, "from", "", "", "the start time in the accounting window to look at (optional, defaults to start of the month")
+	projectBillingCmd.Flags().StringVarP(&billingOpts.ToString, "to", "", "", "the end time in the accounting window to look at (optional, defaults to current system time)")
 
 	containerBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
 	containerBillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
@@ -293,6 +310,22 @@ func initBillingOpts() error {
 	billingOpts.To = to
 
 	return nil
+}
+
+func (c *config) projectsBilling() error {
+	from := strfmt.DateTime(billingOpts.From)
+
+	request := accounting.NewProjectsParams().WithBody(&models.V1ProjectInfoRequest{
+		From: &from,
+		To:   strfmt.DateTime(billingOpts.To),
+	})
+
+	response, err := c.cloud.Accounting.Projects(request, nil)
+	if err != nil {
+		return err
+	}
+
+	return output.New().Print(response.Payload)
 }
 
 func (c *config) clusterUsage() error {
