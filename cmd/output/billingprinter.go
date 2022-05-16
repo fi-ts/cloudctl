@@ -197,8 +197,8 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 
 // Print a volume usage as table
 func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
-	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Start", "End", "Class", "Name", "Type", "CapacitySeconds (Gi * h)", "Lifetime"}
-	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "Class", "Name", "Type", "CapacitySeconds (Gi * h)", "Lifetime"}
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "ClusterID", "ClusterName", "Start", "End", "Class", "UUID", "Name", "Type", "CapacitySeconds (Gi * h)", "Lifetime"}
+	s.shortHeader = []string{"Tenant", "ProjectID", "Partition", "ClusterName", "Class", "UUID", "Name", "Type", "CapacitySeconds (Gi * h)", "Lifetime"}
 	if s.order == "" {
 		s.order = "tenant,project,partition,cluster,name"
 	}
@@ -252,6 +252,10 @@ func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 		if u.Name != nil {
 			name = *u.Name
 		}
+		var uuid string
+		if u.UUID != nil {
+			uuid = *u.UUID
+		}
 		var volumeType string
 		if u.Type != nil {
 			volumeType = *u.Type
@@ -276,6 +280,7 @@ func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 			start,
 			end,
 			class,
+			uuid,
 			name,
 			volumeType,
 			capacity,
@@ -287,6 +292,7 @@ func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 			partition,
 			clusterName,
 			class,
+			uuid,
 			name,
 			volumeType,
 			capacity,
