@@ -575,7 +575,7 @@ func (c *config) postgresApply() error {
 	var purs []models.V1PostgresUpdateRequest
 	var pur models.V1PostgresUpdateRequest
 
-	err := helper.ReadFrom(viper.GetString("file"), &pur, func(data interface{}) {
+	err := helper.ReadFrom(viper.GetString("file"), &pur, func(data any) {
 		udoc, ok := data.(*models.V1PostgresUpdateRequest)
 		if ok {
 			purs = append(purs, *udoc)
@@ -588,7 +588,7 @@ func (c *config) postgresApply() error {
 		return err
 	}
 
-	err = helper.ReadFrom(viper.GetString("file"), &pcr, func(data interface{}) {
+	err = helper.ReadFrom(viper.GetString("file"), &pcr, func(data any) {
 		cdoc, ok := data.(*models.V1PostgresCreateRequest)
 		if ok {
 			pcrs = append(pcrs, *cdoc)
@@ -703,7 +703,7 @@ func (c *config) postgresAcceptRestore(args []string) error {
 func readPostgresUpdateRequests(filename string) ([]models.V1PostgresUpdateRequest, error) {
 	var purs []models.V1PostgresUpdateRequest
 	var pur models.V1PostgresUpdateRequest
-	err := helper.ReadFrom(filename, &pur, func(data interface{}) {
+	err := helper.ReadFrom(filename, &pur, func(data any) {
 		doc := data.(*models.V1PostgresUpdateRequest)
 		purs = append(purs, *doc)
 	})

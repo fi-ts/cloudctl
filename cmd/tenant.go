@@ -131,7 +131,7 @@ func (c *config) tenantList() error {
 func (c *config) tenantApply() error {
 	var tars []models.V1Tenant
 	var tar models.V1Tenant
-	err := helper.ReadFrom(viper.GetString("file"), &tar, func(data interface{}) {
+	err := helper.ReadFrom(viper.GetString("file"), &tar, func(data any) {
 		doc := data.(*models.V1Tenant)
 		tars = append(tars, *doc)
 		// the request needs to be renewed as otherwise the pointers in the request struct will
@@ -214,7 +214,7 @@ func (c *config) tenantEdit(args []string) error {
 func readtenantUpdateRequests(filename string) ([]models.V1Tenant, error) {
 	var pcrs []models.V1Tenant
 	var pcr models.V1Tenant
-	err := helper.ReadFrom(filename, &pcr, func(data interface{}) {
+	err := helper.ReadFrom(filename, &pcr, func(data any) {
 		doc := data.(*models.V1Tenant)
 		pcrs = append(pcrs, *doc)
 	})
