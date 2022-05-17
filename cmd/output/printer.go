@@ -21,7 +21,7 @@ import (
 type (
 	// Printer main Interface for implementations which spits out to specified Writer
 	Printer interface {
-		Print(data interface{}) error
+		Print(data any) error
 		Type() string
 	}
 	tablePrinter struct {
@@ -81,13 +81,13 @@ func (t *tablePrinter) render() {
 	}
 	t.table.ClearRows()
 }
-func (t *tablePrinter) addShortData(row []string, data interface{}) {
+func (t *tablePrinter) addShortData(row []string, data any) {
 	if t.wide {
 		return
 	}
 	t.shortData = append(t.shortData, t.rowOrTemplate(row, data))
 }
-func (t *tablePrinter) addWideData(row []string, data interface{}) {
+func (t *tablePrinter) addWideData(row []string, data any) {
 	if !t.wide {
 		return
 	}
@@ -95,7 +95,7 @@ func (t *tablePrinter) addWideData(row []string, data interface{}) {
 }
 
 // rowOrTemplate return either given row or the data rendered with the given template, depending if template is set.
-func (t *tablePrinter) rowOrTemplate(row []string, data interface{}) []string {
+func (t *tablePrinter) rowOrTemplate(row []string, data any) []string {
 	tpl := t.template
 	if tpl != nil {
 		var buf bytes.Buffer
@@ -111,19 +111,19 @@ func (t *tablePrinter) rowOrTemplate(row []string, data interface{}) []string {
 
 // genericObject transforms the input to a struct which has fields with the same name as in the json struct.
 // this is handy for template rendering as the output of -o json|yaml can be used as the input for the template
-func genericObject(input interface{}) map[string]interface{} {
+func genericObject(input any) map[string]any {
 	b, err := json.Marshal(input)
 	if err != nil {
 		fmt.Printf("unable to marshall input:%v", err)
 		os.Exit(1)
 	}
-	var result interface{}
+	var result any
 	err = json.Unmarshal(b, &result)
 	if err != nil {
 		fmt.Printf("unable to unmarshal input:%v", err)
 		os.Exit(1)
 	}
-	return result.(map[string]interface{})
+	return result.(map[string]any)
 
 }
 
@@ -211,7 +211,7 @@ func (t tablePrinter) Type() string {
 }
 
 // Print a model in a human readable table
-func (t tablePrinter) Print(data interface{}) error {
+func (t tablePrinter) Print(data any) error {
 	switch d := data.(type) {
 	case *models.V1ClusterResponse:
 		ShootTablePrinter{t}.Print([]*models.V1ClusterResponse{d})
@@ -306,7 +306,7 @@ func (t tablePrinter) Print(data interface{}) error {
 }
 
 // Print a model in json format
-func (j jsonPrinter) Print(data interface{}) error {
+func (j jsonPrinter) Print(data any) error {
 	json, err := json.MarshalIndent(data, "", "    ")
 	if err != nil {
 		return fmt.Errorf("unable to marshal to json:%w", err)
@@ -320,7 +320,7 @@ func (j jsonPrinter) Type() string {
 }
 
 // Print a model in yaml format
-func (y yamlPrinter) Print(data interface{}) error {
+func (y yamlPrinter) Print(data any) error {
 	yml, err := yaml.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("unable to marshal to yaml:%w", err)

@@ -501,11 +501,11 @@ func (c *config) clusterCreate() error {
 
 	machineImage := models.V1MachineImage{}
 	if machineImageAndVersion != "" {
-		machineImageParts := strings.Split(machineImageAndVersion, "-")
-		if len(machineImageParts) == 2 {
+		name, version, found := strings.Cut(machineImageAndVersion, "-")
+		if found {
 			machineImage = models.V1MachineImage{
-				Name:    &machineImageParts[0],
-				Version: &machineImageParts[1],
+				Name:    &name,
+				Version: &version,
 			}
 		} else {
 			log.Fatalf("given machineimage:%s is invalid must be in the form <name>-<version>", machineImageAndVersion)
@@ -660,11 +660,11 @@ func (c *config) clusterList() error {
 		if len(labels) > 0 {
 			labelMap := map[string]string{}
 			for _, l := range labels {
-				parts := strings.SplitN(l, "=", 2)
-				if len(parts) != 2 {
+				key, value, found := strings.Cut(l, "=")
+				if !found {
 					log.Fatalf("provided labels must be in the form <key>=<value>, found: %s", l)
 				}
-				labelMap[parts[0]] = parts[1]
+				labelMap[key] = value
 			}
 			cfr.Labels = labelMap
 		}
@@ -977,11 +977,11 @@ func (c *config) updateCluster(args []string) error {
 
 			if machineImageAndVersion != "" {
 				machineImage := models.V1MachineImage{}
-				machineImageParts := strings.Split(machineImageAndVersion, "-")
-				if len(machineImageParts) == 2 {
+				name, version, found := strings.Cut(machineImageAndVersion, "-")
+				if found {
 					machineImage = models.V1MachineImage{
-						Name:    &machineImageParts[0],
-						Version: &machineImageParts[1],
+						Name:    &name,
+						Version: &version,
 					}
 				} else {
 					log.Fatalf("given machineimage:%s is invalid must be in the form <name>-<version>", machineImageAndVersion)
@@ -1069,15 +1069,17 @@ func (c *config) updateCluster(args []string) error {
 		labelMap := current.Labels
 
 		for _, l := range removeLabels {
-			parts := strings.SplitN(l, "=", 2)
-			delete(labelMap, parts[0])
+			key, _, found := strings.Cut(l, "=")
+			if found {
+				delete(labelMap, key)
+			}
 		}
 		for _, l := range addLabels {
-			parts := strings.SplitN(l, "=", 2)
-			if len(parts) != 2 {
+			key, value, found := strings.Cut(l, "=")
+			if !found {
 				log.Fatalf("provided labels must be in the form <key>=<value>, found: %s", l)
 			}
-			labelMap[parts[0]] = parts[1]
+			labelMap[key] = value
 		}
 
 		cur.Labels = labelMap
@@ -1569,11 +1571,11 @@ func makeEgressRules(egressFlagValue []string) []*models.V1EgressRule {
 
 	m := map[string]models.V1EgressRule{}
 	for _, e := range egressFlagValue {
-		parts := strings.Split(e, ":")
-		if len(parts) != 2 {
+		network, ip, found := strings.Cut(e, ":")
+		if !found {
 			log.Fatalf("egress config needs format <network>:<ip> but got %q", e)
 		}
-		n, ip := strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1])
+		n, ip := strings.TrimSpace(network), strings.TrimSpace(ip)
 		if net.ParseIP(ip) == nil {
 			log.Fatalf("egress config contains an invalid IP %s for network %s", ip, n)
 		}

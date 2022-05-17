@@ -238,7 +238,7 @@ func (c *config) projectID(verb string, args []string) (string, error) {
 func (c *config) projectApply() error {
 	var pars []models.V1ProjectCreateRequest
 	var par models.V1ProjectCreateRequest
-	err := helper.ReadFrom(viper.GetString("file"), &par, func(data interface{}) {
+	err := helper.ReadFrom(viper.GetString("file"), &par, func(data any) {
 		doc := data.(*models.V1ProjectCreateRequest)
 		pars = append(pars, *doc)
 		// the request needs to be renewed as otherwise the pointers in the request struct will
@@ -344,7 +344,7 @@ func (c *config) projectEdit(args []string) error {
 func readProjectUpdateRequests(filename string) ([]models.V1ProjectUpdateRequest, error) {
 	var purs []models.V1ProjectUpdateRequest
 	var pur models.V1ProjectUpdateRequest
-	err := helper.ReadFrom(filename, &pur, func(data interface{}) {
+	err := helper.ReadFrom(filename, &pur, func(data any) {
 		doc := data.(*models.V1ProjectUpdateRequest)
 		purs = append(purs, *doc)
 	})
@@ -360,11 +360,11 @@ func readProjectUpdateRequests(filename string) ([]models.V1ProjectUpdateRequest
 func annotationsAsMap(annotations []string) (map[string]string, error) {
 	result := make(map[string]string)
 	for _, a := range annotations {
-		parts := strings.Split(strings.TrimSpace(a), "=")
-		if len(parts) != 2 {
+		key, value, found := strings.Cut(strings.TrimSpace(a), "=")
+		if !found {
 			return result, fmt.Errorf("given annotation %s does not contain exactly one =", a)
 		}
-		result[parts[0]] = parts[1]
+		result[key] = value
 	}
 	return result, nil
 }

@@ -101,7 +101,7 @@ func Truncate(input, elipsis string, maxlength int) string {
 }
 
 // ReadFrom will either read from stdin (-) or a file path an marshall from yaml to data
-func ReadFrom(from string, data interface{}, f func(target interface{})) error {
+func ReadFrom(from string, data any, f func(target any)) error {
 	var reader io.Reader
 	var err error
 	switch from {
@@ -161,16 +161,16 @@ func Edit(id string, getFunc func(id string) ([]byte, error), updateFunc func(fi
 func LabelsToMap(labels []string) (map[string]string, error) {
 	labelMap := make(map[string]string)
 	for _, l := range labels {
-		parts := strings.SplitN(l, "=", 2)
-		if len(parts) != 2 {
+		key, value, found := strings.Cut(l, "=")
+		if !found {
 			return nil, fmt.Errorf("provided labels must be in the form <key>=<value>, found: %s", l)
 		}
-		labelMap[parts[0]] = parts[1]
+		labelMap[key] = value
 	}
 	return labelMap, nil
 }
 
-func MustPrintKubernetesResource(in interface{}) {
+func MustPrintKubernetesResource(in any) {
 	y, err := k8syaml.Marshal(in)
 	if err != nil {
 		panic(fmt.Errorf("unable to marshal to yaml: %w", err))
