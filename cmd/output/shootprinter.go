@@ -100,7 +100,7 @@ func (s ShootLastOperationTablePrinter) Print(data *models.V1beta1LastOperation)
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Seed", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Audit", "Runtime", "Firewall", "Firewall Controller", "Egress IPs"}
+	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Seed", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Audit", "Runtime", "Firewall", "Firewall Controller", "Log accepted conns", "Egress IPs"}
 	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
 	if s.order == "" {
@@ -119,7 +119,7 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 }
 
 func (s ShootIssuesTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "", "Name", "Version", "Partition", "Seed", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Runtime", "Firewall", "Firewall Controller", "Egress IPs"}
+	s.wideHeader = []string{"UID", "", "Name", "Version", "Partition", "Seed", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Audit", "Runtime", "Firewall", "Firewall Controller", "Log accepted conns", "Egress IPs"}
 	s.shortHeader = []string{"UID", "", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
 	if s.order == "" {
@@ -285,6 +285,11 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		firewallController = *shoot.FirewallControllerVersion
 	}
 
+	logAcceptedConnections := ""
+	if shoot.ClusterFeatures.LogAcceptedConnections != nil {
+		logAcceptedConnections = *shoot.ClusterFeatures.LogAcceptedConnections
+	}
+
 	wide := []string{
 		*shoot.ID,
 		*shoot.Name,
@@ -300,6 +305,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		strings.Join(uniqueStringSlice(runtimes), "\n"),
 		firewallImage,
 		firewallController,
+		logAcceptedConnections,
 		strings.Join(egressIPs, "\n"),
 	}
 	short := []string{
