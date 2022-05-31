@@ -12,6 +12,65 @@ import (
 )
 
 // Order cluster
+func (s ProjectBillingTablePrinter) Order(data []*models.V1ProjectInfoResponse) {
+	cols := strings.Split(s.order, ",")
+	if len(cols) > 0 {
+		sort.SliceStable(data, func(i, j int) bool {
+			A := data[i]
+			B := data[j]
+			tenantA := A.Tenantid
+			tenantB := B.Tenantid
+			projectA := A.Projectid
+			projectB := B.Projectid
+			for _, order := range cols {
+				order = strings.ToLower(order)
+				switch order {
+				case "tenant":
+					if A.Tenantid == nil {
+						return true
+					}
+					if B.Tenantid == nil {
+						return false
+					}
+					if *tenantA == "" {
+						return true
+					}
+					if *tenantB == "" {
+						return false
+					}
+					if *tenantA < *tenantB {
+						return true
+					}
+					if *tenantA != *tenantB {
+						return false
+					}
+				case "project":
+					if A.Projectid == nil {
+						return true
+					}
+					if B.Projectid == nil {
+						return false
+					}
+					if *projectA == "" {
+						return true
+					}
+					if *projectB == "" {
+						return false
+					}
+					if *projectA < *projectB {
+						return true
+					}
+					if *projectA != *projectB {
+						return false
+					}
+				}
+			}
+			return false
+		})
+	}
+}
+
+// Order cluster
 func (s ShootTablePrinter) Order(data []*models.V1ClusterResponse) {
 	cols := strings.Split(s.order, ",")
 	if len(cols) > 0 {
