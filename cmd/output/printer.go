@@ -45,7 +45,6 @@ type (
 	yamlPrinter struct {
 		outWriter io.Writer
 	}
-	// TablePrinter produces a human readable model representation
 )
 
 // render the table shortHeader and shortData are always expected.
@@ -228,7 +227,7 @@ func (t tablePrinter) Print(data interface{}) error {
 	case *models.V1beta1LastOperation:
 		ShootLastOperationTablePrinter{t}.Print(d)
 	case *models.V1ProjectResponse:
-		ProjectTablePrinter{t}.Print([]*models.V1ProjectResponse{d})
+		ProjectTableDetailPrinter{t}.Print(d)
 	case []*models.V1ProjectResponse:
 		ProjectTablePrinter{t}.Print(d)
 	case []*models.V1TenantResponse:
