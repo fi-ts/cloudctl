@@ -241,7 +241,12 @@ func newClusterCmd(c *config) *cobra.Command {
 	}
 	clusterSplunkConfigManifestCmd := &cobra.Command{
 		Use:   "splunk-config-manifest",
-		Short: "create a manifest for a custom splunk configuration, every provided provided overrides the default setting",
+		Short: "create a manifest for a custom splunk configuration, every provided value overrides the default setting",
+		Long: `Create a manifest for a custom splunk configuration.
+Any provided keys override the global default settings, any keys not explicitly set retain their global default values.
+
+You need to manually apply the manifest to your cluster, for example by saving it to a file and then executing kubectl apply -f <filename>.
+		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterSplunkConfigManifest()
 		},
@@ -372,7 +377,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterSplunkConfigManifestCmd.Flags().String("index", "", "the splunk index to use for this cluster's audit logs")
 	clusterSplunkConfigManifestCmd.Flags().String("hechost", "", "the hostname or IP of the splunk HEC endpoint")
 	clusterSplunkConfigManifestCmd.Flags().Int("hecport", 0, "port on which the splunk HEC endpoint is listening")
-	clusterSplunkConfigManifestCmd.Flags().Bool("tls", false, "whether to use TLS encryption. You do need to specify a CA file.")
+	clusterSplunkConfigManifestCmd.Flags().Bool("tls", false, "whether to use TLS encryption. You do need to specify a CA file if you use TLS, there are no default CAs in place.")
 	clusterSplunkConfigManifestCmd.Flags().String("cafile", "", "the path to the file containing the ca certificate (chain) for the splunk HEC endpoint")
 	clusterSplunkConfigManifestCmd.Flags().String("cabase64", "", "the base64-encoded ca certificate (chain) for the splunk HEC endpoint")
 	// Cluster machine ... --------------------------------------------------------------------
@@ -1353,10 +1358,13 @@ func (c *config) clusterSplunkConfigManifest() error {
 		secret.StringData["hecPort"] = strconv.Itoa(viper.GetInt("hecport"))
 	}
 	if viper.IsSet("tls") {
-		if !viper.IsSet("cafile") && !viper.IsSet("cabase64") {
-			return fmt.Errorf("you need to supply a ca certificate when using TLS")
+		tls := viper.GetBool("tls")
+		if tls {
+			if !viper.IsSet("cafile") && !viper.IsSet("cabase64") {
+				return fmt.Errorf("you need to supply a ca certificate when using TLS")
+			}
 		}
-		secret.StringData["tlsEnabled"] = strconv.FormatBool(viper.GetBool("tls"))
+		secret.StringData["tlsEnabled"] = strconv.FormatBool(tls)
 	}
 	if viper.IsSet("cafile") {
 		if viper.IsSet("cabase64") {
