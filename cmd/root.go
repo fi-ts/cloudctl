@@ -45,10 +45,10 @@ func newRootCmd() *cobra.Command {
 	rootCmd.PersistentFlags().BoolP("no-headers", "", false, "ommit headers in tables")
 	rootCmd.PersistentFlags().StringP("output-format", "o", "table", "output format (table|wide|markdown|json|yaml|template), wide is a table with more columns.")
 	rootCmd.PersistentFlags().StringP("template", "", "", `output template for template output-format, go template format.
-	For property names inspect the output of -o json or -o yaml for reference.
+	For property names inspect the output of -o json for reference.
 	Example for clusters:
 
-	cloudctl cluster ls -o template --template "{{ .metadata.uid }}"
+	cloudctl cluster ls -o template --template "{{ .ID }} {{ .Name }}"
 
 	`)
 	rootCmd.PersistentFlags().BoolP("yes-i-really-mean-it", "", false, "skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)")
