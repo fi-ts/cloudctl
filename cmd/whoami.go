@@ -39,6 +39,11 @@ func newWhoamiCmd() *cobra.Command {
 			}
 			fmt.Printf("Expires at %s\n", time.Unix(parsedClaims.ExpiresAt, 0).Format("Mon Jan 2 15:04:05 MST 2006"))
 
+			ctx := api.MustDefaultContext()
+			if ctx.IssuerType == "generic" {
+				fmt.Printf("Manage your session on: %s\n", ctx.IssuerURL+"/account")
+			}
+
 			return nil
 		},
 		PreRun: bindPFlags,

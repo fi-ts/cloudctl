@@ -61,6 +61,7 @@ func newRootCmd() *cobra.Command {
 	rootCmd.AddCommand(newDashboardCmd(cfg))
 	rootCmd.AddCommand(newUpdateCmd(name))
 	rootCmd.AddCommand(newLoginCmd())
+	rootCmd.AddCommand(newLogoutCmd())
 	rootCmd.AddCommand(newWhoamiCmd())
 	rootCmd.AddCommand(newProjectCmd(cfg))
 	rootCmd.AddCommand(newTenantCmd(cfg))
