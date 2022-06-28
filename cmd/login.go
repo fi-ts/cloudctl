@@ -55,6 +55,10 @@ func newLoginCmd() *cobra.Command {
 				Debug:        viper.GetBool("debug"),
 			}
 
+			if ctx.IssuerType == "generic" {
+				config.SuccessMessage = fmt.Sprintf(`Please close this page and return to your terminal. Manage your session on: <a href=%q>%s</a>`, ctx.IssuerURL+"/account", ctx.IssuerURL+"/account")
+			}
+
 			return auth.OIDCFlow(config)
 		},
 		PreRun: bindPFlags,
@@ -64,7 +68,6 @@ func newLoginCmd() *cobra.Command {
 }
 
 func printTokenHandler(tokenInfo auth.TokenInfo) error {
-
 	fmt.Println(tokenInfo.IDToken)
 	return nil
 }

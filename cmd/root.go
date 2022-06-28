@@ -14,6 +14,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var (
@@ -53,6 +55,7 @@ func newRootCmd() *cobra.Command {
 	`)
 	rootCmd.PersistentFlags().BoolP("yes-i-really-mean-it", "", false, "skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)")
 
+	must(viper.BindPFlags(rootCmd.Flags()))
 	must(viper.BindPFlags(rootCmd.PersistentFlags()))
 
 	cfg := getConfig(rootCmd, name)
@@ -61,6 +64,7 @@ func newRootCmd() *cobra.Command {
 	rootCmd.AddCommand(newDashboardCmd(cfg))
 	rootCmd.AddCommand(newUpdateCmd(name))
 	rootCmd.AddCommand(newLoginCmd())
+	rootCmd.AddCommand(newLogoutCmd(cfg))
 	rootCmd.AddCommand(newWhoamiCmd())
 	rootCmd.AddCommand(newProjectCmd(cfg))
 	rootCmd.AddCommand(newTenantCmd(cfg))
@@ -94,11 +98,10 @@ type config struct {
 	cloud       *client.CloudAPI
 	comp        *completion.Completion
 	consoleHost string
+	log         *zap.SugaredLogger
 }
 
 func getConfig(cmd *cobra.Command, name string) *config {
-	must(viper.BindPFlags(cmd.PersistentFlags()))
-
 	viper.SetEnvPrefix(strings.ToUpper(name))
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	viper.AutomaticEnv()
@@ -130,6 +133,12 @@ func getConfig(cmd *cobra.Command, name string) *config {
 	}
 
 	ctx := api.MustDefaultContext()
+
+	logger, err := newLogger()
+	if err != nil {
+		log.Fatalf("error creating logger: %v", err)
+	}
+
 	driverURL := viper.GetString("url")
 	if driverURL == "" && ctx.ApiURL != "" {
 		driverURL = ctx.ApiURL
@@ -169,5 +178,24 @@ func getConfig(cmd *cobra.Command, name string) *config {
 		cloud:       cloud,
 		comp:        comp,
 		consoleHost: consoleHost,
+		log:         logger,
 	}
+}
+
+func newLogger() (*zap.SugaredLogger, error) {
+	cfg := zap.NewProductionConfig()
+	if viper.GetBool("debug") {
+		cfg.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+	} else {
+		cfg.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
+	}
+	cfg.EncoderConfig.TimeKey = "timestamp"
+	cfg.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
+
+	l, err := cfg.Build()
+	if err != nil {
+		return nil, err
+	}
+
+	return l.Sugar(), nil
 }
