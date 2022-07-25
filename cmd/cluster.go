@@ -942,6 +942,10 @@ func (c *config) updateCluster(args []string) error {
 		}
 
 		if removeworkergroup {
+			if worker == nil {
+				return fmt.Errorf("worker group %s not found", workergroupname)
+			}
+
 			fmt.Println("WARNING. Removing a worker group cannot be undone and causes the loss of local data on the deleted nodes.")
 			err = helper.Prompt("Are you sure? (y/n)", "y")
 			if err != nil {
