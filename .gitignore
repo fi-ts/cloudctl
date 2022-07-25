@@ -3,3 +3,4 @@ api/models
 bin
 .idea
 cloudctl
+.vscode
