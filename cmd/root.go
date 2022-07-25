@@ -58,7 +58,7 @@ func newRootCmd() *cobra.Command {
 	must(viper.BindPFlags(rootCmd.Flags()))
 	must(viper.BindPFlags(rootCmd.PersistentFlags()))
 
-	cfg := getConfig(rootCmd, name)
+	cfg := getConfig(name)
 
 	rootCmd.AddCommand(newClusterCmd(cfg))
 	rootCmd.AddCommand(newDashboardCmd(cfg))
@@ -101,7 +101,7 @@ type config struct {
 	log         *zap.SugaredLogger
 }
 
-func getConfig(cmd *cobra.Command, name string) *config {
+func getConfig(name string) *config {
 	viper.SetEnvPrefix(strings.ToUpper(name))
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	viper.AutomaticEnv()
