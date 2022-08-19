@@ -185,6 +185,15 @@ func newClusterCmd(c *config) *cobra.Command {
 		ValidArgsFunction: c.comp.ClusterListCompletion,
 		PreRun:            bindPFlags,
 	}
+	clusterMonitoringSecretCmd := &cobra.Command{
+		Use:   "monitoring-secret <clusterid>",
+		Short: "returns the endpoint and access credentials to the monitoring of the cluster",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.clusterMonitoringSecret(args)
+		},
+		ValidArgsFunction: c.comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
 	clusterMachineSSHCmd := &cobra.Command{
 		Use:   "ssh <clusterid>",
 		Short: "ssh access a machine/firewall of the cluster",
@@ -433,6 +442,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCmd.AddCommand(clusterLogsCmd)
 	clusterCmd.AddCommand(clusterIssuesCmd)
 	clusterCmd.AddCommand(clusterSplunkConfigManifestCmd)
+	clusterCmd.AddCommand(clusterMonitoringSecretCmd)
 
 	return clusterCmd
 }
@@ -1450,6 +1460,20 @@ func (c *config) clusterMachineReinstall(args []string) error {
 	ms = append(ms, shoot.Payload.Firewalls...)
 
 	return output.New().Print(ms)
+}
+
+func (c *config) clusterMonitoringSecret(args []string) error {
+	cid, err := c.clusterID("monitoring-secret", args)
+	if err != nil {
+		return err
+	}
+
+	secret, err := c.cloud.Cluster.GetMonitoringSecret(cluster.NewGetMonitoringSecretParams().WithID(cid), nil)
+	if err != nil {
+		return err
+	}
+
+	return output.New().Print(secret.Payload)
 }
 
 func (c *config) clusterMachineSSH(args []string, console bool) error {
