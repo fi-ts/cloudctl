@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func newLoginCmd() *cobra.Command {
+func newLoginCmd(c *config) *cobra.Command {
 	loginCmd := &cobra.Command{
 		Use:   "login",
 		Short: "login user and receive token",
@@ -53,6 +53,7 @@ func newLoginCmd() *cobra.Command {
 				TokenHandler: handler,
 				Console:      console,
 				Debug:        viper.GetBool("debug"),
+				Log:          c.log.Desugar(),
 			}
 
 			if ctx.IssuerType == "generic" {

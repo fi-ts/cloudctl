@@ -284,6 +284,10 @@ func (t tablePrinter) Print(data interface{}) error {
 		PostgresBackupEntryTablePrinter{t}.Print(d)
 	case []*models.V1S3PartitionResponse:
 		S3PartitionTablePrinter{t}.Print(d)
+	case *models.V1ClusterMonitoringSecretResponse:
+		return yamlPrinter{
+			outWriter: t.outWriter,
+		}.Print(d)
 	case *models.V1S3CredentialsResponse, *models.V1S3Response:
 		return yamlPrinter{
 			outWriter: t.outWriter,
