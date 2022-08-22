@@ -14,14 +14,17 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/utils/pointer"
 
 	"github.com/fatih/color"
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/gosimple/slug"
 	"github.com/metal-stack/metal-lib/auth"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/completion"
@@ -60,22 +63,22 @@ var (
 		"off": {
 			Description: "turn off the kube-apiserver auditlog",
 			Config: &models.V1Audit{
-				ClusterAudit:  pointer.BoolPtr(false),
-				AuditToSplunk: pointer.BoolPtr(false),
+				ClusterAudit:  pointer.Pointer(false),
+				AuditToSplunk: pointer.Pointer(false),
 			},
 		},
 		"on": {
 			Description: "turn on the kube-apiserver auditlog, and expose it as container log of the audittailer deployment in the audit namespace",
 			Config: &models.V1Audit{
-				ClusterAudit:  pointer.BoolPtr(true),
-				AuditToSplunk: pointer.BoolPtr(false),
+				ClusterAudit:  pointer.Pointer(true),
+				AuditToSplunk: pointer.Pointer(false),
 			},
 		},
 		"splunk": {
 			Description: "also forward the auditlog to a splunk HEC endpoint. create a custom splunk config manifest with \"cloudctl cluster splunk-config-manifest\"",
 			Config: &models.V1Audit{
-				ClusterAudit:  pointer.BoolPtr(true),
-				AuditToSplunk: pointer.BoolPtr(true),
+				ClusterAudit:  pointer.Pointer(true),
+				AuditToSplunk: pointer.Pointer(true),
 			},
 		},
 	}
@@ -250,11 +253,20 @@ func newClusterCmd(c *config) *cobra.Command {
 	}
 	clusterSplunkConfigManifestCmd := &cobra.Command{
 		Use:   "splunk-config-manifest",
-		Short: "create a manifest for a custom splunk configuration, every provided provided overrides the default setting",
+		Short: "create a manifest for a custom splunk configuration, overriding the default settings for splunk auditing",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterSplunkConfigManifest()
 		},
 		PreRun: bindPFlags,
+	}
+	clusterDNSManifestCmd := &cobra.Command{
+		Use:   "dns-manifest <clusterid>",
+		Short: "create a manifest for an ingress or service type loadbalancer, creating a DNS entry and valid certificate within your cluster domain",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.clusterDNSManifest(args)
+		},
+		ValidArgsFunction: c.comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
 	}
 
 	clusterCreateCmd.Flags().String("name", "", "name of the cluster, max 10 characters. [required]")
@@ -384,6 +396,18 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterSplunkConfigManifestCmd.Flags().Bool("tls", false, "whether to use TLS encryption. You do need to specify a CA file.")
 	clusterSplunkConfigManifestCmd.Flags().String("cafile", "", "the path to the file containing the ca certificate (chain) for the splunk HEC endpoint")
 	clusterSplunkConfigManifestCmd.Flags().String("cabase64", "", "the base64-encoded ca certificate (chain) for the splunk HEC endpoint")
+
+	// Cluster dns manifest --------------------------------------------------------------------
+	clusterDNSManifestCmd.Flags().String("type", "ingress", "either of type ingress or service")
+	clusterDNSManifestCmd.Flags().String("name", "<name>", "the resource name")
+	clusterDNSManifestCmd.Flags().String("namespace", "default", "the resource's namespace")
+	clusterDNSManifestCmd.Flags().Int("ttl", 180, "the ttl set to the created dns entry")
+	clusterDNSManifestCmd.Flags().Bool("with-certificate", true, "whether to request a let's encrypt certificate for the requested dns entry or not")
+	clusterDNSManifestCmd.Flags().String("backend-name", "my-backend", "the name of the backend")
+	clusterDNSManifestCmd.Flags().Int32("backend-port", 443, "the port of the backend")
+	clusterDNSManifestCmd.Flags().String("ingress-class", "nginx", "the ingress class name")
+	must(clusterDNSManifestCmd.RegisterFlagCompletionFunc("type", cobra.FixedCompletions([]string{"ingress", "service"}, cobra.ShellCompDirectiveNoFileComp)))
+
 	// Cluster machine ... --------------------------------------------------------------------
 	clusterMachineSSHCmd.Flags().String("machineid", "", "machine to connect to.")
 	must(clusterMachineSSHCmd.MarkFlagRequired("machineid"))
@@ -442,6 +466,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCmd.AddCommand(clusterLogsCmd)
 	clusterCmd.AddCommand(clusterIssuesCmd)
 	clusterCmd.AddCommand(clusterSplunkConfigManifestCmd)
+	clusterCmd.AddCommand(clusterDNSManifestCmd)
 	clusterCmd.AddCommand(clusterMonitoringSecretCmd)
 
 	return clusterCmd
@@ -596,7 +621,7 @@ func (c *config) clusterCreate() error {
 
 		// default to true for evaluation clusters
 		if purpose == string(v1beta1.ShootPurposeEvaluation) {
-			scr.Maintenance.AutoUpdate.KubernetesVersion = pointer.Bool(true)
+			scr.Maintenance.AutoUpdate.KubernetesVersion = pointer.Pointer(true)
 		}
 		if viper.IsSet("autoupdate-kubernetes") {
 			auto := viper.GetBool("autoupdate-kubernetes")
@@ -936,10 +961,10 @@ func (c *config) updateCluster(args []string) error {
 
 				worker = &models.V1Worker{
 					Name:           &workergroupname,
-					Minimum:        pointer.Int32(1),
-					Maximum:        pointer.Int32(1),
-					MaxSurge:       pointer.String("1"),
-					MaxUnavailable: pointer.String("0"),
+					Minimum:        pointer.Pointer(int32(1)),
+					Maximum:        pointer.Pointer(int32(1)),
+					MaxSurge:       pointer.Pointer("1"),
+					MaxUnavailable: pointer.Pointer("0"),
 					Labels:         workerlabels,
 					Annotations:    workerannotations,
 				}
@@ -1185,7 +1210,7 @@ func (c *config) clusterDescribe(args []string) error {
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
 	if viper.GetBool("no-machines") {
-		findRequest.WithReturnMachines(pointer.BoolPtr(false))
+		findRequest.WithReturnMachines(pointer.Pointer(false))
 	}
 	shoot, err := c.cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
@@ -1344,8 +1369,8 @@ func (c *config) clusterInputs() error {
 
 func (c *config) clusterSplunkConfigManifest() error {
 	secret := corev1.Secret{
-		TypeMeta:   v1.TypeMeta{Kind: "Secret", APIVersion: "v1"},
-		ObjectMeta: v1.ObjectMeta{Name: "splunk-config", Namespace: "kube-system"},
+		TypeMeta:   metav1.TypeMeta{Kind: "Secret", APIVersion: "v1"},
+		ObjectMeta: metav1.ObjectMeta{Name: "splunk-config", Namespace: "kube-system"},
 		Type:       corev1.SecretTypeOpaque,
 		StringData: map[string]string{},
 		Data:       map[string][]byte{},
@@ -1388,6 +1413,128 @@ func (c *config) clusterSplunkConfigManifest() error {
 	}
 
 	helper.MustPrintKubernetesResource(secret)
+
+	return nil
+}
+
+func (c *config) clusterDNSManifest(args []string) error {
+	ci, err := c.clusterID("dns-manifest", args)
+	if err != nil {
+		return err
+	}
+
+	cluster, err := c.cloud.Cluster.FindCluster(cluster.NewFindClusterParams().WithID(ci).WithReturnMachines(pointer.Pointer(false)), nil)
+	if err != nil {
+		return err
+	}
+
+	domain := fmt.Sprintf("%s.%s", viper.GetString("name"), pointer.SafeDeref(cluster.Payload.DNSEndpoint))
+
+	var resource runtime.Object
+
+	annotations := map[string]string{
+		"dns.gardener.cloud/class":    "garden",
+		"dns.gardener.cloud/ttl":      strconv.Itoa(viper.GetInt("ttl")),
+		"dns.gardener.cloud/dnsnames": domain,
+	}
+
+	if viper.GetBool("with-certificate") {
+		annotations["cert.gardener.cloud/purpose"] = "managed"
+	}
+
+	switch t := viper.GetString("type"); t {
+	case "ingress":
+		ingress := &networkingv1.Ingress{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Ingress",
+				APIVersion: networkingv1.SchemeGroupVersion.String(),
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      viper.GetString("name"),
+				Namespace: viper.GetString("namespace"),
+				Labels: map[string]string{
+					"app": viper.GetString("name"),
+				},
+				Annotations: annotations,
+			},
+			Spec: networkingv1.IngressSpec{
+				IngressClassName: pointer.Pointer(viper.GetString("ingress-class")),
+				Rules: []networkingv1.IngressRule{
+					{
+						Host: domain,
+						IngressRuleValue: networkingv1.IngressRuleValue{
+							HTTP: &networkingv1.HTTPIngressRuleValue{
+								Paths: []networkingv1.HTTPIngressPath{
+									{
+										PathType: pointer.Pointer(networkingv1.PathTypePrefix),
+										Path:     "/",
+										Backend: networkingv1.IngressBackend{
+											Service: &networkingv1.IngressServiceBackend{
+												Name: viper.GetString("backend-name"),
+												Port: networkingv1.ServiceBackendPort{
+													Number: viper.GetInt32("backend-port"),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		if viper.GetBool("with-certificate") {
+			ingress.Spec.TLS = []networkingv1.IngressTLS{
+				{
+					Hosts:      []string{domain},
+					SecretName: fmt.Sprintf("%s-tls-secret", viper.GetString("name")),
+				},
+			}
+		}
+
+		resource = ingress
+	case "service":
+		service := &corev1.Service{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Service",
+				APIVersion: corev1.SchemeGroupVersion.String(),
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      viper.GetString("name"),
+				Namespace: viper.GetString("namespace"),
+				Labels: map[string]string{
+					"app": viper.GetString("name"),
+				},
+				Annotations: annotations,
+			},
+			Spec: corev1.ServiceSpec{
+				Type: corev1.ServiceTypeLoadBalancer,
+				Selector: map[string]string{
+					"app": viper.GetString("name"),
+				},
+				Ports: []corev1.ServicePort{
+					{
+						Name:       viper.GetString("backend-name"),
+						Port:       viper.GetInt32("backend-port"),
+						TargetPort: intstr.FromInt(int(viper.GetInt32("backend-port"))),
+						Protocol:   corev1.ProtocolTCP,
+					},
+				},
+			},
+		}
+
+		if viper.GetBool("with-certificate") {
+			service.Annotations["cert.gardener.cloud/secretname"] = fmt.Sprintf("%s-tls-secret", viper.GetString("name"))
+		}
+
+		resource = service
+	default:
+		return fmt.Errorf("type must be one of %s, found: %s", []string{"loadbalancer", "service"}, t)
+	}
+
+	helper.MustPrintKubernetesResource(resource)
 
 	return nil
 }
