@@ -41,12 +41,11 @@ func newDashboardCmd(c *config) *cobra.Command {
 		Use:   "dashboard",
 		Short: "shows a live dashboard optimized for operation",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runDashboard(c.cloud)
+			return runDashboard(c.client)
 		},
-		PreRun: bindPFlags,
 	}
 
-	tabs := dashboardTabs(c.cloud)
+	tabs := dashboardTabs(c.client)
 
 	dashboardCmd.Flags().String("partition", "", "show resources in partition [optional]")
 	dashboardCmd.Flags().String("tenant", "", "show resources of given tenant [optional]")

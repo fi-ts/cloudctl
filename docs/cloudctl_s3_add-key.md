@@ -1,0 +1,44 @@
+## cloudctl s3 add-key
+
+adds a key for an s3 user
+
+```
+cloudctl s3 add-key <id> [flags]
+```
+
+### Options
+
+```
+      --access-key string   specify the access key, otherwise will be generated
+  -h, --help                help for add-key
+  -p, --partition string    name of s3 partition where this user is in [required]
+      --project string      id of the project that the s3 user belongs to [required]
+      --secret-key string   specify the secret key, otherwise will be generated
+  -t, --tenant string       tenant of the s3 user, defaults to logged in tenant
+```
+
+### Options inherited from parent commands
+
+```
+      --api-token string       api token to authenticate. Can be specified with CLOUDCTL_API_TOKEN environment variable.
+      --api-url string         api server address. Can be specified with CLOUDCTL_API_URL environment variable.
+      --debug                  debug output
+      --force-color            force colored output even without tty
+      --kubeconfig string      Path to the kube-config to use for authentication and authorization. Is updated by login. Uses default path if not specified.
+      --no-headers             omit headers in tables
+      --order string           order by (comma separated) column(s)
+  -o, --output-format string   output format (table|wide|markdown|json|yaml|template), wide is a table with more columns. (default "table")
+      --template string        output template for template output-format, go template format.
+                               	For property names inspect the output of -o json for reference.
+                               	Example for clusters:
+                               
+                               	cloudctl cluster ls -o template --template "{{ .ID }} {{ .Name }}"
+                               
+                               	
+      --yes-i-really-mean-it   skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)
+```
+
+### SEE ALSO
+
+* [cloudctl s3](cloudctl_s3.md)	 - manage s3 entities
+

@@ -42,7 +42,6 @@ contexts:
 			}
 			return nil
 		},
-		PreRun: bindPFlags,
 	}
 
 	contextShortCmd := &cobra.Command{
@@ -51,7 +50,6 @@ contexts:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return contextShort()
 		},
-		PreRun: bindPFlags,
 	}
 
 	contextCmd.AddCommand(contextShortCmd)

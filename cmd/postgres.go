@@ -72,7 +72,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresCreate()
 		},
-		PreRun: bindPFlags,
 	}
 	postgresCreateStandbyCmd := &cobra.Command{
 		Use:   "create-standby",
@@ -80,7 +79,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresCreateStandby()
 		},
-		PreRun: bindPFlags,
 	}
 	postgresPromoteToPrimaryCmd := &cobra.Command{
 		Use:   "promote-to-primary",
@@ -88,7 +86,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresPromoteToPrimary(args)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresDemoteToStandbyCmd := &cobra.Command{
 		Use:   "demote-to-standby",
@@ -96,7 +93,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresDemoteToStandby(args)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresRestoreCmd := &cobra.Command{
 		Use:   "restore",
@@ -104,7 +100,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresRestore()
 		},
-		PreRun: bindPFlags,
 	}
 	postgresApplyCmd := &cobra.Command{
 		Use:   "apply",
@@ -112,7 +107,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresApply()
 		},
-		PreRun: bindPFlags,
 	}
 	postgresEditCmd := &cobra.Command{
 		Use:   "edit",
@@ -120,7 +114,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresEdit(args)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresAcceptRestoreCmd := &cobra.Command{
 		Use:   "restore-accepted",
@@ -128,7 +121,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresAcceptRestore(args)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresListCmd := &cobra.Command{
 		Use:     "list",
@@ -137,7 +129,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresFind()
 		},
-		PreRun: bindPFlags,
 	}
 	postgresListBackupsCmd := &cobra.Command{
 		Use:   "list-backups",
@@ -145,7 +136,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresListBackups(args)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresDeleteCmd := &cobra.Command{
 		Use:     "delete <postgres>",
@@ -154,7 +144,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresDelete(args)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresDescribeCmd := &cobra.Command{
 		Use:   "describe <postgres>",
@@ -162,7 +151,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresDescribe(args)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresConnectionStringCmd := &cobra.Command{
 		Use:   "connectionstring <postgres>",
@@ -170,7 +158,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresConnectionString(args)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresVersionsCmd := &cobra.Command{
 		Use:   "version",
@@ -178,7 +165,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresVersions()
 		},
-		PreRun: bindPFlags,
 	}
 	postgresPartitionsCmd := &cobra.Command{
 		Use:   "partition",
@@ -186,7 +172,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresPartitions()
 		},
-		PreRun: bindPFlags,
 	}
 	postgresBackupCmd := &cobra.Command{
 		Use:   "backup-config",
@@ -199,7 +184,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresBackupCreate(false)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresBackupAutoCreateCmd := &cobra.Command{
 		Use:   "auto-create",
@@ -207,7 +191,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresBackupCreate(true)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresBackupUpdateCmd := &cobra.Command{
 		Use:   "update",
@@ -215,7 +198,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresBackupUpdate()
 		},
-		PreRun: bindPFlags,
 	}
 	postgresBackupListCmd := &cobra.Command{
 		Use:     "list",
@@ -224,7 +206,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresBackupGet()
 		},
-		PreRun: bindPFlags,
 	}
 	postgresBackupDeleteCmd := &cobra.Command{
 		Use:     "delete <backup-config>",
@@ -233,7 +214,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresBackupDelete(args)
 		},
-		PreRun: bindPFlags,
 	}
 
 	postgresCmd.AddCommand(postgresBackupCmd)
@@ -302,7 +282,7 @@ postgres=#
 
 	// Restore
 	postgresRestoreCmd.Flags().StringP("source-postgres-id", "", "", "if of the primary database")
-	postgresRestoreCmd.Flags().StringP("timestamp", "", time.Now().Format(time.RFC3339), "point-in-time to restore to")
+	postgresRestoreCmd.Flags().StringP("timestamp", "", "", "point-in-time to restore to, defaults to current system time")
 	postgresRestoreCmd.Flags().StringP("version", "", "", "postgres version of the database")
 	postgresRestoreCmd.Flags().StringP("description", "", "", "description of the database")
 	postgresRestoreCmd.Flags().StringP("partition", "", "", "partition where the database should be created. Changing the partition compared to the source database requires administrative privileges")
@@ -412,7 +392,7 @@ func (c *config) postgresCreate() error {
 	request := database.NewCreatePostgresParams()
 	request.SetBody(pcr)
 
-	response, err := c.cloud.Database.CreatePostgres(request, nil)
+	response, err := c.client.Database.CreatePostgres(request, nil)
 	if err != nil {
 		return err
 	}
@@ -443,7 +423,7 @@ func (c *config) postgresCreateStandby() error {
 	request := database.NewCreatePostgresStandbyParams()
 	request.SetBody(pcsr)
 
-	response, err := c.cloud.Database.CreatePostgresStandby(request, nil)
+	response, err := c.client.Database.CreatePostgresStandby(request, nil)
 	if err != nil {
 		return err
 	}
@@ -458,7 +438,7 @@ func (c *config) postgresPromoteToPrimary(args []string) error {
 	}
 
 	params := database.NewGetPostgresParams().WithID(id)
-	resp, err := c.cloud.Database.GetPostgres(params, nil)
+	resp, err := c.client.Database.GetPostgres(params, nil)
 	if err != nil {
 		return err
 	}
@@ -488,7 +468,7 @@ func (c *config) postgresPromoteToPrimary(args []string) error {
 	// send the update request
 	req := database.NewUpdatePostgresParams()
 	req.Body = body
-	uresp, err := c.cloud.Database.UpdatePostgres(req, nil)
+	uresp, err := c.client.Database.UpdatePostgres(req, nil)
 	if err != nil {
 		return err
 	}
@@ -502,7 +482,7 @@ func (c *config) postgresDemoteToStandby(args []string) error {
 	}
 
 	params := database.NewGetPostgresParams().WithID(id)
-	resp, err := c.cloud.Database.GetPostgres(params, nil)
+	resp, err := c.client.Database.GetPostgres(params, nil)
 	if err != nil {
 		return err
 	}
@@ -528,7 +508,7 @@ func (c *config) postgresDemoteToStandby(args []string) error {
 	// send the update request
 	req := database.NewUpdatePostgresParams()
 	req.Body = body
-	uresp, err := c.cloud.Database.UpdatePostgres(req, nil)
+	uresp, err := c.client.Database.UpdatePostgres(req, nil)
 	if err != nil {
 		return err
 	}
@@ -543,6 +523,9 @@ func (c *config) postgresRestore() error {
 	version := viper.GetString("version")
 	maintenance := viper.GetStringSlice("maintenance")
 	timestamp := viper.GetString("timestamp")
+	if timestamp == "" {
+		timestamp = time.Now().Format(time.RFC3339)
+	}
 
 	labelMap, err := helper.LabelsToMap(labels)
 	if err != nil {
@@ -560,7 +543,7 @@ func (c *config) postgresRestore() error {
 	request := database.NewRestorePostgresParams()
 	request.SetBody(pcsr)
 
-	response, err := c.cloud.Database.RestorePostgres(request, nil)
+	response, err := c.client.Database.RestorePostgres(request, nil)
 	if err != nil {
 		return err
 	}
@@ -607,7 +590,7 @@ func (c *config) postgresApply() error {
 			continue
 		}
 		params := database.NewGetPostgresParams().WithID(*par.ID)
-		resp, err := c.cloud.Database.GetPostgres(params, nil)
+		resp, err := c.client.Database.GetPostgres(params, nil)
 		if err != nil {
 			return err
 		}
@@ -616,7 +599,7 @@ func (c *config) postgresApply() error {
 			request := database.NewUpdatePostgresParams()
 			request.SetBody(&purs[i])
 
-			updatedPG, err := c.cloud.Database.UpdatePostgres(request, nil)
+			updatedPG, err := c.client.Database.UpdatePostgres(request, nil)
 			if err != nil {
 				return err
 			}
@@ -630,7 +613,7 @@ func (c *config) postgresApply() error {
 		request := database.NewCreatePostgresParams()
 		request.SetBody(&pcrs[i])
 
-		createdPG, err := c.cloud.Database.CreatePostgres(request, nil)
+		createdPG, err := c.client.Database.CreatePostgres(request, nil)
 		if err != nil {
 			return err
 		}
@@ -648,7 +631,7 @@ func (c *config) postgresEdit(args []string) error {
 
 	getFunc := func(id string) ([]byte, error) {
 		params := database.NewGetPostgresParams().WithID(id)
-		resp, err := c.cloud.Database.GetPostgres(params, nil)
+		resp, err := c.client.Database.GetPostgres(params, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -668,7 +651,7 @@ func (c *config) postgresEdit(args []string) error {
 		}
 		pup := database.NewUpdatePostgresParams()
 		pup.Body = &purs[0]
-		uresp, err := c.cloud.Database.UpdatePostgres(pup, nil)
+		uresp, err := c.client.Database.UpdatePostgres(pup, nil)
 		if err != nil {
 			return err
 		}
@@ -692,7 +675,7 @@ func (c *config) postgresAcceptRestore(args []string) error {
 	}
 
 	params := database.NewAcceptPostgresRestoreParams().WithID(*pg.ID)
-	resp, err := c.cloud.Database.AcceptPostgresRestore(params, nil)
+	resp, err := c.client.Database.AcceptPostgresRestore(params, nil)
 	if err != nil {
 		return err
 	}
@@ -742,13 +725,13 @@ func (c *config) postgresFind() error {
 		}
 
 		params.SetBody(ifr)
-		resp, err := c.cloud.Database.FindPostgres(params, nil)
+		resp, err := c.client.Database.FindPostgres(params, nil)
 		if err != nil {
 			return err
 		}
 		return output.New().Print(resp.Payload)
 	}
-	resp, err := c.cloud.Database.ListPostgres(nil, nil)
+	resp, err := c.client.Database.ListPostgres(nil, nil)
 	if err != nil {
 		return err
 	}
@@ -777,7 +760,7 @@ func (c *config) postgresDelete(args []string) error {
 	}
 
 	params := database.NewDeletePostgresParams().WithID(*pg.ID)
-	resp, err := c.cloud.Database.DeletePostgres(params, nil)
+	resp, err := c.client.Database.DeletePostgres(params, nil)
 	if err != nil {
 		return err
 	}
@@ -801,7 +784,7 @@ func (c *config) postgresListBackups(args []string) error {
 
 	id := args[0]
 	params := database.NewGetPostgresBackupsParams().WithID(id)
-	resp, err := c.cloud.Database.GetPostgresBackups(params, nil)
+	resp, err := c.client.Database.GetPostgresBackups(params, nil)
 	if err != nil {
 		return err
 	}
@@ -817,7 +800,7 @@ func (c *config) postgresConnectionString(args []string) error {
 	}
 
 	params := database.NewGetPostgresSecretsParams().WithID(*postgres.ID)
-	resp, err := c.cloud.Database.GetPostgresSecrets(params, nil)
+	resp, err := c.client.Database.GetPostgresSecrets(params, nil)
 	if err != nil {
 		return err
 	}
@@ -889,7 +872,7 @@ func (c *config) postgresBackupCreate(autocreate bool) error {
 	request := database.NewCreatePostgresBackupConfigParams()
 	request.SetBody(bcr)
 
-	response, err := c.cloud.Database.CreatePostgresBackupConfig(request, nil)
+	response, err := c.client.Database.CreatePostgresBackupConfig(request, nil)
 	if err != nil {
 		return err
 	}
@@ -900,7 +883,7 @@ func (c *config) postgresBackupUpdate() error {
 	id := viper.GetString("id")
 
 	request := database.NewGetBackupConfigParams().WithID(id)
-	resp, err := c.cloud.Database.GetBackupConfig(request, nil)
+	resp, err := c.client.Database.GetBackupConfig(request, nil)
 	if err != nil {
 		return err
 	}
@@ -924,7 +907,7 @@ func (c *config) postgresBackupUpdate() error {
 	req := database.NewUpdatePostgresBackupConfigParams()
 	req.SetBody(bur)
 
-	response, err := c.cloud.Database.UpdatePostgresBackupConfig(req, nil)
+	response, err := c.client.Database.UpdatePostgresBackupConfig(req, nil)
 	if err != nil {
 		return err
 	}
@@ -934,7 +917,7 @@ func (c *config) postgresBackupUpdate() error {
 
 func (c *config) postgresBackupGet() error {
 	request := database.NewListPostgresBackupConfigsParams()
-	resp, err := c.cloud.Database.ListPostgresBackupConfigs(request, nil)
+	resp, err := c.client.Database.ListPostgresBackupConfigs(request, nil)
 	if err != nil {
 		return err
 	}
@@ -951,7 +934,7 @@ func (c *config) postgresBackupDelete(args []string) error {
 
 	// try to fetch that backup-config first
 	gbcp := database.NewGetBackupConfigParams().WithID(args[0])
-	_, err := c.cloud.Database.GetBackupConfig(gbcp, nil)
+	_, err := c.client.Database.GetBackupConfig(gbcp, nil)
 	if err != nil {
 		return err
 	}
@@ -970,7 +953,7 @@ func (c *config) postgresBackupDelete(args []string) error {
 	}
 
 	request := database.NewDeletePostgresBackupConfigParams().WithID(id)
-	resp, err := c.cloud.Database.DeletePostgresBackupConfig(request, nil)
+	resp, err := c.client.Database.DeletePostgresBackupConfig(request, nil)
 	if err != nil {
 		return err
 	}
@@ -980,7 +963,7 @@ func (c *config) postgresBackupDelete(args []string) error {
 
 func (c *config) postgresVersions() error {
 	params := database.NewGetPostgresVersionsParams()
-	resp, err := c.cloud.Database.GetPostgresVersions(params, nil)
+	resp, err := c.client.Database.GetPostgresVersions(params, nil)
 	if err != nil {
 		return err
 	}
@@ -989,7 +972,7 @@ func (c *config) postgresVersions() error {
 }
 func (c *config) postgresPartitions() error {
 	params := database.NewGetPostgresPartitionsParams()
-	resp, err := c.cloud.Database.GetPostgresPartitions(params, nil)
+	resp, err := c.client.Database.GetPostgresPartitions(params, nil)
 	if err != nil {
 		return err
 	}
@@ -1003,7 +986,7 @@ func (c *config) getPostgresFromArgs(args []string) (*models.V1PostgresResponse,
 
 	id := args[0]
 	params := database.NewGetPostgresParams().WithID(id)
-	resp, err := c.cloud.Database.GetPostgres(params, nil)
+	resp, err := c.client.Database.GetPostgres(params, nil)
 	if err != nil {
 		return nil, err
 	}

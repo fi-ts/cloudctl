@@ -49,7 +49,6 @@ func newBillingCmd(c *config) *cobra.Command {
 			}
 			return c.projectsBilling()
 		},
-		PreRun: bindPFlags,
 	}
 	containerBillingCmd := &cobra.Command{
 		Use:   "container",
@@ -69,7 +68,6 @@ export CLOUDCTL_COSTS_MEMORY_GI_HOUR=0.01  # costs per memory hour
 			}
 			return c.containerUsage()
 		},
-		PreRun: bindPFlags,
 	}
 	clusterBillingCmd := &cobra.Command{
 		Use:   "cluster",
@@ -88,7 +86,6 @@ export CLOUDCTL_COSTS_HOUR=0.01        # costs per hour
 			}
 			return c.clusterUsage()
 		},
-		PreRun: bindPFlags,
 	}
 	ipBillingCmd := &cobra.Command{
 		Use:   "ip",
@@ -107,7 +104,6 @@ export CLOUDCTL_COSTS_HOUR=0.01        # costs per hour
 			}
 			return c.ipUsage()
 		},
-		PreRun: bindPFlags,
 	}
 	networkTrafficBillingCmd := &cobra.Command{
 		Use:   "network-traffic",
@@ -128,7 +124,6 @@ export CLOUDCTL_COSTS_TOTAL_NETWORK_TRAFFIC_GI=0.01           # costs per gi
 			}
 			return c.networkTrafficUsage()
 		},
-		PreRun: bindPFlags,
 	}
 	s3BillingCmd := &cobra.Command{
 		Use:   "s3",
@@ -147,7 +142,6 @@ export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01        # costs per storage hour
 			}
 			return c.s3Usage()
 		},
-		PreRun: bindPFlags,
 	}
 	volumeBillingCmd := &cobra.Command{
 		Use:   "volume",
@@ -166,7 +160,6 @@ export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01        # costs per capacity hour
 			}
 			return c.volumeUsage()
 		},
-		PreRun: bindPFlags,
 	}
 	postgresBillingCmd := &cobra.Command{
 		Use:   "postgres",
@@ -187,7 +180,6 @@ export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01 # Costs per capacity hour
 			}
 			return c.postgresUsage()
 		},
-		PreRun: bindPFlags,
 	}
 
 	billingCmd.AddCommand(projectBillingCmd)
@@ -320,7 +312,7 @@ func (c *config) projectsBilling() error {
 		To:   strfmt.DateTime(billingOpts.To),
 	})
 
-	response, err := c.cloud.Accounting.Projects(request, nil)
+	response, err := c.client.Accounting.Projects(request, nil)
 	if err != nil {
 		return err
 	}
@@ -354,7 +346,7 @@ func (c *config) clusterUsageJSON(cur *models.V1ClusterUsageRequest) error {
 	request := accounting.NewClusterUsageParams()
 	request.SetBody(cur)
 
-	response, err := c.cloud.Accounting.ClusterUsage(request, nil)
+	response, err := c.client.Accounting.ClusterUsage(request, nil)
 	if err != nil {
 		return err
 	}
@@ -366,7 +358,7 @@ func (c *config) clusterUsageCSV(cur *models.V1ClusterUsageRequest) error {
 	request := accounting.NewClusterUsageCSVParams()
 	request.SetBody(cur)
 
-	response, err := c.cloud.Accounting.ClusterUsageCSV(request, nil)
+	response, err := c.client.Accounting.ClusterUsageCSV(request, nil)
 	if err != nil {
 		return err
 	}
@@ -407,7 +399,7 @@ func (c *config) containerUsageJSON(cur *models.V1ContainerUsageRequest) error {
 	request := accounting.NewContainerUsageParams()
 	request.SetBody(cur)
 
-	response, err := c.cloud.Accounting.ContainerUsage(request, nil)
+	response, err := c.client.Accounting.ContainerUsage(request, nil)
 	if err != nil {
 		return err
 	}
@@ -419,7 +411,7 @@ func (c *config) containerUsageCSV(cur *models.V1ContainerUsageRequest) error {
 	request := accounting.NewContainerUsageCSVParams()
 	request.SetBody(cur)
 
-	response, err := c.cloud.Accounting.ContainerUsageCSV(request, nil)
+	response, err := c.client.Accounting.ContainerUsageCSV(request, nil)
 	if err != nil {
 		return err
 	}
@@ -454,7 +446,7 @@ func (c *config) ipUsageJSON(iur *models.V1IPUsageRequest) error {
 	request := accounting.NewIPUsageParams()
 	request.SetBody(iur)
 
-	response, err := c.cloud.Accounting.IPUsage(request, nil)
+	response, err := c.client.Accounting.IPUsage(request, nil)
 	if err != nil {
 		return err
 	}
@@ -466,7 +458,7 @@ func (c *config) ipUsageCSV(iur *models.V1IPUsageRequest) error {
 	request := accounting.NewIPUsageCSVParams()
 	request.SetBody(iur)
 
-	response, err := c.cloud.Accounting.IPUsageCSV(request, nil)
+	response, err := c.client.Accounting.IPUsageCSV(request, nil)
 	if err != nil {
 		return err
 	}
@@ -504,7 +496,7 @@ func (c *config) networkTrafficUsageJSON(cur *models.V1NetworkUsageRequest) erro
 	request := accounting.NewNetworkUsageParams()
 	request.SetBody(cur)
 
-	response, err := c.cloud.Accounting.NetworkUsage(request, nil)
+	response, err := c.client.Accounting.NetworkUsage(request, nil)
 	if err != nil {
 		return err
 	}
@@ -516,7 +508,7 @@ func (c *config) networkTrafficUsageCSV(cur *models.V1NetworkUsageRequest) error
 	request := accounting.NewNetworkUsageCSVParams()
 	request.SetBody(cur)
 
-	response, err := c.cloud.Accounting.NetworkUsageCSV(request, nil)
+	response, err := c.client.Accounting.NetworkUsageCSV(request, nil)
 	if err != nil {
 		return err
 	}
@@ -548,7 +540,7 @@ func (c *config) s3UsageJSON(sur *models.V1S3UsageRequest) error {
 	request := accounting.NewS3UsageParams()
 	request.SetBody(sur)
 
-	response, err := c.cloud.Accounting.S3Usage(request, nil)
+	response, err := c.client.Accounting.S3Usage(request, nil)
 	if err != nil {
 		return err
 	}
@@ -560,7 +552,7 @@ func (c *config) s3UsageCSV(sur *models.V1S3UsageRequest) error {
 	request := accounting.NewS3UsageCSVParams()
 	request.SetBody(sur)
 
-	response, err := c.cloud.Accounting.S3UsageCSV(request, nil)
+	response, err := c.client.Accounting.S3UsageCSV(request, nil)
 	if err != nil {
 		return err
 	}
@@ -601,7 +593,7 @@ func (c *config) volumeUsageJSON(vur *models.V1VolumeUsageRequest) error {
 	request := accounting.NewVolumeUsageParams()
 	request.SetBody(vur)
 
-	response, err := c.cloud.Accounting.VolumeUsage(request, nil)
+	response, err := c.client.Accounting.VolumeUsage(request, nil)
 	if err != nil {
 		return err
 	}
@@ -613,7 +605,7 @@ func (c *config) volumeUsageCSV(vur *models.V1VolumeUsageRequest) error {
 	request := accounting.NewVolumeUsageCSVParams()
 	request.SetBody(vur)
 
-	response, err := c.cloud.Accounting.VolumeUsageCSV(request, nil)
+	response, err := c.client.Accounting.VolumeUsageCSV(request, nil)
 	if err != nil {
 		return err
 	}
@@ -654,7 +646,7 @@ func (c *config) postgresUsageJSON(cur *models.V1PostgresUsageRequest) error {
 	request := accounting.NewPostgresUsageParams()
 	request.SetBody(cur)
 
-	response, err := c.cloud.Accounting.PostgresUsage(request, nil)
+	response, err := c.client.Accounting.PostgresUsage(request, nil)
 	if err != nil {
 		return err
 	}
@@ -666,7 +658,7 @@ func (c *config) postgresUsageCSV(cur *models.V1PostgresUsageRequest) error {
 	request := accounting.NewPostgresUsageCSVParams()
 	request.SetBody(cur)
 
-	response, err := c.cloud.Accounting.PostgresUsageCSV(request, nil)
+	response, err := c.client.Accounting.PostgresUsageCSV(request, nil)
 	if err != nil {
 		return err
 	}

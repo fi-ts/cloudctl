@@ -1,0 +1,44 @@
+## cloudctl s3 list
+
+list all s3
+
+```
+cloudctl s3 list [flags]
+```
+
+### Options
+
+```
+  -h, --help               help for list
+      --id string          id of s3 user.
+      --partition string   name of s3 partition.
+      --project string     project of s3 user.
+      --sort-by strings    sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: id|name|partition|project|tenant
+      --tenant string      tenant of s3 user.
+```
+
+### Options inherited from parent commands
+
+```
+      --api-token string       api token to authenticate. Can be specified with CLOUDCTL_API_TOKEN environment variable.
+      --api-url string         api server address. Can be specified with CLOUDCTL_API_URL environment variable.
+      --debug                  debug output
+      --force-color            force colored output even without tty
+      --kubeconfig string      Path to the kube-config to use for authentication and authorization. Is updated by login. Uses default path if not specified.
+      --no-headers             omit headers in tables
+      --order string           order by (comma separated) column(s)
+  -o, --output-format string   output format (table|wide|markdown|json|yaml|template), wide is a table with more columns. (default "table")
+      --template string        output template for template output-format, go template format.
+                               	For property names inspect the output of -o json for reference.
+                               	Example for clusters:
+                               
+                               	cloudctl cluster ls -o template --template "{{ .ID }} {{ .Name }}"
+                               
+                               	
+      --yes-i-really-mean-it   skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)
+```
+
+### SEE ALSO
+
+* [cloudctl s3](cloudctl_s3.md)	 - manage s3 entities
+

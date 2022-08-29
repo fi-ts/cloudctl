@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/fi-ts/cloudctl/cmd/output"
+	"github.com/fi-ts/cloud-go/api/client/version"
 	"github.com/fi-ts/cloudctl/pkg/api"
 	"github.com/metal-stack/v"
 	"github.com/spf13/cobra"
@@ -19,12 +19,12 @@ func newVersionCmd(c *config) *cobra.Command {
 				Client: v.V.String(),
 			}
 
-			resp, err := c.cloud.Version.Info(nil, nil)
+			resp, err := c.client.Version.Info(version.NewInfoParams(), nil)
 			if err == nil {
 				v.Server = resp.Payload
 			}
 
-			if err2 := output.New().Print(v); err2 != nil {
+			if err2 := c.describePrinter.Print(v); err2 != nil {
 				return err2
 			}
 			if err != nil {
@@ -32,7 +32,6 @@ func newVersionCmd(c *config) *cobra.Command {
 			}
 			return nil
 		},
-		PreRun: bindPFlags,
 	}
 	return versionCmd
 }

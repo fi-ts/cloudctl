@@ -26,7 +26,6 @@ func newIPCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.ipList()
 		},
-		PreRun: bindPFlags,
 	}
 	ipStaticCmd := &cobra.Command{
 		Use:   "static <ip>",
@@ -34,7 +33,6 @@ func newIPCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.ipStatic(args)
 		},
-		PreRun: bindPFlags,
 	}
 	ipAllocateCmd := &cobra.Command{
 		Use:   "allocate <ip>",
@@ -42,7 +40,6 @@ func newIPCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.ipAllocate()
 		},
-		PreRun: bindPFlags,
 	}
 	ipFreeCmd := &cobra.Command{
 		Use:     "delete <ip>",
@@ -51,7 +48,6 @@ func newIPCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.ipFree(args)
 		},
-		PreRun: bindPFlags,
 	}
 
 	ipCmd.AddCommand(ipListCmd)
@@ -99,13 +95,13 @@ func (c *config) ipList() error {
 			Machineid:     pointer.SafeDeref(helper.ViperString("machineid")),
 		}
 		params.SetBody(ifr)
-		resp, err := c.cloud.IP.FindIPs(params, nil)
+		resp, err := c.client.IP.FindIPs(params, nil)
 		if err != nil {
 			return err
 		}
 		return output.New().Print(resp.Payload)
 	}
-	resp, err := c.cloud.IP.ListIPs(nil, nil)
+	resp, err := c.client.IP.ListIPs(nil, nil)
 	if err != nil {
 		return err
 	}
@@ -139,7 +135,7 @@ func (c *config) ipStatic(args []string) error {
 	}
 
 	params.SetBody(iur)
-	resp, err := c.cloud.IP.UpdateIP(params, nil)
+	resp, err := c.client.IP.UpdateIP(params, nil)
 	if err != nil {
 		return err
 	}
@@ -170,7 +166,7 @@ func (c *config) ipAllocate() error {
 	}
 
 	params.SetBody(iar)
-	resp, err := c.cloud.IP.AllocateIP(params, nil)
+	resp, err := c.client.IP.AllocateIP(params, nil)
 	if err != nil {
 		return err
 	}
@@ -185,7 +181,7 @@ func (c *config) ipFree(args []string) error {
 
 	params := ip.NewFreeIPParams()
 	params.SetIP(ipAddress)
-	resp, err := c.cloud.IP.FreeIP(params, nil)
+	resp, err := c.client.IP.FreeIP(params, nil)
 	if err != nil {
 		return err
 	}
@@ -202,7 +198,7 @@ func (c *config) getIPFromArgs(args []string) (string, error) {
 	params := ip.NewGetIPParams()
 	params.SetIP(ipAddress)
 
-	_, err := c.cloud.IP.GetIP(params, nil)
+	_, err := c.client.IP.GetIP(params, nil)
 	if err != nil {
 		return "", err
 	}
