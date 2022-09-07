@@ -22,12 +22,12 @@ import (
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/rest"
 	"github.com/metal-stack/v"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/sync/semaphore"
-	"k8s.io/utils/pointer"
 
 	durosv2 "github.com/metal-stack/duros-go/api/duros/v2"
 )
@@ -463,7 +463,7 @@ func (d *dashboardClusterPane) Render() error {
 		PartitionID: output.StrDeref(partition),
 		Tenant:      output.StrDeref(tenant),
 		Purpose:     output.StrDeref(purpose),
-	}).WithReturnMachines(pointer.BoolPtr(false)).WithContext(ctx), nil)
+	}).WithReturnMachines(pointer.Pointer(false)).WithContext(ctx), nil)
 	if err != nil {
 		return err
 	}
