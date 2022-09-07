@@ -11,10 +11,10 @@ import (
 	"github.com/fi-ts/cloud-go/api/client/version"
 	"github.com/fi-ts/cloud-go/api/models"
 	mockversion "github.com/fi-ts/cloud-go/test/mocks/version"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/v"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"k8s.io/utils/pointer"
 )
 
 func Test_newVersionCmd(t *testing.T) {
@@ -35,7 +35,7 @@ func Test_newVersionCmd(t *testing.T) {
 		Version: mockVersionService,
 	}
 
-	mockVersionService.On("Info", mock.Anything, mock.Anything).Return(&version.InfoOK{Payload: &models.RestVersion{Name: pointer.StringPtr("cloudctl")}}, nil)
+	mockVersionService.On("Info", mock.Anything, mock.Anything).Return(&version.InfoOK{Payload: &models.RestVersion{Name: pointer.Pointer("cloudctl")}}, nil)
 	cfg := &config{
 		cloud: &cloud,
 	}
