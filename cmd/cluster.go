@@ -299,6 +299,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes! [optional]")
 	clusterCreateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
 	clusterCreateCmd.Flags().String("max-pods-per-node", "", "set number of maximum pods per node (default: 510). Lower numbers allow for more node per cluster. [optional]")
+	clusterCreateCmd.Flags().String("cni", "", "the network plugin used in this cluster. [optional]")
 
 	must(clusterCreateCmd.MarkFlagRequired("name"))
 	must(clusterCreateCmd.MarkFlagRequired("project"))
@@ -316,6 +317,9 @@ func newClusterCmd(c *config) *cobra.Command {
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("purpose", c.comp.ClusterPurposeListCompletion))
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("cri", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"docker", "containerd"}, cobra.ShellCompDirectiveNoFileComp
+	}))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("cni", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"calico", "cilium"}, cobra.ShellCompDirectiveNoFileComp
 	}))
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("audit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return auditConfigOptions.Names(true),
@@ -487,6 +491,10 @@ func (c *config) clusterCreate() error {
 	logAcceptedConnections := strconv.FormatBool(viper.GetBool("logacceptedconns"))
 
 	cri := viper.GetString("cri")
+	var cni string
+	if viper.IsSet("cni") {
+		cni = viper.GetString("cri")
+	}
 
 	minsize := viper.GetInt32("minsize")
 	maxsize := viper.GetInt32("maxsize")
@@ -614,6 +622,7 @@ func (c *config) clusterCreate() error {
 			LogAcceptedConnections: &logAcceptedConnections,
 		},
 		CustomDefaultStorageClass: customDefaultStorageClass,
+		Cni:                       cni,
 	}
 
 	if viper.IsSet("autoupdate-kubernetes") || viper.IsSet("autoupdate-machineimages") || purpose == string(v1beta1.ShootPurposeEvaluation) {
