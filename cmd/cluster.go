@@ -493,7 +493,7 @@ func (c *config) clusterCreate() error {
 	cri := viper.GetString("cri")
 	var cni string
 	if viper.IsSet("cni") {
-		cni = viper.GetString("cri")
+		cni = viper.GetString("cni")
 	}
 
 	minsize := viper.GetInt32("minsize")
