@@ -299,7 +299,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes! [optional]")
 	clusterCreateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
 	clusterCreateCmd.Flags().String("max-pods-per-node", "", "set number of maximum pods per node (default: 510). Lower numbers allow for more node per cluster. [optional]")
-	clusterCreateCmd.Flags().String("cni", "", "the network plugin used in this cluster. please note that cilium support is still alpha and we are happy to receive feedback. [optional]")
+	clusterCreateCmd.Flags().String("cni", "", "the network plugin used in this cluster. please note that cilium support is still Alpha and we are happy to receive feedback. [optional]")
 
 	must(clusterCreateCmd.MarkFlagRequired("name"))
 	must(clusterCreateCmd.MarkFlagRequired("project"))
@@ -319,7 +319,7 @@ func newClusterCmd(c *config) *cobra.Command {
 		return []string{"docker", "containerd"}, cobra.ShellCompDirectiveNoFileComp
 	}))
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("cni", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"calico", "cilium"}, cobra.ShellCompDirectiveNoFileComp
+		return []string{"calico", "cilium\tplease note that cilium support is still Alpha and we are happy to receive feedback."}, cobra.ShellCompDirectiveNoFileComp
 	}))
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("audit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return auditConfigOptions.Names(true),
