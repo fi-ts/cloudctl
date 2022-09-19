@@ -158,23 +158,6 @@ func (c *Completion) TenantListCompletion(cmd *cobra.Command, args []string, toC
 	sort.Strings(names)
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
-func (c *Completion) SnapshotListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	request := volume.NewListSnapshotsParams()
-	response, err := c.cloud.Volume.ListSnapshots(request, nil)
-	if err != nil {
-		return nil, cobra.ShellCompDirectiveError
-	}
-
-	var names []string
-	for _, s := range response.Payload {
-		if s.SnapshotID == nil {
-			continue
-		}
-		names = append(names, *s.SnapshotID)
-	}
-	sort.Strings(names)
-	return names, cobra.ShellCompDirectiveDefault
-}
 
 func (c *Completion) VolumeListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	request := volume.NewListVolumesParams()

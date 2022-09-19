@@ -81,7 +81,7 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 
 // Print an snapshot as table
 func (p SnapshotTablePrinter) Print(data []*models.V1SnapshotResponse) {
-	p.shortHeader = []string{"ID", "Name", "Size", "Replicas", "Project", "Tenant", "Partition"}
+	p.shortHeader = []string{"ID", "SourceID", "SourceName", "Name", "Size", "Project", "Tenant", "Partition"}
 	p.wideHeader = append(p.shortHeader, "Nodes")
 	p.Order(data)
 
@@ -98,10 +98,6 @@ func (p SnapshotTablePrinter) Print(data []*models.V1SnapshotResponse) {
 		if snap.Size != nil {
 			size = humanize.IBytes(uint64(*snap.Size))
 		}
-		replica := ""
-		if snap.ReplicaCount != nil {
-			replica = fmt.Sprintf("%d", *snap.ReplicaCount)
-		}
 		partition := ""
 		if snap.PartitionID != nil {
 			partition = *snap.PartitionID
@@ -114,8 +110,16 @@ func (p SnapshotTablePrinter) Print(data []*models.V1SnapshotResponse) {
 		if snap.TenantID != nil {
 			tenant = *snap.TenantID
 		}
+		sourceID := ""
+		if snap.SourceVolumeID != nil {
+			sourceID = *snap.SourceVolumeID
+		}
+		sourceName := ""
+		if snap.SourceVolumeName != nil {
+			sourceName = *snap.SourceVolumeName
+		}
 
-		short := []string{snapshotID, name, size, replica, project, tenant, partition}
+		short := []string{snapshotID, sourceID, sourceName, name, size, project, tenant, partition}
 		wide := short
 
 		p.addWideData(wide, snap)
