@@ -1134,3 +1134,35 @@ func (s VolumeTablePrinter) Order(data []*models.V1VolumeResponse) {
 		})
 	}
 }
+
+// Order cluster
+func (s SnapshotTablePrinter) Order(data []*models.V1SnapshotResponse) {
+	cols := strings.Split(s.order, ",")
+	if len(cols) > 0 {
+		sort.SliceStable(data, func(i, j int) bool {
+			A := data[i]
+			B := data[j]
+			sizeA := A.Size
+			sizeB := B.Size
+			for _, order := range cols {
+				order = strings.ToLower(order)
+				switch order {
+				case "size":
+					if A.Size == nil {
+						return true
+					}
+					if B.Size == nil {
+						return false
+					}
+					if *sizeA < *sizeB {
+						return true
+					}
+					if *sizeA != *sizeB {
+						return false
+					}
+				}
+			}
+			return false
+		})
+	}
+}
