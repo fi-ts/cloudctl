@@ -81,7 +81,7 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 
 // Print an snapshot as table
 func (p SnapshotTablePrinter) Print(data []*models.V1SnapshotResponse) {
-	p.shortHeader = []string{"ID", "SourceID", "SourceName", "Name", "Size", "Project", "Tenant", "Partition"}
+	p.shortHeader = []string{"ID", "Name", "SourceVolumeID", "SourceVolumeName", "Size", "Project", "Tenant", "Partition"}
 	p.wideHeader = append(p.shortHeader, "Nodes")
 	p.Order(data)
 
@@ -119,7 +119,7 @@ func (p SnapshotTablePrinter) Print(data []*models.V1SnapshotResponse) {
 			sourceName = *snap.SourceVolumeName
 		}
 
-		short := []string{snapshotID, sourceID, sourceName, name, size, project, tenant, partition}
+		short := []string{snapshotID, name, sourceID, sourceName, size, project, tenant, partition}
 		wide := short
 
 		p.addWideData(wide, snap)
