@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/fi-ts/cloud-go/api/client/ip"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
@@ -91,11 +92,11 @@ func (c *config) ipList() error {
 	if helper.AtLeastOneViperStringFlagGiven("ipaddress", "project", "prefix", "machineid", "network") {
 		params := ip.NewFindIPsParams()
 		ifr := &models.V1IPFindRequest{
-			IPAddress:        helper.ViperString("ipaddress"),
-			ProjectID:        helper.ViperString("project"),
-			ParentPrefixCidr: helper.ViperString("prefix"),
-			NetworkID:        helper.ViperString("network"),
-			MachineID:        helper.ViperString("machineid"),
+			Ipaddress:     pointer.SafeDeref(helper.ViperString("ipaddress")),
+			Projectid:     pointer.SafeDeref(helper.ViperString("project")),
+			Networkprefix: pointer.SafeDeref(helper.ViperString("prefix")),
+			Networkid:     pointer.SafeDeref(helper.ViperString("network")),
+			Machineid:     pointer.SafeDeref(helper.ViperString("machineid")),
 		}
 		params.SetBody(ifr)
 		resp, err := c.cloud.IP.FindIPs(params, nil)
@@ -120,7 +121,7 @@ func (c *config) ipStatic(args []string) error {
 	params := ip.NewUpdateIPParams()
 	iur := &models.V1IPUpdateRequest{
 		Ipaddress: &ipAddress,
-		Type:      "static",
+		Type:      pointer.Pointer("static"),
 	}
 	if helper.ViperString("name") != nil {
 		iur.Name = *helper.ViperString("name")
@@ -150,14 +151,14 @@ func (c *config) ipAllocate() error {
 	iar := &models.V1IPAllocateRequest{
 		Name:        *helper.ViperString("name"),
 		Description: *helper.ViperString("description"),
-		Type:        "static",
+		Type:        pointer.Pointer("static"),
 		Networkid:   helper.ViperString("network"),
 		Projectid:   helper.ViperString("project"),
 		Tags:        helper.ViperStringSlice("tags"),
 	}
 
 	if helper.ViperString("specific-ip") != nil {
-		iar.Ipaddress = helper.ViperString("specific-ip")
+		iar.SpecificIP = helper.ViperString("specific-ip")
 	}
 
 	if !viper.GetBool("yes-i-really-mean-it") {
