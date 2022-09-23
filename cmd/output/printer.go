@@ -12,6 +12,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/pkg/api"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/spf13/viper"
 
 	"github.com/olekukonko/tablewriter"
@@ -266,6 +267,10 @@ func (t tablePrinter) Print(data interface{}) error {
 		VolumeTablePrinter{t}.Print([]*models.V1VolumeResponse{d})
 	case []*models.V1VolumeResponse:
 		VolumeTablePrinter{t}.Print(d)
+	case []*models.V1SnapshotResponse:
+		SnapshotTablePrinter{t}.Print(d)
+	case *models.V1SnapshotResponse:
+		SnapshotTablePrinter{t}.Print(pointer.WrapInSlice(d))
 	case []*models.V1StorageClusterInfo:
 		VolumeClusterInfoTablePrinter{t}.Print(d)
 	case models.V1PostgresPartitionsResponse:

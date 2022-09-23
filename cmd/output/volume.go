@@ -19,6 +19,9 @@ type (
 	VolumeClusterInfoTablePrinter struct {
 		tablePrinter
 	}
+	SnapshotTablePrinter struct {
+		tablePrinter
+	}
 )
 
 // Print an volume as table
@@ -76,6 +79,55 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 	p.render()
 }
 
+// Print an snapshot as table
+func (p SnapshotTablePrinter) Print(data []*models.V1SnapshotResponse) {
+	p.shortHeader = []string{"ID", "Name", "SourceVolumeID", "SourceVolumeName", "Size", "Project", "Tenant", "Partition"}
+	p.wideHeader = append(p.shortHeader, "Nodes")
+	p.Order(data)
+
+	for _, snap := range data {
+		snapshotID := ""
+		if snap.SnapshotID != nil {
+			snapshotID = *snap.SnapshotID
+		}
+		name := ""
+		if snap.Name != nil {
+			name = *snap.Name
+		}
+		size := ""
+		if snap.Size != nil {
+			size = humanize.IBytes(uint64(*snap.Size))
+		}
+		partition := ""
+		if snap.PartitionID != nil {
+			partition = *snap.PartitionID
+		}
+		project := ""
+		if snap.ProjectID != nil {
+			project = *snap.ProjectID
+		}
+		tenant := ""
+		if snap.TenantID != nil {
+			tenant = *snap.TenantID
+		}
+		sourceID := ""
+		if snap.SourceVolumeID != nil {
+			sourceID = *snap.SourceVolumeID
+		}
+		sourceName := ""
+		if snap.SourceVolumeName != nil {
+			sourceName = *snap.SourceVolumeName
+		}
+
+		short := []string{snapshotID, name, sourceID, sourceName, size, project, tenant, partition}
+		wide := short
+
+		p.addWideData(wide, snap)
+		p.addShortData(short, snap)
+	}
+	p.render()
+}
+
 // ConnectedHosts returns the worker nodes without internal prefixes and suffixes
 func ConnectedHosts(vol *models.V1VolumeResponse) []string {
 	nodes := []string{}
@@ -97,41 +149,44 @@ VolumeManifest create a manifest for static PV like so
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  annotations:
-    pv.kubernetes.io/provisioned-by: csi.lightbitslabs.com
-  name: pvc-7e3b4b43-0061-46f0-a125-e0c1a0b2a4fb
+
+	annotations:
+	  pv.kubernetes.io/provisioned-by: csi.lightbitslabs.com
+	name: pvc-7e3b4b43-0061-46f0-a125-e0c1a0b2a4fb
+
 spec:
-  accessModes:
-  - ReadWriteOnce
-  capacity:
-    storage: 20Gi
-  claimRef:
-    apiVersion: v1
-    kind: PersistentVolumeClaim
-    name: example-mt-pvc-2
-    namespace: default
-    resourceVersion: "13088"
-    uid: 7e3b4b43-0061-46f0-a125-e0c1a0b2a4fb
-  csi:
-    controllerExpandSecretRef:
-      name: lb-csi-creds
-      namespace: kube-system
-    controllerPublishSecretRef:
-      name: lb-csi-creds
-      namespace: kube-system
-    driver: csi.lightbitslabs.com
-    fsType: ext4
-    nodePublishSecretRef:
-      name: lb-csi-creds
-      namespace: kube-system
-    nodeStageSecretRef:
-      name: lb-csi-creds
-      namespace: kube-system
-    volumeAttributes:
-      storage.kubernetes.io/csiProvisionerIdentity: 1608281061542-8081-csi.lightbitslabs.com
-    volumeHandle: mgmt:10.131.44.1:443,10.131.44.2:443,10.131.44.3:443|nguid:d798ec5a-84b3-4909-9938-785ebd3bbadb|proj:24235d11-deb9-46e3-9101-f906c78b10b6|scheme:grpcs
-  persistentVolumeReclaimPolicy: Delete
-  storageClassName: partition-silver
+
+	accessModes:
+	- ReadWriteOnce
+	capacity:
+	  storage: 20Gi
+	claimRef:
+	  apiVersion: v1
+	  kind: PersistentVolumeClaim
+	  name: example-mt-pvc-2
+	  namespace: default
+	  resourceVersion: "13088"
+	  uid: 7e3b4b43-0061-46f0-a125-e0c1a0b2a4fb
+	csi:
+	  controllerExpandSecretRef:
+	    name: lb-csi-creds
+	    namespace: kube-system
+	  controllerPublishSecretRef:
+	    name: lb-csi-creds
+	    namespace: kube-system
+	  driver: csi.lightbitslabs.com
+	  fsType: ext4
+	  nodePublishSecretRef:
+	    name: lb-csi-creds
+	    namespace: kube-system
+	  nodeStageSecretRef:
+	    name: lb-csi-creds
+	    namespace: kube-system
+	  volumeAttributes:
+	    storage.kubernetes.io/csiProvisionerIdentity: 1608281061542-8081-csi.lightbitslabs.com
+	  volumeHandle: mgmt:10.131.44.1:443,10.131.44.2:443,10.131.44.3:443|nguid:d798ec5a-84b3-4909-9938-785ebd3bbadb|proj:24235d11-deb9-46e3-9101-f906c78b10b6|scheme:grpcs
+	persistentVolumeReclaimPolicy: Delete
+	storageClassName: partition-silver
 */
 func VolumeManifest(v models.V1VolumeResponse, name, namespace string) error {
 	filesystem := corev1.PersistentVolumeFilesystem

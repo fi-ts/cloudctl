@@ -65,6 +65,58 @@ func newVolumeCmd(c *config) *cobra.Command {
 		PreRun: bindPFlags,
 	}
 
+	snapshotCmd := &cobra.Command{
+		Use:   "snapshot",
+		Short: "manage snapshots",
+		Long:  "list/find/delete snapshot",
+	}
+	snapshotListCmd := &cobra.Command{
+		Use:     "list",
+		Short:   "list snapshot",
+		Aliases: []string{"ls"},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.snapshotFind()
+		},
+		PreRun: bindPFlags,
+	}
+	snapshotDescribeCmd := &cobra.Command{
+		Use:   "describe <snapshot>",
+		Short: "describes a snapshot",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.snapshotDescribe(args)
+		},
+		PreRun: bindPFlags,
+	}
+	snapshotDeleteCmd := &cobra.Command{
+		Use:     "delete <snapshot>",
+		Aliases: []string{"destroy", "rm", "remove"},
+		Short:   "delete a snapshot",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.snapshotDelete(args)
+		},
+		PreRun: bindPFlags,
+	}
+
+	snapshotListCmd.Flags().StringP("snapshotid", "", "", "snapshotid to filter [optional]")
+	snapshotListCmd.Flags().StringP("project", "", "", "project to filter")
+	snapshotListCmd.Flags().StringP("name", "", "", "name to filter")
+	snapshotListCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
+
+	snapshotDescribeCmd.Flags().StringP("project", "", "", "project to filter")
+	snapshotDeleteCmd.Flags().StringP("project", "", "", "project to filter")
+
+	must(snapshotListCmd.MarkFlagRequired("project"))
+	must(snapshotDescribeCmd.MarkFlagRequired("project"))
+	must(snapshotDeleteCmd.MarkFlagRequired("project"))
+
+	must(snapshotListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	must(snapshotListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+
+	snapshotCmd.AddCommand(snapshotListCmd)
+	snapshotCmd.AddCommand(snapshotDescribeCmd)
+	snapshotCmd.AddCommand(snapshotDeleteCmd)
+	volumeCmd.AddCommand(snapshotCmd)
+
 	volumeCmd.AddCommand(volumeListCmd)
 	volumeCmd.AddCommand(volumeDeleteCmd)
 	volumeCmd.AddCommand(volumeDescribeCmd)
@@ -137,13 +189,7 @@ func (c *config) volumeDescribe(args []string) error {
 	if err != nil {
 		return err
 	}
-
-	resp, err := c.cloud.Volume.GetVolume(volume.NewGetVolumeParams().WithID(*vol.VolumeID), nil)
-	if err != nil {
-		return err
-	}
-
-	return output.New().Print(resp.Payload)
+	return output.New().Print(vol)
 }
 
 func (c *config) volumeDelete(args []string) error {
@@ -199,21 +245,74 @@ func (c *config) getVolumeFromArgs(args []string) (*models.V1VolumeResponse, err
 		return nil, fmt.Errorf("no volume given")
 	}
 
-	volumeID := args[0]
-	params := volume.NewFindVolumesParams()
-	ifr := &models.V1VolumeFindRequest{
-		VolumeID: &volumeID,
-	}
-	params.SetBody(ifr)
-	resp, err := c.cloud.Volume.FindVolumes(params, nil)
+	id := args[0]
+	resp, err := c.cloud.Volume.GetVolume(volume.NewGetVolumeParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
-	if len(resp.Payload) < 1 {
-		return nil, fmt.Errorf("no volume for id:%s found", volumeID)
+	return resp.Payload, nil
+}
+
+// Snapshots
+
+func (c *config) getSnapshotFromArgs(args []string) (*models.V1SnapshotResponse, error) {
+	if len(args) < 1 {
+		return nil, fmt.Errorf("no snapshot given")
 	}
-	if len(resp.Payload) > 1 {
-		return nil, fmt.Errorf("more than one volume for id:%s found", volumeID)
+	id := args[0]
+	projectid := helper.ViperString("project")
+	resp, err := c.cloud.Volume.GetSnapshot(volume.NewGetSnapshotParams().WithID(id).WithProjectID(projectid), nil)
+	if err != nil {
+		return nil, err
 	}
-	return resp.Payload[0], nil
+	return resp.Payload, nil
+}
+
+func (c *config) snapshotFind() error {
+	params := volume.NewFindSnapshotsParams()
+	ifr := &models.V1SnapshotFindRequest{
+		SnapshotID:  helper.ViperString("snapshotid"),
+		ProjectID:   helper.ViperString("project"),
+		Name:        helper.ViperString("name"),
+		PartitionID: helper.ViperString("partition"),
+	}
+	params.SetBody(ifr)
+	resp, err := c.cloud.Volume.FindSnapshots(params, nil)
+	if err != nil {
+		return err
+	}
+	return output.New().Print(resp.Payload)
+}
+
+func (c *config) snapshotDescribe(args []string) error {
+	snap, err := c.getSnapshotFromArgs(args)
+	if err != nil {
+		return err
+	}
+	return output.New().Print(snap)
+}
+
+func (c *config) snapshotDelete(args []string) error {
+	snap, err := c.getSnapshotFromArgs(args)
+	if err != nil {
+		return err
+	}
+
+	if !viper.GetBool("yes-i-really-mean-it") {
+		fmt.Printf(`
+delete snapshot: %q, all data will be lost forever.
+`, *snap.SnapshotID)
+		err = helper.Prompt("Are you sure? (y/n)", "y")
+		if err != nil {
+			return err
+		}
+	}
+
+	projectid := helper.ViperString("project")
+	resp, err := c.cloud.Volume.DeleteSnapshot(volume.NewDeleteSnapshotParams().WithID(*snap.SnapshotID).WithProjectID(projectid), nil)
+	if err != nil {
+		return err
+	}
+
+	return output.New().Print(resp.Payload)
 }
