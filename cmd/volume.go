@@ -99,6 +99,7 @@ func newVolumeCmd(c *config) *cobra.Command {
 
 	snapshotListCmd.Flags().StringP("snapshotid", "", "", "snapshotid to filter [optional]")
 	snapshotListCmd.Flags().StringP("project", "", "", "project to filter")
+	snapshotListCmd.Flags().StringP("name", "", "", "name to filter")
 	snapshotListCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
 
 	snapshotDescribeCmd.Flags().StringP("project", "", "", "project to filter")
@@ -272,6 +273,7 @@ func (c *config) snapshotFind() error {
 	ifr := &models.V1SnapshotFindRequest{
 		SnapshotID:  helper.ViperString("snapshotid"),
 		ProjectID:   helper.ViperString("project"),
+		Name:        helper.ViperString("name"),
 		PartitionID: helper.ViperString("partition"),
 	}
 	params.SetBody(ifr)
