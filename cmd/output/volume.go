@@ -9,6 +9,7 @@ import (
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8syaml "sigs.k8s.io/yaml"
 )
 
 type (
@@ -215,6 +216,28 @@ func VolumeManifest(v models.V1VolumeResponse, name, namespace string) error {
 	}
 
 	helper.MustPrintKubernetesResource(pv)
+	return nil
+}
+
+func VolumeEncryptionSecretManifest(namespace, passphrase string) error {
+	secret := corev1.Secret{
+		TypeMeta: v1.TypeMeta{Kind: "Secret", APIVersion: "v1"},
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "storage-encryption-key",
+			Namespace: namespace,
+		},
+		Type: corev1.SecretTypeOpaque,
+		StringData: map[string]string{
+			"host-encryption-passphrase": passphrase,
+		},
+	}
+	y, err := k8syaml.Marshal(secret)
+	if err != nil {
+		return err
+	}
+	fmt.Println(`# Sample secret to be used in conjunction with the partition-gold-encrypted StorageClass.
+# Place this secret, after modifying namespace and the actual secret value, in the same namespace as the pvc`)
+	fmt.Println(string(y))
 	return nil
 }
 

@@ -170,7 +170,7 @@ func LabelsToMap(labels []string) (map[string]string, error) {
 	return labelMap, nil
 }
 
-func MustPrintKubernetesResource(in interface{}) {
+func MustPrintKubernetesResource(in any) {
 	y, err := k8syaml.Marshal(in)
 	if err != nil {
 		panic(fmt.Errorf("unable to marshal to yaml: %w", err))
