@@ -236,7 +236,10 @@ func VolumeEncryptionSecretManifest(namespace, passphrase string) error {
 		return err
 	}
 	fmt.Println(`# Sample secret to be used in conjunction with the partition-gold-encrypted StorageClass.
-# Place this secret, after modifying namespace and the actual secret value, in the same namespace as the pvc`)
+# Place this secret, after modifying namespace and the actual secret value, in the same namespace as the pvc.
+#
+# IMPORTANT
+# Remember to make a safe copy of this secret at a secure location, once lost all your data will be lost as well.`)
 	fmt.Println(string(y))
 	return nil
 }
