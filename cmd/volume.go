@@ -56,6 +56,15 @@ func newVolumeCmd(c *config) *cobra.Command {
 		ValidArgsFunction: c.comp.VolumeListCompletion,
 		PreRun:            bindPFlags,
 	}
+	volumeEncryptionSecretManifestCmd := &cobra.Command{
+		Use:   "encryption-secret-manifest",
+		Short: "print a secret manifest for volume encryption",
+		Long:  "This command helps you with the creation of a secret to encrypt volumes",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.volumeEncryptionSecretManifest()
+		},
+		PreRun: bindPFlags,
+	}
 	volumeClusterInfoCmd := &cobra.Command{
 		Use:   "clusterinfo",
 		Short: "show storage cluster infos",
@@ -121,6 +130,7 @@ func newVolumeCmd(c *config) *cobra.Command {
 	volumeCmd.AddCommand(volumeDeleteCmd)
 	volumeCmd.AddCommand(volumeDescribeCmd)
 	volumeCmd.AddCommand(volumeManifestCmd)
+	volumeCmd.AddCommand(volumeEncryptionSecretManifestCmd)
 	volumeCmd.AddCommand(volumeClusterInfoCmd)
 
 	volumeListCmd.Flags().StringP("volumeid", "", "", "volumeid to filter [optional]")
@@ -135,6 +145,9 @@ func newVolumeCmd(c *config) *cobra.Command {
 
 	volumeManifestCmd.Flags().StringP("name", "", "restored-pv", "name of the PersistentVolume")
 	volumeManifestCmd.Flags().StringP("namespace", "", "default", "namespace for the PersistentVolume")
+
+	volumeEncryptionSecretManifestCmd.Flags().StringP("namespace", "", "default", "namespace for the PersistentVolume encryption secret")
+	volumeEncryptionSecretManifestCmd.Flags().StringP("passphrase", "", "please-change-me", "passphrase for the PersistentVolume encryption")
 
 	volumeClusterInfoCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
 	must(volumeClusterInfoCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
@@ -240,6 +253,13 @@ func (c *config) volumeManifest(args []string) error {
 
 	return output.VolumeManifest(*volume, name, namespace)
 }
+
+func (c *config) volumeEncryptionSecretManifest() error {
+	namespace := viper.GetString("namespace")
+	passphrase := viper.GetString("passphrase")
+	return output.VolumeEncryptionSecretManifest(namespace, passphrase)
+}
+
 func (c *config) getVolumeFromArgs(args []string) (*models.V1VolumeResponse, error) {
 	if len(args) < 1 {
 		return nil, fmt.Errorf("no volume given")
