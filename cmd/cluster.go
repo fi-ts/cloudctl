@@ -808,25 +808,26 @@ type sshkeypair struct {
 	publickey  []byte
 }
 
-func (c *config) sshKeyPair(clusterID string) (*sshkeypair, error) {
+func (c *config) sshKeyPair(clusterID string) (*sshkeypair, *models.V1VPN, error) {
 	request := cluster.NewGetSSHKeyPairParams()
 	request.SetID(clusterID)
 	credentials, err := c.cloud.Cluster.GetSSHKeyPair(request, nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	privateKey, err := base64.StdEncoding.DecodeString(*credentials.Payload.SSHKeyPair.PrivateKey)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	publicKey, err := base64.StdEncoding.DecodeString(*credentials.Payload.SSHKeyPair.PublicKey)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+
 	return &sshkeypair{
 		privatekey: privateKey,
 		publickey:  publicKey,
-	}, nil
+	}, credentials.Payload.VPN, nil
 }
 
 func (c *config) reconcileCluster(args []string) error {
@@ -1649,7 +1650,7 @@ func (c *config) clusterMachineSSH(args []string, console bool) error {
 		return err
 	}
 
-	keypair, err := c.sshKeyPair(cid)
+	keypair, vpn, err := c.sshKeyPair(cid)
 	if err != nil {
 		return err
 	}
@@ -1678,20 +1679,25 @@ func (c *config) clusterMachineSSH(args []string, console bool) error {
 					return err
 				}
 				bmcConsolePort := "5222"
-				err = ssh("-i", privateKeyFile, mid+"@"+c.consoleHost, "-p", bmcConsolePort)
+				err = runSSH("-i", privateKeyFile, mid+"@"+c.consoleHost, "-p", bmcConsolePort)
 				return err
 			}
 			networks := m.Allocation.Networks
 			feature := m.Allocation.Image.Features[0]
+			// FIXME change to allocation.Role
 			switch feature {
 			case "firewall":
+				if vpn != nil {
+					return c.firewallSSHViaVPN(*m.ID, *m.Allocation.Project, keypair.privatekey, vpn)
+				}
+
 				for _, nw := range networks {
 					if *nw.Underlay || *nw.Private {
 						continue
 					}
 					for _, ip := range nw.Ips {
 						if portOpen(ip, "22", time.Second) {
-							err := ssh("-i", privateKeyFile, "metal"+"@"+ip)
+							err := runSSH("-i", privateKeyFile, "metal"+"@"+ip)
 							return err
 						}
 					}
@@ -1710,7 +1716,7 @@ func (c *config) clusterMachineSSH(args []string, console bool) error {
 	return fmt.Errorf("machine:%s not found in cluster:%s", mid, cid)
 }
 
-func ssh(args ...string) error {
+func runSSH(args ...string) error {
 	path, err := exec.LookPath("ssh")
 	if err != nil {
 		return fmt.Errorf("unable to locate ssh in path")
