@@ -6,8 +6,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"os/exec"
-	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -1658,28 +1656,21 @@ func (c *config) clusterMachineSSH(args []string, console bool) error {
 	ms = append(ms, shoot.Payload.Firewalls...)
 	for _, m := range ms {
 		if *m.ID == mid {
-			home, err := os.UserHomeDir()
 			if err != nil {
 				return fmt.Errorf("unable determine home directory:%w", err)
 			}
-			privateKeyFile := path.Join(home, "."+c.name, "."+cid+".id_rsa")
-			err = os.WriteFile(privateKeyFile, keypair.privatekey, 0600)
-			if err != nil {
-				return fmt.Errorf("unable to write private key:%s error:%w", privateKeyFile, err)
-			}
-			defer os.Remove(privateKeyFile)
 			if console {
 				fmt.Printf("access console via ssh\n")
 				authContext, err := api.GetAuthContext(viper.GetString("kubeconfig"))
 				if err != nil {
 					return err
 				}
-				err = os.Setenv("LC_METAL_STACK_OIDC_TOKEN", authContext.IDToken)
-				if err != nil {
-					return err
+				env := &env{
+					key:   "LC_METAL_STACK_OIDC_TOKEN",
+					value: authContext.IDToken,
 				}
-				bmcConsolePort := "5222"
-				err = runSSH("-i", privateKeyFile, mid+"@"+c.consoleHost, "-p", bmcConsolePort)
+				bmcConsolePort := 5222
+				err = sshClient(mid, c.consoleHost, keypair.privatekey, bmcConsolePort, env)
 				return err
 			}
 			networks := m.Allocation.Networks
@@ -1695,7 +1686,7 @@ func (c *config) clusterMachineSSH(args []string, console bool) error {
 					}
 					for _, ip := range nw.Ips {
 						if portOpen(ip, "22", time.Second) {
-							err := runSSH("-i", privateKeyFile, "metal"+"@"+ip)
+							err := sshClient("metal", ip, keypair.privatekey, 22, nil)
 							return err
 						}
 					}
@@ -1712,20 +1703,6 @@ func (c *config) clusterMachineSSH(args []string, console bool) error {
 	}
 
 	return fmt.Errorf("machine:%s not found in cluster:%s", mid, cid)
-}
-
-func runSSH(args ...string) error {
-	path, err := exec.LookPath("ssh")
-	if err != nil {
-		return fmt.Errorf("unable to locate ssh in path")
-	}
-	args = append(args, "-o", "StrictHostKeyChecking=No")
-	fmt.Printf("%s %s\n", path, strings.Join(args, " "))
-	cmd := exec.Command(path, args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stdout
-	return cmd.Run()
 }
 
 func portOpen(ip string, port string, timeout time.Duration) bool {

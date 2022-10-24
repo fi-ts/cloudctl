@@ -203,7 +203,23 @@ func sshClientOverSOCKS5(user, host string, privateKey []byte, port int, proxyAd
 	}
 	defer client.Close()
 
-	return createSSHSession(client)
+	return createSSHSession(client, nil)
+}
+
+func sshClient(user, host string, privateKey []byte, port int, env *env) error {
+	fmt.Printf("ssh to %s@%s:%d\n", user, host, port)
+	sshConfig, err := getSSHConfig(user, privateKey)
+	if err != nil {
+		return fmt.Errorf("failed to create SSH config: %w", err)
+	}
+	sshServerAddress := fmt.Sprintf("%s:%d", host, port)
+	client, err := ssh.Dial("tcp", sshServerAddress, sshConfig)
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+
+	return createSSHSession(client, env)
 }
 
 func getProxiedSSHClient(sshServerAddress, proxyAddr string, sshConfig *ssh.ClientConfig) (*ssh.Client, error) {
@@ -233,13 +249,24 @@ func getProxiedSSHClient(sshServerAddress, proxyAddr string, sshConfig *ssh.Clie
 	return ssh.NewClient(c, chans, reqs), nil
 }
 
-func createSSHSession(client *ssh.Client) error {
+type env struct {
+	key   string
+	value string
+}
+
+func createSSHSession(client *ssh.Client, env *env) error {
 	session, err := client.NewSession()
 	if err != nil {
 		return err
 	}
 	defer session.Close()
 
+	if env != nil {
+		err = session.Setenv(env.key, env.value)
+		if err != nil {
+			return err
+		}
+	}
 	// Set IO
 	session.Stdout = os.Stdout
 	session.Stderr = os.Stderr
