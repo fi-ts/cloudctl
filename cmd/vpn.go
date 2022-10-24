@@ -20,7 +20,6 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
-	"github.com/spf13/viper"
 )
 
 const (
@@ -29,8 +28,8 @@ const (
 	proxyConnectionAttempts = 10
 )
 
-func (c *config) firewallSSHViaVPN(firewallID, projectID string, privateKey []byte, vpn *models.V1VPN) (err error) {
-	socksProxyPort := viper.GetInt("proxy-port")
+func (c *config) firewallSSHViaVPN(firewallID string, privateKey []byte, vpn *models.V1VPN) (err error) {
+	fmt.Printf("accessing firewall through vpn ")
 
 	cli, err := dockerclient.NewClientWithOpts(dockerclient.FromEnv)
 	if err != nil {
@@ -43,6 +42,11 @@ func (c *config) firewallSSHViaVPN(firewallID, projectID string, privateKey []by
 		return fmt.Errorf("failed to pull tailscale image: %w", err)
 	}
 
+	socksProxyPort, err := getFreePort()
+	if err != nil {
+		return err
+	}
+
 	containerConfig := &container.Config{
 		Image: tailscaleImage,
 		Cmd:   []string{"tailscaled", "--tun=userspace-networking", "--no-logs-no-support", fmt.Sprintf("--socks5-server=:%d", socksProxyPort)},
@@ -51,7 +55,7 @@ func (c *config) firewallSSHViaVPN(firewallID, projectID string, privateKey []by
 		NetworkMode: container.NetworkMode("host"),
 		AutoRemove:  true,
 	}
-	containerName := "tailscaled"
+	containerName := "tailscaled-" + firewallID
 	resp, err := cli.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, containerName)
 	if err != nil {
 		return err
@@ -192,8 +196,8 @@ func sshClientOverSOCKS5(user, host string, privateKey []byte, port int, proxyAd
 	if err != nil {
 		return fmt.Errorf("failed to create SSH config: %w", err)
 	}
-
-	client, err := getProxiedSSHClient(fmt.Sprintf("%s:%d", host, port), proxyAddr, sshConfig)
+	sshServerAddress := fmt.Sprintf("%s:%d", host, port)
+	client, err := getProxiedSSHClient(sshServerAddress, proxyAddr, sshConfig)
 	if err != nil {
 		return err
 	}
@@ -210,8 +214,10 @@ func getProxiedSSHClient(sshServerAddress, proxyAddr string, sshConfig *ssh.Clie
 
 	var conn net.Conn
 	for i := 0; i < proxyConnectionAttempts; i++ {
+		fmt.Printf(".")
 		conn, err = dialer.Dial("tcp", sshServerAddress)
 		if err == nil {
+			fmt.Printf("\n")
 			break
 		}
 	}
@@ -300,4 +306,15 @@ func getSSHConfig(user string, privateKey []byte) (*ssh.ClientConfig, error) {
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		Timeout:         10 * time.Second,
 	}, nil
+}
+func getFreePort() (port int, err error) {
+	var a *net.TCPAddr
+	if a, err = net.ResolveTCPAddr("tcp", "localhost:0"); err == nil {
+		var l *net.TCPListener
+		if l, err = net.ListenTCP("tcp", a); err == nil {
+			defer l.Close()
+			return l.Addr().(*net.TCPAddr).Port, nil
+		}
+	}
+	return
 }

@@ -300,8 +300,8 @@ github.com/fatih/color v1.12.0/go.mod h1:ELkj/draVOlAH/xkhN6mQ50Qd0MPOk5AAr3maGE
 github.com/fatih/color v1.13.0 h1:8LOYc1KYPPmyKMuN8QV2DNRWNbLo6LZ0iLs8+mlH53w=
 github.com/fatih/color v1.13.0/go.mod h1:kLAiJbzzSOZDVNGyDpeOxJ47H46qBXwg5ILebYFFOfk=
 github.com/felixge/httpsnoop v1.0.1/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
-github.com/fi-ts/cloud-go v0.20.1-0.20221021070740-052abbad04d8 h1:a8/iHdwQ0r7tCWqNGXZ4RVwo/bXVPxYcW+5jZJzxZVk=
-github.com/fi-ts/cloud-go v0.20.1-0.20221021070740-052abbad04d8/go.mod h1:T91pWjGK5+q7zQhq451qV8mJhz3XnvZBzDxtstvy/A4=
+github.com/fi-ts/cloud-go v0.20.1-0.20221024154939-f083d8dbef86 h1:9f9m4bdBb2qV5U2fef8h0AFK1CahC0Bfms4cwAEJW30=
+github.com/fi-ts/cloud-go v0.20.1-0.20221024154939-f083d8dbef86/go.mod h1:T91pWjGK5+q7zQhq451qV8mJhz3XnvZBzDxtstvy/A4=
 github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568/go.mod h1:xEzjJPgXI435gkrCt3MPfRiAkVrwSbHsst4LCFVfpJc=
 github.com/fogleman/gg v1.2.1-0.20190220221249-0403632d5b90/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
 github.com/form3tech-oss/jwt-go v3.2.2+incompatible/go.mod h1:pbq4aXjuKjdthFRnoDwaVPLA+WlJuPGy+QneDUgJi2k=

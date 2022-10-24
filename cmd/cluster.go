@@ -1683,12 +1683,10 @@ func (c *config) clusterMachineSSH(args []string, console bool) error {
 				return err
 			}
 			networks := m.Allocation.Networks
-			feature := m.Allocation.Image.Features[0]
-			// FIXME change to allocation.Role
-			switch feature {
+			switch *m.Allocation.Role {
 			case "firewall":
 				if vpn != nil {
-					return c.firewallSSHViaVPN(*m.ID, *m.Allocation.Project, keypair.privatekey, vpn)
+					return c.firewallSSHViaVPN(*m.ID, keypair.privatekey, vpn)
 				}
 
 				for _, nw := range networks {
@@ -1708,7 +1706,7 @@ func (c *config) clusterMachineSSH(args []string, console bool) error {
 				// ip vrf exec <tenantvrf> ssh <machineip>
 				return fmt.Errorf("machine access via ssh not implemented")
 			default:
-				return fmt.Errorf("unknown machine type:%s", feature)
+				return fmt.Errorf("unknown machine role:%s", *m.Allocation.Role)
 			}
 		}
 	}

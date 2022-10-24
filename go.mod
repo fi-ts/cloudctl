@@ -8,7 +8,7 @@ require (
 	github.com/docker/docker v20.10.20+incompatible
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.13.0
-	github.com/fi-ts/cloud-go v0.20.1-0.20221021070740-052abbad04d8
+	github.com/fi-ts/cloud-go v0.20.1-0.20221024154939-f083d8dbef86
 	github.com/gardener/gardener v1.42.0
 	github.com/go-openapi/strfmt v0.21.3
 	github.com/go-playground/validator/v10 v10.11.1
