@@ -136,7 +136,7 @@ func pullImageIfNotExists(ctx context.Context, cli *dockerclient.Client, tag str
 		return fmt.Errorf("failed to pull image: %w", err)
 	}
 
-	if _, err := io.Copy(os.Stdout, reader); err != nil {
+	if _, err := io.Copy(io.Discard, reader); err != nil {
 		return fmt.Errorf("failed to load image: %w", err)
 	}
 
