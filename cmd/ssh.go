@@ -107,12 +107,12 @@ func (c *config) firewallSSHViaVPN(firewallID string, privateKey []byte, vpn *mo
 	return nil
 }
 
-// TailscaleStatus and TailscalePeerStatus structs are used to parse VPN IP for the machine
-type TailscaleStatus struct {
-	Peer map[string]*TailscalePeerStatus
+// tailscaleStatus and tailscalePeerStatus structs are used to parse VPN IP for the machine
+type tailscaleStatus struct {
+	Peer map[string]*tailscalePeerStatus
 }
 
-type TailscalePeerStatus struct {
+type tailscalePeerStatus struct {
 	HostName     string
 	TailscaleIPs []string
 }
@@ -174,7 +174,7 @@ func (c *config) getFirewallVPNAddr(ctx context.Context, cli *dockerclient.Clien
 				}
 				i++
 			}
-			ts := &TailscaleStatus{}
+			ts := &tailscaleStatus{}
 			if err := json.Unmarshal([]byte(data[i:]), ts); err != nil {
 				return err
 			}
