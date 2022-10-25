@@ -804,28 +804,30 @@ func (c *config) clusterKubeconfig(args []string) error {
 type sshkeypair struct {
 	privatekey []byte
 	publickey  []byte
+	vpn        *models.V1VPN
 }
 
-func (c *config) sshKeyPair(clusterID string) (*sshkeypair, *models.V1VPN, error) {
+func (c *config) sshKeyPair(clusterID string) (*sshkeypair, error) {
 	request := cluster.NewGetSSHKeyPairParams()
 	request.SetID(clusterID)
 	credentials, err := c.cloud.Cluster.GetSSHKeyPair(request, nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	privateKey, err := base64.StdEncoding.DecodeString(*credentials.Payload.SSHKeyPair.PrivateKey)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	publicKey, err := base64.StdEncoding.DecodeString(*credentials.Payload.SSHKeyPair.PublicKey)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	return &sshkeypair{
 		privatekey: privateKey,
 		publickey:  publicKey,
-	}, credentials.Payload.VPN, nil
+		vpn:        credentials.Payload.VPN,
+	}, nil
 }
 
 func (c *config) reconcileCluster(args []string) error {
@@ -1648,7 +1650,7 @@ func (c *config) clusterMachineSSH(args []string, console bool) error {
 		return err
 	}
 
-	keypair, vpn, err := c.sshKeyPair(cid)
+	keypair, err := c.sshKeyPair(cid)
 	if err != nil {
 		return err
 	}
@@ -1676,8 +1678,8 @@ func (c *config) clusterMachineSSH(args []string, console bool) error {
 			networks := m.Allocation.Networks
 			switch *m.Allocation.Role {
 			case "firewall":
-				if vpn != nil {
-					return c.firewallSSHViaVPN(*m.ID, keypair.privatekey, vpn)
+				if keypair.vpn != nil {
+					return c.firewallSSHViaVPN(*m.ID, keypair.privatekey, keypair.vpn)
 				}
 
 				for _, nw := range networks {

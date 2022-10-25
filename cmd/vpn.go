@@ -25,7 +25,7 @@ import (
 const (
 	tailscaleImage          = "tailscale/tailscale:v1.32"
 	taiscaleStatusRetries   = 50
-	proxyConnectionAttempts = 10
+	proxyConnectionAttempts = 50
 )
 
 func (c *config) firewallSSHViaVPN(firewallID string, privateKey []byte, vpn *models.V1VPN) (err error) {
@@ -201,7 +201,6 @@ func sshClientOverSOCKS5(user, host string, privateKey []byte, port int, proxyAd
 	if err != nil {
 		return err
 	}
-	defer client.Close()
 
 	return createSSHSession(client, nil)
 }
@@ -217,7 +216,6 @@ func sshClient(user, host string, privateKey []byte, port int, env *env) error {
 	if err != nil {
 		return err
 	}
-	defer client.Close()
 
 	return createSSHSession(client, env)
 }
@@ -236,6 +234,7 @@ func getProxiedSSHClient(sshServerAddress, proxyAddr string, sshConfig *ssh.Clie
 			fmt.Printf("\n")
 			break
 		}
+		time.Sleep(500 * time.Millisecond)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to proxy at address %s: %w", proxyAddr, err)
