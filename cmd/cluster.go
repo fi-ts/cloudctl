@@ -375,7 +375,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
 	clusterUpdateCmd.Flags().BoolP("reversed-vpn", "", false, "enables usage of reversed-vpn instead of konnectivity tunnel for worker connectivity.")
-	clusterCreateCmd.Flags().Bool("encrypted-storage-classes", false, "enables the deployment of encrypted duros storage classes into the cluster.")
+	clusterUpdateCmd.Flags().Bool("encrypted-storage-classes", false, "enables the deployment of encrypted duros storage classes into the cluster.")
 	clusterUpdateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
 	clusterUpdateCmd.Flags().BoolP("disable-custom-default-storage-class", "", false, "if set to true, no default class is deployed, you have to set one of your storageclasses manually to default")
 
