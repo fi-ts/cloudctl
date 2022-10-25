@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
+	github.com/avast/retry-go/v4 v4.3.0
 	github.com/dcorbe/termui-dpc v0.0.0-20211125210512-9d2673a82dd6
 	github.com/docker/docker v20.10.20+incompatible
 	github.com/dustin/go-humanize v1.0.0

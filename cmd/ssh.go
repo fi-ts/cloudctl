@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/avast/retry-go/v4"
 	dockerclient "github.com/docker/docker/client"
 	"github.com/fi-ts/cloud-go/api/models"
 	"golang.org/x/crypto/ssh"
@@ -23,9 +24,7 @@ import (
 )
 
 const (
-	tailscaleImage          = "tailscale/tailscale:v1.32"
-	taiscaleStatusRetries   = 50
-	proxyConnectionAttempts = 50
+	tailscaleImage = "tailscale/tailscale:v1.32"
 )
 
 func (c *config) firewallSSHViaVPN(firewallID string, privateKey []byte, vpn *models.V1VPN) (err error) {
@@ -146,49 +145,54 @@ func pullImageIfNotExists(ctx context.Context, cli *dockerclient.Client, tag str
 
 func (c *config) getFirewallVPNAddr(ctx context.Context, cli *dockerclient.Client, containerName, fwName string) (addr string, err error) {
 	// Wait until Peers info is filled
-	for i := 0; i < taiscaleStatusRetries; i++ {
-		execConfig := types.ExecConfig{
-			Cmd:          []string{"tailscale", "status", "--json"},
-			AttachStdout: true,
-		}
-		execResp, err := cli.ContainerExecCreate(ctx, containerName, execConfig)
-		if err != nil {
-			return "", fmt.Errorf("failed to create tailscale status exec: %w", err)
-		}
-		resp, err := cli.ContainerExecAttach(ctx, execResp.ID, types.ExecStartCheck{})
-		if err != nil {
-			return "", fmt.Errorf("failed to attach to tailscale status exec: %w", err)
-		}
-
-		var data string
-		s := bufio.NewScanner(resp.Reader)
-		for s.Scan() {
-			data += s.Text()
-		}
-
-		// Skipping noise at the beginning
-		var i int
-		for _, c := range data {
-			if c == '{' {
-				break
+	execConfig := types.ExecConfig{
+		Cmd:          []string{"tailscale", "status", "--json"},
+		AttachStdout: true,
+	}
+	err = retry.Do(
+		func() error {
+			execResp, err := cli.ContainerExecCreate(ctx, containerName, execConfig)
+			if err != nil {
+				return fmt.Errorf("failed to create tailscale status exec: %w", err)
 			}
-			i++
-		}
-		ts := &TailscaleStatus{}
-		if err := json.Unmarshal([]byte(data[i:]), ts); err != nil {
-			continue
-		}
+			resp, err := cli.ContainerExecAttach(ctx, execResp.ID, types.ExecStartCheck{})
+			if err != nil {
+				return fmt.Errorf("failed to attach to tailscale status exec: %w", err)
+			}
 
-		if ts.Peer != nil {
-			for _, p := range ts.Peer {
-				if strings.HasPrefix(p.HostName, fwName) {
-					return p.TailscaleIPs[0], nil
+			var data string
+			s := bufio.NewScanner(resp.Reader)
+			for s.Scan() {
+				data += s.Text()
+			}
+
+			// Skipping noise at the beginning
+			var i int
+			for _, c := range data {
+				if c == '{' {
+					break
+				}
+				i++
+			}
+			ts := &TailscaleStatus{}
+			if err := json.Unmarshal([]byte(data[i:]), ts); err != nil {
+				return err
+			}
+
+			if ts.Peer != nil {
+				for _, p := range ts.Peer {
+					if strings.HasPrefix(p.HostName, fwName) {
+						addr = p.TailscaleIPs[0]
+						return nil
+					}
 				}
 			}
-		}
-	}
+			return fmt.Errorf("failed to find IP for specified firewall")
+		},
+		retry.Attempts(50),
+	)
 
-	return "", fmt.Errorf("failed to find IP for specified firewall")
+	return addr, err
 }
 
 func sshClientOverSOCKS5(user, host string, privateKey []byte, port int, proxyAddr string) error {
@@ -227,15 +231,18 @@ func getProxiedSSHClient(sshServerAddress, proxyAddr string, sshConfig *ssh.Clie
 	}
 
 	var conn net.Conn
-	for i := 0; i < proxyConnectionAttempts; i++ {
-		fmt.Printf(".")
-		conn, err = dialer.Dial("tcp", sshServerAddress)
-		if err == nil {
-			fmt.Printf("\n")
-			break
-		}
-		time.Sleep(500 * time.Millisecond)
-	}
+	err = retry.Do(
+		func() error {
+			fmt.Printf(".")
+			conn, err = dialer.Dial("tcp", sshServerAddress)
+			if err == nil {
+				fmt.Printf("\n")
+				return nil
+			}
+			return err
+		},
+		retry.Attempts(50),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to proxy at address %s: %w", proxyAddr, err)
 	}
