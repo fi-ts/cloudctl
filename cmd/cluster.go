@@ -6,8 +6,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"os/exec"
-	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -806,6 +804,7 @@ func (c *config) clusterKubeconfig(args []string) error {
 type sshkeypair struct {
 	privatekey []byte
 	publickey  []byte
+	vpn        *models.V1VPN
 }
 
 func (c *config) sshKeyPair(clusterID string) (*sshkeypair, error) {
@@ -823,9 +822,11 @@ func (c *config) sshKeyPair(clusterID string) (*sshkeypair, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &sshkeypair{
 		privatekey: privateKey,
 		publickey:  publicKey,
+		vpn:        credentials.Payload.VPN,
 	}, nil
 }
 
@@ -1657,41 +1658,37 @@ func (c *config) clusterMachineSSH(args []string, console bool) error {
 	ms = append(ms, shoot.Payload.Firewalls...)
 	for _, m := range ms {
 		if *m.ID == mid {
-			home, err := os.UserHomeDir()
 			if err != nil {
 				return fmt.Errorf("unable determine home directory:%w", err)
 			}
-			privateKeyFile := path.Join(home, "."+c.name, "."+cid+".id_rsa")
-			err = os.WriteFile(privateKeyFile, keypair.privatekey, 0600)
-			if err != nil {
-				return fmt.Errorf("unable to write private key:%s error:%w", privateKeyFile, err)
-			}
-			defer os.Remove(privateKeyFile)
 			if console {
 				fmt.Printf("access console via ssh\n")
 				authContext, err := api.GetAuthContext(viper.GetString("kubeconfig"))
 				if err != nil {
 					return err
 				}
-				err = os.Setenv("LC_METAL_STACK_OIDC_TOKEN", authContext.IDToken)
-				if err != nil {
-					return err
+				env := &env{
+					key:   "LC_METAL_STACK_OIDC_TOKEN",
+					value: authContext.IDToken,
 				}
-				bmcConsolePort := "5222"
-				err = ssh("-i", privateKeyFile, mid+"@"+c.consoleHost, "-p", bmcConsolePort)
+				bmcConsolePort := 5222
+				err = sshClient(mid, c.consoleHost, keypair.privatekey, bmcConsolePort, env)
 				return err
 			}
 			networks := m.Allocation.Networks
-			feature := m.Allocation.Image.Features[0]
-			switch feature {
+			switch *m.Allocation.Role {
 			case "firewall":
+				if keypair.vpn != nil {
+					return c.firewallSSHViaVPN(*m.ID, keypair.privatekey, keypair.vpn)
+				}
+
 				for _, nw := range networks {
 					if *nw.Underlay || *nw.Private {
 						continue
 					}
 					for _, ip := range nw.Ips {
 						if portOpen(ip, "22", time.Second) {
-							err := ssh("-i", privateKeyFile, "metal"+"@"+ip)
+							err := sshClient("metal", ip, keypair.privatekey, 22, nil)
 							return err
 						}
 					}
@@ -1702,26 +1699,12 @@ func (c *config) clusterMachineSSH(args []string, console bool) error {
 				// ip vrf exec <tenantvrf> ssh <machineip>
 				return fmt.Errorf("machine access via ssh not implemented")
 			default:
-				return fmt.Errorf("unknown machine type:%s", feature)
+				return fmt.Errorf("unknown machine role:%s", *m.Allocation.Role)
 			}
 		}
 	}
 
 	return fmt.Errorf("machine:%s not found in cluster:%s", mid, cid)
-}
-
-func ssh(args ...string) error {
-	path, err := exec.LookPath("ssh")
-	if err != nil {
-		return fmt.Errorf("unable to locate ssh in path")
-	}
-	args = append(args, "-o", "StrictHostKeyChecking=No")
-	fmt.Printf("%s %s\n", path, strings.Join(args, " "))
-	cmd := exec.Command(path, args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stdout
-	return cmd.Run()
 }
 
 func portOpen(ip string, port string, timeout time.Duration) bool {

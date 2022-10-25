@@ -2,4 +2,5 @@ api/client
 api/models
 bin
 .idea
+.vscode
 cloudctl
