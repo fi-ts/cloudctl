@@ -292,7 +292,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().String("audit", "on", "audit logging of cluster API access; can be off, on (default) or splunk (logging to a predefined or custom splunk endpoint). [optional]")
 	clusterCreateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced. [optional]")
 	clusterCreateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. [optional]")
-	clusterCreateCmd.Flags().Bool("encrypted-storage-classes", false, "enables the deployment of encrypted duros storage classes into the cluster. [optional]")
+	clusterCreateCmd.Flags().Bool("encrypted-storage-classes", false, "enables the deployment of encrypted duros storage classes into the cluster. please refer to the user manual to properly use volume encryption. [optional]")
 	clusterCreateCmd.Flags().BoolP("reversed-vpn", "", false, "enables usage of reversed-vpn instead of konnectivity tunnel for worker connectivity. [optional]")
 	clusterCreateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster [optional]")
 	clusterCreateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes! [optional]")
@@ -375,7 +375,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
 	clusterUpdateCmd.Flags().BoolP("reversed-vpn", "", false, "enables usage of reversed-vpn instead of konnectivity tunnel for worker connectivity.")
-	clusterUpdateCmd.Flags().Bool("encrypted-storage-classes", false, "enables the deployment of encrypted duros storage classes into the cluster.")
+	clusterUpdateCmd.Flags().Bool("encrypted-storage-classes", false, "enables the deployment of encrypted duros storage classes into the cluster. please refer to the user manual to properly use volume encryption.")
 	clusterUpdateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
 	clusterUpdateCmd.Flags().BoolP("disable-custom-default-storage-class", "", false, "if set to true, no default class is deployed, you have to set one of your storageclasses manually to default")
 
