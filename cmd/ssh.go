@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"net/netip"
 	"os"
@@ -73,7 +72,7 @@ func (c *config) firewallSSHViaVPN(firewallID string, privateKey []byte, vpn *mo
 
 	conn, err := lc.DialTCP(ctx, firewallVPNIP.String(), 22)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	return sshClientWithConn("metal", hostname, privateKey, conn)
