@@ -44,7 +44,6 @@ func (c *config) firewallSSHViaVPN(firewallID string, privateKey []byte, vpn *mo
 		if err != nil {
 			return err
 		}
-		fmt.Printf("online:%t\n", status.Self.Online)
 		if status.Self.Online {
 			for _, peer := range status.Peer {
 				if strings.HasPrefix(peer.HostName, firewallID) {
@@ -59,17 +58,10 @@ func (c *config) firewallSSHViaVPN(firewallID string, privateKey []byte, vpn *mo
 		return err
 	}
 
-	// now disable logging
-	s.Logf = func(format string, args ...any) {
-
-	}
+	// now disable logging, maybe altogether later
+	s.Logf = func(format string, args ...any) {}
 
 	fmt.Printf("fw:%s has ip: %s, vpn connected after: %s\n", firewallID, firewallVPNIP, time.Since(start))
-	// pingresult, err := lc.Ping(ctx, netip.MustParseAddr("fd7a:115c:a1e0::5"), tailcfg.PingICMP)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// fmt.Printf("ping to:%q(%q) took %fs\n", pingresult.NodeIP, pingresult.NodeName, pingresult.LatencySeconds)
 
 	conn, err := lc.DialTCP(ctx, firewallVPNIP.String(), 22)
 	if err != nil {
