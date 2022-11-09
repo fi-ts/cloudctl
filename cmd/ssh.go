@@ -31,6 +31,12 @@ func (c *config) firewallSSHViaVPN(firewallID string, privateKey []byte, vpn *mo
 		AuthKey:    *vpn.AuthKey,
 	}
 	defer s.Close()
+
+	// now disable logging, maybe altogether later
+	if os.Getenv("DEBUG") == "" {
+		s.Logf = func(format string, args ...any) {}
+	}
+
 	start := time.Now()
 	lc, err := s.LocalClient()
 	if err != nil {
@@ -39,29 +45,31 @@ func (c *config) firewallSSHViaVPN(firewallID string, privateKey []byte, vpn *mo
 	ctx := context.Background()
 
 	var firewallVPNIP netip.Addr
-	err = retry.Do(func() error {
-		status, err := lc.Status(ctx)
-		if err != nil {
-			return err
-		}
-		if status.Self.Online {
-			for _, peer := range status.Peer {
-				if strings.HasPrefix(peer.HostName, firewallID) {
-					firewallVPNIP = peer.TailscaleIPs[0]
-					return nil
+	err = retry.Do(
+		func() error {
+			fmt.Printf(".")
+			status, err := lc.Status(ctx)
+			if err != nil {
+				return err
+			}
+			if status.Self.Online {
+				for _, peer := range status.Peer {
+					if strings.HasPrefix(peer.HostName, firewallID) {
+						firewallVPNIP = peer.TailscaleIPs[0]
+						fmt.Printf(" connected to %s (ip %s) took: %s\n", firewallID, firewallVPNIP, time.Since(start))
+						return nil
+					}
 				}
 			}
-		}
-		return fmt.Errorf("did not get online")
-	})
+			return fmt.Errorf("did not get online")
+		},
+		retry.Attempts(50),
+	)
 	if err != nil {
 		return err
 	}
-
-	// now disable logging, maybe altogether later
+	// disable logging after successful connect
 	s.Logf = func(format string, args ...any) {}
-
-	fmt.Printf("fw:%s has ip: %s, vpn connected after: %s\n", firewallID, firewallVPNIP, time.Since(start))
 
 	conn, err := lc.DialTCP(ctx, firewallVPNIP.String(), 22)
 	if err != nil {
