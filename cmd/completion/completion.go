@@ -11,6 +11,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/client/tenant"
 	"github.com/fi-ts/cloud-go/api/client/volume"
 	"github.com/fi-ts/cloudctl/pkg/api"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/spf13/cobra"
 )
 
@@ -184,8 +185,17 @@ func (c *Completion) NetworkListCompletion(cmd *cobra.Command, args []string, to
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	sort.Strings(sc.Payload.Networks)
-	return sc.Payload.Networks, cobra.ShellCompDirectiveNoFileComp
+	var names []string
+	for _, n := range sc.Payload.Networks {
+		n := n
+		if n.ID == nil {
+			continue
+		}
+		names = append(names, *n.ID+"\t"+pointer.SafeDeref(n.Name))
+	}
+
+	sort.Strings(names)
+	return names, cobra.ShellCompDirectiveNoFileComp
 }
 func (c *Completion) VersionListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	request := cluster.NewListConstraintsParams()
