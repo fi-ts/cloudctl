@@ -110,7 +110,7 @@ ID   NAME       DESCRIPTION   LABELS   ANNOTATIONS
 		{
 			name: "apply",
 			cmd: func(want []*models.V1TenantResponse) []string {
-				return []string{"tenant", "apply", "-f", "/file.yaml"}
+				return []string{"tenant", "apply", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1TenantResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -147,7 +147,7 @@ ID   NAME       DESCRIPTION   LABELS   ANNOTATIONS
 		{
 			name: "update from file",
 			cmd: func(want []*models.V1TenantResponse) []string {
-				return []string{"tenant", "update", "-f", "/file.yaml"}
+				return []string{"tenant", "update", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1TenantResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))

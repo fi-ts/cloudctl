@@ -155,7 +155,7 @@ s3-2
 		{
 			name: "apply",
 			cmd: func(want []*models.V1S3CredentialsResponse) []string {
-				return []string{"s3", "apply", "-f", "/file.yaml"}
+				return []string{"s3", "apply", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1S3CredentialsResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -179,7 +179,7 @@ s3-2
 		{
 			name: "create from file",
 			cmd: func(want []*models.V1S3CredentialsResponse) []string {
-				return []string{"s3", "create", "-f", "/file.yaml"}
+				return []string{"s3", "create", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1S3CredentialsResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -198,7 +198,7 @@ s3-2
 		{
 			name: "update from file",
 			cmd: func(want []*models.V1S3CredentialsResponse) []string {
-				return []string{"s3", "update", "-f", "/file.yaml"}
+				return []string{"s3", "update", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1S3CredentialsResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -217,7 +217,7 @@ s3-2
 		{
 			name: "delete from file",
 			cmd: func(want []*models.V1S3CredentialsResponse) []string {
-				return []string{"s3", "delete", "-f", "/file.yaml", "--project", *want[0].Project, "--partition", *want[0].Partition}
+				return []string{"s3", "delete", "-f", "/file.yaml", "--project", *want[0].Project, "--partition", *want[0].Partition, "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1S3CredentialsResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -313,7 +313,7 @@ s3-1
 					"--access-key", *want.Keys[0].AccessKey,
 					"--secret-key", *want.Keys[0].SecretKey,
 				}
-				assertExhaustiveArgs(t, args, "file", "bulk-output")
+				assertExhaustiveArgs(t, args, "file", "bulk-output", "force-delete", "force")
 				return args
 			},
 			mocks: &client.CloudMockFns{

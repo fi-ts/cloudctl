@@ -20,6 +20,7 @@ cloudctl s3 apply [flags]
                       $ # or via file
                       $ cloudctl s3 apply -f s3.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for apply
 ```
 

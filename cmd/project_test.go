@@ -160,7 +160,7 @@ UID   TENANT   NAME        DESCRIPTION   LABELS   ANNOTATIONS
 		{
 			name: "apply",
 			cmd: func(want []*models.V1ProjectResponse) []string {
-				return []string{"project", "apply", "-f", "/file.yaml"}
+				return []string{"project", "apply", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1ProjectResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -191,7 +191,7 @@ UID   TENANT   NAME        DESCRIPTION   LABELS   ANNOTATIONS
 		{
 			name: "create from file",
 			cmd: func(want []*models.V1ProjectResponse) []string {
-				return []string{"project", "create", "-f", "/file.yaml"}
+				return []string{"project", "create", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1ProjectResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -210,7 +210,7 @@ UID   TENANT   NAME        DESCRIPTION   LABELS   ANNOTATIONS
 		{
 			name: "update from file",
 			cmd: func(want []*models.V1ProjectResponse) []string {
-				return []string{"project", "update", "-f", "/file.yaml"}
+				return []string{"project", "update", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1ProjectResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -238,7 +238,7 @@ UID   TENANT   NAME        DESCRIPTION   LABELS   ANNOTATIONS
 		{
 			name: "delete from file",
 			cmd: func(want []*models.V1ProjectResponse) []string {
-				return []string{"project", "delete", "-f", "/file.yaml"}
+				return []string{"project", "delete", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1ProjectResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -320,7 +320,7 @@ UID   TENANT   NAME        DESCRIPTION   LABELS   ANNOTATIONS
 					"--machine-quota", strconv.FormatInt(int64(want.Quotas.Machine.Quota), 10),
 					"--ip-quota", strconv.FormatInt(int64(want.Quotas.IP.Quota), 10),
 				}
-				assertExhaustiveArgs(t, args, "file", "bulk-output")
+				assertExhaustiveArgs(t, args, "file", "bulk-output", "force")
 				return args
 			},
 			mocks: &client.CloudMockFns{

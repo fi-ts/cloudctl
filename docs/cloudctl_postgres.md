@@ -5,10 +5,10 @@ manage postgres
 ### Synopsis
 
 
-Create an manage postgres databases.
+Create and manage postgres databases.
 
-To create a postgres database you first need to specify/create a backup-config where the database should store the backups.
-This can be done either by auto-create a S3 endpoint or provide all S3 details.
+To create a postgres database you first need to specify/create a backup-config where the database backups are stored in.
+This can be done either by auto-creating an S3 endpoint or provide all S3 details manually.
 
 Example Workflow:
 

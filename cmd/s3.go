@@ -98,7 +98,7 @@ func newS3Cmd(c *config) *cobra.Command {
 			cmd.Flags().StringP("partition", "p", "", "name of s3 partition where this user is in [required]")
 			cmd.Flags().String("project", "", "id of the project that the s3 user belongs to [required]")
 			cmd.Flags().StringP("tenant", "t", "", "tenant of the s3 user, defaults to logged in tenant")
-			cmd.Flags().Bool("force", false, "forces s3 user deletion along with buckets and bucket objects even if those still exist (dangerous!)")
+			cmd.Flags().Bool("force-delete", false, "forces s3 user deletion along with buckets and bucket objects even if those still exist (dangerous!)")
 
 			must(cmd.MarkFlagRequired("partition"))
 			must(cmd.MarkFlagRequired("project"))
@@ -241,7 +241,7 @@ func (c s3Cmd) Delete(id string) (*models.V1S3CredentialsResponse, error) {
 		Partition: pointer.PointerOrNil(viper.GetString("partition")),
 		Tenant:    pointer.PointerOrNil(viper.GetString("tenant")),
 		Project:   pointer.PointerOrNil(viper.GetString("project")),
-		Force:     pointer.Pointer(viper.GetBool("force")),
+		Force:     pointer.Pointer(viper.GetBool("force-delete")),
 	}), nil)
 	if err != nil {
 		return nil, err

@@ -21,6 +21,7 @@ cloudctl s3 create [flags]
                             $ # or via file
                             $ cloudctl s3 create -f s3.yaml
                             	
+      --force               skips security prompty for bulk operations
   -h, --help                help for create
   -i, --id string           id of the s3 user [required]
       --max-buckets int     maximum number of buckets for the s3 user

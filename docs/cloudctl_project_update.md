@@ -20,6 +20,7 @@ cloudctl project update [flags]
                       $ # or via file
                       $ cloudctl project update -f project.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for update
 ```
 

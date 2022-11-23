@@ -20,6 +20,7 @@ cloudctl tenant update [flags]
                       $ # or via file
                       $ cloudctl tenant update -f tenant.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for update
 ```
 

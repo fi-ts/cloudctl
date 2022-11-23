@@ -20,6 +20,7 @@ cloudctl tenant apply [flags]
                       $ # or via file
                       $ cloudctl tenant apply -f tenant.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for apply
 ```
 

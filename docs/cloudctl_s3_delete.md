@@ -9,7 +9,7 @@ cloudctl s3 delete <id> [flags]
 ### Options
 
 ```
-      --bulk-output        prints results in a bulk at the end, the results are a list. default is printing results intermediately during delete, which causes single entities to be printed sequentially.
+      --bulk-output        when deleting from file: prints results in a bulk at the end, the results are a list. default is printing results intermediately during deletion, which causes single entities to be printed sequentially.
   -f, --file string        filename of the create or update request in yaml format, or - for stdin.
                            
                            Example:
@@ -20,7 +20,8 @@ cloudctl s3 delete <id> [flags]
                            $ # or via file
                            $ cloudctl s3 delete -f s3.yaml
                            	
-      --force              forces s3 user deletion along with buckets and bucket objects even if those still exist (dangerous!)
+      --force              skips security prompty for bulk operations
+      --force-delete       forces s3 user deletion along with buckets and bucket objects even if those still exist (dangerous!)
   -h, --help               help for delete
   -p, --partition string   name of s3 partition where this user is in [required]
       --project string     id of the project that the s3 user belongs to [required]

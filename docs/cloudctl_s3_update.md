@@ -20,6 +20,7 @@ cloudctl s3 update [flags]
                       $ # or via file
                       $ cloudctl s3 update -f s3.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for update
 ```
 
