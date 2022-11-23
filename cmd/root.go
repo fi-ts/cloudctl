@@ -24,7 +24,6 @@ import (
 const binaryName = "cloudctl"
 
 type config struct {
-	name            string
 	fs              afero.Fs
 	out             io.Writer
 	client          *client.CloudAPI
