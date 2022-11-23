@@ -329,8 +329,8 @@ github.com/fatih/color v1.12.0/go.mod h1:ELkj/draVOlAH/xkhN6mQ50Qd0MPOk5AAr3maGE
 github.com/fatih/color v1.13.0 h1:8LOYc1KYPPmyKMuN8QV2DNRWNbLo6LZ0iLs8+mlH53w=
 github.com/fatih/color v1.13.0/go.mod h1:kLAiJbzzSOZDVNGyDpeOxJ47H46qBXwg5ILebYFFOfk=
 github.com/felixge/httpsnoop v1.0.1/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
-github.com/fi-ts/cloud-go v0.20.3 h1:8jw+DIiCYwf1Vh66AU8jffYx61oGnACYt9lDpYC/9Zw=
-github.com/fi-ts/cloud-go v0.20.3/go.mod h1:T91pWjGK5+q7zQhq451qV8mJhz3XnvZBzDxtstvy/A4=
+github.com/fi-ts/cloud-go v0.20.4-0.20221123104110-b0644ea155f4 h1:PPnj71MNx+44S2o9GFNj8icgeQiZ3b+spAo6pWQuOfI=
+github.com/fi-ts/cloud-go v0.20.4-0.20221123104110-b0644ea155f4/go.mod h1:T91pWjGK5+q7zQhq451qV8mJhz3XnvZBzDxtstvy/A4=
 github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568/go.mod h1:xEzjJPgXI435gkrCt3MPfRiAkVrwSbHsst4LCFVfpJc=
 github.com/fogleman/gg v1.2.1-0.20190220221249-0403632d5b90/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
 github.com/form3tech-oss/jwt-go v3.2.2+incompatible/go.mod h1:pbq4aXjuKjdthFRnoDwaVPLA+WlJuPGy+QneDUgJi2k=
@@ -378,6 +378,7 @@ github.com/gardener/hvpa-controller v0.3.1/go.mod h1:rjsb3BPKJFMluudZ8/bhCCDQfFC
 github.com/gardener/landscaper/apis v0.7.0/go.mod h1:++MW27PlSnbWM4AJipikw62RSprxO5TKVxZ8nh0e4Yw=
 github.com/gardener/machine-controller-manager v0.27.0/go.mod h1:zlIxuLQMtRO+aXOFsG6qtYkBmggbWY82K7MSO051ARU=
 github.com/gardener/machine-controller-manager v0.33.0/go.mod h1:jxxE+mGgXwg4iPlCHTG4GtUfK2CcHA6yYoIIowoxOZU=
+github.com/gardener/machine-controller-manager v0.41.0 h1:X8MrCqnGnRnn8GwDU3ajeRbu50yFUplcac++isqCFY4=
 github.com/gardener/machine-controller-manager v0.41.0/go.mod h1:43OABkCemMS6b35z3OprbfaT3p2HxKAZkJekjCO2T48=
 github.com/getkin/kin-openapi v0.76.0/go.mod h1:660oXbgy5JFMKreazJaQTw7o+X00qeSyhcnluiMv+Xg=
 github.com/getsentry/raven-go v0.2.0/go.mod h1:KungGk8q33+aIAZUIVWZDr2OfAEBsO49PX4NzFV5kcQ=
