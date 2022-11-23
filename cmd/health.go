@@ -14,7 +14,7 @@ func newHealthCmd(c *config) *cobra.Command {
 		Use:   "health",
 		Short: "show health information",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			resp, err := c.cloud.Health.Health(nil, nil)
+			resp, err := c.client.Health.Health(nil, nil)
 			if err != nil {
 				var r *health.HealthInternalServerError
 				if errors.As(err, &r) {
@@ -31,7 +31,6 @@ func newHealthCmd(c *config) *cobra.Command {
 
 			return output.New().Print(resp.Payload.Services)
 		},
-		PreRun: bindPFlags,
 	}
 	return healthCmd
 }

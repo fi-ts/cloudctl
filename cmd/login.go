@@ -62,7 +62,6 @@ func newLoginCmd(c *config) *cobra.Command {
 
 			return auth.OIDCFlow(config)
 		},
-		PreRun: bindPFlags,
 	}
 	loginCmd.Flags().Bool("print-only", false, "If true, the token is printed to stdout")
 	return loginCmd

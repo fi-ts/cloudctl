@@ -41,7 +41,6 @@ func newWhoamiCmd() *cobra.Command {
 
 			return nil
 		},
-		PreRun: bindPFlags,
 	}
 	return whoamiCmd
 }

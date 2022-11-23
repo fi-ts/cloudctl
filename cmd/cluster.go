@@ -94,7 +94,6 @@ func newClusterCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterCreate()
 		},
-		PreRun: bindPFlags,
 	}
 
 	clusterListCmd := &cobra.Command{
@@ -104,7 +103,6 @@ func newClusterCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterList()
 		},
-		PreRun: bindPFlags,
 	}
 	clusterDeleteCmd := &cobra.Command{
 		Use:     "delete <clusterid>",
@@ -114,7 +112,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterDelete(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterDescribeCmd := &cobra.Command{
 		Use:   "describe <clusterid>",
@@ -123,7 +120,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterDescribe(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterKubeconfigCmd := &cobra.Command{
 		Use:   "kubeconfig <clusterid>",
@@ -132,7 +128,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterKubeconfig(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 
 	clusterReconcileCmd := &cobra.Command{
@@ -142,7 +137,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.reconcileCluster(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterUpdateCmd := &cobra.Command{
 		Use:   "update <clusterid>",
@@ -151,7 +145,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.updateCluster(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterInputsCmd := &cobra.Command{
 		Use:   "inputs",
@@ -159,7 +152,6 @@ func newClusterCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterInputs()
 		},
-		PreRun: bindPFlags,
 	}
 	clusterMachineCmd := &cobra.Command{
 		Use:     "machine",
@@ -174,7 +166,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMachines(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterIssuesCmd := &cobra.Command{
 		Use:     "issues [<clusterid>]",
@@ -184,7 +175,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterIssues(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterMonitoringSecretCmd := &cobra.Command{
 		Use:   "monitoring-secret <clusterid>",
@@ -193,7 +183,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMonitoringSecret(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterMachineSSHCmd := &cobra.Command{
 		Use:   "ssh <clusterid>",
@@ -202,7 +191,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMachineSSH(args, false)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterMachineConsoleCmd := &cobra.Command{
 		Use:   "console <clusterid>",
@@ -211,7 +199,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMachineSSH(args, true)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterMachineResetCmd := &cobra.Command{
 		Use:   "reset <clusterid>",
@@ -220,7 +207,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMachineReset(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterMachineCycleCmd := &cobra.Command{
 		Use:   "cycle <clusterid>",
@@ -229,7 +215,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMachineCycle(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterMachineReinstallCmd := &cobra.Command{
 		Use:   "reinstall <clusterid>",
@@ -238,7 +223,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMachineReinstall(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterLogsCmd := &cobra.Command{
 		Use:   "logs <clusterid>",
@@ -247,7 +231,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterLogs(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterSplunkConfigManifestCmd := &cobra.Command{
 		Use:   "splunk-config-manifest",
@@ -255,7 +238,6 @@ func newClusterCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterSplunkConfigManifest()
 		},
-		PreRun: bindPFlags,
 	}
 	clusterDNSManifestCmd := &cobra.Command{
 		Use:   "dns-manifest <clusterid>",
@@ -264,7 +246,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterDNSManifest(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 
 	clusterCreateCmd.Flags().String("name", "", "name of the cluster, max 10 characters. [required]")
@@ -524,7 +505,7 @@ func (c *config) clusterCreate() error {
 	version := viper.GetString("version")
 	if version == "" {
 		request := cluster.NewListConstraintsParams()
-		constraints, err := c.cloud.Cluster.ListConstraints(request, nil)
+		constraints, err := c.client.Cluster.ListConstraints(request, nil)
 		if err != nil {
 			return err
 		}
@@ -669,7 +650,7 @@ func (c *config) clusterCreate() error {
 
 	request := cluster.NewCreateClusterParams()
 	request.SetBody(scr)
-	shoot, err := c.cloud.Cluster.CreateCluster(request, nil)
+	shoot, err := c.client.Cluster.CreateCluster(request, nil)
 	if err != nil {
 		return err
 	}
@@ -725,7 +706,7 @@ func (c *config) clusterList() error {
 	if cfr != nil {
 		fcp := cluster.NewFindClustersParams()
 		fcp.SetBody(cfr)
-		response, err := c.cloud.Cluster.FindClusters(fcp, nil)
+		response, err := c.client.Cluster.FindClusters(fcp, nil)
 		if err != nil {
 			return err
 		}
@@ -733,7 +714,7 @@ func (c *config) clusterList() error {
 	}
 
 	request := cluster.NewListClustersParams()
-	shoots, err := c.cloud.Cluster.ListClusters(request, nil)
+	shoots, err := c.client.Cluster.ListClusters(request, nil)
 	if err != nil {
 		return err
 	}
@@ -748,7 +729,7 @@ func (c *config) clusterKubeconfig(args []string) error {
 
 	request := cluster.NewGetClusterKubeconfigTplParams()
 	request.SetID(id)
-	credentials, err := c.cloud.Cluster.GetClusterKubeconfigTpl(request, nil)
+	credentials, err := c.client.Cluster.GetClusterKubeconfigTpl(request, nil)
 	if err != nil {
 		return err
 	}
@@ -779,7 +760,7 @@ func (c *config) clusterKubeconfig(args []string) error {
 		return err
 	}
 
-	clusterResp, err := c.cloud.Cluster.FindCluster(cluster.NewFindClusterParams().WithID(id), nil)
+	clusterResp, err := c.client.Cluster.FindCluster(cluster.NewFindClusterParams().WithID(id), nil)
 	if err != nil {
 		return err
 	}
@@ -814,7 +795,7 @@ type sshkeypair struct {
 func (c *config) sshKeyPair(clusterID string) (*sshkeypair, error) {
 	request := cluster.NewGetSSHKeyPairParams()
 	request.SetID(clusterID)
-	credentials, err := c.cloud.Cluster.GetSSHKeyPair(request, nil)
+	credentials, err := c.client.Cluster.GetSSHKeyPair(request, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -858,7 +839,7 @@ func (c *config) reconcileCluster(args []string) error {
 	}
 	request.Body = &models.V1ClusterReconcileRequest{Operation: operation}
 
-	shoot, err := c.cloud.Cluster.ReconcileCluster(request, nil)
+	shoot, err := c.client.Cluster.ReconcileCluster(request, nil)
 	if err != nil {
 		return err
 	}
@@ -909,7 +890,7 @@ func (c *config) updateCluster(args []string) error {
 
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	resp, err := c.cloud.Cluster.FindCluster(findRequest, nil)
+	resp, err := c.client.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
@@ -1182,7 +1163,7 @@ func (c *config) updateCluster(args []string) error {
 	}
 
 	request.SetBody(cur)
-	shoot, err := c.cloud.Cluster.UpdateCluster(request, nil)
+	shoot, err := c.client.Cluster.UpdateCluster(request, nil)
 	if err != nil {
 		return err
 	}
@@ -1200,7 +1181,7 @@ func (c *config) clusterDelete(args []string) error {
 	// local storage only could lead to very big problems for users.
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	resp, err := c.cloud.Cluster.FindCluster(findRequest, nil)
+	resp, err := c.client.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
@@ -1220,7 +1201,7 @@ func (c *config) clusterDelete(args []string) error {
 
 	request := cluster.NewDeleteClusterParams()
 	request.SetID(ci)
-	cl, err := c.cloud.Cluster.DeleteCluster(request, nil)
+	cl, err := c.client.Cluster.DeleteCluster(request, nil)
 	if err != nil {
 		return err
 	}
@@ -1237,7 +1218,7 @@ func (c *config) clusterDescribe(args []string) error {
 	if viper.GetBool("no-machines") {
 		findRequest.WithReturnMachines(pointer.Pointer(false))
 	}
-	shoot, err := c.cloud.Cluster.FindCluster(findRequest, nil)
+	shoot, err := c.client.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
@@ -1276,7 +1257,7 @@ func (c *config) clusterIssues(args []string) error {
 		if cfr != nil {
 			fcp := cluster.NewFindClustersParams().WithReturnMachines(&boolTrue)
 			fcp.SetBody(cfr)
-			response, err := c.cloud.Cluster.FindClusters(fcp, nil)
+			response, err := c.client.Cluster.FindClusters(fcp, nil)
 			if err != nil {
 				return err
 			}
@@ -1284,7 +1265,7 @@ func (c *config) clusterIssues(args []string) error {
 		}
 
 		request := cluster.NewListClustersParams().WithReturnMachines(&boolTrue)
-		shoots, err := c.cloud.Cluster.ListClusters(request, nil)
+		shoots, err := c.client.Cluster.ListClusters(request, nil)
 		if err != nil {
 			return err
 		}
@@ -1297,7 +1278,7 @@ func (c *config) clusterIssues(args []string) error {
 	}
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	shoot, err := c.cloud.Cluster.FindCluster(findRequest, nil)
+	shoot, err := c.client.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
@@ -1311,7 +1292,7 @@ func (c *config) clusterMachines(args []string) error {
 	}
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	shoot, err := c.cloud.Cluster.FindCluster(findRequest, nil)
+	shoot, err := c.client.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
@@ -1336,7 +1317,7 @@ func (c *config) clusterLogs(args []string) error {
 	}
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
-	shoot, err := c.cloud.Cluster.FindCluster(findRequest, nil)
+	shoot, err := c.client.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}
@@ -1384,7 +1365,7 @@ func (c *config) clusterInputs() error {
 	if partition != "" {
 		request.WithPartition(&partition)
 	}
-	sc, err := c.cloud.Cluster.ListConstraints(request, nil)
+	sc, err := c.client.Cluster.ListConstraints(request, nil)
 	if err != nil {
 		return err
 	}
@@ -1448,7 +1429,7 @@ func (c *config) clusterDNSManifest(args []string) error {
 		return err
 	}
 
-	cluster, err := c.cloud.Cluster.FindCluster(cluster.NewFindClusterParams().WithID(ci).WithReturnMachines(pointer.Pointer(false)), nil)
+	cluster, err := c.client.Cluster.FindCluster(cluster.NewFindClusterParams().WithID(ci).WithReturnMachines(pointer.Pointer(false)), nil)
 	if err != nil {
 		return err
 	}
@@ -1575,7 +1556,7 @@ func (c *config) clusterMachineReset(args []string) error {
 	request.SetID(cid)
 	request.Body = &models.V1ClusterMachineResetRequest{Machineid: &mid}
 
-	shoot, err := c.cloud.Cluster.ResetMachine(request, nil)
+	shoot, err := c.client.Cluster.ResetMachine(request, nil)
 	if err != nil {
 		return err
 	}
@@ -1597,7 +1578,7 @@ func (c *config) clusterMachineCycle(args []string) error {
 	request.SetID(cid)
 	request.Body = &models.V1ClusterMachineCycleRequest{Machineid: &mid}
 
-	shoot, err := c.cloud.Cluster.CycleMachine(request, nil)
+	shoot, err := c.client.Cluster.CycleMachine(request, nil)
 	if err != nil {
 		return err
 	}
@@ -1623,7 +1604,7 @@ func (c *config) clusterMachineReinstall(args []string) error {
 		request.Body.Imageid = img
 	}
 
-	shoot, err := c.cloud.Cluster.ReinstallMachine(request, nil)
+	shoot, err := c.client.Cluster.ReinstallMachine(request, nil)
 	if err != nil {
 		return err
 	}
@@ -1640,7 +1621,7 @@ func (c *config) clusterMonitoringSecret(args []string) error {
 		return err
 	}
 
-	secret, err := c.cloud.Cluster.GetMonitoringSecret(cluster.NewGetMonitoringSecretParams().WithID(cid), nil)
+	secret, err := c.client.Cluster.GetMonitoringSecret(cluster.NewGetMonitoringSecretParams().WithID(cid), nil)
 	if err != nil {
 		return err
 	}
@@ -1657,7 +1638,7 @@ func (c *config) clusterMachineSSH(args []string, console bool) error {
 
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(cid)
-	shoot, err := c.cloud.Cluster.FindCluster(findRequest, nil)
+	shoot, err := c.client.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
 		return err
 	}

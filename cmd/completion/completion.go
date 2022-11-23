@@ -5,11 +5,6 @@ import (
 
 	"github.com/fi-ts/cloud-go/api/client"
 	"github.com/fi-ts/cloud-go/api/client/cluster"
-	"github.com/fi-ts/cloud-go/api/client/database"
-	"github.com/fi-ts/cloud-go/api/client/project"
-	"github.com/fi-ts/cloud-go/api/client/s3"
-	"github.com/fi-ts/cloud-go/api/client/tenant"
-	"github.com/fi-ts/cloud-go/api/client/volume"
 	"github.com/fi-ts/cloudctl/pkg/api"
 	"github.com/spf13/cobra"
 )
@@ -26,6 +21,14 @@ func NewCompletion(cloud *client.CloudAPI) *Completion {
 	return &Completion{
 		cloud: cloud,
 	}
+}
+
+func (c *Completion) SetClient(cloud *client.CloudAPI) {
+	c.cloud = cloud
+}
+
+func OutputFormatListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return []string{"table", "wide", "markdown", "json", "yaml", "template"}, cobra.ShellCompDirectiveNoFileComp
 }
 
 func (c *Completion) ContextListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -104,20 +107,6 @@ func (c *Completion) clusterMachineListCompletion(clusterIDs []string, includeMa
 	return machines, cobra.ShellCompDirectiveNoFileComp
 }
 
-func (c *Completion) ProjectListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	request := project.NewListProjectsParams()
-	response, err := c.cloud.Project.ListProjects(request, nil)
-	if err != nil {
-		return nil, cobra.ShellCompDirectiveError
-	}
-	var names []string
-	for _, p := range response.Payload.Projects {
-		names = append(names, p.Meta.ID+"\t"+p.TenantID+"/"+p.Name)
-	}
-	sort.Strings(names)
-	return names, cobra.ShellCompDirectiveNoFileComp
-}
-
 func (c *Completion) PartitionListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	request := cluster.NewListConstraintsParams()
 	sc, err := c.cloud.Cluster.ListConstraints(request, nil)
@@ -141,40 +130,6 @@ func (c *Completion) SeedListCompletion(cmd *cobra.Command, args []string, toCom
 	}
 	sort.Strings(names)
 	return names, cobra.ShellCompDirectiveNoFileComp
-}
-
-func (c *Completion) TenantListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	request := tenant.NewListTenantsParams()
-	ts, err := c.cloud.Tenant.ListTenants(request, nil)
-	if err != nil {
-		return nil, cobra.ShellCompDirectiveError
-	}
-
-	var names []string
-	for _, t := range ts.Payload {
-		name := t.Meta.ID + "\t" + t.Name
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	return names, cobra.ShellCompDirectiveNoFileComp
-}
-
-func (c *Completion) VolumeListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	request := volume.NewListVolumesParams()
-	response, err := c.cloud.Volume.ListVolumes(request, nil)
-	if err != nil {
-		return nil, cobra.ShellCompDirectiveError
-	}
-
-	var names []string
-	for _, v := range response.Payload {
-		if v.VolumeID == nil {
-			continue
-		}
-		names = append(names, *v.VolumeID)
-	}
-	sort.Strings(names)
-	return names, cobra.ShellCompDirectiveDefault
 }
 
 func (c *Completion) NetworkListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -257,58 +212,4 @@ func (c *Completion) FirewallControllerVersionListCompletion(cmd *cobra.Command,
 	}
 	sort.Strings(fwcvs)
 	return fwcvs, cobra.ShellCompDirectiveNoFileComp
-}
-
-func (c *Completion) S3ListPartitionsCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	request := s3.NewLists3partitionsParams()
-	response, err := c.cloud.S3.Lists3partitions(request, nil)
-	if err != nil {
-		return nil, cobra.ShellCompDirectiveError
-	}
-	var names []string
-	for _, p := range response.Payload {
-		names = append(names, *p.ID)
-	}
-	sort.Strings(names)
-	return names, cobra.ShellCompDirectiveNoFileComp
-}
-func (c *Completion) PostgresListPartitionsCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	request := database.NewGetPostgresPartitionsParams()
-	response, err := c.cloud.Database.GetPostgresPartitions(request, nil)
-	if err != nil {
-		return nil, cobra.ShellCompDirectiveError
-	}
-	var names []string
-	for name := range response.Payload {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	return names, cobra.ShellCompDirectiveNoFileComp
-}
-
-func (c *Completion) PostgresListVersionsCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	request := database.NewGetPostgresVersionsParams()
-	response, err := c.cloud.Database.GetPostgresVersions(request, nil)
-	if err != nil {
-		return nil, cobra.ShellCompDirectiveError
-	}
-	var names []string
-	for _, v := range response.Payload {
-		names = append(names, v.Version)
-	}
-	sort.Strings(names)
-	return names, cobra.ShellCompDirectiveNoFileComp
-}
-func (c *Completion) PostgresListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	request := database.NewListPostgresParams()
-	response, err := c.cloud.Database.ListPostgres(request, nil)
-	if err != nil {
-		return nil, cobra.ShellCompDirectiveError
-	}
-	var names []string
-	for _, p := range response.Payload {
-		names = append(names, *p.ID+"\t"+p.Description)
-	}
-	sort.Strings(names)
-	return names, cobra.ShellCompDirectiveNoFileComp
 }
