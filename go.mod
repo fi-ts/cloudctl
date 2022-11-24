@@ -8,7 +8,7 @@ require (
 	github.com/dcorbe/termui-dpc v0.0.0-20211125210512-9d2673a82dd6
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.13.0
-	github.com/fi-ts/cloud-go v0.20.4-0.20221123115809-877ec6871e3e
+	github.com/fi-ts/cloud-go v0.20.7
 	github.com/gardener/gardener v1.42.0
 	github.com/gardener/machine-controller-manager v0.41.0
 	github.com/go-openapi/strfmt v0.21.3
