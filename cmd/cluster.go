@@ -352,7 +352,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().Bool("remove-workergroup", false, "if set, removes the targeted worker group")
 	clusterUpdateCmd.Flags().StringSlice("workerlabels", []string{}, "labels of the worker group (syncs to kubernetes node resource after some time, too)")
 	clusterUpdateCmd.Flags().StringSlice("workerannotations", []string{}, "annotations of the worker group (syncs to kubernetes node resource after some time, too)")
-	clusterUpdateCmd.Flags().StringSlice("workertaints", []string{}, "list of taints to set for nodes of the worker group. (Use empty string to remove previous set taints)")
+	clusterUpdateCmd.Flags().StringSlice("workertaints", []string{}, "list of taints to set for nodes of the worker group. (use empty string to remove previous set taints)")
 	clusterUpdateCmd.Flags().Int32("minsize", 0, "minimal workers of the cluster.")
 	clusterUpdateCmd.Flags().Int32("maxsize", 0, "maximal workers of the cluster.")
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
