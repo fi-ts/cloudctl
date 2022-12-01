@@ -36,6 +36,7 @@ import (
 
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1/constants"
+	utiltaints "github.com/gardener/machine-controller-manager/pkg/util/taints"
 )
 
 type auditConfigOptionsMap map[string]struct {
@@ -351,6 +352,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().Bool("remove-workergroup", false, "if set, removes the targeted worker group")
 	clusterUpdateCmd.Flags().StringSlice("workerlabels", []string{}, "labels of the worker group (syncs to kubernetes node resource after some time, too)")
 	clusterUpdateCmd.Flags().StringSlice("workerannotations", []string{}, "annotations of the worker group (syncs to kubernetes node resource after some time, too)")
+	clusterUpdateCmd.Flags().StringSlice("workertaints", []string{}, "list of taints to set for nodes of the worker group. (use empty string to remove previous set taints)")
 	clusterUpdateCmd.Flags().Int32("minsize", 0, "minimal workers of the cluster.")
 	clusterUpdateCmd.Flags().Int32("maxsize", 0, "maximal workers of the cluster.")
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
@@ -874,6 +876,7 @@ func (c *config) updateCluster(args []string) error {
 	removeworkergroup := viper.GetBool("remove-workergroup")
 	workerlabelslice := viper.GetStringSlice("workerlabels")
 	workerannotationsslice := viper.GetStringSlice("workerannotations")
+	workertaintsslice := viper.GetStringSlice("workertaints")
 	minsize := viper.GetInt32("minsize")
 	maxsize := viper.GetInt32("maxsize")
 	version := viper.GetString("version")
@@ -905,6 +908,20 @@ func (c *config) updateCluster(args []string) error {
 	workerannotations, err := helper.LabelsToMap(workerannotationsslice)
 	if err != nil {
 		return err
+	}
+	coreworkertaints, _, err := utiltaints.ParseTaints(workertaintsslice)
+	if err != nil {
+		return fmt.Errorf("specified taints are invalid: %w", err)
+	}
+
+	var workertaints []*models.V1Taint
+	for _, t := range coreworkertaints {
+		t := t
+		workertaints = append(workertaints, &models.V1Taint{
+			Key:    &t.Key,
+			Value:  t.Value,
+			Effect: (*string)(&t.Effect),
+		})
 	}
 
 	findRequest := cluster.NewFindClusterParams()
@@ -961,7 +978,7 @@ func (c *config) updateCluster(args []string) error {
 		minsize != 0 || maxsize != 0 || maxsurge != "" || maxunavailable != "" ||
 		machineImageAndVersion != "" || machineType != "" ||
 		viper.IsSet("healthtimeout") || viper.IsSet("draintimeout") ||
-		viper.IsSet("workerlabels") || viper.IsSet("workerannotations") {
+		viper.IsSet("workerlabels") || viper.IsSet("workerannotations") || viper.IsSet("workertaints") {
 
 		workers := current.Workers
 
@@ -988,6 +1005,7 @@ func (c *config) updateCluster(args []string) error {
 					MaxUnavailable: pointer.Pointer("0"),
 					Labels:         workerlabels,
 					Annotations:    workerannotations,
+					Taints:         workertaints,
 				}
 				workers = append(workers, worker)
 			}
@@ -1073,6 +1091,10 @@ func (c *config) updateCluster(args []string) error {
 
 			if viper.IsSet("workerannotations") {
 				worker.Annotations = workerannotations
+			}
+
+			if viper.IsSet("workertaints") {
+				worker.Taints = workertaints
 			}
 
 			if maxsurge != "" {
