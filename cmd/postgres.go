@@ -222,7 +222,15 @@ postgres=#
 		Aliases: []string{"ls"},
 		Short:   "list backup configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.postgresBackupGet()
+			return c.postgresBackupList()
+		},
+		PreRun: bindPFlags,
+	}
+	postgresBackupDescribeCmd := &cobra.Command{
+		Use:   "describe",
+		Short: "describe backup configuration",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.postgresBackupDescribe(args)
 		},
 		PreRun: bindPFlags,
 	}
@@ -258,6 +266,7 @@ postgres=#
 	postgresBackupCmd.AddCommand(postgresBackupAutoCreateCmd)
 	postgresBackupCmd.AddCommand(postgresBackupUpdateCmd)
 	postgresBackupCmd.AddCommand(postgresBackupListCmd)
+	postgresBackupCmd.AddCommand(postgresBackupDescribeCmd)
 	postgresBackupCmd.AddCommand(postgresBackupDeleteCmd)
 
 	// Create
@@ -932,9 +941,27 @@ func (c *config) postgresBackupUpdate() error {
 	return output.New().Print(response.Payload)
 }
 
-func (c *config) postgresBackupGet() error {
+func (c *config) postgresBackupList() error {
+
 	request := database.NewListPostgresBackupConfigsParams()
 	resp, err := c.cloud.Database.ListPostgresBackupConfigs(request, nil)
+	if err != nil {
+		return err
+	}
+	return output.New().Print(resp.Payload)
+}
+func (c *config) postgresBackupDescribe(args []string) error {
+
+	if len(args) < 1 {
+		return fmt.Errorf("missing backup id")
+	}
+	if len(args) > 1 {
+		return fmt.Errorf("only a single backup id is supported")
+	}
+	id := args[0]
+
+	gbcp := database.NewGetBackupConfigParams().WithID(id)
+	resp, err := c.cloud.Database.GetBackupConfig(gbcp, nil)
 	if err != nil {
 		return err
 	}
