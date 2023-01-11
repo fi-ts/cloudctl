@@ -2,7 +2,7 @@ FROM metalstack/builder:latest as builder
 RUN make platforms \
  && strip bin/cloudctl-linux-amd64 bin/cloudctl
 
-FROM alpine:3.15
+FROM alpine:3.17
 LABEL maintainer="metal-stack Authors <info@metal-stack.io>"
 COPY --from=builder /work/bin/cloudctl /cloudctl
 ENTRYPOINT ["/cloudctl"]

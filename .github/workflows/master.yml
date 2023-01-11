@@ -10,9 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@master
+        uses: actions/checkout@v3
+      - name: Set up Go 1.19
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.19
       - name: Lint
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@v3
         with:
           args: -p bugs -p unused --timeout=3m
       - name: Build
