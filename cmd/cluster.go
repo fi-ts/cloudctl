@@ -3,8 +3,10 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	"io"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"sort"
 	"strconv"
@@ -241,6 +243,15 @@ func newClusterCmd(c *config) *cobra.Command {
 		ValidArgsFunction: c.comp.ClusterListCompletion,
 		PreRun:            bindPFlags,
 	}
+	clusterMachinePackagesCmd := &cobra.Command{
+		Use:   "packages <clusterid>",
+		Short: "show packages of the os image which is installed on this machine",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.clusterMachinePackages(args)
+		},
+		ValidArgsFunction: c.comp.ClusterListCompletion,
+		PreRun:            bindPFlags,
+	}
 	clusterLogsCmd := &cobra.Command{
 		Use:   "logs <clusterid>",
 		Short: "get logs for the cluster",
@@ -439,12 +450,17 @@ func newClusterCmd(c *config) *cobra.Command {
 	must(clusterMachineReinstallCmd.MarkFlagRequired("machineid"))
 	must(clusterMachineReinstallCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterMachineListCompletion))
 
+	clusterMachinePackagesCmd.Flags().String("machineid", "", "machine to connect to.")
+	must(clusterMachinePackagesCmd.MarkFlagRequired("machineid"))
+	must(clusterMachinePackagesCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterMachineListCompletion))
+
 	clusterMachineCmd.AddCommand(clusterMachineListCmd)
 	clusterMachineCmd.AddCommand(clusterMachineSSHCmd)
 	clusterMachineCmd.AddCommand(clusterMachineConsoleCmd)
 	clusterMachineCmd.AddCommand(clusterMachineResetCmd)
 	clusterMachineCmd.AddCommand(clusterMachineCycleCmd)
 	clusterMachineCmd.AddCommand(clusterMachineReinstallCmd)
+	clusterMachineCmd.AddCommand(clusterMachinePackagesCmd)
 
 	clusterReconcileCmd.Flags().Bool("retry", false, "Executes a cluster \"retry\" operation instead of regular \"reconcile\".")
 	clusterReconcileCmd.Flags().Bool("maintain", false, "Executes a cluster \"maintain\" operation instead of regular \"reconcile\".")
@@ -1654,6 +1670,56 @@ func (c *config) clusterMachineReinstall(args []string) error {
 	ms = append(ms, shoot.Payload.Firewalls...)
 
 	return output.New().Print(ms)
+}
+
+func (c *config) clusterMachinePackages(args []string) error {
+	cid, err := c.clusterID("packages", args)
+	if err != nil {
+		return err
+	}
+	mid := viper.GetString("machineid")
+
+	findRequest := cluster.NewFindClusterParams()
+	findRequest.SetID(cid)
+	shoot, err := c.cloud.Cluster.FindCluster(findRequest, nil)
+	if err != nil {
+		return err
+	}
+
+	ms := shoot.Payload.Machines
+	ms = append(ms, shoot.Payload.Firewalls...)
+	for _, m := range ms {
+		if *m.ID == mid {
+			if m.Allocation == nil || m.Allocation.Image == nil {
+				continue
+			}
+			id := *m.ID
+			url := m.Allocation.Image.URL
+			packageURL := strings.Replace(url, "img.tar.lz4", "packages.txt", 1)
+			//nolint:gosec,noctx
+			res, err := http.Head(packageURL)
+			if err != nil {
+				return fmt.Errorf("image:%s does not have a package list", id)
+			}
+			defer res.Body.Close()
+			if res.StatusCode >= 400 {
+				return fmt.Errorf("image:%s does not have a package list", id)
+			}
+			//nolint:gosec,noctx
+			getResp, err := http.Get(packageURL)
+			if err != nil {
+				return err
+			}
+			defer getResp.Body.Close()
+			content, err := io.ReadAll(getResp.Body)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("%s", string(content))
+			return nil
+		}
+	}
+	return fmt.Errorf("machine:%s not found in cluster:%s", mid, cid)
 }
 
 func (c *config) clusterMonitoringSecret(args []string) error {
