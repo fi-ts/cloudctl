@@ -245,7 +245,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	}
 	clusterMachinePackagesCmd := &cobra.Command{
 		Use:   "packages <clusterid>",
-		Short: "show packages of the os installed on this machine",
+		Short: "show packages of the os image which is installed on this machine",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterMachinePackages(args)
 		},
