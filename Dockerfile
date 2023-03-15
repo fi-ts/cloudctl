@@ -1,4 +1,4 @@
-FROM metalstack/builder:latest as builder
+FROM ghcr.io/metal-stack/builder:latest as builder
 RUN make platforms \
  && strip bin/cloudctl-linux-amd64 bin/cloudctl
 
