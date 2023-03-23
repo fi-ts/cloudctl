@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/avast/retry-go/v4"
+	"github.com/google/uuid"
 	"github.com/tailscale/golang-x-crypto/ssh"
 
 	"tailscale.com/tsnet"
@@ -24,10 +25,19 @@ func (c *config) firewallSSHViaVPN(firewallID string, privateKey []byte, vpn *mo
 	if err != nil {
 		return err
 	}
+
+	randomSuffix, _, _ := strings.Cut(uuid.NewString(), "-")
+	hostname = fmt.Sprintf("cloudctl-%s-%s", hostname, randomSuffix)
+	tempDir, err := os.MkdirTemp("", hostname)
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(tempDir)
 	s := &tsnet.Server{
 		Hostname:   hostname,
 		ControlURL: *vpn.Address,
 		AuthKey:    *vpn.AuthKey,
+		Dir:        tempDir,
 	}
 	defer s.Close()
 
