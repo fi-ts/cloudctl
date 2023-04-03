@@ -53,10 +53,10 @@ func (m MachineTablePrinter) Print(data []*models.ModelsV1MachineResponse) {
 		for _, nw := range alloc.Networks {
 			nwIPs = append(nwIPs, nw.Ips...)
 		}
-		ips := strings.Join(nwIPs, ",")
+		ips := strings.Join(nwIPs, "\n")
 		image := ""
 		if alloc.Image != nil {
-			image = alloc.Image.Name
+			image = strValue(alloc.Image.ID)
 		}
 		started := strValue(alloc.Created)
 		age := ""
