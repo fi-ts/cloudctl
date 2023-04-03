@@ -9,6 +9,7 @@ import (
 	"os"
 	"text/template"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/pkg/api"
@@ -160,7 +161,7 @@ func newPrinter(format, order, tpl string, noHeaders bool, writer io.Writer) (Pr
 	case "table", "wide":
 		printer = newTablePrinter(format, order, noHeaders, nil, writer)
 	case "template":
-		tmpl, err := template.New("").Parse(tpl)
+		tmpl, err := template.New("t").Funcs(sprig.TxtFuncMap()).Parse(tpl)
 		if err != nil {
 			return nil, fmt.Errorf("template invalid:%w", err)
 		}
