@@ -11,7 +11,6 @@ import (
 	"github.com/fi-ts/cloud-go/api/client"
 	"github.com/fi-ts/cloudctl/cmd/completion"
 	"github.com/fi-ts/cloudctl/pkg/api"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -86,8 +85,7 @@ func Execute() {
 	err := cmd.Execute()
 	if err != nil {
 		if viper.GetBool("debug") {
-			st := errors.WithStack(err)
-			fmt.Printf("%+v", st)
+			panic(err)
 		}
 		os.Exit(1)
 	}
