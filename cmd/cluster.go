@@ -391,6 +391,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().Bool("encrypted-storage-classes", false, "enables the deployment of encrypted duros storage classes into the cluster. please refer to the user manual to properly use volume encryption.")
 	clusterUpdateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
 	clusterUpdateCmd.Flags().BoolP("disable-custom-default-storage-class", "", false, "if set to true, no default class is deployed, you have to set one of your storageclasses manually to default")
+	clusterUpdateCmd.Flags().String("workergroup-kubernetes-version", "", "set custom kubernetes version of the worker group. (set to \"0\" to remove custom kubernetes version)")
 
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewalltype", c.comp.FirewallTypeListCompletion))
@@ -400,6 +401,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("machinetype", c.comp.MachineTypeListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("machineimage", c.comp.MachineImageListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("purpose", c.comp.ClusterPurposeListCompletion))
+	must(clusterUpdateCmd.RegisterFlagCompletionFunc("workergroup-kubernetes-version", c.comp.VersionListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("audit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return auditConfigOptions.Names(true),
 			cobra.ShellCompDirectiveNoFileComp
@@ -977,6 +979,8 @@ func (c *config) updateCluster(args []string) error {
 		clusterFeatures.LogAcceptedConnections = &logAcceptedConnections
 	}
 
+	workergroupKubernetesVersion := viper.GetString("workergroup-kubernetes-version")
+
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
 		ID: &ci,
@@ -994,7 +998,7 @@ func (c *config) updateCluster(args []string) error {
 		minsize != 0 || maxsize != 0 || maxsurge != "" || maxunavailable != "" ||
 		machineImageAndVersion != "" || machineType != "" ||
 		viper.IsSet("healthtimeout") || viper.IsSet("draintimeout") ||
-		viper.IsSet("workerlabels") || viper.IsSet("workerannotations") || viper.IsSet("workertaints") {
+		viper.IsSet("workerlabels") || viper.IsSet("workerannotations") || viper.IsSet("workertaints") || viper.IsSet("workergroup-kubernetes-version") {
 
 		workers := current.Workers
 
@@ -1014,14 +1018,15 @@ func (c *config) updateCluster(args []string) error {
 				}
 
 				worker = &models.V1Worker{
-					Name:           &workergroupname,
-					Minimum:        pointer.Pointer(int32(1)),
-					Maximum:        pointer.Pointer(int32(1)),
-					MaxSurge:       pointer.Pointer("1"),
-					MaxUnavailable: pointer.Pointer("0"),
-					Labels:         workerlabels,
-					Annotations:    workerannotations,
-					Taints:         workertaints,
+					Name:              &workergroupname,
+					Minimum:           pointer.Pointer(int32(1)),
+					Maximum:           pointer.Pointer(int32(1)),
+					MaxSurge:          pointer.Pointer("1"),
+					MaxUnavailable:    pointer.Pointer("0"),
+					Labels:            workerlabels,
+					Annotations:       workerannotations,
+					Taints:            workertaints,
+					KubernetesVersion: pointer.Pointer(""),
 				}
 				workers = append(workers, worker)
 			}
@@ -1111,6 +1116,14 @@ func (c *config) updateCluster(args []string) error {
 
 			if viper.IsSet("workertaints") {
 				worker.Taints = workertaints
+			}
+
+			if viper.IsSet("workergroup-kubernetes-version") {
+				if workergroupKubernetesVersion != "0" {
+					worker.KubernetesVersion = &workergroupKubernetesVersion
+				} else {
+					worker.KubernetesVersion = pointer.Pointer("")
+				}
 			}
 
 			if maxsurge != "" {
