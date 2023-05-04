@@ -585,7 +585,7 @@ func (c *config) volumeUsage() error {
 		vur.Clusterid = billingOpts.ClusterID
 	}
 	if billingOpts.Namespace != "" {
-		vur.Clusterid = billingOpts.Namespace
+		vur.Namespace = billingOpts.Namespace
 	}
 	if len(billingOpts.Annotations) > 0 {
 		vur.Annotations = billingOpts.Annotations
