@@ -365,7 +365,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().StringSlice("workerlabels", []string{}, "labels of the worker group (syncs to kubernetes node resource after some time, too)")
 	clusterUpdateCmd.Flags().StringSlice("workerannotations", []string{}, "annotations of the worker group (syncs to kubernetes node resource after some time, too)")
 	clusterUpdateCmd.Flags().StringSlice("workertaints", []string{}, "list of taints to set for nodes of the worker group. (use empty string to remove previous set taints)")
-	clusterUpdateCmd.Flags().String("workerversion", "", "set custom kubernetes version of the worker group independent of the api server. note that the worker version may only be two minor version older than the api server as stated in the official kubernetes version skew policy. (set to \"\" to remove custom kubernetes version, please )")
+	clusterUpdateCmd.Flags().String("workerversion", "", "set custom kubernetes version of the worker group independent of the api server. note that the worker version may only be two minor version older than the api server as stated in the official kubernetes version skew policy. (set to \"\" to remove custom kubernetes version)")
 	clusterUpdateCmd.Flags().Int32("minsize", 0, "minimal workers of the cluster.")
 	clusterUpdateCmd.Flags().Int32("maxsize", 0, "maximal workers of the cluster.")
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
