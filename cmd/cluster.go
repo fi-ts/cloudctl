@@ -351,6 +351,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterListCmd.Flags().String("tenant", "", "show clusters of given tenant")
 	clusterListCmd.Flags().StringSlice("labels", nil, "show clusters of given labels")
 	clusterListCmd.Flags().String("purpose", "", "show clusters of given purpose")
+	must(clusterListCmd.RegisterFlagCompletionFunc("id", c.comp.ClusterListCompletion))
 	must(clusterListCmd.RegisterFlagCompletionFunc("name", c.comp.ClusterNameCompletion))
 	must(clusterListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	must(clusterListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
@@ -364,6 +365,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().StringSlice("workerlabels", []string{}, "labels of the worker group (syncs to kubernetes node resource after some time, too)")
 	clusterUpdateCmd.Flags().StringSlice("workerannotations", []string{}, "annotations of the worker group (syncs to kubernetes node resource after some time, too)")
 	clusterUpdateCmd.Flags().StringSlice("workertaints", []string{}, "list of taints to set for nodes of the worker group. (use empty string to remove previous set taints)")
+	clusterUpdateCmd.Flags().String("workerversion", "", "set custom kubernetes version of the worker group independent of the api server. note that the worker version may only be two minor version older than the api server as stated in the official kubernetes version skew policy. (set to \"\" to remove custom kubernetes version)")
 	clusterUpdateCmd.Flags().Int32("minsize", 0, "minimal workers of the cluster.")
 	clusterUpdateCmd.Flags().Int32("maxsize", 0, "maximal workers of the cluster.")
 	clusterUpdateCmd.Flags().String("version", "", "kubernetes version of the cluster.")
@@ -393,6 +395,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().BoolP("disable-custom-default-storage-class", "", false, "if set to true, no default class is deployed, you have to set one of your storageclasses manually to default")
 
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
+	must(clusterUpdateCmd.RegisterFlagCompletionFunc("workerversion", c.comp.VersionListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewalltype", c.comp.FirewallTypeListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewallimage", c.comp.FirewallImageListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("seed", c.comp.SeedListCompletion))
@@ -977,6 +980,8 @@ func (c *config) updateCluster(args []string) error {
 		clusterFeatures.LogAcceptedConnections = &logAcceptedConnections
 	}
 
+	workergroupKubernetesVersion := viper.GetString("workerversion")
+
 	request := cluster.NewUpdateClusterParams()
 	cur := &models.V1ClusterUpdateRequest{
 		ID: &ci,
@@ -994,7 +999,7 @@ func (c *config) updateCluster(args []string) error {
 		minsize != 0 || maxsize != 0 || maxsurge != "" || maxunavailable != "" ||
 		machineImageAndVersion != "" || machineType != "" ||
 		viper.IsSet("healthtimeout") || viper.IsSet("draintimeout") ||
-		viper.IsSet("workerlabels") || viper.IsSet("workerannotations") || viper.IsSet("workertaints") {
+		viper.IsSet("workerlabels") || viper.IsSet("workerannotations") || viper.IsSet("workertaints") || viper.IsSet("workerversion") {
 
 		workers := current.Workers
 
@@ -1023,6 +1028,7 @@ func (c *config) updateCluster(args []string) error {
 					Annotations:    workerannotations,
 					Taints:         workertaints,
 				}
+
 				workers = append(workers, worker)
 			}
 		} else if len(workers) == 1 {
@@ -1111,6 +1117,17 @@ func (c *config) updateCluster(args []string) error {
 
 			if viper.IsSet("workertaints") {
 				worker.Taints = workertaints
+			}
+
+			if viper.IsSet("workerversion") {
+				if pointer.SafeDeref(worker.KubernetesVersion) != "" && workergroupKubernetesVersion == "" {
+					fmt.Println("WARNING. Removing the worker version override may update your worker nodes to the version of the api server.")
+					err = helper.Prompt("Are you sure? (y/n)", "y")
+					if err != nil {
+						return err
+					}
+				}
+				worker.KubernetesVersion = pointer.Pointer(workergroupKubernetesVersion)
 			}
 
 			if maxsurge != "" {
