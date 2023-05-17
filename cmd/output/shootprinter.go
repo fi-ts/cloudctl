@@ -184,12 +184,9 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 	}
 	lastReconcilation := ""
 	if shoot.Status != nil && shoot.Status.LastOperation != nil && shoot.Status.LastOperation.LastUpdateTime != nil {
-		// 2023-05-17T07:06:44Z
-
 		lastUpdate, err := time.Parse(time.RFC3339, *shoot.Status.LastOperation.LastUpdateTime)
 		if err != nil {
-			fmt.Printf("unable to parse lastUpdate time:%v", err)
-
+			lastReconcilation = "unknown"
 		} else {
 			lastReconcilation = helper.HumanizeDuration(time.Since(lastUpdate))
 		}
