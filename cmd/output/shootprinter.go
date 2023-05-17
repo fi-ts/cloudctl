@@ -374,7 +374,7 @@ func imageExpires(m *models.ModelsV1MachineResponse) error {
 
 	t, err := time.Parse(time.RFC3339, *m.Allocation.Image.ExpirationDate)
 	if err != nil {
-		return fmt.Errorf("Image of %q has no valid expiration date: %s", host, imageID)
+		return fmt.Errorf("image of %q has no valid expiration date: %s", host, imageID)
 	}
 
 	if t.IsZero() {
@@ -386,9 +386,9 @@ func imageExpires(m *models.ModelsV1MachineResponse) error {
 	expiresInHours := int(time.Until(t).Hours())
 
 	if expiresInHours <= 0 {
-		return fmt.Errorf("Image of %q has expired since %d day(s): %s", host, -expiresInHours/24, imageID)
+		return fmt.Errorf("image of %q has expired since %d day(s): %s", host, -expiresInHours/24, imageID)
 	} else if expiresInHours < expirationWarningDays*24 {
-		return fmt.Errorf("Image of %q expires in %d day(s): %s", host, expiresInHours/24, imageID)
+		return fmt.Errorf("image of %q expires in %d day(s): %s", host, expiresInHours/24, imageID)
 	}
 
 	return nil
@@ -404,9 +404,9 @@ func kubernetesExpires(shoot *models.V1ClusterResponse) error {
 	expiresInHours := int(time.Until(time.Time(*shoot.Kubernetes.ExpirationDate)).Hours())
 
 	if expiresInHours <= 0 {
-		return fmt.Errorf("Kubernetes support has expired since %d day(s): %s", -expiresInHours/24, *shoot.Kubernetes.Version)
+		return fmt.Errorf("kubernetes support has expired since %d day(s): %s", -expiresInHours/24, *shoot.Kubernetes.Version)
 	} else if expiresInHours < expirationWarningDays*24 {
-		return fmt.Errorf("Kubernetes support expires in %d day(s): %s", expiresInHours/24, *shoot.Kubernetes.Version)
+		return fmt.Errorf("kubernetes support expires in %d day(s): %s", expiresInHours/24, *shoot.Kubernetes.Version)
 	}
 
 	return nil
