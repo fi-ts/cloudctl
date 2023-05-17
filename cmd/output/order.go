@@ -143,6 +143,27 @@ func (s ShootTablePrinter) Order(data []*models.V1ClusterResponse) {
 					if *nameA != *nameB {
 						return false
 					}
+				case "update":
+					if A.Status == nil || A.Status.LastOperation == nil || A.Status.LastOperation.LastUpdateTime == nil {
+						return true
+					}
+					if B.Status == nil || B.Status.LastOperation == nil || B.Status.LastOperation.LastUpdateTime == nil {
+						return false
+					}
+					atime, err := time.Parse(time.RFC3339, *A.Status.LastOperation.LastUpdateTime)
+					if err != nil {
+						return false
+					}
+					btime, _ := time.Parse(time.RFC3339, *B.Status.LastOperation.LastUpdateTime)
+					if err != nil {
+						return true
+					}
+					if btime.Before(atime) {
+						return true
+					}
+					if btime.Compare(atime) != 0 {
+						return false
+					}
 				}
 			}
 			return false

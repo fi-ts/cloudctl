@@ -100,7 +100,7 @@ func (s ShootLastOperationTablePrinter) Print(data *models.V1beta1LastOperation)
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Seed", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Audit", "Runtime", "Firewall", "Firewall Controller", "Log accepted conns", "Egress IPs"}
+	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Seed", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "LastUpdate", "Purpose", "Privileged", "Audit", "Runtime", "Firewall", "Firewall Controller", "Log accepted conns", "Egress IPs", "Gardener"}
 	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
 	if s.order == "" {
@@ -182,6 +182,21 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 	if shoot.CreationTimestamp != nil {
 		age = helper.HumanizeDuration(time.Since(time.Time(*shoot.CreationTimestamp)))
 	}
+	lastReconcilation := ""
+	if shoot.Status != nil && shoot.Status.LastOperation != nil && shoot.Status.LastOperation.LastUpdateTime != nil {
+		lastUpdate, err := time.Parse(time.RFC3339, *shoot.Status.LastOperation.LastUpdateTime)
+		if err != nil {
+			lastReconcilation = "unknown"
+		} else {
+			lastReconcilation = helper.HumanizeDuration(time.Since(lastUpdate))
+		}
+	}
+
+	gardener := ""
+	if shoot.Status != nil && shoot.Status.Gardener != nil && shoot.Status.Gardener.Version != nil {
+		gardener = *shoot.Status.Gardener.Version
+	}
+
 	operation := ""
 	progress := "0%"
 	if shoot.Status.LastOperation != nil {
@@ -299,6 +314,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		shootStats.apiServer, shootStats.controlPlane, shootStats.nodes, shootStats.system,
 		size,
 		age,
+		lastReconcilation,
 		purpose,
 		privileged,
 		audit,
@@ -307,6 +323,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		firewallController,
 		logAcceptedConnections,
 		strings.Join(egressIPs, "\n"),
+		gardener,
 	}
 	short := []string{
 		*shoot.ID,
@@ -360,7 +377,7 @@ func imageExpires(m *models.ModelsV1MachineResponse) error {
 
 	t, err := time.Parse(time.RFC3339, *m.Allocation.Image.ExpirationDate)
 	if err != nil {
-		return fmt.Errorf("Image of %q has no valid expiration date: %s", host, imageID)
+		return fmt.Errorf("image of %q has no valid expiration date: %s", host, imageID)
 	}
 
 	if t.IsZero() {
@@ -372,9 +389,9 @@ func imageExpires(m *models.ModelsV1MachineResponse) error {
 	expiresInHours := int(time.Until(t).Hours())
 
 	if expiresInHours <= 0 {
-		return fmt.Errorf("Image of %q has expired since %d day(s): %s", host, -expiresInHours/24, imageID)
+		return fmt.Errorf("image of %q has expired since %d day(s): %s", host, -expiresInHours/24, imageID)
 	} else if expiresInHours < expirationWarningDays*24 {
-		return fmt.Errorf("Image of %q expires in %d day(s): %s", host, expiresInHours/24, imageID)
+		return fmt.Errorf("image of %q expires in %d day(s): %s", host, expiresInHours/24, imageID)
 	}
 
 	return nil
@@ -390,9 +407,9 @@ func kubernetesExpires(shoot *models.V1ClusterResponse) error {
 	expiresInHours := int(time.Until(time.Time(*shoot.Kubernetes.ExpirationDate)).Hours())
 
 	if expiresInHours <= 0 {
-		return fmt.Errorf("Kubernetes support has expired since %d day(s): %s", -expiresInHours/24, *shoot.Kubernetes.Version)
+		return fmt.Errorf("kubernetes support has expired since %d day(s): %s", -expiresInHours/24, *shoot.Kubernetes.Version)
 	} else if expiresInHours < expirationWarningDays*24 {
-		return fmt.Errorf("Kubernetes support expires in %d day(s): %s", expiresInHours/24, *shoot.Kubernetes.Version)
+		return fmt.Errorf("kubernetes support expires in %d day(s): %s", expiresInHours/24, *shoot.Kubernetes.Version)
 	}
 
 	return nil
