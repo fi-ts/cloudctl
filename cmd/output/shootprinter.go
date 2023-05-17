@@ -100,7 +100,7 @@ func (s ShootLastOperationTablePrinter) Print(data *models.V1beta1LastOperation)
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Seed", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "LastUpdate", "Purpose", "Privileged", "Audit", "Runtime", "Firewall", "Firewall Controller", "Log accepted conns", "Egress IPs"}
+	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Seed", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "LastUpdate", "Purpose", "Privileged", "Audit", "Runtime", "Firewall", "Firewall Controller", "Log accepted conns", "Egress IPs", "Gardener"}
 	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
 	if s.order == "" {
@@ -190,6 +190,11 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		} else {
 			lastReconcilation = helper.HumanizeDuration(time.Since(lastUpdate))
 		}
+	}
+
+	gardener := ""
+	if shoot.Status != nil && shoot.Status.Gardener != nil && shoot.Status.Gardener.Version != nil {
+		gardener = *shoot.Status.Gardener.Version
 	}
 
 	operation := ""
@@ -318,6 +323,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		firewallController,
 		logAcceptedConnections,
 		strings.Join(egressIPs, "\n"),
+		gardener,
 	}
 	short := []string{
 		*shoot.ID,
