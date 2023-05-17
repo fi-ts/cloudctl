@@ -354,6 +354,8 @@ type dashboardClusterPane struct {
 	clusterProblems   *widgets.Table
 	clusterLastErrors *widgets.Table
 
+	clusterGardenerVersions *widgets.StackedBarChart
+
 	sem *semaphore.Weighted
 
 	cloud *client.CloudAPI
@@ -390,6 +392,12 @@ func NewDashboardClusterPane(cloud *client.CloudAPI) *dashboardClusterPane {
 	d.clusterStatusSystem = widgets.NewGauge()
 	d.clusterStatusSystem.Title = "System"
 	d.clusterStatusSystem.BarColor = ui.ColorGreen
+
+	d.clusterGardenerVersions = widgets.NewStackedBarChart()
+	d.clusterGardenerVersions.Title = "Gardener Versions"
+	d.clusterGardenerVersions.PaddingLeft = 5
+	d.clusterGardenerVersions.BarWidth = 5
+	d.clusterGardenerVersions.BarGap = 10
 
 	d.clusterProblems = widgets.NewTable()
 	d.clusterProblems.Title = "Cluster Problems"
@@ -443,9 +451,10 @@ func (d *dashboardClusterPane) Render() error {
 
 		clusters []*models.V1ClusterResponse
 
-		succeeded  int
-		processing int
-		unhealthy  int
+		succeeded        int
+		processing       int
+		unhealthy        int
+		gardenerVersions = make(map[string]int)
 
 		apiOK     int
 		controlOK int
@@ -532,6 +541,11 @@ func (d *dashboardClusterPane) Render() error {
 				Time:         t,
 			})
 		}
+		_, ok := gardenerVersions[*c.Status.Gardener.Version]
+		if !ok {
+			gardenerVersions[*c.Status.Gardener.Version] = 0
+		}
+		gardenerVersions[*c.Status.Gardener.Version]++
 	}
 
 	processedClusters := len(clusters)
@@ -569,6 +583,21 @@ func (d *dashboardClusterPane) Render() error {
 	d.clusterStatusControl.Percent = controlOK * 100 / processedClusters
 	d.clusterStatusNodes.Percent = nodesOK * 100 / processedClusters
 	d.clusterStatusSystem.Percent = systemOK * 100 / processedClusters
+
+	var (
+		gv         []string
+		gvversions []float64
+	)
+
+	for k, v := range gardenerVersions {
+		gv = append(gv, k)
+		gvversions = append(gvversions, float64(v))
+	}
+	d.clusterGardenerVersions.Labels = gv
+	d.clusterGardenerVersions.Data = make([][]float64, len(gv))
+	d.clusterGardenerVersions.Data[0] = gvversions
+	ui.Render(d.clusterGardenerVersions)
+
 	ui.Render(d.clusterStatusAPI, d.clusterStatusControl, d.clusterStatusNodes, d.clusterStatusSystem)
 
 	return nil
