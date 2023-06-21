@@ -466,15 +466,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterMachineCmd.AddCommand(clusterMachinePackagesCmd)
 
 	clusterReconcileCmd.Flags().String("operation", models.V1ClusterReconcileRequestOperationReconcile, "Executes a cluster \"reconcile\" operation.")
-	must(clusterReconcileCmd.RegisterFlagCompletionFunc("operation", cobra.FixedCompletions(
-		[]string{
-			models.V1ClusterReconcileRequestOperationReconcile,
-			models.V1ClusterReconcileRequestOperationRetry,
-			models.V1ClusterReconcileRequestOperationMaintain,
-			models.V1ClusterReconcileRequestOperationRotateDashSSHDashKeypair,
-		},
-		cobra.ShellCompDirectiveNoFileComp,
-	)))
+	must(clusterReconcileCmd.RegisterFlagCompletionFunc("operation", c.comp.ClusterReconcileOperationCompletion))
 
 	clusterIssuesCmd.Flags().String("id", "", "show clusters of given id")
 	clusterIssuesCmd.Flags().String("name", "", "show clusters of given name")
