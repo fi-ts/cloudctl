@@ -465,8 +465,16 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterMachineCmd.AddCommand(clusterMachineReinstallCmd)
 	clusterMachineCmd.AddCommand(clusterMachinePackagesCmd)
 
-	clusterReconcileCmd.Flags().Bool("retry", false, "Executes a cluster \"retry\" operation instead of regular \"reconcile\".")
-	clusterReconcileCmd.Flags().Bool("maintain", false, "Executes a cluster \"maintain\" operation instead of regular \"reconcile\".")
+	clusterReconcileCmd.Flags().String("operation", models.V1ClusterReconcileRequestOperationReconcile, "Executes a cluster \"reconcile\" operation.")
+	must(clusterReconcileCmd.RegisterFlagCompletionFunc("operation", cobra.FixedCompletions(
+		[]string{
+			models.V1ClusterReconcileRequestOperationReconcile,
+			models.V1ClusterReconcileRequestOperationRetry,
+			models.V1ClusterReconcileRequestOperationMaintain,
+			models.V1ClusterReconcileRequestOperationRotateDashSSHDashKeypair,
+		},
+		cobra.ShellCompDirectiveNoFileComp,
+	)))
 
 	clusterIssuesCmd.Flags().String("id", "", "show clusters of given id")
 	clusterIssuesCmd.Flags().String("name", "", "show clusters of given name")
@@ -864,20 +872,8 @@ func (c *config) reconcileCluster(args []string) error {
 	request := cluster.NewReconcileClusterParams()
 	request.SetID(ci)
 
-	if helper.ViperBool("retry") != nil && helper.ViperBool("maintain") != nil {
-		return fmt.Errorf("--retry and --maintain are mutually exclusive")
-	}
-
-	var operation *string
-	if viper.GetBool("retry") {
-		o := "retry"
-		operation = &o
-	}
-	if viper.GetBool("maintain") {
-		o := "maintain"
-		operation = &o
-	}
-	request.Body = &models.V1ClusterReconcileRequest{Operation: operation}
+	operation := viper.GetString("operation")
+	request.Body = &models.V1ClusterReconcileRequest{Operation: &operation}
 
 	shoot, err := c.cloud.Cluster.ReconcileCluster(request, nil)
 	if err != nil {
