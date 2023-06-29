@@ -300,7 +300,9 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().StringSlice("labels", []string{}, "labels of the cluster")
 	clusterCreateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
 	clusterCreateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <network>:<ip>; e.g.: --egress internet:1.2.3.4,extnet:123.1.1.1 --egress internet:1.2.3.5 [optional]")
-	clusterCreateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster.")
+	clusterCreateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster (deprecated, has been replaced with --disable-pod-security-policies and --default-pod-security-standard)")
+	clusterCreateCmd.Flags().BoolP("disable-pod-security-policies", "", false, "disable pod security policies")
+	clusterCreateCmd.Flags().String("default-pod-security-standard", "", "set default pod security standard for cluster =>1.23.x (valid values: privileged, baseline, restricted)")
 	clusterCreateCmd.Flags().String("audit", "on", "audit logging of cluster API access; can be off, on (default) or splunk (logging to a predefined or custom splunk endpoint). [optional]")
 	clusterCreateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced. [optional]")
 	clusterCreateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. [optional]")
@@ -326,6 +328,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("firewallimage", c.comp.FirewallImageListCompletion))
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("firewallcontroller", c.comp.FirewallControllerVersionListCompletion))
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("purpose", c.comp.ClusterPurposeListCompletion))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("default-pod-security-standard", c.comp.PodSecurityListCompletion))
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("cri", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"docker", "containerd"}, cobra.ShellCompDirectiveNoFileComp
 	}))
@@ -378,7 +381,9 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().String("machineimage", "", "machine image to use for the nodes, must be in the form of <name>-<version> ")
 	clusterUpdateCmd.Flags().StringSlice("addlabels", []string{}, "labels to add to the cluster")
 	clusterUpdateCmd.Flags().StringSlice("removelabels", []string{}, "labels to remove from the cluster")
-	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster, please add --yes-i-really-mean-it")
+	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster (deprecated, has been replaced with --disable-pod-security-policies and --default-pod-security-standard)")
+	clusterUpdateCmd.Flags().BoolP("disable-pod-security-policies", "", false, "disable pod security policies")
+	clusterUpdateCmd.Flags().String("default-pod-security-standard", "", "set default pod security standard for cluster =>1.23.x (valid values: privileged, baseline, restricted)")
 	clusterUpdateCmd.Flags().String("audit", "on", "audit logging of cluster API access; can be off, on or splunk (logging to a predefined or custom splunk endpoint).")
 	clusterUpdateCmd.Flags().String("purpose", "", fmt.Sprintf("purpose of the cluster, can be one of %s. SLA is only given on production clusters.", strings.Join(completion.ClusterPurposes, "|")))
 	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]. Use --egress none to remove all egress rules.")
@@ -403,6 +408,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("machinetype", c.comp.MachineTypeListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("machineimage", c.comp.MachineImageListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("purpose", c.comp.ClusterPurposeListCompletion))
+	must(clusterUpdateCmd.RegisterFlagCompletionFunc("default-pod-security-standard", c.comp.PodSecurityListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("audit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return auditConfigOptions.Names(true),
 			cobra.ShellCompDirectiveNoFileComp
@@ -521,6 +527,9 @@ func (c *config) clusterCreate() error {
 		cni = viper.GetString("cni")
 	}
 
+	if viper.IsSet("allowprivileged") {
+		return fmt.Errorf("--allowprivileged is deprecated and has been replaced with --disable-pod-security-policies and --default-pod-security-standard")
+	}
 	minsize := viper.GetInt32("minsize")
 	maxsize := viper.GetInt32("maxsize")
 	maxsurge := viper.GetString("maxsurge")
@@ -529,7 +538,9 @@ func (c *config) clusterCreate() error {
 	healthtimeout := viper.GetDuration("healthtimeout")
 	draintimeout := viper.GetDuration("draintimeout")
 
-	allowprivileged := viper.GetBool("allowprivileged")
+	allowprivileged := viper.GetBool("disable-pod-security-policies")
+	defaultPodSecurityStandard := viper.GetString("default-pod-security-standard")
+
 	audit := viper.GetString("audit")
 
 	labels := viper.GetStringSlice("labels")
@@ -568,6 +579,23 @@ func (c *config) clusterCreate() error {
 		sort.Sort(semver.Collection(sortedVersions))
 
 		version = sortedVersions[len(sortedVersions)-1].String()
+	}
+
+	// for kubernetes version >=1.25 disallow allowprivileged==true
+	// and set defaultPodSecurity to restricted
+	if ok, err := helper.CheckVersionConstraint(">=1.25", version); ok || err != nil {
+		if viper.IsSet("disable-pod-security-policies") {
+			log.Fatalf("--disable-pod-security-policies is not supported for Kubernetes versions >= 1.25.x: %s", version)
+		}
+		if !viper.IsSet("default-pod-security-standard") {
+			defaultPodSecurityStandard = "restricted"
+		}
+		allowprivileged = true
+	}
+	if viper.IsSet("default-pod-security-standard") {
+		if ok, err := helper.CheckVersionConstraint("<=1.22", version); ok || err != nil {
+			log.Fatalf("--default-pod-security-standard is only supported for kubernetes version >=1.23.x: %s", version)
+		}
 	}
 
 	machineImage := models.V1MachineImage{}
@@ -630,8 +658,9 @@ func (c *config) clusterCreate() error {
 		FirewallImage:             &firewallImage,
 		FirewallControllerVersion: &firewallController,
 		Kubernetes: &models.V1Kubernetes{
-			AllowPrivilegedContainers: &allowprivileged,
-			Version:                   &version,
+			AllowPrivilegedContainers:  &allowprivileged,
+			Version:                    &version,
+			DefaultPodSecurityStandard: &defaultPodSecurityStandard,
 		},
 		Audit: auditConfig.Config,
 		Maintenance: &models.V1Maintenance{
@@ -878,6 +907,10 @@ func (c *config) updateCluster(args []string) error {
 	ci, err := c.clusterID("update", args)
 	if err != nil {
 		return err
+	}
+
+	if viper.IsSet("allowprivileged") {
+		return fmt.Errorf("--allowprivileged is deprecated and has been replaced with --disable-pod-security-policies and --default-pod-security-standard")
 	}
 	workergroupname := viper.GetString("workergroup")
 	removeworkergroup := viper.GetBool("remove-workergroup")
@@ -1196,13 +1229,25 @@ func (c *config) updateCluster(args []string) error {
 	if version != "" {
 		k8s.Version = &version
 	}
-	if viper.IsSet("allowprivileged") {
-		if !viper.GetBool("yes-i-really-mean-it") {
-			return fmt.Errorf("allowprivileged is set but you forgot to add --yes-i-really-mean-it")
+	if viper.IsSet("disable-pod-security-policies") {
+		if ok, err := helper.CheckVersionConstraint(">=1.25", *current.Kubernetes.Version); ok || err != nil {
+			return fmt.Errorf("--disable-pod-security-policies is not supported for Kubernetes versions >= 1.25.x: %s", *current.Kubernetes.Version)
 		}
-		allowPrivileged := viper.GetBool("allowprivileged")
-		k8s.AllowPrivilegedContainers = &allowPrivileged
+		if !viper.GetBool("yes-i-really-mean-it") {
+			return fmt.Errorf("--disable-pod-security-policies is set but you forgot to add --yes-i-really-mean-it")
+		}
+		k8s.AllowPrivilegedContainers = pointer.Pointer(viper.GetBool("disable-pod-security-policies"))
 	}
+	if viper.IsSet("default-pod-security-standard") {
+		if ok, err := helper.CheckVersionConstraint("<=1.22", *current.Kubernetes.Version); ok || err != nil {
+			return fmt.Errorf("--default-pod-security-standard is not supported for Kubernetes version <=1.23.x: %s", *current.Kubernetes.Version)
+		}
+		k8s.DefaultPodSecurityStandard = pointer.Pointer(viper.GetString("default-pod-security-standard"))
+		if !viper.GetBool("yes-i-really-mean-it") {
+			return fmt.Errorf("--default-pod-security-standard is set but you forgot to add --yes-i-really-mean-it")
+		}
+	}
+
 	cur.Kubernetes = k8s
 
 	if viper.IsSet("audit") {

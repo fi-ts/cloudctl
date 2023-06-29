@@ -3,13 +3,14 @@ module github.com/fi-ts/cloudctl
 go 1.20
 
 require (
+	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/avast/retry-go/v4 v4.3.4
 	github.com/dcorbe/termui-dpc v0.0.0-20211125210512-9d2673a82dd6
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.15.0
-	github.com/fi-ts/cloud-go v0.20.18
+	github.com/fi-ts/cloud-go v0.20.19-0.20230629131451-0153ade192de
 	github.com/gardener/gardener v1.45.0
 	github.com/gardener/machine-controller-manager v0.48.1
 	github.com/go-openapi/strfmt v0.21.7
@@ -39,7 +40,6 @@ require (
 require (
 	filippo.io/edwards25519 v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
-	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/akutz/memconn v0.1.0 // indirect

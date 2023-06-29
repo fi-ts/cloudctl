@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver"
 	"gopkg.in/yaml.v3"
 	k8syaml "sigs.k8s.io/yaml"
 )
@@ -176,4 +177,18 @@ func MustPrintKubernetesResource(in any) {
 		panic(fmt.Errorf("unable to marshal to yaml: %w", err))
 	}
 	fmt.Printf("---\n%s", string(y))
+}
+
+func CheckVersionConstraint(constraint, version string) (bool, error) {
+	cc, err := semver.NewConstraint(constraint)
+	if err != nil {
+		return false, err
+	}
+
+	v, err := semver.NewVersion(version)
+	if err != nil {
+		return false, err
+	}
+
+	return cc.Check(v), nil
 }
