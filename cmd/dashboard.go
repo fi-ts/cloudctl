@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	ui "github.com/dcorbe/termui-dpc"
 	"github.com/dcorbe/termui-dpc/widgets"
 	"github.com/fi-ts/cloud-go/api/client"
@@ -27,6 +28,7 @@ import (
 	"github.com/metal-stack/v"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"golang.org/x/exp/maps"
 	"golang.org/x/sync/semaphore"
 
 	durosv2 "github.com/metal-stack/duros-go/api/duros/v2"
@@ -365,14 +367,14 @@ func NewDashboardClusterPane(cloud *client.CloudAPI) *dashboardClusterPane {
 	d.sem = semaphore.NewWeighted(1)
 
 	d.clusterHealth = widgets.NewBarChart()
-	d.clusterHealth.Labels = []string{"Succeeded", "Progressing", "Unhealthy"}
+	d.clusterHealth.Labels = []string{"Succeeded", "Progressing", "Unhealthy", "Gardener"}
 	d.clusterHealth.Title = "Cluster Operation"
 	d.clusterHealth.PaddingLeft = 5
 	d.clusterHealth.BarWidth = 5
 	d.clusterHealth.BarGap = 10
-	d.clusterHealth.BarColors = []ui.Color{ui.ColorGreen, ui.ColorYellow, ui.ColorRed}
+	d.clusterHealth.BarColors = []ui.Color{ui.ColorGreen, ui.ColorYellow, ui.ColorRed, ui.ColorBlue}
 	if viper.GetString("color-theme") == "default" {
-		d.clusterHealth.NumStyles = []ui.Style{{Fg: ui.ColorWhite}, {Fg: ui.ColorWhite}, {Fg: ui.ColorBlack}}
+		d.clusterHealth.NumStyles = []ui.Style{{Fg: ui.ColorWhite}, {Fg: ui.ColorWhite}, {Fg: ui.ColorBlack}, {Fg: ui.ColorWhite}}
 	}
 
 	d.clusterStatusAPI = widgets.NewGauge()
@@ -414,12 +416,12 @@ func (d *dashboardClusterPane) Description() string {
 }
 
 func (d *dashboardClusterPane) Resize(x1, y1, x2, y2 int) {
-	d.clusterHealth.SetRect(x1, y1, x1+48, y1+12)
+	d.clusterHealth.SetRect(x1, y1, x1+60, y1+12)
 
-	d.clusterStatusAPI.SetRect(x1+50, y1, x2, 3+y1)
-	d.clusterStatusControl.SetRect(x1+50, 3+y1, x2, 6+y1)
-	d.clusterStatusNodes.SetRect(x1+50, 6+y1, x2, 9+y1)
-	d.clusterStatusSystem.SetRect(x1+50, 9+y1, x2, 12+y1)
+	d.clusterStatusAPI.SetRect(x1+62, y1, x2, 3+y1)
+	d.clusterStatusControl.SetRect(x1+62, 3+y1, x2, 6+y1)
+	d.clusterStatusNodes.SetRect(x1+62, 6+y1, x2, 9+y1)
+	d.clusterStatusSystem.SetRect(x1+62, 9+y1, x2, 12+y1)
 
 	tableHeights := int(math.Ceil((float64(y2) - (float64(y1) + 12)) / 2))
 
@@ -443,9 +445,10 @@ func (d *dashboardClusterPane) Render() error {
 
 		clusters []*models.V1ClusterResponse
 
-		succeeded  int
-		processing int
-		unhealthy  int
+		succeeded        int
+		processing       int
+		unhealthy        int
+		gardenerVersions = make(map[string]int)
 
 		apiOK     int
 		controlOK int
@@ -532,6 +535,11 @@ func (d *dashboardClusterPane) Render() error {
 				Time:         t,
 			})
 		}
+		_, ok := gardenerVersions[*c.Status.Gardener.Version]
+		if !ok {
+			gardenerVersions[*c.Status.Gardener.Version] = 0
+		}
+		gardenerVersions[*c.Status.Gardener.Version]++
 	}
 
 	processedClusters := len(clusters)
@@ -539,9 +547,12 @@ func (d *dashboardClusterPane) Render() error {
 		return nil
 	}
 
+	latestGardenerVersion, latestGardenerCount := getGardenerWithLatestVersion(gardenerVersions)
+
 	// for some reason the UI hangs when all values are zero...
 	if succeeded > 0 || processing > 0 || unhealthy > 0 {
-		d.clusterHealth.Data = []float64{float64(succeeded), float64(processing), float64(unhealthy)}
+		d.clusterHealth.Labels[3] = fmt.Sprintf("g/g %s", latestGardenerVersion)
+		d.clusterHealth.Data = []float64{float64(succeeded), float64(processing), float64(unhealthy), float64(latestGardenerCount)}
 		ui.Render(d.clusterHealth)
 	}
 
@@ -569,6 +580,7 @@ func (d *dashboardClusterPane) Render() error {
 	d.clusterStatusControl.Percent = controlOK * 100 / processedClusters
 	d.clusterStatusNodes.Percent = nodesOK * 100 / processedClusters
 	d.clusterStatusSystem.Percent = systemOK * 100 / processedClusters
+
 	ui.Render(d.clusterStatusAPI, d.clusterStatusControl, d.clusterStatusNodes, d.clusterStatusSystem)
 
 	return nil
@@ -888,4 +900,32 @@ func (d *dashboardVolumePane) Render() error {
 	}
 
 	return nil
+}
+
+func getGardenerWithLatestVersion(gardenerVersions map[string]int) (string, float64) {
+	if len(gardenerVersions) == 0 {
+		return "unknown", float64(0)
+	}
+	if len(gardenerVersions) == 1 {
+		version := maps.Keys(gardenerVersions)[0]
+		return version, float64(gardenerVersions[version])
+	}
+
+	raw := maps.Keys(gardenerVersions)
+	vs := make([]*semver.Version, len(raw))
+	for i, r := range raw {
+		v, err := semver.NewVersion(r)
+		if err != nil {
+			return "unknown", float64(0)
+		}
+
+		vs[i] = v
+	}
+
+	sort.Sort(semver.Collection(vs))
+
+	newestVersion := vs[len(vs)-1]
+	version := newestVersion.String()
+
+	return version, float64(gardenerVersions[version])
 }
