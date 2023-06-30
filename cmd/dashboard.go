@@ -547,12 +547,12 @@ func (d *dashboardClusterPane) Render() error {
 		return nil
 	}
 
-	latestGardenerVersion, value := getGardenerWithLatestVersion(gardenerVersions)
+	latestGardenerVersion, latestGardenerCount := getGardenerWithLatestVersion(gardenerVersions)
 
 	// for some reason the UI hangs when all values are zero...
 	if succeeded > 0 || processing > 0 || unhealthy > 0 {
 		d.clusterHealth.Labels[3] = fmt.Sprintf("g/g %s", latestGardenerVersion)
-		d.clusterHealth.Data = []float64{float64(succeeded), float64(processing), float64(unhealthy), float64(value)}
+		d.clusterHealth.Data = []float64{float64(succeeded), float64(processing), float64(unhealthy), float64(latestGardenerCount)}
 		ui.Render(d.clusterHealth)
 	}
 
