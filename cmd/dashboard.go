@@ -547,8 +547,6 @@ func (d *dashboardClusterPane) Render() error {
 		return nil
 	}
 
-	fmt.Printf("GV %v\n", gardenerVersions)
-
 	latestGardenerVersion, value := getGardenerWithLatestVersion(gardenerVersions)
 
 	// for some reason the UI hangs when all values are zero...
