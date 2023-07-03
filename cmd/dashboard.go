@@ -49,7 +49,7 @@ func newDashboardCmd(c *config) *cobra.Command {
 		PreRun: bindPFlags,
 	}
 
-	tabs := dashboardTabs(nil, nil)
+	tabs := dashboardTabs(nil, nil, nil)
 
 	dashboardCmd.Flags().String("partition", "", "show resources in partition [optional]")
 	dashboardCmd.Flags().String("tenant", "", "show resources of given tenant [optional]")
@@ -122,7 +122,7 @@ func runDashboard(cloud *client.CloudAPI) error {
 		width, height = ui.TerminalDimensions()
 
 		uiEvents         = ui.PollEvents()
-		eventPassthrough = make(chan ui.Event)
+		eventPassthrough = make(chan ui.Event, 1)
 		ticker           = time.NewTicker(interval)
 	)
 
@@ -173,10 +173,12 @@ func runDashboard(cloud *client.CloudAPI) error {
 	}
 }
 
-func dashboardTabs(cache *apiCache, eventChannel chan ui.Event) dashboardTabPanes {
+func dashboardTabs(cache *apiCache, eventChannel chan ui.Event, activePanel func() int) dashboardTabPanes {
 	return dashboardTabPanes{
 		NewDashboardClusterHealthPane(cache),
-		NewDashboardClusterVersionsPane(cache, eventChannel),
+		NewDashboardClusterVersionsPane(cache, eventChannel, func() bool {
+			return activePanel() == 1
+		}),
 		NewDashboardVolumePane(cache),
 	}
 }
@@ -244,7 +246,9 @@ func NewDashboard(cloud *client.CloudAPI, eventChannel chan ui.Event) (*dashboar
 		viper.GetString("purpose"),
 	)
 
-	d.tabs = dashboardTabs(cache, eventChannel)
+	d.tabs = dashboardTabs(cache, eventChannel, func() int {
+		return d.tabPane.ActiveTabIndex
+	})
 	var tabNames []string
 	for i, p := range d.tabs {
 		tabNames = append(tabNames, fmt.Sprintf("(%d) %s", i+1, p.Name()))
@@ -593,7 +597,7 @@ type dashboardClusterVersionsPane struct {
 	cache *apiCache
 }
 
-func NewDashboardClusterVersionsPane(cache *apiCache, eventChannel chan ui.Event) *dashboardClusterVersionsPane {
+func NewDashboardClusterVersionsPane(cache *apiCache, eventChannel chan ui.Event, isActive func() bool) *dashboardClusterVersionsPane {
 	d := &dashboardClusterVersionsPane{}
 
 	d.sem = semaphore.NewWeighted(1)
@@ -610,6 +614,13 @@ func NewDashboardClusterVersionsPane(cache *apiCache, eventChannel chan ui.Event
 		for {
 			e := <-eventChannel
 
+			if isActive != nil && !isActive() {
+				continue
+			}
+			if !d.kubernetesVersionsState.runOnce {
+				continue
+			}
+
 			switch e.ID {
 			case "<Down>":
 				d.kubernetesVersions.ScrollDown()
@@ -621,6 +632,10 @@ func NewDashboardClusterVersionsPane(cache *apiCache, eventChannel chan ui.Event
 				d.kubernetesVersions.ScrollTop()
 			case "<PageDown>":
 				d.kubernetesVersions.ScrollBottom()
+			case "<Right>":
+				d.kubernetesVersions.Expand()
+			case "<Left>":
+				d.kubernetesVersions.Collapse()
 			case "E":
 				d.kubernetesVersions.ExpandAll()
 			case "C":
@@ -712,6 +727,7 @@ func (v nodeValue) String() string {
 }
 
 type kubernetesVersions struct {
+	runOnce  bool
 	previous []*widgets.TreeNode
 }
 
@@ -845,6 +861,8 @@ func (k *kubernetesVersions) update(clusters []*models.V1ClusterResponse) ([]*wi
 	}
 
 	sort.Slice(result, sortNodesFunc(result))
+
+	k.runOnce = true
 
 	return result, !cmp.Equal(result, k.previous, cmp.AllowUnexported(widgets.TreeNode{}))
 }
