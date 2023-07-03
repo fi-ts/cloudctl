@@ -372,7 +372,7 @@ type dashboardClusterHealthPane struct {
 
 	sem *semaphore.Weighted
 
-	cloud *cloudCache
+	cache *cloudCache
 }
 
 func NewDashboardClusterHealthPane(cache *cloudCache) *dashboardClusterHealthPane {
@@ -417,7 +417,7 @@ func NewDashboardClusterHealthPane(cache *cloudCache) *dashboardClusterHealthPan
 	d.clusterLastErrors.TextAlignment = ui.AlignLeft
 	d.clusterLastErrors.RowSeparator = false
 
-	d.cloud = cache
+	d.cache = cache
 	return d
 }
 
@@ -471,7 +471,7 @@ func (d *dashboardClusterHealthPane) Render() error {
 	ctx, cancel := context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
 	defer cancel()
 
-	clusters, err := d.cloud.Clusters(ctx)
+	clusters, err := d.cache.Clusters(ctx)
 	if err != nil {
 		return err
 	}
@@ -590,7 +590,7 @@ type dashboardClusterVersionsPane struct {
 
 	sem *semaphore.Weighted
 
-	cloud *cloudCache
+	cache *cloudCache
 }
 
 func NewDashboardClusterVersionsPane(cache *cloudCache, eventChannel chan ui.Event) *dashboardClusterVersionsPane {
@@ -631,7 +631,7 @@ func NewDashboardClusterVersionsPane(cache *cloudCache, eventChannel chan ui.Eve
 		}
 	}()
 
-	d.cloud = cache
+	d.cache = cache
 
 	return d
 }
@@ -864,7 +864,7 @@ func (d *dashboardClusterVersionsPane) Render() error {
 	ctx, cancel := context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
 	defer cancel()
 
-	clusters, err := d.cloud.Clusters(ctx)
+	clusters, err := d.cache.Clusters(ctx)
 	if err != nil {
 		return err
 	}
@@ -913,7 +913,7 @@ type dashboardVolumePane struct {
 
 	sem *semaphore.Weighted
 
-	cloud *cloudCache
+	cache *cloudCache
 }
 
 func NewDashboardVolumePane(cache *cloudCache) *dashboardVolumePane {
@@ -976,7 +976,7 @@ func NewDashboardVolumePane(cache *cloudCache) *dashboardVolumePane {
 		d.serverState.NumStyles = []ui.Style{{Fg: ui.ColorBlack}, {Fg: ui.ColorWhite}, {Fg: ui.ColorBlack}, {Fg: ui.ColorWhite}}
 	}
 
-	d.cloud = cache
+	d.cache = cache
 	return d
 }
 
@@ -1045,7 +1045,7 @@ func (d *dashboardVolumePane) Render() error {
 	ctx, cancel := context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
 	defer cancel()
 
-	volumes, err := d.cloud.Volumes(ctx)
+	volumes, err := d.cache.Volumes(ctx)
 	if err != nil {
 		return err
 	}
@@ -1053,7 +1053,7 @@ func (d *dashboardVolumePane) Render() error {
 	ctx, cancel = context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
 	defer cancel()
 
-	clusterInfos, err := d.cloud.VolumeClusterInfo(ctx)
+	clusterInfos, err := d.cache.VolumeClusterInfo(ctx)
 	if err != nil {
 		return err
 	}
