@@ -1055,7 +1055,15 @@ func (d *dashboardVolumePane) Render() error {
 
 	clusterInfos, err := d.cache.VolumeClusterInfo(ctx)
 	if err != nil {
-		return err
+		var typedErr *volume.ClusterInfoDefault
+		if errors.As(err, &typedErr) {
+			if typedErr.Code() != http.StatusForbidden {
+				return err
+			}
+			// allow forbidden response, because cluster info is only for provider admins
+		} else {
+			return err
+		}
 	}
 
 	for _, v := range volumes {
@@ -1229,22 +1237,11 @@ func newCloudCache(cloud *client.CloudAPI, expiration time.Duration, partition, 
 			return resp.Payload, nil
 		}),
 		volumesClusterInfo: cache.New(expiration, func(ctx context.Context, id string) ([]*models.V1StorageClusterInfo, error) {
-			infoResp, err := cloud.Volume.ClusterInfo(volume.NewClusterInfoParams().WithPartitionid(&partition).WithContext(ctx), nil)
-			if err == nil {
-				return infoResp.Payload, nil
-			}
-
-			var typedErr *volume.ClusterInfoDefault
-			if errors.As(err, &typedErr) {
-				if typedErr.Code() != http.StatusForbidden {
-					return nil, err
-				}
-			} else {
+			resp, err := cloud.Volume.ClusterInfo(volume.NewClusterInfoParams().WithPartitionid(&partition).WithContext(ctx), nil)
+			if err != nil {
 				return nil, err
 			}
-
-			// allow forbidden response, because cluster info is only for provider admins
-			return nil, nil
+			return resp.Payload, nil
 		}),
 	}
 }
