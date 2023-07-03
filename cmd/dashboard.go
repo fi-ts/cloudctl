@@ -173,7 +173,7 @@ func runDashboard(cloud *client.CloudAPI) error {
 	}
 }
 
-func dashboardTabs(cache *cloudCache, eventChannel chan ui.Event) dashboardTabPanes {
+func dashboardTabs(cache *apiCache, eventChannel chan ui.Event) dashboardTabPanes {
 	return dashboardTabPanes{
 		NewDashboardClusterHealthPane(cache),
 		NewDashboardClusterVersionsPane(cache, eventChannel),
@@ -237,7 +237,7 @@ func NewDashboard(cloud *client.CloudAPI, eventChannel chan ui.Event) (*dashboar
 	d.filterHeader.Title = "Filters"
 	d.filterHeader.WrapText = false
 
-	cache := newCloudCache(cloud,
+	cache := newCache(cloud,
 		viper.GetDuration("refresh-interval"),
 		viper.GetString("partition"),
 		viper.GetString("tenant"),
@@ -372,10 +372,10 @@ type dashboardClusterHealthPane struct {
 
 	sem *semaphore.Weighted
 
-	cache *cloudCache
+	cache *apiCache
 }
 
-func NewDashboardClusterHealthPane(cache *cloudCache) *dashboardClusterHealthPane {
+func NewDashboardClusterHealthPane(cache *apiCache) *dashboardClusterHealthPane {
 	d := &dashboardClusterHealthPane{}
 
 	d.sem = semaphore.NewWeighted(1)
@@ -590,10 +590,10 @@ type dashboardClusterVersionsPane struct {
 
 	sem *semaphore.Weighted
 
-	cache *cloudCache
+	cache *apiCache
 }
 
-func NewDashboardClusterVersionsPane(cache *cloudCache, eventChannel chan ui.Event) *dashboardClusterVersionsPane {
+func NewDashboardClusterVersionsPane(cache *apiCache, eventChannel chan ui.Event) *dashboardClusterVersionsPane {
 	d := &dashboardClusterVersionsPane{}
 
 	d.sem = semaphore.NewWeighted(1)
@@ -686,7 +686,7 @@ func (g gardenerVersions) toValues() ([]float64, widgets.PieChartLabel) {
 		if versions[i].parsedVersion == nil {
 			return false
 		}
-		if versions[i].parsedVersion == nil {
+		if versions[j].parsedVersion == nil {
 			return true
 		}
 
@@ -913,10 +913,10 @@ type dashboardVolumePane struct {
 
 	sem *semaphore.Weighted
 
-	cache *cloudCache
+	cache *apiCache
 }
 
-func NewDashboardVolumePane(cache *cloudCache) *dashboardVolumePane {
+func NewDashboardVolumePane(cache *apiCache) *dashboardVolumePane {
 	d := &dashboardVolumePane{}
 
 	d.sem = semaphore.NewWeighted(1)
@@ -1207,15 +1207,15 @@ func (d *dashboardVolumePane) Render() error {
 	return nil
 }
 
-type cloudCache struct {
+type apiCache struct {
 	clusters           *cache.Cache[string, []*models.V1ClusterResponse]
 	volumes            *cache.Cache[string, []*models.V1VolumeResponse]
 	volumesClusterInfo *cache.Cache[string, []*models.V1StorageClusterInfo]
 }
 
-func newCloudCache(cloud *client.CloudAPI, expiration time.Duration, partition, tenant, purpose string) *cloudCache {
-	return &cloudCache{
-		clusters: cache.New(expiration, func(ctx context.Context, id string) ([]*models.V1ClusterResponse, error) {
+func newCache(cloud *client.CloudAPI, expiration time.Duration, partition, tenant, purpose string) *apiCache {
+	return &apiCache{
+		clusters: cache.New(expiration, func(ctx context.Context, _ string) ([]*models.V1ClusterResponse, error) {
 			resp, err := cloud.Cluster.FindClusters(cluster.NewFindClustersParams().WithBody(&models.V1ClusterFindRequest{
 				PartitionID: output.StrDeref(partition),
 				Tenant:      output.StrDeref(tenant),
@@ -1226,7 +1226,7 @@ func newCloudCache(cloud *client.CloudAPI, expiration time.Duration, partition, 
 			}
 			return resp.Payload, nil
 		}),
-		volumes: cache.New(expiration, func(ctx context.Context, id string) ([]*models.V1VolumeResponse, error) {
+		volumes: cache.New(expiration, func(ctx context.Context, _ string) ([]*models.V1VolumeResponse, error) {
 			resp, err := cloud.Volume.FindVolumes(volume.NewFindVolumesParams().WithBody(&models.V1VolumeFindRequest{
 				PartitionID: output.StrDeref(partition),
 				TenantID:    output.StrDeref(tenant),
@@ -1236,7 +1236,7 @@ func newCloudCache(cloud *client.CloudAPI, expiration time.Duration, partition, 
 			}
 			return resp.Payload, nil
 		}),
-		volumesClusterInfo: cache.New(expiration, func(ctx context.Context, id string) ([]*models.V1StorageClusterInfo, error) {
+		volumesClusterInfo: cache.New(expiration, func(ctx context.Context, _ string) ([]*models.V1StorageClusterInfo, error) {
 			resp, err := cloud.Volume.ClusterInfo(volume.NewClusterInfoParams().WithPartitionid(&partition).WithContext(ctx), nil)
 			if err != nil {
 				return nil, err
@@ -1246,14 +1246,14 @@ func newCloudCache(cloud *client.CloudAPI, expiration time.Duration, partition, 
 	}
 }
 
-func (c *cloudCache) Clusters(ctx context.Context) ([]*models.V1ClusterResponse, error) {
+func (c *apiCache) Clusters(ctx context.Context) ([]*models.V1ClusterResponse, error) {
 	return c.clusters.Get(ctx, "")
 }
 
-func (c *cloudCache) Volumes(ctx context.Context) ([]*models.V1VolumeResponse, error) {
+func (c *apiCache) Volumes(ctx context.Context) ([]*models.V1VolumeResponse, error) {
 	return c.volumes.Get(ctx, "")
 }
 
-func (c *cloudCache) VolumeClusterInfo(ctx context.Context) ([]*models.V1StorageClusterInfo, error) {
+func (c *apiCache) VolumeClusterInfo(ctx context.Context) ([]*models.V1StorageClusterInfo, error) {
 	return c.volumesClusterInfo.Get(ctx, "")
 }
