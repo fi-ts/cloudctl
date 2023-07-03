@@ -1240,7 +1240,8 @@ func (c *config) updateCluster(args []string) error {
 	}
 	if viper.IsSet("default-pod-security-standard") {
 		if ok, err := helper.CheckVersionConstraint("<=1.22", *current.Kubernetes.Version); ok || err != nil {
-			return fmt.Errorf("--default-pod-security-standard is not supported for Kubernetes version <=1.23.x: %s", *current.Kubernetes.Version)
+			return fmt.Errorf("--default-pod-security-standard is only supported for kubernetes version >=1.23.x: %s", *current.Kubernetes.Version)
+
 		}
 		k8s.DefaultPodSecurityStandard = pointer.Pointer(viper.GetString("default-pod-security-standard"))
 		if !viper.GetBool("yes-i-really-mean-it") {
