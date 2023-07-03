@@ -23,12 +23,13 @@ import (
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/google/go-cmp/cmp"
+	"github.com/metal-stack/metal-lib/pkg/cache"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/rest"
 	"github.com/metal-stack/v"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"golang.org/x/exp/maps"
 	"golang.org/x/sync/semaphore"
 
 	durosv2 "github.com/metal-stack/duros-go/api/duros/v2"
@@ -48,7 +49,7 @@ func newDashboardCmd(c *config) *cobra.Command {
 		PreRun: bindPFlags,
 	}
 
-	tabs := dashboardTabs(c.cloud)
+	tabs := dashboardTabs(nil, nil)
 
 	dashboardCmd.Flags().String("partition", "", "show resources in partition [optional]")
 	dashboardCmd.Flags().String("tenant", "", "show resources of given tenant [optional]")
@@ -119,18 +120,19 @@ func runDashboard(cloud *client.CloudAPI) error {
 	var (
 		interval      = viper.GetDuration("refresh-interval")
 		width, height = ui.TerminalDimensions()
+
+		uiEvents         = ui.PollEvents()
+		eventPassthrough = make(chan ui.Event)
+		ticker           = time.NewTicker(interval)
 	)
 
-	d, err := NewDashboard(cloud)
+	d, err := NewDashboard(cloud, eventPassthrough)
 	if err != nil {
 		return err
 	}
 
 	d.Resize(0, 0, width, height)
 	d.Render()
-
-	uiEvents := ui.PollEvents()
-	ticker := time.NewTicker(interval)
 
 	panelNumbers := map[string]bool{}
 	for i := range d.tabs {
@@ -159,7 +161,11 @@ func runDashboard(cloud *client.CloudAPI) error {
 					d.tabPane.ActiveTabIndex = i - 1
 					ui.Clear()
 					d.Render()
+					continue
 				}
+
+				// passing on the event to other panels that may wanna use it
+				eventPassthrough <- e
 			}
 		case <-ticker.C:
 			d.Render()
@@ -167,10 +173,11 @@ func runDashboard(cloud *client.CloudAPI) error {
 	}
 }
 
-func dashboardTabs(cloud *client.CloudAPI) dashboardTabPanes {
+func dashboardTabs(cache *cloudCache, eventChannel chan ui.Event) dashboardTabPanes {
 	return dashboardTabPanes{
-		NewDashboardClusterPane(cloud),
-		NewDashboardVolumePane(cloud),
+		NewDashboardClusterHealthPane(cache),
+		NewDashboardClusterVersionsPane(cache, eventChannel),
+		NewDashboardVolumePane(cache),
 	}
 }
 
@@ -208,7 +215,7 @@ func (d dashboardTabPanes) FindIndexByName(name string) (int, error) {
 	return 0, fmt.Errorf("tab with name %q not found", name)
 }
 
-func NewDashboard(cloud *client.CloudAPI) (*dashboard, error) {
+func NewDashboard(cloud *client.CloudAPI, eventChannel chan ui.Event) (*dashboard, error) {
 	err := dashboardApplyTheme(viper.GetString("color-theme"))
 	if err != nil {
 		return nil, err
@@ -230,7 +237,14 @@ func NewDashboard(cloud *client.CloudAPI) (*dashboard, error) {
 	d.filterHeader.Title = "Filters"
 	d.filterHeader.WrapText = false
 
-	d.tabs = dashboardTabs(cloud)
+	cache := newCloudCache(cloud,
+		viper.GetDuration("refresh-interval"),
+		viper.GetString("partition"),
+		viper.GetString("tenant"),
+		viper.GetString("purpose"),
+	)
+
+	d.tabs = dashboardTabs(cache, eventChannel)
 	var tabNames []string
 	for i, p := range d.tabs {
 		tabNames = append(tabNames, fmt.Sprintf("(%d) %s", i+1, p.Name()))
@@ -345,7 +359,7 @@ type dashboardClusterError struct {
 	Time         time.Time
 }
 
-type dashboardClusterPane struct {
+type dashboardClusterHealthPane struct {
 	clusterHealth *widgets.BarChart
 
 	clusterStatusAPI     *widgets.Gauge
@@ -358,16 +372,16 @@ type dashboardClusterPane struct {
 
 	sem *semaphore.Weighted
 
-	cloud *client.CloudAPI
+	cloud *cloudCache
 }
 
-func NewDashboardClusterPane(cloud *client.CloudAPI) *dashboardClusterPane {
-	d := &dashboardClusterPane{}
+func NewDashboardClusterHealthPane(cache *cloudCache) *dashboardClusterHealthPane {
+	d := &dashboardClusterHealthPane{}
 
 	d.sem = semaphore.NewWeighted(1)
 
 	d.clusterHealth = widgets.NewBarChart()
-	d.clusterHealth.Labels = []string{"Succeeded", "Progressing", "Unhealthy", "Gardener"}
+	d.clusterHealth.Labels = []string{"Succeeded", "Progressing", "Unhealthy"}
 	d.clusterHealth.Title = "Cluster Operation"
 	d.clusterHealth.PaddingLeft = 5
 	d.clusterHealth.BarWidth = 5
@@ -403,25 +417,25 @@ func NewDashboardClusterPane(cloud *client.CloudAPI) *dashboardClusterPane {
 	d.clusterLastErrors.TextAlignment = ui.AlignLeft
 	d.clusterLastErrors.RowSeparator = false
 
-	d.cloud = cloud
+	d.cloud = cache
 	return d
 }
 
-func (d *dashboardClusterPane) Name() string {
+func (d *dashboardClusterHealthPane) Name() string {
 	return "Clusters"
 }
 
-func (d *dashboardClusterPane) Description() string {
+func (d *dashboardClusterHealthPane) Description() string {
 	return "Cluster health and issues"
 }
 
-func (d *dashboardClusterPane) Resize(x1, y1, x2, y2 int) {
+func (d *dashboardClusterHealthPane) Resize(x1, y1, x2, y2 int) {
 	d.clusterHealth.SetRect(x1, y1, x1+60, y1+12)
 
-	d.clusterStatusAPI.SetRect(x1+62, y1, x2, 3+y1)
-	d.clusterStatusControl.SetRect(x1+62, 3+y1, x2, 6+y1)
-	d.clusterStatusNodes.SetRect(x1+62, 6+y1, x2, 9+y1)
-	d.clusterStatusSystem.SetRect(x1+62, 9+y1, x2, 12+y1)
+	d.clusterStatusAPI.SetRect(x1+50, y1, x2, 3+y1)
+	d.clusterStatusControl.SetRect(x1+50, 3+y1, x2, 6+y1)
+	d.clusterStatusNodes.SetRect(x1+50, 6+y1, x2, 9+y1)
+	d.clusterStatusSystem.SetRect(x1+50, 9+y1, x2, 12+y1)
 
 	tableHeights := int(math.Ceil((float64(y2) - (float64(y1) + 12)) / 2))
 
@@ -432,23 +446,18 @@ func (d *dashboardClusterPane) Resize(x1, y1, x2, y2 int) {
 	d.clusterLastErrors.ColumnWidths = []int{12, x2 - 12}
 }
 
-func (d *dashboardClusterPane) Render() error {
+func (d *dashboardClusterHealthPane) Render() error {
 	if !d.sem.TryAcquire(1) { // prevent concurrent updates
 		return nil
 	}
 	defer d.sem.Release(1)
 
 	var (
-		tenant    = viper.GetString("tenant")
-		partition = viper.GetString("partition")
-		purpose   = viper.GetString("purpose")
-
 		clusters []*models.V1ClusterResponse
 
-		succeeded        int
-		processing       int
-		unhealthy        int
-		gardenerVersions = make(map[string]int)
+		succeeded  int
+		processing int
+		unhealthy  int
 
 		apiOK     int
 		controlOK int
@@ -462,15 +471,10 @@ func (d *dashboardClusterPane) Render() error {
 	ctx, cancel := context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
 	defer cancel()
 
-	resp, err := d.cloud.Cluster.FindClusters(cluster.NewFindClustersParams().WithBody(&models.V1ClusterFindRequest{
-		PartitionID: output.StrDeref(partition),
-		Tenant:      output.StrDeref(tenant),
-		Purpose:     output.StrDeref(purpose),
-	}).WithReturnMachines(pointer.Pointer(false)).WithContext(ctx), nil)
+	clusters, err := d.cloud.Clusters(ctx)
 	if err != nil {
 		return err
 	}
-	clusters = resp.Payload
 
 	for _, c := range clusters {
 		if c.Status == nil || c.Status.LastOperation == nil || c.Status.LastOperation.State == nil || *c.Status.LastOperation.State == "" {
@@ -535,11 +539,6 @@ func (d *dashboardClusterPane) Render() error {
 				Time:         t,
 			})
 		}
-		_, ok := gardenerVersions[*c.Status.Gardener.Version]
-		if !ok {
-			gardenerVersions[*c.Status.Gardener.Version] = 0
-		}
-		gardenerVersions[*c.Status.Gardener.Version]++
 	}
 
 	processedClusters := len(clusters)
@@ -547,12 +546,9 @@ func (d *dashboardClusterPane) Render() error {
 		return nil
 	}
 
-	latestGardenerVersion, latestGardenerCount := getGardenerWithLatestVersion(gardenerVersions)
-
 	// for some reason the UI hangs when all values are zero...
 	if succeeded > 0 || processing > 0 || unhealthy > 0 {
-		d.clusterHealth.Labels[3] = fmt.Sprintf("g/g %s", latestGardenerVersion)
-		d.clusterHealth.Data = []float64{float64(succeeded), float64(processing), float64(unhealthy), float64(latestGardenerCount)}
+		d.clusterHealth.Data = []float64{float64(succeeded), float64(processing), float64(unhealthy)}
 		ui.Render(d.clusterHealth)
 	}
 
@@ -586,6 +582,324 @@ func (d *dashboardClusterPane) Render() error {
 	return nil
 }
 
+type dashboardClusterVersionsPane struct {
+	kubernetesVersions         *widgets.Tree
+	reconciledGardenerVersions *widgets.PieChart
+
+	kubernetesVersionsState *kubernetesVersions
+
+	sem *semaphore.Weighted
+
+	cloud *cloudCache
+}
+
+func NewDashboardClusterVersionsPane(cache *cloudCache, eventChannel chan ui.Event) *dashboardClusterVersionsPane {
+	d := &dashboardClusterVersionsPane{}
+
+	d.sem = semaphore.NewWeighted(1)
+
+	d.reconciledGardenerVersions = widgets.NewPieChart()
+	d.reconciledGardenerVersions.Title = "Reconciled Gardener Versions"
+
+	d.kubernetesVersions = widgets.NewTree()
+	d.kubernetesVersions.Title = "Kubernetes Versions"
+	d.kubernetesVersions.TextStyle = ui.NewStyle(ui.ColorYellow)
+	d.kubernetesVersionsState = &kubernetesVersions{}
+
+	go func() {
+		for {
+			e := <-eventChannel
+
+			switch e.ID {
+			case "<Down>":
+				d.kubernetesVersions.ScrollDown()
+			case "<Up>":
+				d.kubernetesVersions.ScrollUp()
+			case "<Space>", "<Enter>":
+				d.kubernetesVersions.ToggleExpand()
+			case "<PageUp>":
+				d.kubernetesVersions.ScrollTop()
+			case "<PageDown>":
+				d.kubernetesVersions.ScrollBottom()
+			case "E":
+				d.kubernetesVersions.ExpandAll()
+			case "C":
+				d.kubernetesVersions.CollapseAll()
+			}
+
+			ui.Render(d.kubernetesVersions)
+		}
+	}()
+
+	d.cloud = cache
+
+	return d
+}
+
+func (d *dashboardClusterVersionsPane) Name() string {
+	return "ClusterVersions"
+}
+
+func (d *dashboardClusterVersionsPane) Description() string {
+	return "Cluster version information"
+}
+
+func (d *dashboardClusterVersionsPane) Resize(x1, y1, x2, y2 int) {
+	d.kubernetesVersions.SetRect(x1, y1, x2-40, y2)
+	d.reconciledGardenerVersions.SetRect(x2-40, y1, x2, y2)
+}
+
+type gardenerVersions map[string]int
+
+func (g gardenerVersions) total() int {
+	var result int
+	for _, amount := range g {
+		result += amount
+	}
+	return result
+}
+
+func (g gardenerVersions) toValues() ([]float64, widgets.PieChartLabel) {
+	type gardenerVersion struct {
+		parsedVersion *semver.Version
+		rawVersion    string
+		percentage    float64
+	}
+
+	var versions []gardenerVersion
+
+	for rawVersion, count := range g {
+		v, _ := semver.NewVersion(rawVersion)
+
+		versions = append(versions, gardenerVersion{
+			parsedVersion: v,
+			rawVersion:    rawVersion,
+			percentage:    float64(count) / float64(g.total()),
+		})
+	}
+
+	sort.Slice(versions, func(i, j int) bool {
+		if versions[i].parsedVersion == nil && versions[j].parsedVersion == nil {
+			return versions[i].rawVersion < versions[j].rawVersion
+		}
+
+		if versions[i].parsedVersion == nil {
+			return false
+		}
+		if versions[i].parsedVersion == nil {
+			return true
+		}
+
+		return versions[i].parsedVersion.LessThan(versions[j].parsedVersion)
+	})
+
+	var result []float64
+
+	for _, v := range versions {
+		result = append(result, v.percentage)
+	}
+
+	return result, func(dataIndex int, _ float64) string {
+		d := versions[dataIndex]
+		return fmt.Sprintf("%s (%d%%)", d.rawVersion, int(100*d.percentage))
+	}
+}
+
+type nodeValue string
+
+func (v nodeValue) String() string {
+	return string(v)
+}
+
+type kubernetesVersions struct {
+	previous []*widgets.TreeNode
+}
+
+func (k *kubernetesVersions) update(clusters []*models.V1ClusterResponse) ([]*widgets.TreeNode, bool) {
+	var (
+		result []*widgets.TreeNode
+
+		sortNodesFunc = func(nodes []*widgets.TreeNode) func(i, j int) bool {
+			return func(i, j int) bool {
+				iParsed, _ := semver.NewVersion(nodes[i].Value.String())
+				jParsed, _ := semver.NewVersion(nodes[j].Value.String())
+
+				if iParsed == nil && jParsed == nil {
+					return nodes[i].Value.String() < nodes[j].Value.String()
+				}
+
+				if iParsed == nil {
+					return false
+				}
+				if jParsed == nil {
+					return true
+				}
+
+				return iParsed.LessThan(jParsed)
+			}
+		}
+
+		findNode = func(nodes []*widgets.TreeNode, name string) *widgets.TreeNode {
+			var (
+				tree  = &widgets.Tree{}
+				found *widgets.TreeNode
+			)
+			tree.SetNodes(nodes)
+			tree.Walk(func(n *widgets.TreeNode) bool {
+				if n.Value.String() == name {
+					found = n
+					return false
+				}
+				return true
+			})
+			return found
+		}
+
+		ensureNode = func(name string) *widgets.TreeNode {
+			if existing := findNode(result, name); existing != nil {
+				return existing
+			}
+
+			if previous := findNode(k.previous, name); previous != nil {
+				result = append(result, previous)
+				return previous
+			}
+
+			newNode := &widgets.TreeNode{
+				Value: nodeValue(name),
+			}
+
+			result = append(result, newNode)
+
+			sort.Slice(result, sortNodesFunc(result))
+
+			return newNode
+		}
+
+		ensureChildNode = func(parent *widgets.TreeNode, childName string) *widgets.TreeNode {
+			if existing := findNode(parent.Nodes, childName); existing != nil {
+				return existing
+			}
+
+			newNode := &widgets.TreeNode{
+				Value: nodeValue(childName),
+			}
+
+			parent.Nodes = append(parent.Nodes, newNode)
+
+			sort.Slice(parent.Nodes, sortNodesFunc(parent.Nodes))
+
+			return newNode
+		}
+	)
+
+	defer func() {
+		k.previous = result
+	}()
+
+	majorMinorAmounts := map[string]int{}
+	versionAmounts := map[string]int{}
+
+	for _, c := range clusters {
+		c := c
+
+		var (
+			version = pointer.SafeDeref(pointer.SafeDeref(c.Kubernetes).Version)
+		)
+
+		majorMinor := "unknown"
+		v, _ := semver.NewVersion(version)
+		if v != nil {
+			majorMinor = fmt.Sprintf("%d.%d", v.Major(), v.Minor())
+		}
+
+		majorMinorAmounts[majorMinor]++
+		versionAmounts[version]++
+	}
+
+	for _, c := range clusters {
+		c := c
+
+		var (
+			version = pointer.SafeDeref(pointer.SafeDeref(c.Kubernetes).Version)
+			tenant  = pointer.SafeDeref(c.Tenant)
+			project = pointer.SafeDeref(c.ProjectID)
+			id      = pointer.SafeDeref(c.ID)
+			name    = pointer.SafeDeref(c.Name)
+		)
+		if version == "" || tenant == "" || project == "" || id == "" || name == "" {
+			continue
+		}
+
+		majorMinor := "unknown"
+		v, _ := semver.NewVersion(version)
+		if v != nil {
+			majorMinor = fmt.Sprintf("%d.%d", v.Major(), v.Minor())
+		}
+
+		majorMinorNode := ensureNode(fmt.Sprintf("%s (%d)", majorMinor, majorMinorAmounts[majorMinor]))
+		versionNode := ensureChildNode(majorMinorNode, fmt.Sprintf("%s (%d)", version, versionAmounts[version]))
+		tenantNode := ensureChildNode(versionNode, tenant)
+		projectNode := ensureChildNode(tenantNode, project)
+		_ = ensureChildNode(projectNode, fmt.Sprintf("%s (%s)", name, id))
+	}
+
+	sort.Slice(result, sortNodesFunc(result))
+
+	return result, !cmp.Equal(result, k.previous, cmp.AllowUnexported(widgets.TreeNode{}))
+}
+
+func (d *dashboardClusterVersionsPane) Render() error {
+	if !d.sem.TryAcquire(1) { // prevent concurrent updates
+		return nil
+	}
+	defer d.sem.Release(1)
+
+	var (
+		clusters []*models.V1ClusterResponse
+
+		gardenerVersions = gardenerVersions{}
+	)
+
+	ctx, cancel := context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
+	defer cancel()
+
+	clusters, err := d.cloud.Clusters(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, c := range clusters {
+		if c.Status == nil || c.Status.Gardener == nil {
+			gardenerVersions["unknown"]++
+		} else {
+			gardenerVersions[*c.Status.Gardener.Version]++
+		}
+
+	}
+
+	processedClusters := len(clusters)
+	if processedClusters <= 0 {
+		return nil
+	}
+
+	data, formatter := gardenerVersions.toValues()
+	d.reconciledGardenerVersions.Data = data
+	d.reconciledGardenerVersions.LabelFormatter = formatter
+
+	toRender := []ui.Drawable{d.reconciledGardenerVersions}
+
+	nodes, changed := d.kubernetesVersionsState.update(clusters)
+	if changed {
+		d.kubernetesVersions.SetNodes(nodes)
+		toRender = append(toRender, d.kubernetesVersions)
+	}
+
+	ui.Render(toRender...)
+
+	return nil
+}
+
 type dashboardVolumePane struct {
 	volumeUsedSpace *widgets.Paragraph
 
@@ -599,10 +913,10 @@ type dashboardVolumePane struct {
 
 	sem *semaphore.Weighted
 
-	cloud *client.CloudAPI
+	cloud *cloudCache
 }
 
-func NewDashboardVolumePane(cloud *client.CloudAPI) *dashboardVolumePane {
+func NewDashboardVolumePane(cache *cloudCache) *dashboardVolumePane {
 	d := &dashboardVolumePane{}
 
 	d.sem = semaphore.NewWeighted(1)
@@ -662,7 +976,7 @@ func NewDashboardVolumePane(cloud *client.CloudAPI) *dashboardVolumePane {
 		d.serverState.NumStyles = []ui.Style{{Fg: ui.ColorBlack}, {Fg: ui.ColorWhite}, {Fg: ui.ColorBlack}, {Fg: ui.ColorWhite}}
 	}
 
-	d.cloud = cloud
+	d.cloud = cache
 	return d
 }
 
@@ -697,9 +1011,6 @@ func (d *dashboardVolumePane) Render() error {
 	defer d.sem.Release(1)
 
 	var (
-		tenant    = viper.GetString("tenant")
-		partition = viper.GetString("partition")
-
 		clusters []*models.V1StorageClusterInfo
 		volumes  []*models.V1VolumeResponse
 
@@ -734,10 +1045,7 @@ func (d *dashboardVolumePane) Render() error {
 	ctx, cancel := context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
 	defer cancel()
 
-	volumeResp, err := d.cloud.Volume.FindVolumes(volume.NewFindVolumesParams().WithBody(&models.V1VolumeFindRequest{
-		PartitionID: output.StrDeref(partition),
-		TenantID:    output.StrDeref(tenant),
-	}).WithContext(ctx), nil)
+	volumes, err := d.cloud.Volumes(ctx)
 	if err != nil {
 		return err
 	}
@@ -745,20 +1053,10 @@ func (d *dashboardVolumePane) Render() error {
 	ctx, cancel = context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
 	defer cancel()
 
-	infoResp, err := d.cloud.Volume.ClusterInfo(volume.NewClusterInfoParams().WithPartitionid(&partition).WithContext(ctx), nil)
+	clusterInfos, err := d.cloud.VolumeClusterInfo(ctx)
 	if err != nil {
-		var typedErr *volume.ClusterInfoDefault
-		if errors.As(err, &typedErr) {
-			if typedErr.Code() != http.StatusForbidden {
-				return err
-			}
-			// allow forbidden response, because cluster info is only for provider admins
-		} else {
-			return err
-		}
+		return err
 	}
-
-	volumes = volumeResp.Payload
 
 	for _, v := range volumes {
 		if v.State == nil || v.ProtectionState == nil {
@@ -816,12 +1114,11 @@ func (d *dashboardVolumePane) Render() error {
 		ui.Render(d.volumeProtectionState)
 	}
 
-	if infoResp == nil {
+	if clusterInfos == nil {
 		// for non-admins, we stop here
 		return nil
 	}
-	clusters = infoResp.Payload
-	if len(clusters) == 0 {
+	if len(clusterInfos) == 0 {
 		return nil
 	}
 
@@ -902,30 +1199,64 @@ func (d *dashboardVolumePane) Render() error {
 	return nil
 }
 
-func getGardenerWithLatestVersion(gardenerVersions map[string]int) (string, float64) {
-	if len(gardenerVersions) == 0 {
-		return "unknown", float64(0)
+type cloudCache struct {
+	clusters           *cache.Cache[string, []*models.V1ClusterResponse]
+	volumes            *cache.Cache[string, []*models.V1VolumeResponse]
+	volumesClusterInfo *cache.Cache[string, []*models.V1StorageClusterInfo]
+}
+
+func newCloudCache(cloud *client.CloudAPI, expiration time.Duration, partition, tenant, purpose string) *cloudCache {
+	return &cloudCache{
+		clusters: cache.New(expiration, func(ctx context.Context, id string) ([]*models.V1ClusterResponse, error) {
+			resp, err := cloud.Cluster.FindClusters(cluster.NewFindClustersParams().WithBody(&models.V1ClusterFindRequest{
+				PartitionID: output.StrDeref(partition),
+				Tenant:      output.StrDeref(tenant),
+				Purpose:     output.StrDeref(purpose),
+			}).WithReturnMachines(pointer.Pointer(false)).WithContext(ctx), nil)
+			if err != nil {
+				return nil, err
+			}
+			return resp.Payload, nil
+		}),
+		volumes: cache.New(expiration, func(ctx context.Context, id string) ([]*models.V1VolumeResponse, error) {
+			resp, err := cloud.Volume.FindVolumes(volume.NewFindVolumesParams().WithBody(&models.V1VolumeFindRequest{
+				PartitionID: output.StrDeref(partition),
+				TenantID:    output.StrDeref(tenant),
+			}).WithContext(ctx), nil)
+			if err != nil {
+				return nil, err
+			}
+			return resp.Payload, nil
+		}),
+		volumesClusterInfo: cache.New(expiration, func(ctx context.Context, id string) ([]*models.V1StorageClusterInfo, error) {
+			infoResp, err := cloud.Volume.ClusterInfo(volume.NewClusterInfoParams().WithPartitionid(&partition).WithContext(ctx), nil)
+			if err == nil {
+				return infoResp.Payload, nil
+			}
+
+			var typedErr *volume.ClusterInfoDefault
+			if errors.As(err, &typedErr) {
+				if typedErr.Code() != http.StatusForbidden {
+					return nil, err
+				}
+			} else {
+				return nil, err
+			}
+
+			// allow forbidden response, because cluster info is only for provider admins
+			return nil, nil
+		}),
 	}
-	if len(gardenerVersions) == 1 {
-		version := maps.Keys(gardenerVersions)[0]
-		return version, float64(gardenerVersions[version])
-	}
+}
 
-	raw := maps.Keys(gardenerVersions)
-	vs := make([]*semver.Version, len(raw))
-	for i, r := range raw {
-		v, err := semver.NewVersion(r)
-		if err != nil {
-			return "unknown", float64(0)
-		}
+func (c *cloudCache) Clusters(ctx context.Context) ([]*models.V1ClusterResponse, error) {
+	return c.clusters.Get(ctx, "")
+}
 
-		vs[i] = v
-	}
+func (c *cloudCache) Volumes(ctx context.Context) ([]*models.V1VolumeResponse, error) {
+	return c.volumes.Get(ctx, "")
+}
 
-	sort.Sort(semver.Collection(vs))
-
-	newestVersion := vs[len(vs)-1]
-	version := newestVersion.String()
-
-	return version, float64(gardenerVersions[version])
+func (c *cloudCache) VolumeClusterInfo(ctx context.Context) ([]*models.V1StorageClusterInfo, error) {
+	return c.volumesClusterInfo.Get(ctx, "")
 }
