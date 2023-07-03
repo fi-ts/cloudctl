@@ -1050,10 +1050,7 @@ func (d *dashboardVolumePane) Render() error {
 		return err
 	}
 
-	ctx, cancel = context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
-	defer cancel()
-
-	clusterInfos, err := d.cache.VolumeClusterInfo(ctx)
+	clusters, err = d.cache.VolumeClusterInfo(ctx)
 	if err != nil {
 		var typedErr *volume.ClusterInfoDefault
 		if errors.As(err, &typedErr) {
@@ -1122,11 +1119,7 @@ func (d *dashboardVolumePane) Render() error {
 		ui.Render(d.volumeProtectionState)
 	}
 
-	if clusterInfos == nil {
-		// for non-admins, we stop here
-		return nil
-	}
-	if len(clusterInfos) == 0 {
+	if len(clusters) == 0 {
 		return nil
 	}
 
@@ -1190,7 +1183,10 @@ func (d *dashboardVolumePane) Render() error {
 		d.physicalFree.BarColor = ui.ColorGreen
 	}
 
-	ui.Render(d.compressionRatio, d.physicalFree)
+	// for some reason the UI hangs when all values are zero...
+	if d.compressionRatio.Percent > 0 && d.physicalFree.Percent > 0 {
+		ui.Render(d.compressionRatio, d.physicalFree)
+	}
 
 	// for some reason the UI hangs when all values are zero...
 	if clusterStateOK > 0 || clusterStateError > 0 || clusterStateWarning > 0 || clusterStateOther > 0 {
