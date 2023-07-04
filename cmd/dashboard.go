@@ -434,7 +434,7 @@ func (d *dashboardClusterHealthPane) Description() string {
 }
 
 func (d *dashboardClusterHealthPane) Resize(x1, y1, x2, y2 int) {
-	d.clusterHealth.SetRect(x1, y1, x1+60, y1+12)
+	d.clusterHealth.SetRect(x1, y1, x1+50, y1+12)
 
 	d.clusterStatusAPI.SetRect(x1+50, y1, x2, 3+y1)
 	d.clusterStatusControl.SetRect(x1+50, 3+y1, x2, 6+y1)
