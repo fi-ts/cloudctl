@@ -589,6 +589,7 @@ func (d *dashboardClusterHealthPane) Render() error {
 type dashboardClusterVersionsPane struct {
 	kubernetesVersions         *widgets.Tree
 	reconciledGardenerVersions *widgets.PieChart
+	firewallControllerVersions *widgets.PieChart
 
 	kubernetesVersionsState *kubernetesVersions
 
@@ -606,6 +607,11 @@ func NewDashboardClusterVersionsPane(cache *apiCache, eventChannel chan ui.Event
 	d.reconciledGardenerVersions.Title = "Reconciled Gardener Versions"
 	d.reconciledGardenerVersions.PaddingLeft = 5
 	d.reconciledGardenerVersions.PaddingRight = 5
+
+	d.firewallControllerVersions = widgets.NewPieChart()
+	d.firewallControllerVersions.Title = "Firewall-Controller Versions"
+	d.firewallControllerVersions.PaddingLeft = 5
+	d.firewallControllerVersions.PaddingRight = 5
 
 	d.kubernetesVersions = widgets.NewTree()
 	d.kubernetesVersions.Title = "Kubernetes Versions"
@@ -663,35 +669,39 @@ func (d *dashboardClusterVersionsPane) Description() string {
 
 func (d *dashboardClusterVersionsPane) Resize(x1, y1, x2, y2 int) {
 	d.kubernetesVersions.SetRect(x1, y1, x2-40, y2)
-	d.reconciledGardenerVersions.SetRect(x2-40, y1, x2, y2)
+
+	tableHeights := int(math.Ceil((float64(y2) - (float64(y1))) / 2))
+
+	d.reconciledGardenerVersions.SetRect(x2-40, y1, x2, y1+tableHeights)
+	d.firewallControllerVersions.SetRect(x2-40, y1+tableHeights, x2, y2)
 }
 
-type gardenerVersions map[string]int
+type pieVersion map[string]int
 
-func (g gardenerVersions) total() int {
+func (p pieVersion) total() int {
 	var result int
-	for _, amount := range g {
+	for _, amount := range p {
 		result += amount
 	}
 	return result
 }
 
-func (g gardenerVersions) toValues() ([]float64, widgets.PieChartLabel) {
-	type gardenerVersion struct {
+func (p pieVersion) toValues() ([]float64, widgets.PieChartLabel) {
+	type version struct {
 		parsedVersion *semver.Version
 		rawVersion    string
 		percentage    float64
 	}
 
-	var versions []gardenerVersion
+	var versions []version
 
-	for rawVersion, count := range g {
+	for rawVersion, count := range p {
 		v, _ := semver.NewVersion(rawVersion)
 
-		versions = append(versions, gardenerVersion{
+		versions = append(versions, version{
 			parsedVersion: v,
 			rawVersion:    rawVersion,
-			percentage:    float64(count) / float64(g.total()),
+			percentage:    float64(count) / float64(p.total()),
 		})
 	}
 
@@ -878,7 +888,8 @@ func (d *dashboardClusterVersionsPane) Render() error {
 	var (
 		clusters []*models.V1ClusterResponse
 
-		gardenerVersions = gardenerVersions{}
+		gardenerVersions           = pieVersion{}
+		firewallControllerVersions = pieVersion{}
 	)
 
 	ctx, cancel := context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
@@ -896,6 +907,15 @@ func (d *dashboardClusterVersionsPane) Render() error {
 			gardenerVersions[*c.Status.Gardener.Version]++
 		}
 
+		if c.FirewallControllerVersion == nil {
+			firewallControllerVersions["unknown"]++
+		} else {
+			if *c.FirewallControllerVersion == "" {
+				// auto is default, otherwise some clusters will not be aggregated properly
+				c.FirewallControllerVersion = pointer.Pointer("auto")
+			}
+			firewallControllerVersions[*c.FirewallControllerVersion]++
+		}
 	}
 
 	processedClusters := len(clusters)
@@ -907,7 +927,11 @@ func (d *dashboardClusterVersionsPane) Render() error {
 	d.reconciledGardenerVersions.Data = data
 	d.reconciledGardenerVersions.LabelFormatter = formatter
 
-	toRender := []ui.Drawable{d.reconciledGardenerVersions}
+	data, formatter = firewallControllerVersions.toValues()
+	d.firewallControllerVersions.Data = data
+	d.firewallControllerVersions.LabelFormatter = formatter
+
+	toRender := []ui.Drawable{d.reconciledGardenerVersions, d.firewallControllerVersions}
 
 	nodes, changed := d.kubernetesVersionsState.update(clusters)
 	if changed {
@@ -1045,6 +1069,7 @@ func (d *dashboardVolumePane) Render() error {
 		volumesUnknown   int
 		volumesOther     int
 
+		volumesUsedLogical  int64
 		volumesUsedPhysical int64
 
 		clusterStateOK      int
@@ -1117,14 +1142,16 @@ func (d *dashboardVolumePane) Render() error {
 		}
 
 		if v.Statistics != nil {
-			if v.Statistics.PhysicalUsedStorage == nil {
-				continue
+			if v.Statistics.LogicalUsedStorage != nil {
+				volumesUsedLogical += *v.Statistics.LogicalUsedStorage
 			}
-			volumesUsedPhysical += *v.Statistics.PhysicalUsedStorage
+			if v.Statistics.PhysicalUsedStorage != nil {
+				volumesUsedPhysical += *v.Statistics.PhysicalUsedStorage
+			}
 		}
 	}
 
-	d.volumeUsedSpace.Text = fmt.Sprintf("Summed up physical size of volumes: %s", helper.HumanizeSize(volumesUsedPhysical))
+	d.volumeUsedSpace.Text = fmt.Sprintf("Summed up physical size of volumes: %s, logical size: %s.", helper.HumanizeSize(volumesUsedPhysical), helper.HumanizeSize(volumesUsedLogical))
 	ui.Render(d.volumeUsedSpace)
 
 	// for some reason the UI hangs when all values are zero...
