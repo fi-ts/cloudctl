@@ -605,11 +605,15 @@ func NewDashboardClusterVersionsPane(cache *apiCache, eventChannel chan ui.Event
 
 	d.reconciledGardenerVersions = widgets.NewPieChart()
 	d.reconciledGardenerVersions.Title = "Reconciled Gardener Versions"
-	d.reconciledGardenerVersions.PaddingLeft = 5
+	d.reconciledGardenerVersions.PaddingTop = 1
+	d.reconciledGardenerVersions.PaddingBottom = 1
+	d.reconciledGardenerVersions.PaddingRight = 5
 	d.reconciledGardenerVersions.PaddingRight = 5
 
 	d.firewallControllerVersions = widgets.NewPieChart()
 	d.firewallControllerVersions.Title = "Firewall-Controller Versions"
+	d.firewallControllerVersions.PaddingTop = 1
+	d.firewallControllerVersions.PaddingBottom = 1
 	d.firewallControllerVersions.PaddingLeft = 5
 	d.firewallControllerVersions.PaddingRight = 5
 
