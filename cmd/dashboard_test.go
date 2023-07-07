@@ -1,52 +1,148 @@
 package cmd
 
-import "testing"
+import (
+	"testing"
 
-func Test_getGardenerWithLatestVersion(t *testing.T) {
+	"github.com/dcorbe/termui-dpc/widgets"
+	"github.com/fi-ts/cloud-go/api/models"
+	"github.com/google/go-cmp/cmp"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
+)
+
+func Test_kubernetesVersions_toNodes(t *testing.T) {
 	tests := []struct {
-		name             string
-		gardenerVersions map[string]int
-		wantedVersion    string
-		wantedCount      float64
+		name        string
+		previous    []*widgets.TreeNode
+		clusters    []*models.V1ClusterResponse
+		want        []*widgets.TreeNode
+		wantChanged bool
 	}{
-
 		{
-			name: "one 100%",
-			gardenerVersions: map[string]int{
-				"1.1.1": 2,
+			name: "initial fill",
+			clusters: []*models.V1ClusterResponse{
+				{
+					ID:        pointer.Pointer("cluster-a-id"),
+					Name:      pointer.Pointer("cluster-a"),
+					ProjectID: pointer.Pointer("project-a"),
+					Tenant:    pointer.Pointer("tenant-a"),
+					Kubernetes: &models.V1Kubernetes{
+						Version: pointer.Pointer("1.24.3"),
+					},
+				},
 			},
-			wantedVersion: "1.1.1",
-			wantedCount:   2,
+			want: []*widgets.TreeNode{
+				{
+					Value: nodeValue("1.24 (1)"),
+					Nodes: []*widgets.TreeNode{
+						{
+							Value: nodeValue("1.24.3 (1)"),
+							Nodes: []*widgets.TreeNode{
+								{
+									Value: nodeValue("tenant-a"),
+									Nodes: []*widgets.TreeNode{
+										{
+											Value: nodeValue("project-a"),
+											Nodes: []*widgets.TreeNode{
+												{
+													Value: nodeValue("cluster-a (cluster-a-id)"),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantChanged: true,
 		},
 		{
-			name: "simple 50%",
-			gardenerVersions: map[string]int{
-				"1.1.0": 2,
-				"1.1.1": 2,
+			name: "keep expanded child",
+			previous: []*widgets.TreeNode{
+				{
+					Value: nodeValue("1.24 (2)"),
+					Nodes: []*widgets.TreeNode{
+						{
+							Value: nodeValue("1.24.3 (2)"),
+							Nodes: []*widgets.TreeNode{
+								{
+									Value: nodeValue("tenant-a"),
+									Nodes: []*widgets.TreeNode{
+										{
+											Value: nodeValue("project-a"),
+											Nodes: []*widgets.TreeNode{
+												{
+													Value: nodeValue("cluster-a (cluster-a-id)"),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
 			},
-			wantedVersion: "1.1.1",
-			wantedCount:   float64(2),
-		},
-
-		{
-			name: "simple 20%",
-			gardenerVersions: map[string]int{
-				"1.1.1": 2,
-				"0.1.1": 4,
-				"1.1.0": 4,
+			clusters: []*models.V1ClusterResponse{
+				{
+					ID:        pointer.Pointer("cluster-a-id"),
+					Name:      pointer.Pointer("cluster-a"),
+					ProjectID: pointer.Pointer("project-a"),
+					Tenant:    pointer.Pointer("tenant-a"),
+					Kubernetes: &models.V1Kubernetes{
+						Version: pointer.Pointer("1.24.3"),
+					},
+				},
+				{
+					ID:        pointer.Pointer("cluster-a-id"),
+					Name:      pointer.Pointer("cluster-a"),
+					ProjectID: pointer.Pointer("project-a"),
+					Tenant:    pointer.Pointer("tenant-a"),
+					Kubernetes: &models.V1Kubernetes{
+						Version: pointer.Pointer("1.24.3"),
+					},
+				},
 			},
-			wantedVersion: "1.1.1",
-			wantedCount:   float64(2),
+			want: []*widgets.TreeNode{
+				{
+					Value: nodeValue("1.24 (2)"),
+					Nodes: []*widgets.TreeNode{
+						{
+							Value: nodeValue("1.24.3 (2)"),
+							Nodes: []*widgets.TreeNode{
+								{
+									Value: nodeValue("tenant-a"),
+									Nodes: []*widgets.TreeNode{
+										{
+											Value: nodeValue("project-a"),
+											Nodes: []*widgets.TreeNode{
+												{
+													Value: nodeValue("cluster-a (cluster-a-id)"),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantChanged: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1 := getGardenerWithLatestVersion(tt.gardenerVersions)
-			if got != tt.wantedVersion {
-				t.Errorf("getGardenerPercentage() got = %v, want %v", got, tt.wantedVersion)
+			k := kubernetesVersions{
+				previous: tt.previous,
 			}
-			if got1 != tt.wantedCount {
-				t.Errorf("getGardenerPercentage() got1 = %v, want %v", got1, tt.wantedCount)
+			got, got1 := k.update(tt.clusters)
+			if diff := cmp.Diff(got, tt.want, cmp.AllowUnexported(widgets.TreeNode{})); diff != "" {
+				t.Errorf("kubernetesVersions.toNodes() diff = %s", diff)
+			}
+			if got1 != tt.wantChanged {
+				t.Errorf("kubernetesVersions.toNodes() gotChanged = %v, want %v", got1, tt.wantChanged)
 			}
 		})
 	}
