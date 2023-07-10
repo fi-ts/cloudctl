@@ -17,7 +17,13 @@ import (
 )
 
 var (
-	ClusterPurposes = []string{"production", "development", "evaluation", "infrastructure"}
+	ClusterPurposes     = []string{"production", "development", "evaluation", "infrastructure"}
+	PodSecurityDefaults = []string{
+		models.V1KubernetesDefaultPodSecurityStandardRestricted,
+		models.V1KubernetesDefaultPodSecurityStandardBaseline,
+		models.V1KubernetesDefaultPodSecurityStandardPrivileged,
+		models.V1KubernetesDefaultPodSecurityStandardEmpty,
+	}
 )
 
 type Completion struct {
@@ -81,6 +87,10 @@ func (c *Completion) ClusterFirewallListCompletion(cmd *cobra.Command, args []st
 
 func (c *Completion) ClusterPurposeListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	return ClusterPurposes, cobra.ShellCompDirectiveNoFileComp
+}
+
+func (c *Completion) PodSecurityListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return PodSecurityDefaults, cobra.ShellCompDirectiveNoFileComp
 }
 
 func (c *Completion) ClusterReconcileOperationCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
