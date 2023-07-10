@@ -18,7 +18,12 @@ import (
 
 var (
 	ClusterPurposes     = []string{"production", "development", "evaluation", "infrastructure"}
-	PodSecurityDefaults = []string{"restricted", "privileged", "baseline"}
+	PodSecurityDefaults = []string{
+		models.V1KubernetesDefaultPodSecurityStandardRestricted,
+		models.V1KubernetesDefaultPodSecurityStandardBaseline,
+		models.V1KubernetesDefaultPodSecurityStandardPrivileged,
+		models.V1KubernetesDefaultPodSecurityStandardEmpty,
+	}
 )
 
 type Completion struct {
