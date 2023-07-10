@@ -534,8 +534,8 @@ func (c *config) clusterCreate() error {
 	draintimeout := viper.GetDuration("draintimeout")
 
 	var allowprivileged *bool
-	if viper.IsSet("alllowprivileged") {
-		allowprivileged = pointer.Pointer(viper.GetBool("alllowprivileged"))
+	if viper.IsSet("allowprivileged") {
+		allowprivileged = pointer.Pointer(viper.GetBool("allowprivileged"))
 	}
 	var defaultPodSecurityStandard *string
 	if viper.IsSet("default-pod-security-standard") {
