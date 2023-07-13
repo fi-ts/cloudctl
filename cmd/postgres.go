@@ -770,19 +770,21 @@ func (c *config) postgresDelete(args []string) error {
 		return err
 	}
 
-	must(output.New().Print(pg))
+	if !viper.GetBool("yes-i-really-mean-it") {
+		must(output.New().Print(pg))
 
-	idParts := strings.Split(*pg.ID, "-")
-	firstPartOfPostgresID := idParts[0]
-	lastPartOfPostgresID := idParts[len(idParts)-1]
-	fmt.Println("Please answer some security questions to delete this postgres database")
-	err = helper.Prompt("first part of ID:", firstPartOfPostgresID)
-	if err != nil {
-		return err
-	}
-	err = helper.Prompt("last part of ID:", lastPartOfPostgresID)
-	if err != nil {
-		return err
+		idParts := strings.Split(*pg.ID, "-")
+		firstPartOfPostgresID := idParts[0]
+		lastPartOfPostgresID := idParts[len(idParts)-1]
+		fmt.Println("Please answer some security questions to delete this postgres database")
+		err = helper.Prompt("first part of ID:", firstPartOfPostgresID)
+		if err != nil {
+			return err
+		}
+		err = helper.Prompt("last part of ID:", lastPartOfPostgresID)
+		if err != nil {
+			return err
+		}
 	}
 
 	params := database.NewDeletePostgresParams().WithID(*pg.ID)
