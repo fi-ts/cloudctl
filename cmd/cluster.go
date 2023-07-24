@@ -1790,12 +1790,8 @@ func (c *config) clusterMachineSSH(args []string, console bool) error {
 				if err != nil {
 					return err
 				}
-				env := &env{
-					key:   "LC_METAL_STACK_OIDC_TOKEN",
-					value: authContext.IDToken,
-				}
 				bmcConsolePort := 5222
-				err = sshClient(mid, c.consoleHost, keypair.privatekey, bmcConsolePort, env)
+				err = c.sshClient(mid, c.consoleHost, keypair.privatekey, bmcConsolePort, &authContext.IDToken)
 				return err
 			}
 			networks := m.Allocation.Networks
@@ -1811,7 +1807,7 @@ func (c *config) clusterMachineSSH(args []string, console bool) error {
 					}
 					for _, ip := range nw.Ips {
 						if portOpen(ip, "22", time.Second) {
-							err := sshClient("metal", ip, keypair.privatekey, 22, nil)
+							err := c.sshClient("metal", ip, keypair.privatekey, 22, nil)
 							return err
 						}
 					}
