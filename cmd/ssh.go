@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/fi-ts/cloud-go/api/models"
@@ -10,7 +11,8 @@ import (
 
 func (c *config) firewallSSHViaVPN(firewallID string, privateKey []byte, vpn *models.V1VPN) (err error) {
 	fmt.Printf("accessing firewall through vpn ")
-	v, err := metalvpn.Connect(firewallID, *vpn.Address, *vpn.AuthKey)
+	ctx := context.Background()
+	v, err := metalvpn.Connect(ctx, firewallID, *vpn.Address, *vpn.AuthKey)
 	if err != nil {
 		return err
 	}
@@ -30,7 +32,7 @@ func (c *config) sshClient(user, host string, privateKey []byte, port int, idTok
 	}
 	var env *metalssh.Env
 	if idToken != nil {
-		env = &metalssh.Env{Key: "LC_METAL_STACK_OIDC_TOKEN", Value: *idToken}
+		env = &metalssh.Env{"LC_METAL_STACK_OIDC_TOKEN": *idToken}
 	}
 	return s.Connect(env)
 }
