@@ -17,7 +17,7 @@ require (
 	github.com/gosimple/slug v1.13.1
 	github.com/jinzhu/now v1.1.5
 	github.com/metal-stack/duros-go v0.4.2
-	github.com/metal-stack/metal-lib v0.12.5-0.20230725053447-68ecc2192a5e
+	github.com/metal-stack/metal-lib v0.12.5-0.20230725072314-dc6d2a1222e7
 	github.com/metal-stack/updater v1.1.5
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
