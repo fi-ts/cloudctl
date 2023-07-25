@@ -1780,51 +1780,46 @@ func (c *config) clusterMachineSSH(args []string, console bool) error {
 	ms := shoot.Payload.Machines
 	ms = append(ms, shoot.Payload.Firewalls...)
 	for _, m := range ms {
-		if *m.ID == mid {
+		if *m.ID != mid {
+			continue
+		}
+		if console {
+			fmt.Printf("access console via ssh\n")
+			authContext, err := api.GetAuthContext(viper.GetString("kubeconfig"))
 			if err != nil {
-				return fmt.Errorf("unable determine home directory:%w", err)
-			}
-			if console {
-				fmt.Printf("access console via ssh\n")
-				authContext, err := api.GetAuthContext(viper.GetString("kubeconfig"))
-				if err != nil {
-					return err
-				}
-				env := &env{
-					key:   "LC_METAL_STACK_OIDC_TOKEN",
-					value: authContext.IDToken,
-				}
-				bmcConsolePort := 5222
-				err = sshClient(mid, c.consoleHost, keypair.privatekey, bmcConsolePort, env)
 				return err
 			}
-			networks := m.Allocation.Networks
-			switch *m.Allocation.Role {
-			case "firewall":
-				if keypair.vpn != nil {
-					return c.firewallSSHViaVPN(*m.ID, keypair.privatekey, keypair.vpn)
-				}
-
-				for _, nw := range networks {
-					if *nw.Underlay || *nw.Private {
-						continue
-					}
-					for _, ip := range nw.Ips {
-						if portOpen(ip, "22", time.Second) {
-							err := sshClient("metal", ip, keypair.privatekey, 22, nil)
-							return err
-						}
-					}
-				}
-				return fmt.Errorf("no ip with a open ssh port found")
-			case "machine":
-				// FIXME metal user is not allowed to execute
-				// ip vrf exec <tenantvrf> ssh <machineip>
-				return fmt.Errorf("machine access via ssh not implemented")
-			default:
-				return fmt.Errorf("unknown machine role:%s", *m.Allocation.Role)
-			}
+			bmcConsolePort := 5222
+			err = c.sshClient(mid, c.consoleHost, keypair.privatekey, bmcConsolePort, &authContext.IDToken)
+			return err
 		}
+		networks := m.Allocation.Networks
+		switch *m.Allocation.Role {
+		case "firewall":
+			if keypair.vpn != nil {
+				return c.firewallSSHViaVPN(*m.ID, keypair.privatekey, keypair.vpn)
+			}
+
+			for _, nw := range networks {
+				if *nw.Underlay || *nw.Private {
+					continue
+				}
+				for _, ip := range nw.Ips {
+					if portOpen(ip, "22", time.Second) {
+						err := c.sshClient("metal", ip, keypair.privatekey, 22, nil)
+						return err
+					}
+				}
+			}
+			return fmt.Errorf("no ip with a open ssh port found")
+		case "machine":
+			// FIXME metal user is not allowed to execute
+			// ip vrf exec <tenantvrf> ssh <machineip>
+			return fmt.Errorf("machine access via ssh not implemented")
+		default:
+			return fmt.Errorf("unknown machine role:%s", *m.Allocation.Role)
+		}
+
 	}
 
 	return fmt.Errorf("machine:%s not found in cluster:%s", mid, cid)
