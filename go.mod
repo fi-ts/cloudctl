@@ -17,7 +17,7 @@ require (
 	github.com/gosimple/slug v1.13.1
 	github.com/jinzhu/now v1.1.5
 	github.com/metal-stack/duros-go v0.4.2
-	github.com/metal-stack/metal-lib v0.12.5-0.20230724081620-b0e9ecfec092
+	github.com/metal-stack/metal-lib v0.12.5-0.20230725053447-68ecc2192a5e
 	github.com/metal-stack/updater v1.1.5
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
@@ -105,11 +105,11 @@ require (
 	github.com/illarion/gonotify v1.0.1 // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/insomniacslk/dhcp v0.0.0-20230407062729-974c6f05fe16 // indirect
+	github.com/insomniacslk/dhcp v0.0.0-20230720093626-5648422c16cd // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/josharian/native v1.1.1-0.20230202152459-5c7d0dd6ab86 // indirect
-	github.com/jsimonetti/rtnetlink v1.3.3 // indirect
+	github.com/jsimonetti/rtnetlink v1.3.4 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/kortschak/wol v0.0.0-20200729010619-da482cc4850a // indirect
