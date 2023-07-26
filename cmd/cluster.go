@@ -302,6 +302,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <network>:<ip>; e.g.: --egress internet:1.2.3.4,extnet:123.1.1.1 --egress internet:1.2.3.5 [optional]")
 	clusterCreateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster (this is achieved through pod security policies and has no effect anymore on clusters >= v1.25")
 	clusterCreateCmd.Flags().String("default-pod-security-standard", "", "sets default pod security standard for clusters >= v1.23.x, defaults to restricted on clusters >= v1.25 (valid values: empty string, privileged, baseline, restricted)")
+	clusterCreateCmd.Flags().BoolP("disable-pod-security-policies", "", false, "disable pod security policies")
 	clusterCreateCmd.Flags().String("audit", "on", "audit logging of cluster API access; can be off, on (default) or splunk (logging to a predefined or custom splunk endpoint). [optional]")
 	clusterCreateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced. [optional]")
 	clusterCreateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. [optional]")
@@ -381,6 +382,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().StringSlice("removelabels", []string{}, "labels to remove from the cluster")
 	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster (this is achieved through pod security policies and has no effect anymore on clusters >=v1.25")
 	clusterUpdateCmd.Flags().String("default-pod-security-standard", "", "set default pod security standard for cluster >=v 1.23.x, send empty string explicitly to disable pod security standards (valid values: empty string, privileged, baseline, restricted)")
+	clusterUpdateCmd.Flags().BoolP("disable-pod-security-policies", "", false, "disable pod security policies")
 	clusterUpdateCmd.Flags().String("audit", "on", "audit logging of cluster API access; can be off, on or splunk (logging to a predefined or custom splunk endpoint).")
 	clusterUpdateCmd.Flags().String("purpose", "", fmt.Sprintf("purpose of the cluster, can be one of %s. SLA is only given on production clusters.", strings.Join(completion.ClusterPurposes, "|")))
 	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]. Use --egress none to remove all egress rules.")
@@ -540,6 +542,10 @@ func (c *config) clusterCreate() error {
 	if viper.IsSet("default-pod-security-standard") {
 		defaultPodSecurityStandard = pointer.Pointer(viper.GetString("default-pod-security-standard"))
 	}
+	var disablePodSecurityPolicies *bool
+	if viper.IsSet("disable-pod-security-policies") {
+		disablePodSecurityPolicies = pointer.Pointer(viper.GetBool("disable-pod-security-policies"))
+	}
 
 	audit := viper.GetString("audit")
 
@@ -642,6 +648,7 @@ func (c *config) clusterCreate() error {
 			AllowPrivilegedContainers:  allowprivileged,
 			Version:                    &version,
 			DefaultPodSecurityStandard: defaultPodSecurityStandard,
+			DisablePodSecurityPolicies: disablePodSecurityPolicies,
 		},
 		Audit: auditConfig.Config,
 		Maintenance: &models.V1Maintenance{
@@ -1219,6 +1226,12 @@ func (c *config) updateCluster(args []string) error {
 			return fmt.Errorf("--default-pod-security-standard is set but you forgot to add --yes-i-really-mean-it")
 		}
 		k8s.DefaultPodSecurityStandard = pointer.Pointer(viper.GetString("default-pod-security-standard"))
+	}
+	if viper.IsSet("disable-pod-security-policies") {
+		if !viper.GetBool("yes-i-really-mean-it") {
+			return fmt.Errorf("--disable-pod-security-policies set but you forgot to add --yes-i-really-mean-it")
+		}
+		k8s.DisablePodSecurityPolicies = pointer.Pointer(viper.GetBool("disable-pod-security-policies"))
 	}
 
 	cur.Kubernetes = k8s
