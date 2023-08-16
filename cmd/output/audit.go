@@ -26,7 +26,8 @@ func (p AuditTablePrinter) Print(data []*models.V1AuditResponse) {
 			statusCode = fmt.Sprintf("%d", trace.StatusCode)
 		}
 		row := []string{
-			time.Time(trace.Timestamp).Format(time.DateTime),
+			// using Local() is okay for user cli output
+			time.Time(trace.Timestamp).Local().Format(time.RFC1123), //nolint:gosmopolitan
 			trace.Rqid,
 			trace.Component,
 			trace.Detail,
