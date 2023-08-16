@@ -7,7 +7,7 @@ COMMONDIR := $(or ${COMMONDIR},../../metal-stack/builder)
 
 .PHONY: build-platforms
 build-platforms:
-	docker build --no-cache -t platforms --target platforms .
+	docker build --no-cache -t platforms .
 
 .PHONY: extract-binaries
 extract-binaries: build-platforms
