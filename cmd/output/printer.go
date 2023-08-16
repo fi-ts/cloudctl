@@ -214,6 +214,10 @@ func (t tablePrinter) Type() string {
 // Print a model in a human readable table
 func (t tablePrinter) Print(data interface{}) error {
 	switch d := data.(type) {
+	case *models.V1AuditResponse:
+		AuditTablePrinter{t}.Print([]*models.V1AuditResponse{d})
+	case []*models.V1AuditResponse:
+		AuditTablePrinter{t}.Print(d)
 	case *models.V1ClusterResponse:
 		ShootTablePrinter{t}.Print([]*models.V1ClusterResponse{d})
 	case []*models.V1ClusterResponse:

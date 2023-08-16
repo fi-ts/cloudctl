@@ -8,7 +8,7 @@ require (
 	github.com/dcorbe/termui-dpc v0.0.0-20211125210512-9d2673a82dd6
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.15.0
-	github.com/fi-ts/cloud-go v0.20.23
+	github.com/fi-ts/cloud-go v0.20.24-0.20230816115842-60581049d9a0
 	github.com/gardener/gardener v1.59.0
 	github.com/gardener/machine-controller-manager v0.49.3
 	github.com/go-openapi/strfmt v0.21.7
@@ -84,6 +84,7 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
+	github.com/goccy/go-yaml v1.11.0 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
@@ -111,6 +112,7 @@ require (
 	github.com/josharian/native v1.1.1-0.20230202152459-5c7d0dd6ab86 // indirect
 	github.com/jsimonetti/rtnetlink v1.3.4 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/jszwec/csvutil v1.8.0 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/kortschak/wol v0.0.0-20200729010619-da482cc4850a // indirect
 	github.com/leodido/go-urn v1.2.4 // indirect
@@ -180,6 +182,7 @@ require (
 	golang.org/x/text v0.11.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.11.0 // indirect
+	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
 	golang.zx2c4.com/wireguard/windows v0.5.3 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
