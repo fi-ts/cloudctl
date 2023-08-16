@@ -5,13 +5,14 @@ COMMONDIR := $(or ${COMMONDIR},../../metal-stack/builder)
 
 -include $(COMMONDIR)/Makefile.inc
 
-release:: all
+.PHONY: build-platforms
+build-platforms:
+	docker build --no-cache -t platforms --target platforms .
 
-.PHONY: release-binaries
-release-binaries:
+.PHONY: extract-binaries
+extract-binaries: build-platforms
 	mkdir -p tmp
 	mkdir -p result
-	docker build -t platforms --target platforms .
 	docker cp $(shell docker create platforms):/work/bin tmp
 	mv tmp/bin/cloudctl-linux-amd64 result
 	mv tmp/bin/cloudctl-windows-amd64 result
