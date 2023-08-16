@@ -3,14 +3,14 @@ MAINMODULE := github.com/fi-ts/cloudctl
 # the builder is at https://github.com/metal-stack/builder
 COMMONDIR := $(or ${COMMONDIR},../../metal-stack/builder)
 
-include $(COMMONDIR)/Makefile.inc
+-include $(COMMONDIR)/Makefile.inc
 
 release:: all
 
 release-binaries:
 	mkdir -p tmp
 	mkdir -p result
-	docker build -t platforms --target builder .
+	docker build -t platforms --target platforms .
 	docker cp $(docker create platforms):/work/bin tmp
 	mv tmp/bin/cloudctl-linux-amd64 result
 	mv tmp/bin/cloudctl-windows-amd64 result
