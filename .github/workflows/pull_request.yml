@@ -22,11 +22,5 @@ jobs:
         with:
           args: -p bugs -p unused --timeout=3m
       - name: Build
-        uses: metal-stack/action-docker-make@master
-        with:
-          args: >
-            --no-cache
-            --build-only cloudctl-slug
-            --no-push
-            -x rule2,rule3
-            --summary
+        run: |
+          make release-binaries

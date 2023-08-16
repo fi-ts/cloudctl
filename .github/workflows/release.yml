@@ -23,14 +23,8 @@ jobs:
         run: echo "TAG_NAME=${GITHUB_REF##*/}" >> $GITHUB_ENV
 
       - name: Build
-        uses: metal-stack/action-docker-make@master
-        with:
-          args: >
-            --no-cache
-            --no-push
-            --build-only cloudctl-slug
-            -x rule2,rule3
-            --summary
+        run: |
+          make release-binaries
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
