@@ -7,11 +7,12 @@ COMMONDIR := $(or ${COMMONDIR},../../metal-stack/builder)
 
 release:: all
 
+.PHONY: release-binaries
 release-binaries:
 	mkdir -p tmp
 	mkdir -p result
 	docker build -t platforms --target platforms .
-	docker cp $(docker create platforms):/work/bin tmp
+	docker cp $(shell docker create platforms):/work/bin tmp
 	mv tmp/bin/cloudctl-linux-amd64 result
 	mv tmp/bin/cloudctl-windows-amd64 result
 	mv tmp/bin/cloudctl-darwin-amd64 result
