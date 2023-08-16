@@ -20,3 +20,4 @@ release-binaries:
 	md5sum result/cloudctl-windows-amd64 > result/cloudctl-windows-amd64.md5
 	md5sum result/cloudctl-darwin-amd64 > result/cloudctl-darwin-amd64.md5
 	md5sum result/cloudctl-darwin-arm64 > result/cloudctl-darwin-arm64.md5
+	ls -lh result
