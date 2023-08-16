@@ -1,12 +1,15 @@
-name: release
-
+---
+name: Docker Build Action
 on:
+  pull_request:
+    branches:
+      - master
   release:
     types:
       - published
-
-env:
-  GCS_BUCKET: images.metal-pod.io
+  push:
+    branches:
+      - master
 
 jobs:
   build:
@@ -14,17 +17,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
       - name: Set up Go 1.21
         uses: actions/setup-go@v4
         with:
           go-version: "1.21"
 
-      - name: Make tag
-        run: echo "TAG_NAME=${GITHUB_REF##*/}" >> $GITHUB_ENV
+      - name: Lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          args: --build-tags integration -p bugs -p unused --timeout=3m
 
       - name: Build
         run: |
-          make release-binaries
+          make extract-binaries
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
@@ -32,3 +38,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           files: |
             result/cloudctl-*
+        if: ${{ github.event_name == 'release' }}
