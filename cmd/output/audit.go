@@ -27,7 +27,7 @@ func (p AuditTablePrinter) Print(data []*models.V1AuditResponse) {
 		}
 		row := []string{
 			// using Local() is okay for user cli output
-			time.Time(trace.Timestamp).Local().Format(time.RFC1123), //nolint:gosmopolitan
+			time.Time(trace.Timestamp).Local().Format("2006-01-02 15:04:05 MST"), //nolint:gosmopolitan
 			trace.Rqid,
 			trace.Component,
 			trace.Detail,
