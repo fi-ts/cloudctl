@@ -12,30 +12,55 @@ on:
       - master
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
+    container: ghcr.io/metal-stack/builder:latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Go 1.21
-        uses: actions/setup-go@v4
-        with:
-          go-version: "1.21"
 
       - name: Lint
         uses: golangci/golangci-lint-action@v3
         with:
           args: --build-tags integration -p bugs -p unused --timeout=3m
 
+      - name: Test
+        run: |
+          make test
+
+  build:
+    runs-on: ubuntu-latest
+    container: ghcr.io/metal-stack/builder:latest
+
+    strategy:
+      matrix:
+        arch:
+          - linux/amd64
+          - windows/amd64
+          - darwin/amd64
+          - darwin/arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Build
         run: |
-          make extract-binaries
+          PLATFORMS=${{ matrix.arch }} make platforms
+
+          strip bin/cloudctl-linux-amd64
+
+          md5sum bin/cloudctl-linux-amd64 > bin/cloudctl-linux-amd64.md5
+          md5sum bin/cloudctl-windows-amd64 > bin/cloudctl-windows-amd64.md5
+          md5sum bin/cloudctl-darwin-amd64 > bin/cloudctl-darwin-amd64.md5
+          md5sum bin/cloudctl-darwin-arm64 > bin/cloudctl-darwin-arm64.md5
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           files: |
-            result/cloudctl-*
+            bin/cloudctl-*
         if: ${{ github.event_name == 'release' }}
