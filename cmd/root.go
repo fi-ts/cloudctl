@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"log/slog"
 	"net/url"
 	"os"
 	"strings"
@@ -13,8 +14,6 @@ import (
 	"github.com/fi-ts/cloudctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 var (
@@ -44,6 +43,7 @@ func newRootCmd() *cobra.Command {
 	rootCmd.PersistentFlags().String("kubeconfig", "", "Path to the kube-config to use for authentication and authorization. Is updated by login. Uses default path if not specified.")
 	rootCmd.PersistentFlags().StringP("order", "", "", "order by (comma separated) column(s)")
 	rootCmd.PersistentFlags().BoolP("no-headers", "", false, "ommit headers in tables")
+	rootCmd.PersistentFlags().BoolP("debug", "", false, "enable debug")
 	rootCmd.PersistentFlags().StringP("output-format", "o", "table", "output format (table|wide|markdown|json|yaml|template), wide is a table with more columns.")
 	rootCmd.PersistentFlags().StringP("template", "", "", `output template for template output-format, go template format.
 	For property names inspect the output of -o json for reference.
@@ -96,7 +96,7 @@ type config struct {
 	cloud       *client.CloudAPI
 	comp        *completion.Completion
 	consoleHost string
-	log         *zap.SugaredLogger
+	log         *slog.Logger
 }
 
 func getConfig(name string) *config {
@@ -132,9 +132,9 @@ func getConfig(name string) *config {
 
 	ctx := api.MustDefaultContext()
 
-	logger, err := newLogger()
-	if err != nil {
-		log.Fatalf("error creating logger: %v", err)
+	opts := &slog.HandlerOptions{}
+	if viper.GetBool("debug") {
+		opts.Level = slog.LevelDebug
 	}
 
 	driverURL := viper.GetString("url")
@@ -176,24 +176,6 @@ func getConfig(name string) *config {
 		cloud:       cloud,
 		comp:        comp,
 		consoleHost: consoleHost,
-		log:         logger,
+		log:         slog.New(slog.NewJSONHandler(os.Stdout, opts)),
 	}
-}
-
-func newLogger() (*zap.SugaredLogger, error) {
-	cfg := zap.NewProductionConfig()
-	if viper.GetBool("debug") {
-		cfg.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
-	} else {
-		cfg.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
-	}
-	cfg.EncoderConfig.TimeKey = "timestamp"
-	cfg.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
-
-	l, err := cfg.Build()
-	if err != nil {
-		return nil, err
-	}
-
-	return l.Sugar(), nil
 }
