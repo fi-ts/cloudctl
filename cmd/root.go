@@ -59,6 +59,7 @@ func newRootCmd() *cobra.Command {
 
 	cfg := getConfig(name)
 
+	rootCmd.AddCommand(newAuditCmd(cfg))
 	rootCmd.AddCommand(newClusterCmd(cfg))
 	rootCmd.AddCommand(newDashboardCmd(cfg))
 	rootCmd.AddCommand(newUpdateCmd(name))
