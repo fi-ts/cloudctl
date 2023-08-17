@@ -5,3 +5,5 @@ bin
 .vscode
 cloudctl
 .vscode
+tmp
+result
