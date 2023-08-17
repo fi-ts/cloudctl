@@ -23,13 +23,12 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version-file: 'go.mod'
+          cache: false
 
       - name: Lint
         uses: golangci/golangci-lint-action@v3
         with:
           args: --build-tags integration -p bugs -p unused --timeout=5m
-          skip-pkg-cache: true
-          skip-build-cache: true
 
       - name: Test
         run: |
