@@ -62,7 +62,7 @@ jobs:
 
       - name: Build
         run: |
-          GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} make build
+          make build GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }}
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
