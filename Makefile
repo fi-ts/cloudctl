@@ -1,25 +1,31 @@
-BINARY := cloudctl
-MAINMODULE := github.com/fi-ts/cloudctl
-# the builder is at https://github.com/metal-stack/builder
-COMMONDIR := $(or ${COMMONDIR},../../metal-stack/builder)
+GOOS := linux
+GOARCH := amd64
+CGO_ENABLED := 0
+BINARY := cloudctl-$(GOOS)-$(GOARCH)
 
--include $(COMMONDIR)/Makefile.inc
+SHA := $(shell git rev-parse --short=8 HEAD)
+GITVERSION := $(shell git describe --long --all)
+BUILDDATE := $(shell date --rfc-3339=seconds)
+VERSION := $(or ${VERSION},$(shell git describe --tags --exact-match 2> /dev/null || git symbolic-ref -q --short HEAD || git rev-parse --short HEAD))
 
-.PHONY: build-platforms
-build-platforms:
-	docker build --no-cache -t platforms .
+LINKMODE := $(LINKMODE) \
+		 -X 'github.com/metal-stack/v.Version=$(VERSION)' \
+		 -X 'github.com/metal-stack/v.Revision=$(GITVERSION)' \
+		 -X 'github.com/metal-stack/v.GitSHA1=$(SHA)' \
+		 -X 'github.com/metal-stack/v.BuildDate=$(BUILDDATE)'
 
-.PHONY: extract-binaries
-extract-binaries: build-platforms
-	mkdir -p tmp
-	mkdir -p result
-	docker cp $(shell docker create platforms):/work/bin tmp
-	mv tmp/bin/cloudctl-linux-amd64 result
-	mv tmp/bin/cloudctl-windows-amd64 result
-	mv tmp/bin/cloudctl-darwin-amd64 result
-	mv tmp/bin/cloudctl-darwin-arm64 result
-	md5sum result/cloudctl-linux-amd64 > result/cloudctl-linux-amd64.md5
-	md5sum result/cloudctl-windows-amd64 > result/cloudctl-windows-amd64.md5
-	md5sum result/cloudctl-darwin-amd64 > result/cloudctl-darwin-amd64.md5
-	md5sum result/cloudctl-darwin-arm64 > result/cloudctl-darwin-arm64.md5
-	ls -lh result
+.PHONY: build
+build:
+	go build \
+		-tags netgo \
+		-ldflags \
+		"$(LINKMODE)" \
+		-o bin/$(BINARY) \
+		github.com/fi-ts/cloudctl
+
+	strip bin/$(BINARY) || true
+	md5sum bin/$(BINARY) > bin/$(BINARY).md5
+
+.PHONY: test
+test: build
+	go test -cover ./...

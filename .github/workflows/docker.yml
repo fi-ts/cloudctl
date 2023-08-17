@@ -12,30 +12,63 @@ on:
       - master
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Go 1.21
+      - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: "1.21"
+          go-version-file: 'go.mod'
+          cache: false
 
       - name: Lint
         uses: golangci/golangci-lint-action@v3
         with:
-          args: --build-tags integration -p bugs -p unused --timeout=3m
+          args: --build-tags integration -p bugs -p unused --timeout=5m
+
+      - name: Test
+        run: |
+          make test
+
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        os:
+          - linux
+          - windows
+          - darwin
+        arch:
+          - amd64
+          - arm64
+        exclude:
+          - os: linux
+            arch: arm64
+          - os: windows
+            arch: arm64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
 
       - name: Build
         run: |
-          make extract-binaries
+          make build GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }}
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           files: |
-            result/cloudctl-*
+            bin/cloudctl-*
         if: ${{ github.event_name == 'release' }}
