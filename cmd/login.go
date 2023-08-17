@@ -53,7 +53,7 @@ func newLoginCmd(c *config) *cobra.Command {
 				TokenHandler: handler,
 				Console:      console,
 				Debug:        viper.GetBool("debug"),
-				Log:          c.log.Desugar(),
+				Log:          c.log,
 			}
 
 			if ctx.IssuerType == "generic" {
