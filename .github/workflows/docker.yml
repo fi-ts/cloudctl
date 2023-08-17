@@ -14,12 +14,15 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    container: ghcr.io/metal-stack/builder:latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
 
       - name: Lint
         uses: golangci/golangci-lint-action@v3
@@ -32,30 +35,34 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    container: ghcr.io/metal-stack/builder:latest
 
     strategy:
       matrix:
+        os:
+          - linux
+          - windows
+          - darwin
         arch:
-          - linux/amd64
-          - windows/amd64
-          - darwin/amd64
-          - darwin/arm64
+          - amd64
+          - arm64
+        exclude:
+          - os: linux
+            arch: arm64
+          - os: windows
+            arch: arm64
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
+
       - name: Build
         run: |
-          PLATFORMS=${{ matrix.arch }} make platforms
-
-          strip bin/cloudctl-linux-amd64
-
-          md5sum bin/cloudctl-linux-amd64 > bin/cloudctl-linux-amd64.md5
-          md5sum bin/cloudctl-windows-amd64 > bin/cloudctl-windows-amd64.md5
-          md5sum bin/cloudctl-darwin-amd64 > bin/cloudctl-darwin-amd64.md5
-          md5sum bin/cloudctl-darwin-arm64 > bin/cloudctl-darwin-arm64.md5
+          GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }} make build
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
