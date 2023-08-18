@@ -9,6 +9,7 @@ BUILDDATE := $(shell date --rfc-3339=seconds)
 VERSION := $(or ${VERSION},$(shell git describe --tags --exact-match 2> /dev/null || git symbolic-ref -q --short HEAD || git rev-parse --short HEAD))
 
 LINKMODE := $(LINKMODE) \
+		 -s -w \
 		 -X 'github.com/metal-stack/v.Version=$(VERSION)' \
 		 -X 'github.com/metal-stack/v.Revision=$(GITVERSION)' \
 		 -X 'github.com/metal-stack/v.GitSHA1=$(SHA)' \
@@ -23,7 +24,6 @@ build:
 		-o bin/$(BINARY) \
 		github.com/fi-ts/cloudctl
 
-	strip bin/$(BINARY) || true
 	md5sum bin/$(BINARY) > bin/$(BINARY).md5
 
 .PHONY: test
