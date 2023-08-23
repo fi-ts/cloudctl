@@ -160,7 +160,15 @@ func (c *config) tenantApply() error {
 		}
 		if t.Payload.Meta != nil {
 			params := tenant.NewUpdateTenantParams()
-			params.SetBody(&models.V1TenantUpdateRequest{Tenant: &tars[i]})
+			tar := &tars[i]
+			params.SetBody(&models.V1TenantUpdateRequest{
+				DefaultQuotas: tar.DefaultQuotas,
+				Description:   tar.Description,
+				IamConfig:     tar.IamConfig,
+				Meta:          tar.Meta,
+				Name:          tar.Name,
+				Quotas:        tar.Quotas,
+			})
 			resp, err := c.cloud.Tenant.UpdateTenant(params, nil)
 			if err != nil {
 				return err
@@ -200,7 +208,15 @@ func (c *config) tenantEdit(args []string) error {
 			return fmt.Errorf("tenant update error more or less than one tenant given:%d", len(purs))
 		}
 		pup := tenant.NewUpdateTenantParams()
-		pup.Body = &models.V1TenantUpdateRequest{Tenant: &purs[0]}
+		pur := &purs[0]
+		pup.Body = &models.V1TenantUpdateRequest{
+			DefaultQuotas: pur.DefaultQuotas,
+			Description:   pur.Description,
+			IamConfig:     pur.IamConfig,
+			Meta:          pur.Meta,
+			Name:          pur.Name,
+			Quotas:        pur.Quotas,
+		}
 		uresp, err := c.cloud.Tenant.UpdateTenant(pup, nil)
 		if err != nil {
 			return err
