@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/fi-ts/cloud-go/api/client/audit"
@@ -37,6 +39,9 @@ func newAuditCmd(c *config) *cobra.Command {
 	}
 
 	auditDescribeCmd.Flags().String("phase", "response", "phase of the audit trace. One of [request, response, single, error, opened, closed]")
+	auditDescribeCmd.Flags().Bool("prettify-body", false, "attempts to interpret the body as json and prettifies it")
+
+	must(auditDescribeCmd.RegisterFlagCompletionFunc("phase", c.comp.AuditPhaseCompletion))
 
 	auditListCmd.Flags().StringP("query", "q", "", "filters audit trace body payloads for the given text.")
 
@@ -61,6 +66,9 @@ func newAuditCmd(c *config) *cobra.Command {
 	auditListCmd.Flags().Int32("status-code", 0, "HTTP status code of the audit trace.")
 
 	auditListCmd.Flags().Int64("limit", 100, "limit the number of audit traces.")
+
+	must(auditListCmd.RegisterFlagCompletionFunc("type", c.comp.AuditTypeCompletion))
+	must(auditListCmd.RegisterFlagCompletionFunc("phase", c.comp.AuditPhaseCompletion))
 
 	auditCmd.AddCommand(auditDescribeCmd)
 	auditCmd.AddCommand(auditListCmd)
@@ -119,7 +127,20 @@ func (c *config) auditDescribe(args []string) error {
 		return fmt.Errorf("no audit trace found with request id %s", id)
 	}
 
-	return output.New().Print(traces.Payload[0])
+	trace := traces.Payload[0]
+
+	if viper.GetBool("prettify-body") {
+		trimmed := strings.Trim(trace.Body, `"`)
+		body := map[string]any{}
+		err = json.Unmarshal([]byte(trimmed), &body)
+		if err == nil {
+			if pretty, err := json.MarshalIndent(body, "", "    "); err == nil {
+				trace.Body = string(pretty)
+			}
+		}
+	}
+
+	return output.New().Print(trace)
 }
 
 func eventuallyRelativeDateTime(s string) (strfmt.DateTime, error) {
