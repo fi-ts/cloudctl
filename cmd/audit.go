@@ -41,6 +41,8 @@ func newAuditCmd(c *config) *cobra.Command {
 	auditDescribeCmd.Flags().String("phase", "response", "phase of the audit trace. One of [request, response, single, error, opened, closed]")
 	auditDescribeCmd.Flags().Bool("prettify-body", false, "attempts to interpret the body as json and prettifies it")
 
+	must(auditDescribeCmd.RegisterFlagCompletionFunc("phase", c.comp.AuditPhaseCompletion))
+
 	auditListCmd.Flags().StringP("query", "q", "", "filters audit trace body payloads for the given text.")
 
 	auditListCmd.Flags().String("from", "1h", "start of range of the audit traces. e.g. 1h, 10m, 2006-01-02 15:04:05")
@@ -64,6 +66,9 @@ func newAuditCmd(c *config) *cobra.Command {
 	auditListCmd.Flags().Int32("status-code", 0, "HTTP status code of the audit trace.")
 
 	auditListCmd.Flags().Int64("limit", 100, "limit the number of audit traces.")
+
+	must(auditListCmd.RegisterFlagCompletionFunc("type", c.comp.AuditTypeCompletion))
+	must(auditListCmd.RegisterFlagCompletionFunc("phase", c.comp.AuditPhaseCompletion))
 
 	auditCmd.AddCommand(auditDescribeCmd)
 	auditCmd.AddCommand(auditListCmd)
