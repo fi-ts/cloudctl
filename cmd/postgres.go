@@ -985,17 +985,19 @@ func (c *config) postgresBackupDelete(args []string) error {
 		return err
 	}
 
-	idParts := strings.Split(id, "-")
-	firstPartOfID := idParts[0]
-	lastPartOfID := idParts[len(idParts)-1]
-	fmt.Println("Please answer some security questions to delete this postgres database backup")
-	err = helper.Prompt("first part of ID:", firstPartOfID)
-	if err != nil {
-		return err
-	}
-	err = helper.Prompt("last part of ID:", lastPartOfID)
-	if err != nil {
-		return err
+	if !viper.GetBool("yes-i-really-mean-it") {
+		idParts := strings.Split(id, "-")
+		firstPartOfID := idParts[0]
+		lastPartOfID := idParts[len(idParts)-1]
+		fmt.Println("Please answer some security questions to delete this postgres database backup")
+		err = helper.Prompt("first part of ID:", firstPartOfID)
+		if err != nil {
+			return err
+		}
+		err = helper.Prompt("last part of ID:", lastPartOfID)
+		if err != nil {
+			return err
+		}
 	}
 
 	request := database.NewDeletePostgresBackupConfigParams().WithID(id)
