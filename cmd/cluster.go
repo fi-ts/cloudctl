@@ -312,6 +312,8 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
 	clusterCreateCmd.Flags().String("max-pods-per-node", "", "set number of maximum pods per node (default: 510). Lower numbers allow for more node per cluster. [optional]")
 	clusterCreateCmd.Flags().String("cni", "", "the network plugin used in this cluster, defaults to calico. please note that cilium support is still Alpha and we are happy to receive feedback. [optional]")
+	clusterCreateCmd.Flags().BoolP("enable-node-local-dns", "", false, "enables node local dns cache on the cluster nodes. [optional].")
+	clusterCreateCmd.Flags().BoolP("disable-forwarding-to-upstream-dns", "", false, "disables direct forwarding of queries to external dns servers when node-local-dns is enabled. All dns queries will go through coredns. [optional].")
 
 	must(clusterCreateCmd.MarkFlagRequired("name"))
 	must(clusterCreateCmd.MarkFlagRequired("project"))
@@ -397,6 +399,8 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().Bool("encrypted-storage-classes", false, "enables the deployment of encrypted duros storage classes into the cluster. please refer to the user manual to properly use volume encryption.")
 	clusterUpdateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
 	clusterUpdateCmd.Flags().BoolP("disable-custom-default-storage-class", "", false, "if set to true, no default class is deployed, you have to set one of your storageclasses manually to default")
+	clusterUpdateCmd.Flags().BoolP("enable-node-local-dns", "", false, "enables node local dns cache on the cluster nodes. [optional]. WARNING: changing this value will lead to rolling of the worker nodes [optional]")
+	clusterUpdateCmd.Flags().BoolP("disable-forwarding-to-upstream-dns", "", false, "disables direct forwarding of queries to external dns servers when node-local-dns is enabled. All dns queries will go through coredns [optional].")
 
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("workerversion", c.comp.VersionListCompletion))
@@ -519,6 +523,8 @@ func (c *config) clusterCreate() error {
 	firewallController := viper.GetString("firewallcontroller")
 	logAcceptedConnections := strconv.FormatBool(viper.GetBool("logacceptedconns"))
 	encryptedStorageClasses := strconv.FormatBool(viper.GetBool("encrypted-storage-classes"))
+	enableNodeLocalDNS := viper.GetBool("enable-node-local-dns")
+	disableForwardToUpstreamDNS := viper.GetBool("disable-forwarding-to-upstream-dns")
 
 	cri := viper.GetString("cri")
 	var cni string
@@ -691,6 +697,26 @@ func (c *config) clusterCreate() error {
 	}
 	if seed != "" {
 		scr.SeedName = seed
+	}
+
+	if viper.IsSet("enable-node-local-dns") {
+		if scr.SystemComponents == nil {
+			scr.SystemComponents = &models.V1SystemComponents{}
+		}
+		if scr.SystemComponents.NodeLocalDNS == nil {
+			scr.SystemComponents.NodeLocalDNS = &models.V1NodeLocalDNS{}
+		}
+
+		scr.SystemComponents.NodeLocalDNS.Enabled = &enableNodeLocalDNS
+	}
+	if viper.IsSet("disable-forwarding-to-upstream-dns") {
+		if scr.SystemComponents == nil {
+			scr.SystemComponents = &models.V1SystemComponents{}
+		}
+		if scr.SystemComponents.NodeLocalDNS == nil {
+			scr.SystemComponents.NodeLocalDNS = &models.V1NodeLocalDNS{}
+		}
+		scr.SystemComponents.NodeLocalDNS.DisableForwardToUpstreamDNS = &disableForwardToUpstreamDNS
 	}
 
 	egressRules := makeEgressRules(egress)
@@ -920,6 +946,9 @@ func (c *config) updateCluster(args []string) error {
 	egress := viper.GetStringSlice("egress")
 	maxsurge := viper.GetString("maxsurge")
 	maxunavailable := viper.GetString("maxunavailable")
+
+	enableNodeLocalDNS := viper.GetBool("enable-node-local-dns")
+	disableForwardToUpstreamDNS := viper.GetBool("disable-forwarding-to-upstream-dns")
 
 	defaultStorageClass := viper.GetString("default-storage-class")
 	disableDefaultStorageClass := viper.GetBool("disable-custom-default-storage-class")
@@ -1246,6 +1275,30 @@ func (c *config) updateCluster(args []string) error {
 	}
 
 	cur.EgressRules = makeEgressRules(egress)
+
+	if viper.IsSet("enable-node-local-dns") {
+		if !viper.GetBool("yes-i-really-mean-it") {
+			return fmt.Errorf("setting --enable-node-local-dns will lead to rolling of worker nodes. Please add --yes-i-really-mean-it")
+		}
+
+		if cur.SystemComponents == nil {
+			cur.SystemComponents = &models.V1SystemComponents{}
+		}
+		if cur.SystemComponents.NodeLocalDNS == nil {
+			cur.SystemComponents.NodeLocalDNS = &models.V1NodeLocalDNS{}
+		}
+		cur.SystemComponents.NodeLocalDNS.Enabled = &enableNodeLocalDNS
+
+	}
+	if viper.IsSet("disable-forwarding-to-upstream-dns") {
+		if cur.SystemComponents == nil {
+			cur.SystemComponents = &models.V1SystemComponents{}
+		}
+		if cur.SystemComponents.NodeLocalDNS == nil {
+			cur.SystemComponents.NodeLocalDNS = &models.V1NodeLocalDNS{}
+		}
+		cur.SystemComponents.NodeLocalDNS.DisableForwardToUpstreamDNS = &disableForwardToUpstreamDNS
+	}
 
 	if updateCausesDowntime && !viper.GetBool("yes-i-really-mean-it") {
 		fmt.Println("This cluster update will cause downtime.")
