@@ -314,6 +314,8 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().String("cni", "", "the network plugin used in this cluster, defaults to calico. please note that cilium support is still Alpha and we are happy to receive feedback. [optional]")
 	clusterCreateCmd.Flags().BoolP("enable-node-local-dns", "", false, "enables node local dns cache on the cluster nodes. [optional].")
 	clusterCreateCmd.Flags().BoolP("disable-forwarding-to-upstream-dns", "", false, "disables direct forwarding of queries to external dns servers when node-local-dns is enabled. All dns queries will go through coredns. [optional].")
+	clusterCreateCmd.Flags().StringSlice("kube-apiserver-acl-allowed-cidrs", []string{}, "comma-seperated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
+	clusterCreateCmd.Flags().Bool("disable-kube-apiserver-acl", false, "disables the kube-apiserver acl, allowing all traffic to the kube-apiserver. [optional].")
 
 	must(clusterCreateCmd.MarkFlagRequired("name"))
 	must(clusterCreateCmd.MarkFlagRequired("project"))
@@ -401,6 +403,8 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().BoolP("disable-custom-default-storage-class", "", false, "if set to true, no default class is deployed, you have to set one of your storageclasses manually to default")
 	clusterUpdateCmd.Flags().BoolP("enable-node-local-dns", "", false, "enables node local dns cache on the cluster nodes. [optional]. WARNING: changing this value will lead to rolling of the worker nodes [optional]")
 	clusterUpdateCmd.Flags().BoolP("disable-forwarding-to-upstream-dns", "", false, "disables direct forwarding of queries to external dns servers when node-local-dns is enabled. All dns queries will go through coredns [optional].")
+	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-allowed-cidrs", []string{}, "comma-seperated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
+	clusterUpdateCmd.Flags().Bool("disable-kube-apiserver-acl", true, "disables the kube-apiserver acl, allowing all traffic to the kube-apiserver. [optional].")
 
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("workerversion", c.comp.VersionListCompletion))
@@ -717,6 +721,13 @@ func (c *config) clusterCreate() error {
 			scr.SystemComponents.NodeLocalDNS = &models.V1NodeLocalDNS{}
 		}
 		scr.SystemComponents.NodeLocalDNS.DisableForwardToUpstreamDNS = &disableForwardToUpstreamDNS
+	}
+
+	if viper.IsSet("kube-apiserver-acl-allowed-cidrs") || viper.IsSet("disable-kube-apiserver-acl") {
+		scr.KubeAPIServerACL = &models.V1KubeAPIServerACL{
+			CIDRs:    viper.GetStringSlice("kube-apiserver-acl-allowed-cidrs"),
+			Disabled: pointer.Pointer(viper.GetBool("disable-kube-apiserver-acl")),
+		}
 	}
 
 	egressRules := makeEgressRules(egress)
@@ -1208,6 +1219,21 @@ func (c *config) updateCluster(args []string) error {
 			updateCausesDowntime = true
 		}
 		cur.AdditionalNetworks = firewallNetworks
+	}
+
+	if viper.IsSet("kube-apiserver-acl-allowed-cidrs") || viper.IsSet("disable-kube-apiserver-acl") {
+		newACL := current.KubeAPIServerACL
+		if newACL == nil {
+			newACL = &models.V1KubeAPIServerACL{}
+		}
+
+		if viper.IsSet("kube-apiserver-acl-allowed-cidrs") {
+			newACL.CIDRs = viper.GetStringSlice("kube-apiserver-acl-allowed-cidrs")
+		}
+		if viper.IsSet("disable-kube-apiserver-acl") {
+			newACL.Disabled = pointer.Pointer(viper.GetBool("disable-kube-apiserver-acl"))
+		}
+		cur.KubeAPIServerACL = newACL
 	}
 
 	if purpose != "" {
