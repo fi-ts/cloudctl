@@ -8,7 +8,7 @@ require (
 	github.com/dcorbe/termui-dpc v0.0.0-20211125210512-9d2673a82dd6
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.15.0
-	github.com/fi-ts/cloud-go v0.22.2-0.20231017135944-39c1aeddd33d
+	github.com/fi-ts/cloud-go v0.22.2-0.20231017141213-71dc28f8dd22
 	github.com/gardener/gardener v1.59.0
 	github.com/gardener/machine-controller-manager v0.49.3
 	github.com/go-openapi/strfmt v0.21.7
@@ -204,3 +204,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	tailscale.com v1.48.0 // indirect
 )
+
+replace github.com/fi-ts/cloud-go => ../cloud-go
