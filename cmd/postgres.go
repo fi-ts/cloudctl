@@ -778,19 +778,16 @@ func (c *config) postgresUpdate(args []string) error {
 		PostgresParams: current.PostgresParams,
 	}
 
-	// postgresUpdateCmd.Flags().IntP("replicas", "", 1, "replicas of the database [optional]")
 	if viper.IsSet("replicas") {
 		pur.NumberOfInstances = replicas
 	}
 
-	// postgresUpdateCmd.Flags().StringSliceP("sources", "", []string{"0.0.0.0/0"}, "networks which should be allowed to connect in CIDR notation [optional]")
 	if viper.IsSet("sources") {
 		pur.AccessList = &models.V1AccessList{
 			SourceRanges: sources,
 		}
 	}
 
-	// postgresUpdateCmd.Flags().StringSliceP("labels", "", []string{}, "labels to add to that postgres database [optional]")
 	if viper.IsSet("labels") {
 		labelMap, err := helper.LabelsToMap(labels)
 		if err != nil {
@@ -800,38 +797,28 @@ func (c *config) postgresUpdate(args []string) error {
 	}
 
 	pur.Size = &models.V1PostgresSize{}
-
-	// postgresUpdateCmd.Flags().StringP("cpu", "", "500m", "cpus for the database [optional]")
 	if viper.IsSet("cpu") {
 		pur.Size.CPU = cpu
 	}
-
-	// postgresUpdateCmd.Flags().StringP("buffer", "", "64Mi", "shared buffer for the database [optional]")
 	if viper.IsSet("buffer") {
 		pur.Size.SharedBuffer = buffer
 	}
-
-	// postgresUpdateCmd.Flags().StringP("storage", "", "10Gi", "storage for the database [optional]")
 	if viper.IsSet("storage") {
 		pur.Size.StorageSize = storage
 	}
 
-	// postgresUpdateCmd.Flags().BoolP("audit-logs", "", true, "enable audit logs for the database [optional]")
 	if viper.IsSet("audit-logs") {
 		pur.AuditLogs = auditLogs
 	}
 
-	// postgresUpdateCmd.Flags().StringP("dedicated-load-balancer-ip", "", "", "an existing ip address for a dedicated load balancer [optional]")
 	if viper.IsSet("dedicated-load-balancer-ip") {
 		pur.Dedicatedloadbalancerip = &lbIP
 	}
 
-	// postgresUpdateCmd.Flags().IntP("dedicated-load-balancer-port", "", 0, "a port for a dedicated load balancer [optional]")
 	if viper.IsSet("dedicated-load-balancer-port") {
 		pur.Dedicatedloadbalancerport = &lbPort
 	}
 
-	// auto-assign lb ip
 	if viper.IsSet("auto-assign-ip-from") {
 		pur.Autoassigndedicatedlbipfrom = lbNet
 	}
