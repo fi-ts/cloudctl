@@ -403,7 +403,9 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().BoolP("disable-custom-default-storage-class", "", false, "if set to true, no default class is deployed, you have to set one of your storageclasses manually to default")
 	clusterUpdateCmd.Flags().BoolP("enable-node-local-dns", "", false, "enables node local dns cache on the cluster nodes. [optional]. WARNING: changing this value will lead to rolling of the worker nodes [optional]")
 	clusterUpdateCmd.Flags().BoolP("disable-forwarding-to-upstream-dns", "", false, "disables direct forwarding of queries to external dns servers when node-local-dns is enabled. All dns queries will go through coredns [optional].")
-	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-allowed-cidrs", []string{}, "comma-seperated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
+	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-set-allowed-cidrs", []string{}, "comma-seperated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
+	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-add-to-allowed-cidrs", []string{}, "comma-seperated list of external CIDRs to add to the allowed CIDS to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
+	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-remove-from-allowed-cidrs", []string{}, "comma-seperated list of external CIDRs to be removed from the allowed CIDS to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterUpdateCmd.Flags().Bool("disable-kube-apiserver-acl", true, "disables the kube-apiserver acl, allowing all traffic to the kube-apiserver. [optional].")
 
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
@@ -1224,14 +1226,21 @@ func (c *config) updateCluster(args []string) error {
 		cur.AdditionalNetworks = firewallNetworks
 	}
 
-	if viper.IsSet("kube-apiserver-acl-allowed-cidrs") || viper.IsSet("disable-kube-apiserver-acl") {
+	if viper.IsSet("kube-apiserver-acl-set-allowed-cidrs") || viper.IsSet("disable-kube-apiserver-acl") ||
+		viper.IsSet("kube-apiserver-acl-add-to-allowed-cidrs") || viper.IsSet("kube-apiserver-acl-remove-from-allowed-cidrs") {
+
 		newACL := current.KubeAPIServerACL
 		if newACL == nil {
 			newACL = &models.V1KubeAPIServerACL{}
 		}
 
-		if viper.IsSet("kube-apiserver-acl-allowed-cidrs") {
-			newACL.CIDRs = viper.GetStringSlice("kube-apiserver-acl-allowed-cidrs")
+		for _, c := range viper.GetStringSlice("kube-apiserver-acl-remove-from-allowed-cidrs") {
+			newACL.CIDRs = helper.RemoveStringFromSlice(newACL.CIDRs, c)
+		}
+		newACL.CIDRs = append(newACL.CIDRs, viper.GetStringSlice("kube-apiserver-acl-add-to-allowed-cidrs")...)
+
+		if viper.IsSet("kube-apiserver-acl-set-allowed-cidrs") {
+			newACL.CIDRs = viper.GetStringSlice("kube-apiserver-acl-set-allowed-cidrs")
 		}
 		if viper.IsSet("disable-kube-apiserver-acl") {
 			if !viper.GetBool("yes-i-really-mean-it") {
