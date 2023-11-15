@@ -724,6 +724,9 @@ func (c *config) clusterCreate() error {
 	}
 
 	if viper.IsSet("kube-apiserver-acl-allowed-cidrs") || viper.IsSet("disable-kube-apiserver-acl") {
+		if !viper.GetBool("yes-i-really-mean-it") && viper.IsSet("disable-kube-apiserver-acl") {
+			return fmt.Errorf("--disable-kube-apiserver-acl is set but you forgot to add --yes-i-really-mean-it")
+		}
 		scr.KubeAPIServerACL = &models.V1KubeAPIServerACL{
 			CIDRs:    viper.GetStringSlice("kube-apiserver-acl-allowed-cidrs"),
 			Disabled: pointer.Pointer(viper.GetBool("disable-kube-apiserver-acl")),
@@ -1231,6 +1234,9 @@ func (c *config) updateCluster(args []string) error {
 			newACL.CIDRs = viper.GetStringSlice("kube-apiserver-acl-allowed-cidrs")
 		}
 		if viper.IsSet("disable-kube-apiserver-acl") {
+			if !viper.GetBool("yes-i-really-mean-it") {
+				return fmt.Errorf("--disable-kube-apiserver-acl is set but you forgot to add --yes-i-really-mean-it")
+			}
 			newACL.Disabled = pointer.Pointer(viper.GetBool("disable-kube-apiserver-acl"))
 		}
 		cur.KubeAPIServerACL = newACL
