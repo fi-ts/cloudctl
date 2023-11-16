@@ -177,13 +177,3 @@ func MustPrintKubernetesResource(in any) {
 	}
 	fmt.Printf("---\n%s", string(y))
 }
-
-func RemoveStringFromSlice(s []string, remove string) []string {
-	for i := 0; i < len(s); i++ {
-		if s[i] == remove {
-			s = append(s[:i], s[i+1:]...)
-			i--
-		}
-	}
-	return s
-}

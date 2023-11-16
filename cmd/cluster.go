@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -1234,8 +1235,10 @@ func (c *config) updateCluster(args []string) error {
 			newACL = &models.V1KubeAPIServerACL{}
 		}
 
-		for _, c := range viper.GetStringSlice("kube-apiserver-acl-remove-from-allowed-cidrs") {
-			newACL.CIDRs = helper.RemoveStringFromSlice(newACL.CIDRs, c)
+		for _, r := range viper.GetStringSlice("kube-apiserver-acl-remove-from-allowed-cidrs") {
+			newACL.CIDRs = slices.DeleteFunc(newACL.CIDRs, func(s string) bool {
+				return s == r
+			})
 		}
 		newACL.CIDRs = append(newACL.CIDRs, viper.GetStringSlice("kube-apiserver-acl-add-to-allowed-cidrs")...)
 
@@ -1248,6 +1251,8 @@ func (c *config) updateCluster(args []string) error {
 			}
 			newACL.Disabled = pointer.Pointer(viper.GetBool("disable-kube-apiserver-acl"))
 		}
+		slices.Sort(newACL.CIDRs)
+		newACL.CIDRs = slices.Compact(newACL.CIDRs)
 		cur.KubeAPIServerACL = newACL
 	}
 
