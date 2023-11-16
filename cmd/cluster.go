@@ -316,7 +316,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().BoolP("enable-node-local-dns", "", false, "enables node local dns cache on the cluster nodes. [optional].")
 	clusterCreateCmd.Flags().BoolP("disable-forwarding-to-upstream-dns", "", false, "disables direct forwarding of queries to external dns servers when node-local-dns is enabled. All dns queries will go through coredns. [optional].")
 	clusterCreateCmd.Flags().StringSlice("kube-apiserver-acl-allowed-cidrs", []string{}, "comma-seperated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
-	clusterCreateCmd.Flags().Bool("disable-kube-apiserver-acl", false, "disables the kube-apiserver acl, allowing all traffic to the kube-apiserver. [optional].")
+	clusterCreateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-allowed-cidrs [optional].")
 
 	must(clusterCreateCmd.MarkFlagRequired("name"))
 	must(clusterCreateCmd.MarkFlagRequired("project"))
@@ -407,7 +407,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-set-allowed-cidrs", []string{}, "comma-seperated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-add-to-allowed-cidrs", []string{}, "comma-seperated list of external CIDRs to add to the allowed CIDRs to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-remove-from-allowed-cidrs", []string{}, "comma-seperated list of external CIDRs to be removed from the allowed CIDRs to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
-	clusterUpdateCmd.Flags().Bool("disable-kube-apiserver-acl", true, "disables the kube-apiserver acl, allowing all traffic to the kube-apiserver. [optional].")
+	clusterUpdateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-* [optional].")
 
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("workerversion", c.comp.VersionListCompletion))
@@ -726,13 +726,23 @@ func (c *config) clusterCreate() error {
 		scr.SystemComponents.NodeLocalDNS.DisableForwardToUpstreamDNS = &disableForwardToUpstreamDNS
 	}
 
-	if viper.IsSet("kube-apiserver-acl-allowed-cidrs") || viper.IsSet("disable-kube-apiserver-acl") {
-		if !viper.GetBool("yes-i-really-mean-it") && viper.IsSet("disable-kube-apiserver-acl") {
-			return fmt.Errorf("--disable-kube-apiserver-acl is set but you forgot to add --yes-i-really-mean-it")
+	if viper.IsSet("kube-apiserver-acl-allowed-cidrs") || viper.IsSet("enable-kube-apiserver-acl") {
+
+		if !viper.GetBool("yes-i-really-mean-it") && viper.IsSet("enable-kube-apiserver-acl") {
+			return fmt.Errorf("--enable-kube-apiserver-acl is set but you forgot to add --yes-i-really-mean-it")
 		}
+
+		if viper.GetBool("enable-kube-apiserver-acl") {
+			fmt.Println("WARNING: Restricting access to the kube-apiserver prevents FI-TS operators from helping you in case of any issues in your cluster.")
+			err = helper.Prompt("Are you sure? (y/n)", "y")
+			if err != nil {
+				return err
+			}
+		}
+
 		scr.KubeAPIServerACL = &models.V1KubeAPIServerACL{
 			CIDRs:    viper.GetStringSlice("kube-apiserver-acl-allowed-cidrs"),
-			Disabled: pointer.Pointer(viper.GetBool("disable-kube-apiserver-acl")),
+			Disabled: pointer.Pointer(!viper.GetBool("enable-kube-apiserver-acl")),
 		}
 	}
 
@@ -1227,12 +1237,27 @@ func (c *config) updateCluster(args []string) error {
 		cur.AdditionalNetworks = firewallNetworks
 	}
 
-	if viper.IsSet("kube-apiserver-acl-set-allowed-cidrs") || viper.IsSet("disable-kube-apiserver-acl") ||
+	if viper.IsSet("kube-apiserver-acl-set-allowed-cidrs") || viper.IsSet("enable-kube-apiserver-acl") ||
 		viper.IsSet("kube-apiserver-acl-add-to-allowed-cidrs") || viper.IsSet("kube-apiserver-acl-remove-from-allowed-cidrs") {
 
 		newACL := current.KubeAPIServerACL
 		if newACL == nil {
 			newACL = &models.V1KubeAPIServerACL{}
+		}
+
+		if viper.IsSet("enable-kube-apiserver-acl") {
+			if !viper.GetBool("yes-i-really-mean-it") {
+				return fmt.Errorf("--enable-kube-apiserver-acl is set but you forgot to add --yes-i-really-mean-it")
+			}
+			newACL.Disabled = pointer.Pointer(!viper.GetBool("enable-kube-apiserver-acl"))
+		}
+
+		if viper.IsSet("enable-kube-apiserver-acl") && viper.GetBool("enable-kube-apiserver-acl") {
+			fmt.Println("WARNING: Restricting access to the kube-apiserver prevents FI-TS operators from helping you in case of any issues in your cluster.")
+			err = helper.Prompt("Are you sure? (y/n)", "y")
+			if err != nil {
+				return err
+			}
 		}
 
 		for _, r := range viper.GetStringSlice("kube-apiserver-acl-remove-from-allowed-cidrs") {
@@ -1245,12 +1270,7 @@ func (c *config) updateCluster(args []string) error {
 		if viper.IsSet("kube-apiserver-acl-set-allowed-cidrs") {
 			newACL.CIDRs = viper.GetStringSlice("kube-apiserver-acl-set-allowed-cidrs")
 		}
-		if viper.IsSet("disable-kube-apiserver-acl") {
-			if !viper.GetBool("yes-i-really-mean-it") {
-				return fmt.Errorf("--disable-kube-apiserver-acl is set but you forgot to add --yes-i-really-mean-it")
-			}
-			newACL.Disabled = pointer.Pointer(viper.GetBool("disable-kube-apiserver-acl"))
-		}
+
 		slices.Sort(newACL.CIDRs)
 		newACL.CIDRs = slices.Compact(newACL.CIDRs)
 		cur.KubeAPIServerACL = newACL
