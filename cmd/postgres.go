@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func newPostgresCmd(c *config) *cobra.Command {
@@ -317,6 +318,7 @@ postgres=#
 	postgresRestoreCmd.Flags().StringP("partition", "", "", "partition where the database should be created. Changing the partition compared to the source database requires administrative privileges")
 	postgresRestoreCmd.Flags().StringSliceP("labels", "", []string{}, "labels to add to that postgres database")
 	postgresRestoreCmd.Flags().StringSliceP("maintenance", "", []string{"Sun:22:00-23:00"}, "time specification of the automatic maintenance in the form Weekday:HH:MM-HH-MM [optional]")
+	postgresRestoreCmd.Flags().StringP("storage", "", "", "storage for the database")
 	must(postgresRestoreCmd.MarkFlagRequired("source-postgres-id"))
 	must(postgresRestoreCmd.RegisterFlagCompletionFunc("source-postgres-id", c.comp.PostgresListCompletion))
 	must(postgresRestoreCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
@@ -552,11 +554,39 @@ func (c *config) postgresRestore() error {
 	version := viper.GetString("version")
 	maintenance := viper.GetStringSlice("maintenance")
 	timestamp := viper.GetString("timestamp")
+	storage := viper.GetString("storage")
 
 	labelMap, err := helper.LabelsToMap(labels)
 	if err != nil {
 		return err
 	}
+
+	size := &models.V1PostgresSize{}
+	if viper.IsSet("storage") {
+
+		size.StorageSize = storage
+
+		params := database.NewGetPostgresParams().WithID(srcID)
+		resp, err := c.cloud.Database.GetPostgres(params, nil)
+		if err != nil {
+			return err
+		}
+		oldStorageSize := resource.MustParse(resp.Payload.Size.StorageSize)
+
+		// Storage
+		newStorageSize, err := resource.ParseQuantity(storage)
+		if err != nil {
+			return fmt.Errorf("given storage:%s is not valid:%w", storage, err)
+		}
+		if newStorageSize.Cmp(oldStorageSize) == -1 && !viper.GetBool("yes-i-really-mean-it") {
+			fmt.Println("The new storage size is smaller than the old storage size and might not be able to hold all the restored data.")
+			err = helper.Prompt("Are you sure? (y/n)", "y")
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	pcsr := &models.V1PostgresRestoreRequest{
 		SourceID:    &srcID,
 		Description: desc,
@@ -565,7 +595,9 @@ func (c *config) postgresRestore() error {
 		Maintenance: maintenance,
 		Labels:      labelMap,
 		Timestamp:   timestamp,
+		Size:        size,
 	}
+
 	request := database.NewRestorePostgresParams()
 	request.SetBody(pcsr)
 

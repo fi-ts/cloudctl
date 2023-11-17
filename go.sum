@@ -151,8 +151,6 @@ github.com/envoyproxy/go-control-plane v0.9.9-0.20201210154907-fd9021fe5dad/go.m
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/fatih/color v1.15.0 h1:kOqh6YHBtK8aywxGerMG2Eq3H6Qgoqeo13Bk2Mv/nBs=
 github.com/fatih/color v1.15.0/go.mod h1:0h5ZqXfHYED7Bhv2ZJamyIOUej9KtShiJESRwBDUSsw=
-github.com/fi-ts/cloud-go v0.22.1 h1:VKzwA5I8G+MNmBu4XTVjG1hahkk/7xcte6UvawXG0dk=
-github.com/fi-ts/cloud-go v0.22.1/go.mod h1:BYrXp1jTvfxYRiL0B+LE+6ZDp3GF110y9Sr2tuRJo5c=
 github.com/fi-ts/cloud-go v0.22.2-0.20231117121157-08a65026eca2 h1:5ZszfnEa8UXATQZeHhohuOtzPpINd3fm6daDi9E+Ltw=
 github.com/fi-ts/cloud-go v0.22.2-0.20231117121157-08a65026eca2/go.mod h1:BYrXp1jTvfxYRiL0B+LE+6ZDp3GF110y9Sr2tuRJo5c=
 github.com/frankban/quicktest v1.14.5 h1:dfYrrRyLtiqT9GyKXgdh+k4inNeTvmGbuSgZ3lx3GhA=
