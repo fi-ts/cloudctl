@@ -152,6 +152,8 @@ github.com/envoyproxy/go-control-plane v0.9.9-0.20201210154907-fd9021fe5dad/go.m
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/fatih/color v1.15.0 h1:kOqh6YHBtK8aywxGerMG2Eq3H6Qgoqeo13Bk2Mv/nBs=
 github.com/fatih/color v1.15.0/go.mod h1:0h5ZqXfHYED7Bhv2ZJamyIOUej9KtShiJESRwBDUSsw=
+github.com/fi-ts/cloud-go v0.22.1 h1:VKzwA5I8G+MNmBu4XTVjG1hahkk/7xcte6UvawXG0dk=
+github.com/fi-ts/cloud-go v0.22.1/go.mod h1:BYrXp1jTvfxYRiL0B+LE+6ZDp3GF110y9Sr2tuRJo5c=
 github.com/fi-ts/cloud-go v0.22.2-0.20231109152324-3cfddc7ab2d4 h1:zaqb6LTViFV8Vz6nXugtlIECV/DZWUCOxmtq9cjaZNE=
 github.com/fi-ts/cloud-go v0.22.2-0.20231109152324-3cfddc7ab2d4/go.mod h1:BYrXp1jTvfxYRiL0B+LE+6ZDp3GF110y9Sr2tuRJo5c=
 github.com/frankban/quicktest v1.14.5 h1:dfYrrRyLtiqT9GyKXgdh+k4inNeTvmGbuSgZ3lx3GhA=
@@ -162,8 +164,8 @@ github.com/fxamacker/cbor/v2 v2.4.0 h1:ri0ArlOR+5XunOP8CRUowT0pSJOwhW098ZCUyskZD
 github.com/fxamacker/cbor/v2 v2.4.0/go.mod h1:TA1xS00nchWmaBnEIxPSE5oHLuJBAVvqrtAnWBwBCVo=
 github.com/gabriel-vasile/mimetype v1.4.2 h1:w5qFW6JKBz9Y393Y4q372O9A7cUSequkh1Q7OhCmWKU=
 github.com/gabriel-vasile/mimetype v1.4.2/go.mod h1:zApsH/mKG4w07erKIaJPFiX0Tsq9BFQgN3qGY5GnNgA=
-github.com/gardener/gardener v1.59.0 h1:9T8C2lPwaFTKxUi3afpVjmbao/uDcn5lfYRmFqMFoYw=
-github.com/gardener/gardener v1.59.0/go.mod h1:4vopE/Pg4LJud1CRg80rAcp94v83MJIgktlHNcSKO84=
+github.com/gardener/gardener v1.65.0 h1:YwSW++VUdkQ80lOP/9xZLlrNFn2jrdxOAv/gLQtmUsg=
+github.com/gardener/gardener v1.65.0/go.mod h1:gYzfsgsvmnev6LYAYCLw3QKsvxELVXSXz55Ws1HrOq4=
 github.com/gardener/machine-controller-manager v0.49.3 h1:/ghxZVMij00SpeaORMZJlodosePWWByrIOr8fcp45sU=
 github.com/gardener/machine-controller-manager v0.49.3/go.mod h1:ypFf18+Y6mJpohfZrOJI+vq7NQ3Yn7Ke4ujW23u/6nM=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
