@@ -1242,7 +1242,10 @@ func (c *config) updateCluster(args []string) error {
 
 		newACL := current.KubeAPIServerACL
 		if newACL == nil {
-			newACL = &models.V1KubeAPIServerACL{}
+			newACL = &models.V1KubeAPIServerACL{
+				CIDRs:    []string{},
+				Disabled: pointer.Pointer(true),
+			}
 		}
 
 		if viper.IsSet("enable-kube-apiserver-acl") {
