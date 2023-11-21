@@ -9,7 +9,7 @@ require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.15.0
 	// TODO: pin to cloud-go from no-reversed-vpn cloud-api PR
-	github.com/fi-ts/cloud-go v0.22.1
+	github.com/fi-ts/cloud-go v0.22.2-0.20231117121157-08a65026eca2
 	github.com/gardener/gardener v1.65.0
 	github.com/gardener/machine-controller-manager v0.49.3
 	github.com/go-openapi/strfmt v0.21.7
