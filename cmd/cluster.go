@@ -315,7 +315,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().String("cni", "", "the network plugin used in this cluster, defaults to calico. please note that cilium support is still Alpha and we are happy to receive feedback. [optional]")
 	clusterCreateCmd.Flags().BoolP("enable-node-local-dns", "", false, "enables node local dns cache on the cluster nodes. [optional].")
 	clusterCreateCmd.Flags().BoolP("disable-forwarding-to-upstream-dns", "", false, "disables direct forwarding of queries to external dns servers when node-local-dns is enabled. All dns queries will go through coredns. [optional].")
-	clusterCreateCmd.Flags().StringSlice("kube-apiserver-acl-allowed-cidrs", []string{}, "comma-seperated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
+	clusterCreateCmd.Flags().StringSlice("kube-apiserver-acl-allowed-cidrs", []string{}, "comma-separated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterCreateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-allowed-cidrs [optional].")
 
 	must(clusterCreateCmd.MarkFlagRequired("name"))
@@ -403,9 +403,9 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().BoolP("disable-custom-default-storage-class", "", false, "if set to true, no default class is deployed, you have to set one of your storageclasses manually to default")
 	clusterUpdateCmd.Flags().BoolP("enable-node-local-dns", "", false, "enables node local dns cache on the cluster nodes. [optional]. WARNING: changing this value will lead to rolling of the worker nodes [optional]")
 	clusterUpdateCmd.Flags().BoolP("disable-forwarding-to-upstream-dns", "", false, "disables direct forwarding of queries to external dns servers when node-local-dns is enabled. All dns queries will go through coredns [optional].")
-	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-set-allowed-cidrs", []string{}, "comma-seperated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
-	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-add-to-allowed-cidrs", []string{}, "comma-seperated list of external CIDRs to add to the allowed CIDRs to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
-	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-remove-from-allowed-cidrs", []string{}, "comma-seperated list of external CIDRs to be removed from the allowed CIDRs to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
+	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-set-allowed-cidrs", []string{}, "comma-separated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
+	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-add-to-allowed-cidrs", []string{}, "comma-separated list of external CIDRs to add to the allowed CIDRs to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
+	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-remove-from-allowed-cidrs", []string{}, "comma-separated list of external CIDRs to be removed from the allowed CIDRs to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterUpdateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-* [optional].")
 
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
