@@ -147,6 +147,9 @@ func (s ShootIssuesTablePrinter) Print(data []*models.V1ClusterResponse) {
 
 func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []string, []string) {
 	shootStats := newShootStats(shoot.Status)
+	if (*shoot).KubeAPIServerACL != nil && !*shoot.KubeAPIServerACL.Disabled {
+		shootStats.apiServer += "🔒"
+	}
 
 	maintainEmoji := ""
 	var issues []string
