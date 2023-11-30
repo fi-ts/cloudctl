@@ -480,7 +480,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterMachineCmd.AddCommand(clusterMachineReinstallCmd)
 	clusterMachineCmd.AddCommand(clusterMachinePackagesCmd)
 
-	clusterReconcileCmd.Flags().String("operation", models.V1ClusterReconcileRequestOperationReconcile, "Executes a cluster \"reconcile\" operation.")
+	clusterReconcileCmd.Flags().String("operation", models.V1ClusterReconcileRequestOperationReconcile, "Executes a cluster \"reconcile\" operation. (maintain|reconcile|retry|rotate-ssh-keypair) ")
 	must(clusterReconcileCmd.RegisterFlagCompletionFunc("operation", c.comp.ClusterReconcileOperationCompletion))
 
 	clusterIssuesCmd.Flags().String("id", "", "show clusters of given id")
