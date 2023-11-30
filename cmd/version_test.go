@@ -62,6 +62,7 @@ func Test_newVersionCmd(t *testing.T) {
 server:
     builddate: null
     gitsha1: null
+    minclientversion: null
     name: cloudctl
     revision: null
     version: null
