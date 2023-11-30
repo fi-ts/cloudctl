@@ -17,7 +17,13 @@ import (
 )
 
 var (
-	ClusterPurposes     = []string{"production", "development", "evaluation", "infrastructure"}
+	ClusterPurposes            = []string{"production", "development", "evaluation", "infrastructure"}
+	ClusterReconcileOperations = []string{
+		models.V1ClusterReconcileRequestOperationReconcile,
+		models.V1ClusterReconcileRequestOperationRetry,
+		models.V1ClusterReconcileRequestOperationMaintain,
+		models.V1ClusterReconcileRequestOperationRotateDashSSHDashKeypair,
+	}
 	PodSecurityDefaults = []string{
 		models.V1KubernetesDefaultPodSecurityStandardRestricted,
 		models.V1KubernetesDefaultPodSecurityStandardBaseline,
