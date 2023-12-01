@@ -18,7 +18,7 @@ require (
 	github.com/jinzhu/now v1.1.5
 	github.com/metal-stack/duros-go v0.4.3
 	github.com/metal-stack/metal-lib v0.14.1
-	github.com/metal-stack/updater v1.2.0
+	github.com/metal-stack/updater v1.2.1
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/spf13/cobra v1.8.0
