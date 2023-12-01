@@ -69,6 +69,9 @@ func newLoginCmd(c *config) *cobra.Command {
 				return err
 			}
 
+			// We need to reread the written kubeconfig
+			c := getConfig(c.name)
+
 			resp, err := c.cloud.Version.Info(nil, nil)
 			if err != nil {
 				return err
