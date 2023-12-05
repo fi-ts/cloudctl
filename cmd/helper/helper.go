@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 	"gopkg.in/yaml.v3"
 	k8syaml "sigs.k8s.io/yaml"
 )
@@ -176,4 +178,9 @@ func MustPrintKubernetesResource(in any) {
 		panic(fmt.Errorf("unable to marshal to yaml: %w", err))
 	}
 	fmt.Printf("---\n%s", string(y))
+}
+
+func ClientNoAuth() runtime.ClientAuthInfoWriterFunc {
+	noAuth := func(_ runtime.ClientRequest, _ strfmt.Registry) error { return nil }
+	return runtime.ClientAuthInfoWriterFunc(noAuth)
 }
