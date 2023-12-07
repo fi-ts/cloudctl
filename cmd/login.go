@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/fi-ts/cloudctl/pkg/api"
 	"github.com/metal-stack/metal-lib/auth"
 	"github.com/metal-stack/v"
@@ -69,10 +70,7 @@ func newLoginCmd(c *config) *cobra.Command {
 				return err
 			}
 
-			// We need to reread the written kubeconfig
-			c := getConfig(c.name)
-
-			resp, err := c.cloud.Version.Info(nil, nil)
+			resp, err := c.cloud.Version.Info(nil, helper.ClientNoAuth())
 			if err != nil {
 				return err
 			}
@@ -82,16 +80,25 @@ func newLoginCmd(c *config) *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("required cloudctl minimum version:%q is not semver parsable:%w", minVersion, err)
 				}
+
 				// This is a developer build
 				if !strings.HasPrefix(v.Version, "v") {
 					return nil
 				}
+
 				thisVersion, err := semver.NewVersion(v.Version)
 				if err != nil {
 					return fmt.Errorf("cloudctl version:%q is not semver parsable:%w", v.Version, err)
 				}
+
 				if thisVersion.LessThan(parsedMinVersion) {
-					return fmt.Errorf("your cloudctl version:%s is smaller than the required minimum version:%s, please run `cloudctl update do` to get the latest version", thisVersion, minVersion)
+					return fmt.Errorf("your cloudctl version:%s is smaller than the required minimum version:%s, please run `cloudctl update do` to update to the supported version", thisVersion, minVersion)
+				}
+
+				if !thisVersion.Equal(parsedMinVersion) {
+					fmt.Println()
+					fmt.Printf("WARNING: Your cloudctl version %q might not compatible with the cloud-api (supported version is %q). Please run `cloudctl update do` to update to the supported version.", thisVersion, minVersion)
+					fmt.Println()
 				}
 			}
 
