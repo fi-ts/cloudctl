@@ -92,7 +92,7 @@ func newLoginCmd(c *config) *cobra.Command {
 				}
 
 				if thisVersion.LessThan(parsedMinVersion) {
-					return fmt.Errorf("your cloudctl version:%s is smaller than the required minimum version:%s, please run `cloudctl update do` to get the this version", thisVersion, minVersion)
+					return fmt.Errorf("your cloudctl version:%s is smaller than the required minimum version:%s, please run `cloudctl update do` to update to the supported version", thisVersion, minVersion)
 				}
 
 				if !thisVersion.Equal(parsedMinVersion) {
