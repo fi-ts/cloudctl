@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -314,6 +315,8 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().String("cni", "", "the network plugin used in this cluster, defaults to calico. please note that cilium support is still Alpha and we are happy to receive feedback. [optional]")
 	clusterCreateCmd.Flags().BoolP("enable-node-local-dns", "", false, "enables node local dns cache on the cluster nodes. [optional].")
 	clusterCreateCmd.Flags().BoolP("disable-forwarding-to-upstream-dns", "", false, "disables direct forwarding of queries to external dns servers when node-local-dns is enabled. All dns queries will go through coredns. [optional].")
+	clusterCreateCmd.Flags().StringSlice("kube-apiserver-acl-allowed-cidrs", []string{}, "comma-separated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
+	clusterCreateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-allowed-cidrs [optional].")
 
 	must(clusterCreateCmd.MarkFlagRequired("name"))
 	must(clusterCreateCmd.MarkFlagRequired("project"))
@@ -387,7 +390,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().BoolP("disable-pod-security-policies", "", false, "disable pod security policies")
 	clusterUpdateCmd.Flags().String("audit", "on", "audit logging of cluster API access; can be off, on or splunk (logging to a predefined or custom splunk endpoint).")
 	clusterUpdateCmd.Flags().String("purpose", "", fmt.Sprintf("purpose of the cluster, can be one of %s. SLA is only given on production clusters.", strings.Join(completion.ClusterPurposes, "|")))
-	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]. Use --egress none to remove all egress rules.")
+	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]. Use \"--egress none\" to remove all egress rules.")
 	clusterUpdateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
 	clusterUpdateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced. (0 = provider-default)")
 	clusterUpdateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. (0 = provider-default)")
@@ -395,12 +398,15 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().String("maxunavailable", "", "max number (e.g. 0) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
-	clusterUpdateCmd.Flags().BoolP("reversed-vpn", "", false, "enables usage of reversed-vpn instead of konnectivity tunnel for worker connectivity.")
 	clusterUpdateCmd.Flags().Bool("encrypted-storage-classes", false, "enables the deployment of encrypted duros storage classes into the cluster. please refer to the user manual to properly use volume encryption.")
 	clusterUpdateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
 	clusterUpdateCmd.Flags().BoolP("disable-custom-default-storage-class", "", false, "if set to true, no default class is deployed, you have to set one of your storageclasses manually to default")
 	clusterUpdateCmd.Flags().BoolP("enable-node-local-dns", "", false, "enables node local dns cache on the cluster nodes. [optional]. WARNING: changing this value will lead to rolling of the worker nodes [optional]")
 	clusterUpdateCmd.Flags().BoolP("disable-forwarding-to-upstream-dns", "", false, "disables direct forwarding of queries to external dns servers when node-local-dns is enabled. All dns queries will go through coredns [optional].")
+	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-set-allowed-cidrs", []string{}, "comma-separated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
+	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-add-to-allowed-cidrs", []string{}, "comma-separated list of external CIDRs to add to the allowed CIDRs to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
+	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-remove-from-allowed-cidrs", []string{}, "comma-separated list of external CIDRs to be removed from the allowed CIDRs to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
+	clusterUpdateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-* [optional].")
 
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("workerversion", c.comp.VersionListCompletion))
@@ -474,7 +480,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterMachineCmd.AddCommand(clusterMachineReinstallCmd)
 	clusterMachineCmd.AddCommand(clusterMachinePackagesCmd)
 
-	clusterReconcileCmd.Flags().String("operation", models.V1ClusterReconcileRequestOperationReconcile, "Executes a cluster \"reconcile\" operation.")
+	clusterReconcileCmd.Flags().String("operation", models.V1ClusterReconcileRequestOperationReconcile, fmt.Sprintf("Executes a cluster \"reconcile\" operation, can be one of %s.", strings.Join(completion.ClusterReconcileOperations, "|")))
 	must(clusterReconcileCmd.RegisterFlagCompletionFunc("operation", c.comp.ClusterReconcileOperationCompletion))
 
 	clusterIssuesCmd.Flags().String("id", "", "show clusters of given id")
@@ -666,8 +672,6 @@ func (c *config) clusterCreate() error {
 		AdditionalNetworks: networks,
 		PartitionID:        &partition,
 		ClusterFeatures: &models.V1ClusterFeatures{
-			// always set reversed vpn for new clusters
-			ReversedVPN:            pointer.Pointer("true"),
 			LogAcceptedConnections: &logAcceptedConnections,
 			DurosStorageEncryption: &encryptedStorageClasses,
 		},
@@ -717,6 +721,26 @@ func (c *config) clusterCreate() error {
 			scr.SystemComponents.NodeLocalDNS = &models.V1NodeLocalDNS{}
 		}
 		scr.SystemComponents.NodeLocalDNS.DisableForwardToUpstreamDNS = &disableForwardToUpstreamDNS
+	}
+
+	if viper.IsSet("kube-apiserver-acl-allowed-cidrs") || viper.IsSet("enable-kube-apiserver-acl") {
+
+		if !viper.GetBool("yes-i-really-mean-it") && viper.IsSet("enable-kube-apiserver-acl") {
+			return fmt.Errorf("--enable-kube-apiserver-acl is set but you forgot to add --yes-i-really-mean-it")
+		}
+
+		if viper.GetBool("enable-kube-apiserver-acl") {
+			fmt.Println("WARNING: Restricting access to the kube-apiserver prevents FI-TS operators from helping you in case of any issues in your cluster.")
+			err = helper.Prompt("Are you sure? (y/n)", "y")
+			if err != nil {
+				return err
+			}
+		}
+
+		scr.KubeAPIServerACL = &models.V1KubeAPIServerACL{
+			CIDRs:    viper.GetStringSlice("kube-apiserver-acl-allowed-cidrs"),
+			Disabled: pointer.Pointer(!viper.GetBool("enable-kube-apiserver-acl")),
+		}
 	}
 
 	egressRules := makeEgressRules(egress)
@@ -953,7 +977,6 @@ func (c *config) updateCluster(args []string) error {
 	defaultStorageClass := viper.GetString("default-storage-class")
 	disableDefaultStorageClass := viper.GetBool("disable-custom-default-storage-class")
 
-	reversedVPN := strconv.FormatBool(viper.GetBool("reversed-vpn"))
 	encryptedStorageClasses := strconv.FormatBool(viper.GetBool("encrypted-storage-classes"))
 
 	workerlabels, err := helper.LabelsToMap(workerlabelslice)
@@ -1008,9 +1031,6 @@ func (c *config) updateCluster(args []string) error {
 	var clusterFeatures models.V1ClusterFeatures
 	if viper.IsSet("encrypted-storage-classes") {
 		clusterFeatures.DurosStorageEncryption = &encryptedStorageClasses
-	}
-	if viper.IsSet("reversed-vpn") {
-		clusterFeatures.ReversedVPN = &reversedVPN
 	}
 	if viper.IsSet("logacceptedconns") {
 		clusterFeatures.LogAcceptedConnections = &logAcceptedConnections
@@ -1208,6 +1228,48 @@ func (c *config) updateCluster(args []string) error {
 			updateCausesDowntime = true
 		}
 		cur.AdditionalNetworks = firewallNetworks
+	}
+
+	if viper.IsSet("kube-apiserver-acl-set-allowed-cidrs") || viper.IsSet("enable-kube-apiserver-acl") ||
+		viper.IsSet("kube-apiserver-acl-add-to-allowed-cidrs") || viper.IsSet("kube-apiserver-acl-remove-from-allowed-cidrs") {
+
+		newACL := current.KubeAPIServerACL
+		if newACL == nil {
+			newACL = &models.V1KubeAPIServerACL{
+				CIDRs:    []string{},
+				Disabled: pointer.Pointer(true),
+			}
+		}
+
+		if viper.IsSet("enable-kube-apiserver-acl") {
+			if !viper.GetBool("yes-i-really-mean-it") {
+				return fmt.Errorf("--enable-kube-apiserver-acl is set but you forgot to add --yes-i-really-mean-it")
+			}
+			newACL.Disabled = pointer.Pointer(!viper.GetBool("enable-kube-apiserver-acl"))
+		}
+
+		if viper.IsSet("enable-kube-apiserver-acl") && viper.GetBool("enable-kube-apiserver-acl") {
+			fmt.Println("WARNING: Restricting access to the kube-apiserver prevents FI-TS operators from helping you in case of any issues in your cluster.")
+			err = helper.Prompt("Are you sure? (y/n)", "y")
+			if err != nil {
+				return err
+			}
+		}
+
+		for _, r := range viper.GetStringSlice("kube-apiserver-acl-remove-from-allowed-cidrs") {
+			newACL.CIDRs = slices.DeleteFunc(newACL.CIDRs, func(s string) bool {
+				return s == r
+			})
+		}
+		newACL.CIDRs = append(newACL.CIDRs, viper.GetStringSlice("kube-apiserver-acl-add-to-allowed-cidrs")...)
+
+		if viper.IsSet("kube-apiserver-acl-set-allowed-cidrs") {
+			newACL.CIDRs = viper.GetStringSlice("kube-apiserver-acl-set-allowed-cidrs")
+		}
+
+		slices.Sort(newACL.CIDRs)
+		newACL.CIDRs = slices.Compact(newACL.CIDRs)
+		cur.KubeAPIServerACL = newACL
 	}
 
 	if purpose != "" {
