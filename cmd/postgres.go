@@ -122,6 +122,14 @@ postgres=#
 		},
 		PreRun: bindPFlags,
 	}
+	postgresUpdateCmd := &cobra.Command{
+		Use:   "update",
+		Short: "update postgres",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.postgresUpdate(args)
+		},
+		PreRun: bindPFlags,
+	}
 	postgresAcceptRestoreCmd := &cobra.Command{
 		Use:   "restore-accepted",
 		Short: "confirm the restore of a database",
@@ -253,6 +261,7 @@ postgres=#
 	postgresCmd.AddCommand(postgresRestoreCmd)
 	postgresCmd.AddCommand(postgresApplyCmd)
 	postgresCmd.AddCommand(postgresEditCmd)
+	postgresCmd.AddCommand(postgresUpdateCmd)
 	postgresCmd.AddCommand(postgresAcceptRestoreCmd)
 	postgresCmd.AddCommand(postgresListCmd)
 	postgresCmd.AddCommand(postgresListBackupsCmd)
@@ -283,6 +292,9 @@ postgres=#
 	postgresCreateCmd.Flags().StringP("backup-config", "", "", "backup to use")
 	postgresCreateCmd.Flags().StringSliceP("maintenance", "", []string{"Sun:22:00-23:00"}, "time specification of the automatic maintenance in the form Weekday:HH:MM-HH-MM [optional]")
 	postgresCreateCmd.Flags().BoolP("audit-logs", "", true, "enable audit logs for the database")
+	postgresCreateCmd.Flags().StringP("dedicated-load-balancer-ip", "", "", "an existing ip address for a dedicated load balancer [optional]")
+	postgresCreateCmd.Flags().StringP("auto-assign-ip-from", "", "", "a network used for auto-assigning an ip for a dedicated load balancer [optional]")
+	postgresCreateCmd.Flags().IntP("dedicated-load-balancer-port", "", 0, "a port for a dedicated load balancer [optional]")
 	must(postgresCreateCmd.MarkFlagRequired("description"))
 	must(postgresCreateCmd.MarkFlagRequired("project"))
 	must(postgresCreateCmd.MarkFlagRequired("partition"))
@@ -299,6 +311,9 @@ postgres=#
 	postgresCreateStandbyCmd.Flags().StringSliceP("labels", "", []string{}, "labels to add to that postgres database")
 	postgresCreateStandbyCmd.Flags().StringP("backup-config", "", "", "backup to use")
 	postgresCreateStandbyCmd.Flags().StringSliceP("maintenance", "", []string{"Sun:22:00-23:00"}, "time specification of the automatic maintenance in the form Weekday:HH:MM-HH-MM [optional]")
+	postgresCreateStandbyCmd.Flags().StringP("dedicated-load-balancer-ip", "", "", "an existing ip address for a dedicated load balancer [optional]")
+	postgresCreateStandbyCmd.Flags().StringP("auto-assign-ip-from", "", "", "a network used for auto-assigning an ip for a dedicated load balancer [optional]")
+	postgresCreateStandbyCmd.Flags().IntP("dedicated-load-balancer-port", "", 0, "a port for a dedicated load balancer [optional]")
 	must(postgresCreateStandbyCmd.MarkFlagRequired("primary-postgres-id"))
 	must(postgresCreateStandbyCmd.MarkFlagRequired("description"))
 	must(postgresCreateStandbyCmd.MarkFlagRequired("partition"))
@@ -320,6 +335,18 @@ postgres=#
 	must(postgresRestoreCmd.MarkFlagRequired("source-postgres-id"))
 	must(postgresRestoreCmd.RegisterFlagCompletionFunc("source-postgres-id", c.comp.PostgresListCompletion))
 	must(postgresRestoreCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
+
+	// Update
+	postgresUpdateCmd.Flags().IntP("replicas", "", 1, "replicas of the database [optional]")
+	postgresUpdateCmd.Flags().StringSliceP("sources", "", []string{"0.0.0.0/0"}, "networks which should be allowed to connect in CIDR notation [optional]")
+	postgresUpdateCmd.Flags().StringSliceP("labels", "", []string{}, "labels to add to that postgres database [optional]")
+	postgresUpdateCmd.Flags().StringP("cpu", "", "500m", "cpus for the database [optional]")
+	postgresUpdateCmd.Flags().StringP("buffer", "", "64Mi", "shared buffer for the database [optional]")
+	postgresUpdateCmd.Flags().StringP("storage", "", "10Gi", "storage for the database [optional]")
+	postgresUpdateCmd.Flags().BoolP("audit-logs", "", true, "enable audit logs for the database [optional]")
+	postgresUpdateCmd.Flags().StringP("dedicated-load-balancer-ip", "", "", "an existing ip address for a dedicated load balancer [optional]")
+	postgresUpdateCmd.Flags().StringP("auto-assign-ip-from", "", "", "a network used for auto-assigning an ip for a dedicated load balancer [optional]")
+	postgresUpdateCmd.Flags().IntP("dedicated-load-balancer-port", "", 0, "a port for a dedicated load balancer [optional]")
 
 	// List
 	postgresListCmd.Flags().StringP("id", "", "", "postgres id to filter [optional]")
@@ -394,6 +421,19 @@ func (c *config) postgresCreate() error {
 	storage := viper.GetString("storage")
 	maintenance := viper.GetStringSlice("maintenance")
 	auditLogs := viper.GetBool("audit-logs")
+	lbIP := viper.GetString("dedicated-load-balancer-ip")
+	lbPort := viper.GetInt32("dedicated-load-balancer-port")
+	lbNet := viper.GetString("auto-assign-ip-from")
+
+	var dedicatedloadbalancerip *string
+	if lbIP != "" {
+		dedicatedloadbalancerip = &lbIP
+	}
+
+	var dedicatedloadbalancerport *int32
+	if lbPort != 0 {
+		dedicatedloadbalancerport = &lbPort
+	}
 
 	labelMap, err := helper.LabelsToMap(labels)
 	if err != nil {
@@ -414,10 +454,16 @@ func (c *config) postgresCreate() error {
 		AccessList: &models.V1AccessList{
 			SourceRanges: sources,
 		},
-		Maintenance: maintenance,
-		Labels:      labelMap,
-		AuditLogs:   auditLogs,
+		Maintenance:               maintenance,
+		Labels:                    labelMap,
+		AuditLogs:                 auditLogs,
+		Dedicatedloadbalancerip:   dedicatedloadbalancerip,
+		Dedicatedloadbalancerport: dedicatedloadbalancerport,
 	}
+	if lbNet != "" {
+		pcr.Autoassigndedicatedlbipfrom = lbNet
+	}
+
 	request := database.NewCreatePostgresParams()
 	request.SetBody(pcr)
 
@@ -436,18 +482,31 @@ func (c *config) postgresCreateStandby() error {
 	labels := viper.GetStringSlice("labels")
 	backupConfig := viper.GetString("backup-config")
 	maintenance := viper.GetStringSlice("maintenance")
+	var dedicatedloadbalancerip *string
+	if lbIP := viper.GetString("dedicated-load-balancer-ip"); lbIP != "" {
+		dedicatedloadbalancerip = &lbIP
+	}
+	var dedicatedloadbalancerport *int32
+	if lbPort := viper.GetInt32("dedicated-load-balancer-port"); lbPort != 0 {
+		dedicatedloadbalancerport = &lbPort
+	}
 
 	labelMap, err := helper.LabelsToMap(labels)
 	if err != nil {
 		return err
 	}
 	pcsr := &models.V1PostgresCreateStandbyRequest{
-		PrimaryID:   &primaryPostgresID,
-		Description: desc,
-		PartitionID: partition,
-		Backup:      backupConfig,
-		Maintenance: maintenance,
-		Labels:      labelMap,
+		PrimaryID:                 &primaryPostgresID,
+		Description:               desc,
+		PartitionID:               partition,
+		Backup:                    backupConfig,
+		Maintenance:               maintenance,
+		Labels:                    labelMap,
+		Dedicatedloadbalancerip:   dedicatedloadbalancerip,
+		Dedicatedloadbalancerport: dedicatedloadbalancerport,
+	}
+	if lbNet := viper.GetString("auto-assign-ip-from"); lbNet != "" {
+		pcsr.Autoassigndedicatedlbipfrom = lbNet
 	}
 	request := database.NewCreatePostgresStandbyParams()
 	request.SetBody(pcsr)
@@ -684,6 +743,94 @@ func (c *config) postgresEdit(args []string) error {
 		return output.New().Print(uresp.Payload)
 	}
 	return helper.Edit(id, getFunc, updateFunc)
+}
+
+func (c *config) postgresUpdate(args []string) error {
+	replicas := viper.GetInt32("replicas")
+	sources := viper.GetStringSlice("sources")
+	labels := viper.GetStringSlice("labels")
+	cpu := viper.GetString("cpu")
+	buffer := viper.GetString("buffer")
+	storage := viper.GetString("storage")
+	auditLogs := viper.GetBool("audit-logs")
+	lbIP := viper.GetString("dedicated-load-balancer-ip")
+	lbPort := viper.GetInt32("dedicated-load-balancer-port")
+	lbNet := viper.GetString("auto-assign-ip-from")
+
+	id, err := c.postgresID("update", args)
+	if err != nil {
+		return err
+	}
+
+	params := database.NewGetPostgresParams().WithID(id)
+	resp, err := c.cloud.Database.GetPostgres(params, nil)
+	if err != nil {
+		return err
+	}
+	current := resp.Payload
+
+	// copy the (minimum) current config
+	pur := &models.V1PostgresUpdateRequest{
+		ProjectID:      current.ProjectID,
+		ID:             current.ID,
+		Connection:     current.Connection,
+		AuditLogs:      current.AuditLogs,
+		PostgresParams: current.PostgresParams,
+	}
+
+	if viper.IsSet("replicas") {
+		pur.NumberOfInstances = replicas
+	}
+
+	if viper.IsSet("sources") {
+		pur.AccessList = &models.V1AccessList{
+			SourceRanges: sources,
+		}
+	}
+
+	if viper.IsSet("labels") {
+		labelMap, err := helper.LabelsToMap(labels)
+		if err != nil {
+			return err
+		}
+		pur.Labels = labelMap
+	}
+
+	pur.Size = &models.V1PostgresSize{}
+	if viper.IsSet("cpu") {
+		pur.Size.CPU = cpu
+	}
+	if viper.IsSet("buffer") {
+		pur.Size.SharedBuffer = buffer
+	}
+	if viper.IsSet("storage") {
+		pur.Size.StorageSize = storage
+	}
+
+	if viper.IsSet("audit-logs") {
+		pur.AuditLogs = auditLogs
+	}
+
+	if viper.IsSet("dedicated-load-balancer-ip") {
+		pur.Dedicatedloadbalancerip = &lbIP
+	}
+
+	if viper.IsSet("dedicated-load-balancer-port") {
+		pur.Dedicatedloadbalancerport = &lbPort
+	}
+
+	if viper.IsSet("auto-assign-ip-from") {
+		pur.Autoassigndedicatedlbipfrom = lbNet
+	}
+
+	// send the update request
+	req := database.NewUpdatePostgresParams()
+	req.Body = pur
+	uresp, err := c.cloud.Database.UpdatePostgres(req, nil)
+	if err != nil {
+		return err
+	}
+	return output.New().Print(uresp.Payload)
 }
 
 func (c *config) postgresAcceptRestore(args []string) error {
