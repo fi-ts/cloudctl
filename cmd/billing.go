@@ -109,6 +109,44 @@ export CLOUDCTL_COSTS_HOUR=0.01        # costs per hour
 		},
 		PreRun: bindPFlags,
 	}
+	machineBillingCmd := &cobra.Command{
+		Use:   "machine",
+		Short: "look at machine bills",
+		Long: `
+You may want to convert the usage to a price in Euro by using the prices from your contract. You can use the following environment variables:
+
+export CLOUDCTL_COSTS_HOUR=0.01        # costs per hour
+
+⚠ Please be aware that any costs calculated in this fashion can still be different from the final bill as it does not include contract specific details like minimum purchase, discounts, etc.
+`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			err := initBillingOpts()
+			if err != nil {
+				return err
+			}
+			return c.machineUsage()
+		},
+		PreRun: bindPFlags,
+	}
+	productOptionBillingCmd := &cobra.Command{
+		Use:   "product-option",
+		Short: "look at product option bills",
+		Long: `
+You may want to convert the usage to a price in Euro by using the prices from your contract. You can use the following environment variables:
+
+export CLOUDCTL_COSTS_HOUR=0.01        # costs per hour
+
+⚠ Please be aware that any costs calculated in this fashion can still be different from the final bill as it does not include contract specific details like minimum purchase, discounts, etc.
+`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			err := initBillingOpts()
+			if err != nil {
+				return err
+			}
+			return c.productOptionUsage()
+		},
+		PreRun: bindPFlags,
+	}
 	networkTrafficBillingCmd := &cobra.Command{
 		Use:   "network-traffic",
 		Short: "look at network traffic bills",
@@ -198,6 +236,8 @@ export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01 # Costs per capacity hour
 	billingCmd.AddCommand(s3BillingCmd)
 	billingCmd.AddCommand(volumeBillingCmd)
 	billingCmd.AddCommand(postgresBillingCmd)
+	billingCmd.AddCommand(machineBillingCmd)
+	billingCmd.AddCommand(productOptionBillingCmd)
 
 	billingOpts = &BillingOpts{}
 
@@ -227,6 +267,34 @@ export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01 # Costs per capacity hour
 	must(clusterBillingCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
 
 	must(viper.BindPFlags(clusterBillingCmd.Flags()))
+
+	machineBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
+	machineBillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
+	machineBillingCmd.Flags().StringVarP(&billingOpts.FromString, "from", "", "", "the start time in the accounting window to look at (optional, defaults to start of the month")
+	machineBillingCmd.Flags().StringVarP(&billingOpts.ToString, "to", "", "", "the end time in the accounting window to look at (optional, defaults to current system time)")
+	machineBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
+	machineBillingCmd.Flags().StringVarP(&billingOpts.ClusterID, "cluster-id", "c", "", "the cluster to account")
+	machineBillingCmd.Flags().String("machine-id", "", "the machine-id to account")
+	machineBillingCmd.Flags().String("size-id", "", "the size-id to account")
+	machineBillingCmd.Flags().String("partition-id", "", "the partition-id to account")
+
+	must(machineBillingCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
+	must(machineBillingCmd.RegisterFlagCompletionFunc("partition-id", c.comp.PartitionListCompletion))
+	must(machineBillingCmd.RegisterFlagCompletionFunc("machine-id", c.comp.MachineImageListCompletion))
+
+	must(viper.BindPFlags(machineBillingCmd.Flags()))
+
+	productOptionBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
+	productOptionBillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
+	productOptionBillingCmd.Flags().StringVarP(&billingOpts.FromString, "from", "", "", "the start time in the accounting window to look at (optional, defaults to start of the month")
+	productOptionBillingCmd.Flags().StringVarP(&billingOpts.ToString, "to", "", "", "the end time in the accounting window to look at (optional, defaults to current system time)")
+	productOptionBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
+	productOptionBillingCmd.Flags().StringVarP(&billingOpts.ClusterID, "cluster-id", "c", "", "the cluster to account")
+	productOptionBillingCmd.Flags().String("id", "", "the id of the product option to account")
+
+	must(productOptionBillingCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
+
+	must(viper.BindPFlags(productOptionBillingCmd.Flags()))
 
 	ipBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
 	ipBillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
@@ -373,6 +441,66 @@ func (c *config) clusterUsageCSV(cur *models.V1ClusterUsageRequest) error {
 
 	fmt.Println(response.Payload)
 	return nil
+}
+
+func (c *config) machineUsage() error {
+	from := strfmt.DateTime(billingOpts.From)
+	cur := models.V1MachineUsageRequest{
+		From: &from,
+		To:   strfmt.DateTime(billingOpts.To),
+	}
+	if billingOpts.Tenant != "" {
+		cur.Tenant = billingOpts.Tenant
+	}
+	if billingOpts.ProjectID != "" {
+		cur.Projectid = billingOpts.ProjectID
+	}
+	if billingOpts.ClusterID != "" {
+		cur.Clusterid = billingOpts.ClusterID
+	}
+	if viper.IsSet("machine-id") {
+		cur.ID = viper.GetString("machine-id")
+	}
+	if viper.IsSet("size-id") {
+		cur.Sizeid = viper.GetString("size-id")
+	}
+	if viper.IsSet("partition-id") {
+		cur.Partition = viper.GetString("partition-id")
+	}
+
+	response, err := c.cloud.Accounting.MachineUsage(accounting.NewMachineUsageParams().WithBody(&cur), nil)
+	if err != nil {
+		return err
+	}
+
+	return output.New().Print(response.Payload)
+}
+
+func (c *config) productOptionUsage() error {
+	from := strfmt.DateTime(billingOpts.From)
+	cur := models.V1ProductOptionUsageRequest{
+		From: &from,
+		To:   strfmt.DateTime(billingOpts.To),
+	}
+	if billingOpts.Tenant != "" {
+		cur.Tenant = billingOpts.Tenant
+	}
+	if billingOpts.ProjectID != "" {
+		cur.Projectid = billingOpts.ProjectID
+	}
+	if billingOpts.ClusterID != "" {
+		cur.Clusterid = billingOpts.ClusterID
+	}
+	if viper.IsSet("id") {
+		cur.ID = viper.GetString("id")
+	}
+
+	response, err := c.cloud.Accounting.ProductOptionUsage(accounting.NewProductOptionUsageParams().WithBody(&cur), nil)
+	if err != nil {
+		return err
+	}
+
+	return output.New().Print(response.Payload)
 }
 
 func (c *config) containerUsage() error {

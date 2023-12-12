@@ -103,8 +103,8 @@ github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1m
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/fatih/color v1.16.0 h1:zmkK9Ngbjj+K0yRhTVONQh1p/HknKYSlNT+vZCzyokM=
 github.com/fatih/color v1.16.0/go.mod h1:fL2Sau1YI5c0pdGEVCbKQbLXB6edEj1ZgiY4NijnWvE=
-github.com/fi-ts/cloud-go v0.23.0 h1:iJDu5J3P0Q4wa2z6sCZdXCA7z4udfOSZot4c2oVnIpE=
-github.com/fi-ts/cloud-go v0.23.0/go.mod h1:z4ZWkDa0EiaAfHy1iiv7vlgoZgJQEsAgQnrvG2cJksw=
+github.com/fi-ts/cloud-go v0.23.1-0.20231212152117-ac7cfb24f780 h1:GqY5LB5UXLpcDKXqhEla6rMyHXqAnE86/ZZpWmYEKrQ=
+github.com/fi-ts/cloud-go v0.23.1-0.20231212152117-ac7cfb24f780/go.mod h1:z4ZWkDa0EiaAfHy1iiv7vlgoZgJQEsAgQnrvG2cJksw=
 github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHkI4W8=
 github.com/frankban/quicktest v1.14.6/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
 github.com/fsnotify/fsnotify v1.7.0 h1:8JEhPFa5W2WU7YfeZzPNqzMP6Lwt7L2715Ggo0nosvA=
