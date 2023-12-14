@@ -205,7 +205,7 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 
 // Print a machine usage as table
 func (s MachineBillingTablePrinter) Print(data *models.V1MachineUsageResponse) {
-	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "MachineID", "MachineName", "ClusterID", "ClusterName", "MachineStart", "Lifetime"}
+	s.wideHeader = []string{"Tenant", "From", "To", "ProjectID", "ProjectName", "Partition", "Size", "MachineID", "MachineName", "ClusterID", "MachineStart", "Lifetime"}
 	s.shortHeader = s.wideHeader
 
 	if s.order == "" {
@@ -246,13 +246,13 @@ func (s MachineBillingTablePrinter) Print(data *models.V1MachineUsageResponse) {
 		if u.Machinename != nil {
 			machineName = *u.Machinename
 		}
+		var sizeid string
+		if u.Sizeid != nil {
+			sizeid = *u.Sizeid
+		}
 		var clusterID string
 		if u.Clusterid != nil {
 			clusterID = *u.Clusterid
-		}
-		var clusterName string
-		if u.Clustername != nil {
-			clusterName = *u.Clustername
 		}
 		var machineStart string
 		if u.Machinestart != nil {
@@ -270,10 +270,10 @@ func (s MachineBillingTablePrinter) Print(data *models.V1MachineUsageResponse) {
 			projectID,
 			projectName,
 			partition,
+			sizeid,
 			machineID,
 			machineName,
 			clusterID,
-			clusterName,
 			machineStart,
 			humanizeDuration(lifetime),
 		}
