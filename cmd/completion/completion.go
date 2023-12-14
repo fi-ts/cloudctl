@@ -3,6 +3,7 @@ package completion
 import (
 	"sort"
 
+	accountingv1 "github.com/fi-ts/accounting-go/pkg/apis/v1"
 	"github.com/fi-ts/cloud-go/api/client"
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/fi-ts/cloud-go/api/client/database"
@@ -280,6 +281,33 @@ func (c *Completion) FirewallImageListCompletion(cmd *cobra.Command, args []stri
 	return sc.Payload.FirewallImages, cobra.ShellCompDirectiveNoFileComp
 }
 
+func (c *Completion) SizeListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	request := cluster.NewListConstraintsParams()
+	sc, err := c.cloud.Cluster.ListConstraints(request, nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+
+	sizeMap := map[string]bool{}
+	for _, t := range sc.Payload.MachineTypes {
+		t := t
+		sizeMap[t] = true
+	}
+	for _, t := range sc.Payload.FirewallTypes {
+		t := t
+		sizeMap[t] = true
+	}
+
+	var sizes []string
+	for size := range sizeMap {
+		sizes = append(sizes, size)
+	}
+
+	sort.Strings(sizes)
+
+	return sizes, cobra.ShellCompDirectiveNoFileComp
+}
+
 func (c *Completion) FirewallControllerVersionListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	request := cluster.NewListConstraintsParams()
 	sc, err := c.cloud.Cluster.ListConstraints(request, nil)
@@ -349,4 +377,16 @@ func (c *Completion) PostgresListCompletion(cmd *cobra.Command, args []string, t
 	}
 	sort.Strings(names)
 	return names, cobra.ShellCompDirectiveNoFileComp
+}
+
+func (c *Completion) ProductOptionsCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	var options []string
+	for o, v := range accountingv1.ProductOption_value {
+		if v == 0 {
+			continue
+		}
+		options = append(options, o)
+	}
+	sort.Strings(options)
+	return options, cobra.ShellCompDirectiveNoFileComp
 }
