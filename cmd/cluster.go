@@ -263,6 +263,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().BoolP("disable-forwarding-to-upstream-dns", "", false, "disables direct forwarding of queries to external dns servers when node-local-dns is enabled. All dns queries will go through coredns. [optional].")
 	clusterCreateCmd.Flags().StringSlice("kube-apiserver-acl-allowed-cidrs", []string{}, "comma-separated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterCreateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-allowed-cidrs [optional].")
+	clusterCreateCmd.Flags().String("network-isolation", "", "restricts access to the outside networks, can be one of baseline|restricted|isolated. Baseline defines no restriction, restricted will by default only allow external traffic to strictly required destinations, own cluster wide networkpolicies are possible, forbidden does not allow cluster wide networkpolicies to external networks.[optional]. Please consult the documentation for detailed description.")
 
 	must(clusterCreateCmd.MarkFlagRequired("name"))
 	must(clusterCreateCmd.MarkFlagRequired("project"))
@@ -286,6 +287,13 @@ func newClusterCmd(c *config) *cobra.Command {
 		return []string{
 			"calico\tcalico networking plugin. this is the cluster default.",
 			"cilium\tcilium networking plugin. please note that cilium support is still Alpha and we are happy to receive feedback.",
+		}, cobra.ShellCompDirectiveNoFileComp
+	}))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("network-isolation", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{
+			models.V1ClusterCreateRequestNetworkAccessTypeBaseline + "\tunrestricted network access for outgoing traffic, service type loadbalancer possible in all networks",
+			models.V1ClusterCreateRequestNetworkAccessTypeRestricted + "\tonly strictly required network access for outgoing traffic possible, own cluster wide network policies possible, service type loadbalancer possible in all networks",
+			models.V1ClusterCreateRequestNetworkAccessTypeForbidden + "\tonly strictly required network access for outgoing traffic possible, own cluster wide network policies not possible, service type loadbalancer possible only in private networks",
 		}, cobra.ShellCompDirectiveNoFileComp
 	}))
 
@@ -487,6 +495,11 @@ func (c *config) clusterCreate() error {
 		disablePodSecurityPolicies = pointer.Pointer(viper.GetBool("disable-pod-security-policies"))
 	}
 
+	var networkAccessType *string
+	if viper.IsSet("network-isolation") {
+		networkAccessType = pointer.Pointer(viper.GetString("network-isolation"))
+	}
+
 	labels := viper.GetStringSlice("labels")
 
 	// FIXME helper and validation
@@ -597,6 +610,7 @@ func (c *config) clusterCreate() error {
 		},
 		CustomDefaultStorageClass: customDefaultStorageClass,
 		Cni:                       cni,
+		NetworkAccessType:         networkAccessType,
 	}
 
 	if viper.IsSet("autoupdate-kubernetes") || viper.IsSet("autoupdate-machineimages") || purpose == string(v1beta1.ShootPurposeEvaluation) {
