@@ -150,6 +150,15 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 	if (*shoot).KubeAPIServerACL != nil && !*shoot.KubeAPIServerACL.Disabled {
 		shootStats.apiServer += "🔒"
 	}
+	if (*shoot).NetworkAccessType != nil {
+		if *shoot.NetworkAccessType == models.V1ClusterCreateRequestNetworkAccessTypeForbidden {
+			// shootStats.nodes += "🛡"
+			shootStats.nodes += "⛓️"
+		}
+		if *shoot.NetworkAccessType == models.V1ClusterCreateRequestNetworkAccessTypeRestricted {
+			shootStats.nodes += "⛓️"
+		}
+	}
 
 	maintainEmoji := ""
 	var issues []string
