@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -150,13 +151,13 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 	if (*shoot).KubeAPIServerACL != nil && !*shoot.KubeAPIServerACL.Disabled {
 		shootStats.apiServer += "🔒"
 	}
+	name := *shoot.Name
 	if (*shoot).NetworkAccessType != nil {
 		if *shoot.NetworkAccessType == models.V1ClusterCreateRequestNetworkAccessTypeForbidden {
-			// shootStats.nodes += "🛡"
-			shootStats.nodes += "⛓️"
+			name = color.RedString(name)
 		}
 		if *shoot.NetworkAccessType == models.V1ClusterCreateRequestNetworkAccessTypeRestricted {
-			shootStats.nodes += "⛓️"
+			name = color.YellowString(name)
 		}
 	}
 
@@ -321,7 +322,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 
 	wide := []string{
 		*shoot.ID,
-		*shoot.Name,
+		name,
 		version, partition, seed, dnsdomain,
 		operation,
 		progress,
@@ -343,7 +344,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		*shoot.ID,
 		tenant,
 		project,
-		*shoot.Name,
+		name,
 		version, partition,
 		operation,
 		progress,
