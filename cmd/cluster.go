@@ -498,6 +498,34 @@ func (c *config) clusterCreate() error {
 	var networkAccessType *string
 	if viper.IsSet("network-isolation") {
 		networkAccessType = pointer.Pointer(viper.GetString("network-isolation"))
+		switch *networkAccessType {
+		case models.V1ClusterCreateRequestNetworkAccessTypeForbidden:
+			fmt.Printf(`
+WARNING: You are going to create a cluster which has no internet access with the following consequences:
+- pulling images is only possible from private registries you provide, these registries must be resolvable from the public dns and must be secured with a trusted TLS certificate
+- service type loadbalancer can only be created in networks which are not internet facing
+- cluster wide network policies can only be create in networks which are not internet facing
+- It is not possible to change this cluster back to %q after creation
+`, models.V1ClusterCreateRequestNetworkAccessTypeBaseline)
+			err := helper.Prompt("Are you sure? (y/n)", "y")
+			if err != nil {
+				return err
+			}
+		case models.V1ClusterCreateRequestNetworkAccessTypeRestricted:
+			fmt.Printf(`
+WARNING: You are going to create a cluster which has no internet access with the following consequences:
+- pulling images is only possible from private registries you provide, these registries must be resolvable from the public dns and must be secured with a trusted TLS certificate
+- you can create cluster wide network policies to the outside world without restrictions
+- but cluster wide network policies allowing access to popular registries like docker.io, quay.io and eu.gcr.io will still not allow pulling images from there
+- It is not possible to change this cluster back to %q after creation
+`, models.V1ClusterCreateRequestNetworkAccessTypeBaseline)
+			err := helper.Prompt("Are you sure? (y/n)", "y")
+			if err != nil {
+				return err
+			}
+		case models.V1ClusterCreateRequestNetworkAccessTypeBaseline:
+			// Noop
+		}
 	}
 
 	labels := viper.GetStringSlice("labels")
