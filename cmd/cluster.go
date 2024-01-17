@@ -504,7 +504,7 @@ func (c *config) clusterCreate() error {
 WARNING: You are going to create a cluster which has no internet access with the following consequences:
 - pulling images is only possible from private registries you provide, these registries must be resolvable from the public dns and must be secured with a trusted TLS certificate
 - service type loadbalancer can only be created in networks which are not internet facing
-- cluster wide network policies can only be create in networks which are not internet facing
+- cluster wide network policies can only be created in networks which are not internet facing
 - It is not possible to change this cluster back to %q after creation
 `, models.V1ClusterCreateRequestNetworkAccessTypeBaseline)
 			err := helper.Prompt("Are you sure? (y/n)", "y")
