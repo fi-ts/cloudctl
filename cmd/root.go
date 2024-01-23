@@ -44,6 +44,7 @@ func newRootCmd() *cobra.Command {
 	rootCmd.PersistentFlags().StringP("order", "", "", "order by (comma separated) column(s)")
 	rootCmd.PersistentFlags().BoolP("no-headers", "", false, "ommit headers in tables")
 	rootCmd.PersistentFlags().BoolP("debug", "", false, "enable debug")
+	rootCmd.PersistentFlags().Bool("force-color", false, "force colored output even without tty")
 	rootCmd.PersistentFlags().StringP("output-format", "o", "table", "output format (table|wide|markdown|json|yaml|template), wide is a table with more columns.")
 	rootCmd.PersistentFlags().StringP("template", "", "", `output template for template output-format, go template format.
 	For property names inspect the output of -o json for reference.

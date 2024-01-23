@@ -10,6 +10,7 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
+	"github.com/fatih/color"
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/pkg/api"
@@ -169,6 +170,16 @@ func newPrinter(format, order, tpl string, noHeaders bool, writer io.Writer) (Pr
 	default:
 		return nil, fmt.Errorf("unknown format:%s", format)
 	}
+
+	if viper.IsSet("force-color") {
+		enabled := viper.GetBool("force-color")
+		if enabled {
+			color.NoColor = false
+		} else {
+			color.NoColor = true
+		}
+	}
+
 	return printer, nil
 }
 
