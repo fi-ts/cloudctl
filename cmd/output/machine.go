@@ -21,6 +21,8 @@ const (
 	skull    = "\U0001F480"
 	question = "\U00002753"
 	circle   = "●"
+	VPN      = "🛡"
+	Lock     = "🔒"
 )
 
 // Print a list of Machines in a table
@@ -94,6 +96,15 @@ func (m MachineTablePrinter) Print(data []*models.ModelsV1MachineResponse) {
 		default:
 			statusEmoji = question
 		}
+
+		if machine.State != nil && machine.State.Value != nil && *machine.State.Value == "LOCK" {
+			statusEmoji = Lock
+		}
+
+		if machine.Allocation != nil && machine.Allocation.Vpn != nil {
+			statusEmoji = VPN
+		}
+
 		row := []string{machineID, statusEmoji, lastEvent, when, started, age, hostname, ips, sizeID, image, partitionID}
 		m.addShortData(row, machine)
 		m.addWideData(row, machine)
