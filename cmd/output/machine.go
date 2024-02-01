@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/fi-ts/cloud-go/api/models"
+	metalmodels "github.com/metal-stack/metal-go/api/models"
 )
 
 type (
@@ -97,7 +98,7 @@ func (m MachineTablePrinter) Print(data []*models.ModelsV1MachineResponse) {
 			statusEmoji = question
 		}
 
-		if machine.State != nil && machine.State.Value != nil && *machine.State.Value == "LOCK" {
+		if machine.State != nil && machine.State.Value != nil && *machine.State.Value == metalmodels.V1MachineStateValueLOCKED {
 			statusEmoji = Lock
 		}
 
