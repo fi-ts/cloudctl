@@ -513,7 +513,7 @@ WARNING: You are going to create a cluster which has no internet access with the
 			}
 		case models.V1ClusterCreateRequestNetworkAccessTypeRestricted:
 			fmt.Printf(`
-WARNING: You are going to create a cluster which has no internet access with the following consequences:
+WARNING: You are going to create a cluster that has no default internet access with the following consequences:
 - pulling images is only possible from private registries you provide, these registries must be resolvable from the public dns and must be secured with a trusted TLS certificate
 - you can create cluster wide network policies to the outside world without restrictions
 - pulling container images from registries requires to create a corresponding CWNP to these registries
