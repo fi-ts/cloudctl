@@ -504,7 +504,7 @@ func (c *config) clusterCreate() error {
 WARNING: You are going to create a cluster which has no internet access with the following consequences:
 - pulling images is only possible from private registries you provide, these registries must be resolvable from the public dns and must be secured with a trusted TLS certificate
 - service type loadbalancer can only be created in networks which are specified in the allowed networks (see cluster inputs)
-- cluster wide network policies can only be created in certain network ranges whichspecified in the allowed networks (see cluster inputs)
+- cluster wide network policies can only be created in certain network ranges which are specified in the allowed networks (see cluster inputs)
 - It is not possible to change this cluster back to %q after creation
 `, models.V1ClusterCreateRequestNetworkAccessTypeBaseline)
 			err := helper.Prompt("Are you sure? (y/n)", "y")
@@ -516,7 +516,7 @@ WARNING: You are going to create a cluster which has no internet access with the
 WARNING: You are going to create a cluster which has no internet access with the following consequences:
 - pulling images is only possible from private registries you provide, these registries must be resolvable from the public dns and must be secured with a trusted TLS certificate
 - you can create cluster wide network policies to the outside world without restrictions
-- but cluster wide network policies allowing access to popular registries like docker.io, quay.io and eu.gcr.io will still not allow pulling images from there
+- pulling container images from registries requires to create a corresponding CWNP to these registries
 - It is not possible to change this cluster back to %q after creation
 `, models.V1ClusterCreateRequestNetworkAccessTypeBaseline)
 			err := helper.Prompt("Are you sure? (y/n)", "y")
