@@ -9,11 +9,11 @@ import (
 	"os"
 	"text/template"
 
-	"github.com/Masterminds/sprig/v3"
 	"github.com/fatih/color"
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/pkg/api"
+	sprig "github.com/go-task/slim-sprig/v3"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/spf13/viper"
 
