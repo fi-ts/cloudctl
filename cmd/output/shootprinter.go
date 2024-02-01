@@ -148,11 +148,11 @@ func (s ShootIssuesTablePrinter) Print(data []*models.V1ClusterResponse) {
 
 func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []string, []string) {
 	shootStats := newShootStats(shoot.Status)
-	if (*shoot).KubeAPIServerACL != nil && !*shoot.KubeAPIServerACL.Disabled {
+	if shoot.KubeAPIServerACL != nil && !*shoot.KubeAPIServerACL.Disabled {
 		shootStats.apiServer += "🔒"
 	}
 	name := *shoot.Name
-	if (*shoot).NetworkAccessType != nil {
+	if shoot.NetworkAccessType != nil {
 		if *shoot.NetworkAccessType == models.V1ClusterCreateRequestNetworkAccessTypeForbidden {
 			name = color.RedString(name)
 		}
