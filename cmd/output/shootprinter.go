@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
@@ -147,8 +148,17 @@ func (s ShootIssuesTablePrinter) Print(data []*models.V1ClusterResponse) {
 
 func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []string, []string) {
 	shootStats := newShootStats(shoot.Status)
-	if (*shoot).KubeAPIServerACL != nil && !*shoot.KubeAPIServerACL.Disabled {
+	if shoot.KubeAPIServerACL != nil && !*shoot.KubeAPIServerACL.Disabled {
 		shootStats.apiServer += "🔒"
+	}
+	name := *shoot.Name
+	if shoot.NetworkAccessType != nil {
+		if *shoot.NetworkAccessType == models.V1ClusterCreateRequestNetworkAccessTypeForbidden {
+			name = color.RedString(name)
+		}
+		if *shoot.NetworkAccessType == models.V1ClusterCreateRequestNetworkAccessTypeRestricted {
+			name = color.YellowString(name)
+		}
 	}
 
 	maintainEmoji := ""
@@ -312,7 +322,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 
 	wide := []string{
 		*shoot.ID,
-		*shoot.Name,
+		name,
 		version, partition, seed, dnsdomain,
 		operation,
 		progress,
@@ -334,7 +344,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		*shoot.ID,
 		tenant,
 		project,
-		*shoot.Name,
+		name,
 		version, partition,
 		operation,
 		progress,

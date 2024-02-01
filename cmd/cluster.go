@@ -263,6 +263,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().BoolP("disable-forwarding-to-upstream-dns", "", false, "disables direct forwarding of queries to external dns servers when node-local-dns is enabled. All dns queries will go through coredns. [optional].")
 	clusterCreateCmd.Flags().StringSlice("kube-apiserver-acl-allowed-cidrs", []string{}, "comma-separated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterCreateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-allowed-cidrs [optional].")
+	clusterCreateCmd.Flags().String("network-isolation", "", "defines restrictions to external network communication for the cluster, can be one of baseline|restricted|isolated. baseline sets no special restrictions to external networks, restricted by default only allows external traffic to explicitly allowed destinations, forbidden disallows communication with external networks except for a limited set of networks. Please consult the documentation for detailed descriptions of the individual modes as these cannot be altered anymore after creation. [optional]")
 
 	must(clusterCreateCmd.MarkFlagRequired("name"))
 	must(clusterCreateCmd.MarkFlagRequired("project"))
@@ -286,6 +287,13 @@ func newClusterCmd(c *config) *cobra.Command {
 		return []string{
 			"calico\tcalico networking plugin. this is the cluster default.",
 			"cilium\tcilium networking plugin. please note that cilium support is still Alpha and we are happy to receive feedback.",
+		}, cobra.ShellCompDirectiveNoFileComp
+	}))
+	must(clusterCreateCmd.RegisterFlagCompletionFunc("network-isolation", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{
+			models.V1ClusterCreateRequestNetworkAccessTypeBaseline + "\tno special restrictions for external network traffic, service type loadbalancer possible in all networks",
+			models.V1ClusterCreateRequestNetworkAccessTypeRestricted + "\texternal network traffic needs to be allowed explicitly, own cluster wide network policies possible, service type loadbalancer possible in all networks",
+			models.V1ClusterCreateRequestNetworkAccessTypeForbidden + "\texternal network traffic is not possible except for allowed networks , own cluster wide network policies not possible, service type loadbalancer possible only in allowed networks, for the allowed networks please see cluster inputs",
 		}, cobra.ShellCompDirectiveNoFileComp
 	}))
 
@@ -487,6 +495,39 @@ func (c *config) clusterCreate() error {
 		disablePodSecurityPolicies = pointer.Pointer(viper.GetBool("disable-pod-security-policies"))
 	}
 
+	var networkAccessType *string
+	if viper.IsSet("network-isolation") {
+		networkAccessType = pointer.Pointer(viper.GetString("network-isolation"))
+		switch *networkAccessType {
+		case models.V1ClusterCreateRequestNetworkAccessTypeForbidden:
+			fmt.Printf(`
+WARNING: You are going to create a cluster which has no internet access with the following consequences:
+- pulling images is only possible from private registries you provide, these registries must be resolvable from the public dns, their IP must be located in one of the allowed networks (see cluster inputs), and must be secured with a trusted TLS certificate
+- service type loadbalancer can only be created in networks which are specified in the allowed networks (see cluster inputs)
+- cluster wide network policies can only be created in certain network ranges which are specified in the allowed networks (see cluster inputs)
+- It is not possible to change this cluster back to %q after creation
+`, models.V1ClusterCreateRequestNetworkAccessTypeBaseline)
+			err := helper.Prompt("Are you sure? (y/n)", "y")
+			if err != nil {
+				return err
+			}
+		case models.V1ClusterCreateRequestNetworkAccessTypeRestricted:
+			fmt.Printf(`
+WARNING: You are going to create a cluster that has no default internet access with the following consequences:
+- pulling images is only possible from private registries you provide, these registries must be resolvable from the public dns and must be secured with a trusted TLS certificate
+- you can create cluster wide network policies to the outside world without restrictions
+- pulling container images from registries requires to create a corresponding CWNP to these registries
+- It is not possible to change this cluster back to %q after creation
+`, models.V1ClusterCreateRequestNetworkAccessTypeBaseline)
+			err := helper.Prompt("Are you sure? (y/n)", "y")
+			if err != nil {
+				return err
+			}
+		case models.V1ClusterCreateRequestNetworkAccessTypeBaseline:
+			// Noop
+		}
+	}
+
 	labels := viper.GetStringSlice("labels")
 
 	// FIXME helper and validation
@@ -597,6 +638,7 @@ func (c *config) clusterCreate() error {
 		},
 		CustomDefaultStorageClass: customDefaultStorageClass,
 		Cni:                       cni,
+		NetworkAccessType:         networkAccessType,
 	}
 
 	if viper.IsSet("autoupdate-kubernetes") || viper.IsSet("autoupdate-machineimages") || purpose == string(v1beta1.ShootPurposeEvaluation) {
