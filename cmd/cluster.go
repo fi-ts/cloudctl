@@ -263,7 +263,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().BoolP("disable-forwarding-to-upstream-dns", "", false, "disables direct forwarding of queries to external dns servers when node-local-dns is enabled. All dns queries will go through coredns. [optional].")
 	clusterCreateCmd.Flags().StringSlice("kube-apiserver-acl-allowed-cidrs", []string{}, "comma-separated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterCreateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-allowed-cidrs [optional].")
-	clusterCreateCmd.Flags().String("network-isolation", "", "defines restrictions to external network communication for the cluster, can be one of baseline|restricted|isolated. baseline sets no special restrictions to external networks, restricted by default only allows external traffic to explicitly allowed destinations, forbidden disallows communication with external networks except for a limited set of networks ranges like MPLS. Please consult the documentation for detailed descriptions of the individual modes as these cannot be altered anymore after creation. [optional]")
+	clusterCreateCmd.Flags().String("network-isolation", "", "defines restrictions to external network communication for the cluster, can be one of baseline|restricted|isolated. baseline sets no special restrictions to external networks, restricted by default only allows external traffic to explicitly allowed destinations, forbidden disallows communication with external networks except for a limited set of networks. Please consult the documentation for detailed descriptions of the individual modes as these cannot be altered anymore after creation. [optional]")
 
 	must(clusterCreateCmd.MarkFlagRequired("name"))
 	must(clusterCreateCmd.MarkFlagRequired("project"))
@@ -293,7 +293,7 @@ func newClusterCmd(c *config) *cobra.Command {
 		return []string{
 			models.V1ClusterCreateRequestNetworkAccessTypeBaseline + "\tno special restrictions for external network traffic, service type loadbalancer possible in all networks",
 			models.V1ClusterCreateRequestNetworkAccessTypeRestricted + "\texternal network traffic needs to be allowed explicitly, own cluster wide network policies possible, service type loadbalancer possible in all networks",
-			models.V1ClusterCreateRequestNetworkAccessTypeForbidden + "\texternal network traffic is not possible except for certain internal network ranges like MPLS, own cluster wide network policies not possible, service type loadbalancer possible only in private networks",
+			models.V1ClusterCreateRequestNetworkAccessTypeForbidden + "\texternal network traffic is not possible except for allowed networks , own cluster wide network policies not possible, service type loadbalancer possible only in allowed networks, for the allowed networks please see cluster inputs",
 		}, cobra.ShellCompDirectiveNoFileComp
 	}))
 
