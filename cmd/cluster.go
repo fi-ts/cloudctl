@@ -240,7 +240,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().String("firewallimage", "", "machine image to use for the firewall. [optional]")
 	clusterCreateCmd.Flags().String("firewallcontroller", "", "version of the firewall-controller to use. [optional]")
 	clusterCreateCmd.Flags().BoolP("logacceptedconns", "", false, "also log accepted connections on the cluster firewall [optional]")
-	clusterCreateCmd.Flags().String("cri", "", "container runtime to use, only docker|containerd supported as alternative actually. [optional]")
+	clusterCreateCmd.Flags().String("cri", "", "container runtime to use, currently only containerd is supported. [optional]")
 	clusterCreateCmd.Flags().Int32("minsize", 1, "minimal workers of the cluster.")
 	clusterCreateCmd.Flags().Int32("maxsize", 1, "maximal workers of the cluster.")
 	clusterCreateCmd.Flags().String("maxsurge", "1", "max number (e.g. 1) or percentage (e.g. 10%) of workers created during a update of the cluster.")
@@ -281,7 +281,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("purpose", c.comp.ClusterPurposeListCompletion))
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("default-pod-security-standard", c.comp.PodSecurityListCompletion))
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("cri", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"docker", "containerd"}, cobra.ShellCompDirectiveNoFileComp
+		return []string{"containerd"}, cobra.ShellCompDirectiveNoFileComp
 	}))
 	must(clusterCreateCmd.RegisterFlagCompletionFunc("cni", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{
@@ -584,10 +584,9 @@ WARNING: You are going to create a cluster that has no default internet access w
 
 	switch cri {
 	case "containerd":
-	case "docker":
 	case "":
 	default:
-		log.Fatalf("provided cri:%s is not supported, only docker or containerd at the moment", cri)
+		log.Fatalf("provided cri:%s is not supported, only containerd at the moment", cri)
 	}
 
 	var customDefaultStorageClass *models.V1CustomDefaultStorageClass
