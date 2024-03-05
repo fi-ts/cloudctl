@@ -8,7 +8,7 @@ require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.16.0
 	github.com/fi-ts/accounting-go v0.9.1
-	github.com/fi-ts/cloud-go v0.24.3
+	github.com/fi-ts/cloud-go v0.24.4-0.20240304120631-09b9b6c63208
 	github.com/gardener/gardener v1.73.2
 	github.com/gardener/machine-controller-manager v0.50.1
 	github.com/go-openapi/runtime v0.27.1
@@ -20,7 +20,7 @@ require (
 	github.com/jinzhu/now v1.1.5
 	github.com/metal-stack/duros-go v0.4.4
 	github.com/metal-stack/metal-go v0.28.0
-	github.com/metal-stack/metal-lib v0.14.4
+	github.com/metal-stack/metal-lib v0.15.0
 	github.com/metal-stack/updater v1.2.1
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
@@ -174,7 +174,6 @@ require (
 	go.opentelemetry.io/otel/metric v1.23.1 // indirect
 	go.opentelemetry.io/otel/trace v1.23.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	go.uber.org/zap v1.26.0 // indirect
 	go4.org/mem v0.0.0-20220726221520-4f986261bf13 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
 	golang.org/x/crypto v0.19.0 // indirect

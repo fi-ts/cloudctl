@@ -58,6 +58,29 @@ func (p HealthTablePrinter) PrintServices(services map[string]models.RestHealthR
 		wide := []string{name, status, msg}
 		p.addWideData(wide, s)
 		p.addShortData(wide, s)
+
+		i := 0
+		for sname, sresult := range s.Services {
+			prefix := "├"
+			if i == len(s.Services)-1 {
+				prefix = "└"
+			}
+			prefix += "─╴"
+
+			status := "unknown"
+			if sresult.Status != nil && *sresult.Status != "" {
+				status = *sresult.Status
+			}
+			msg := ""
+			if sresult.Message != nil && *sresult.Message != "" {
+				msg = *s.Message
+			}
+
+			wide := []string{prefix + sname, status, msg}
+			p.addWideData(wide, s)
+			p.addShortData(wide, s)
+			i++
+		}
 	}
 
 	p.render()
