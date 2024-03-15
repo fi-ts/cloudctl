@@ -106,6 +106,21 @@ func newVolumeCmd(c *config) *cobra.Command {
 		PreRun: bindPFlags,
 	}
 
+	qosCmd := &cobra.Command{
+		Use:   "qos",
+		Short: "manage qos policies",
+		Long:  "list qos policies",
+	}
+	qosListCmd := &cobra.Command{
+		Use:     "list",
+		Short:   "list qos policies",
+		Aliases: []string{"ls"},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.listQoSPolicies()
+		},
+		PreRun: bindPFlags,
+	}
+
 	snapshotListCmd.Flags().StringP("snapshotid", "", "", "snapshotid to filter [optional]")
 	snapshotListCmd.Flags().StringP("project", "", "", "project to filter")
 	snapshotListCmd.Flags().StringP("name", "", "", "name to filter")
@@ -125,6 +140,9 @@ func newVolumeCmd(c *config) *cobra.Command {
 	snapshotCmd.AddCommand(snapshotDescribeCmd)
 	snapshotCmd.AddCommand(snapshotDeleteCmd)
 	volumeCmd.AddCommand(snapshotCmd)
+
+	qosCmd.AddCommand(qosListCmd)
+	volumeCmd.AddCommand(qosCmd)
 
 	volumeCmd.AddCommand(volumeListCmd)
 	volumeCmd.AddCommand(volumeDeleteCmd)
@@ -334,5 +352,13 @@ delete snapshot: %q, all data will be lost forever.
 		return err
 	}
 
+	return output.New().Print(resp.Payload)
+}
+
+func (c *config) listQoSPolicies() error {
+	resp, err := c.cloud.Volume.ListPolicies(volume.NewListPoliciesParams(), nil)
+	if err != nil {
+		return err
+	}
 	return output.New().Print(resp.Payload)
 }
