@@ -46,6 +46,16 @@ func newVolumeCmd(c *config) *cobra.Command {
 		ValidArgsFunction: c.comp.VolumeListCompletion,
 		PreRun:            bindPFlags,
 	}
+	volumeSetQoSCmd := &cobra.Command{
+		Use:     "set-qos <volume>",
+		Aliases: []string{"set-qos"},
+		Short:   "sets the qos policy of the volume",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.volumeSetQoS(args)
+		},
+		ValidArgsFunction: c.comp.VolumeListCompletion,
+		PreRun:            bindPFlags,
+	}
 	volumeManifestCmd := &cobra.Command{
 		Use:   "manifest <volume>",
 		Short: "print a manifest for a volume",
@@ -150,6 +160,7 @@ func newVolumeCmd(c *config) *cobra.Command {
 	volumeCmd.AddCommand(volumeManifestCmd)
 	volumeCmd.AddCommand(volumeEncryptionSecretManifestCmd)
 	volumeCmd.AddCommand(volumeClusterInfoCmd)
+	volumeCmd.AddCommand(volumeSetQoSCmd)
 
 	volumeListCmd.Flags().StringP("volumeid", "", "", "volumeid to filter [optional]")
 	volumeListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
@@ -169,6 +180,12 @@ func newVolumeCmd(c *config) *cobra.Command {
 
 	volumeClusterInfoCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
 	must(volumeClusterInfoCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+
+	volumeSetQoSCmd.Flags().StringP("policyid", "", "", "the new qos policy of the volume")
+
+	must(volumeSetQoSCmd.MarkFlagRequired("policyid"))
+
+	must(volumeSetQoSCmd.RegisterFlagCompletionFunc("policyid", c.comp.PolicyListCompletion))
 
 	return volumeCmd
 }
@@ -249,6 +266,26 @@ If used in cronjob for example, volume might not be connected now, but required 
 		return err
 	}
 
+	return output.New().Print(resp.Payload)
+}
+
+func (c *config) volumeSetQoS(args []string) error {
+	vol, err := c.getVolumeFromArgs(args)
+	if err != nil {
+		return err
+	}
+	policyId := helper.ViperString("policyid")
+
+	params := volume.NewSetVolumeQoSPolicyParams().
+		WithID(*vol.VolumeID).
+		WithBody(&models.V1VolumeSetQoSPolicyRequest{
+			QoSPolicyID: policyId,
+		})
+
+	resp, err := c.cloud.Volume.SetVolumeQoSPolicy(params, nil)
+	if err != nil {
+		return err
+	}
 	return output.New().Print(resp.Payload)
 }
 

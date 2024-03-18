@@ -158,6 +158,22 @@ func (c *Completion) PartitionListCompletion(cmd *cobra.Command, args []string, 
 	return sc.Payload.Partitions, cobra.ShellCompDirectiveNoFileComp
 }
 
+func (c *Completion) PolicyListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	request := volume.NewListPoliciesParams()
+	sc, err := c.cloud.Volume.ListPolicies(request, nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	policyids := make([]string, 0, len(sc.Payload))
+	for _, policy := range sc.Payload {
+		if policy.QoSPolicyID == nil {
+			continue
+		}
+		policyids = append(policyids, *policy.QoSPolicyID)
+	}
+	return policyids, cobra.ShellCompDirectiveNoFileComp
+}
+
 func (c *Completion) SeedListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	request := cluster.NewListConstraintsParams()
 	sc, err := c.cloud.Cluster.ListConstraints(request, nil)
