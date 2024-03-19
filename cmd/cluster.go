@@ -264,6 +264,8 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().StringSlice("kube-apiserver-acl-allowed-cidrs", []string{}, "comma-separated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterCreateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-allowed-cidrs [optional].")
 	clusterCreateCmd.Flags().String("network-isolation", "", "defines restrictions to external network communication for the cluster, can be one of baseline|restricted|isolated. baseline sets no special restrictions to external networks, restricted by default only allows external traffic to explicitly allowed destinations, forbidden disallows communication with external networks except for a limited set of networks. Please consult the documentation for detailed descriptions of the individual modes as these cannot be altered anymore after creation. [optional]")
+	clusterCreateCmd.Flags().String("maintenance-begin", "220000+0100", "defines the beginning of the time window in the format HHMMSS+ZONE, e.g. \"220000+0100\". [optional]")
+	clusterCreateCmd.Flags().String("maintenance-end", "233000+0100", "defines the end of the time window in the format HHMMSS+ZONE, e.g. \"220000+0100\". [optional]")
 
 	must(clusterCreateCmd.MarkFlagRequired("name"))
 	must(clusterCreateCmd.MarkFlagRequired("project"))
@@ -356,6 +358,8 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-add-to-allowed-cidrs", []string{}, "comma-separated list of external CIDRs to add to the allowed CIDRs to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-remove-from-allowed-cidrs", []string{}, "comma-separated list of external CIDRs to be removed from the allowed CIDRs to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterUpdateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-* [optional].")
+	clusterUpdateCmd.Flags().String("maintenance-begin", "", "defines the beginning of the time window in the format HHMMSS+ZONE, e.g. \"220000+0100\". [optional]")
+	clusterUpdateCmd.Flags().String("maintenance-end", "", "defines the end of the time window in the format HHMMSS+ZONE, e.g. \"220000+0100\". [optional]")
 
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
 	must(clusterUpdateCmd.RegisterFlagCompletionFunc("workerversion", c.comp.VersionListCompletion))
@@ -533,8 +537,8 @@ WARNING: You are going to create a cluster that has no default internet access w
 	// FIXME helper and validation
 	networks := viper.GetStringSlice("external-networks")
 	egress := viper.GetStringSlice("egress")
-	maintenanceBegin := "220000+0100"
-	maintenanceEnd := "233000+0100"
+	maintenanceBegin := viper.GetString("maintenance-begin")
+	maintenanceEnd := viper.GetString("maintenance-end")
 
 	version := viper.GetString("version")
 	if version == "" {
@@ -1166,6 +1170,20 @@ func (c *config) updateCluster(args []string) error {
 	if viper.IsSet("autoupdate-machineimages") {
 		auto := viper.GetBool("autoupdate-machineimages")
 		cur.Maintenance.AutoUpdate.MachineImage = &auto
+	}
+	if viper.IsSet("maintenance-begin") {
+		begin := viper.GetString("maintenance-begin")
+		if cur.Maintenance.TimeWindow == nil {
+			cur.Maintenance.TimeWindow = &models.V1MaintenanceTimeWindow{}
+		}
+		cur.Maintenance.TimeWindow.Begin = &begin
+	}
+	if viper.IsSet("maintenance-end") {
+		if cur.Maintenance.TimeWindow == nil {
+			cur.Maintenance.TimeWindow = &models.V1MaintenanceTimeWindow{}
+		}
+		end := viper.GetString("maintenance-end")
+		cur.Maintenance.TimeWindow.End = &end
 	}
 
 	updateCausesDowntime := false
