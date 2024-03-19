@@ -25,6 +25,7 @@ import (
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/metal-stack/metal-lib/pkg/cache"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/rest"
 	"github.com/metal-stack/v"
@@ -58,16 +59,16 @@ func newDashboardCmd(c *config) *cobra.Command {
 	dashboardCmd.Flags().String("initial-tab", strings.ToLower(tabs[0].Name()), "the tab to show when starting the dashboard [optional]")
 	dashboardCmd.Flags().Duration("refresh-interval", 3*time.Second, "refresh interval [optional]")
 
-	must(dashboardCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-	must(dashboardCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
-	must(dashboardCmd.RegisterFlagCompletionFunc("purpose", c.comp.ClusterPurposeListCompletion))
-	must(dashboardCmd.RegisterFlagCompletionFunc("color-theme", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	genericcli.Must(dashboardCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	genericcli.Must(dashboardCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
+	genericcli.Must(dashboardCmd.RegisterFlagCompletionFunc("purpose", c.comp.ClusterPurposeListCompletion))
+	genericcli.Must(dashboardCmd.RegisterFlagCompletionFunc("color-theme", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{
 			"default\twith bright fonts, optimized for dark terminal backgrounds",
 			"dark\twith dark fonts, optimized for bright terminal backgrounds",
 		}, cobra.ShellCompDirectiveNoFileComp
 	}))
-	must(dashboardCmd.RegisterFlagCompletionFunc("initial-tab", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	genericcli.Must(dashboardCmd.RegisterFlagCompletionFunc("initial-tab", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var names []string
 		for _, t := range tabs {
 			names = append(names, fmt.Sprintf("%s\t%s", strings.ToLower(t.Name()), t.Description()))

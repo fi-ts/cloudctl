@@ -12,6 +12,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/client"
 	"github.com/fi-ts/cloudctl/cmd/completion"
 	"github.com/fi-ts/cloudctl/pkg/api"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -55,8 +56,8 @@ func newRootCmd() *cobra.Command {
 	`)
 	rootCmd.PersistentFlags().BoolP("yes-i-really-mean-it", "", false, "skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)")
 
-	must(viper.BindPFlags(rootCmd.Flags()))
-	must(viper.BindPFlags(rootCmd.PersistentFlags()))
+	genericcli.Must(viper.BindPFlags(rootCmd.Flags()))
+	genericcli.Must(viper.BindPFlags(rootCmd.PersistentFlags()))
 
 	cfg := getConfig(name)
 

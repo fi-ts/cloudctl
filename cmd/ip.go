@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/fi-ts/cloud-go/api/client/ip"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 
 	"github.com/fi-ts/cloud-go/api/models"
@@ -65,13 +66,13 @@ func newIPCmd(c *config) *cobra.Command {
 	ipListCmd.Flags().StringP("machineid", "", "", "machineid to filter [optional]")
 	ipListCmd.Flags().StringP("network", "", "", "network to filter [optional]")
 
-	must(ipListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-	must(ipListCmd.RegisterFlagCompletionFunc("network", c.comp.NetworkListCompletion))
+	genericcli.Must(ipListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	genericcli.Must(ipListCmd.RegisterFlagCompletionFunc("network", c.comp.NetworkListCompletion))
 
 	ipStaticCmd.Flags().StringP("name", "", "", "set name of the ip address [required]")
 	ipStaticCmd.Flags().StringP("description", "", "", "set description of the ip address [required]")
-	must(ipStaticCmd.MarkFlagRequired("name"))
-	must(ipStaticCmd.MarkFlagRequired("description"))
+	genericcli.Must(ipStaticCmd.MarkFlagRequired("name"))
+	genericcli.Must(ipStaticCmd.MarkFlagRequired("description"))
 
 	ipAllocateCmd.Flags().StringP("name", "", "", "set name of the ip address [required]")
 	ipAllocateCmd.Flags().StringP("description", "", "", "set description of the ip address [required]")
@@ -79,11 +80,11 @@ func newIPCmd(c *config) *cobra.Command {
 	ipAllocateCmd.Flags().StringP("network", "", "", "the network of the ip address [required]")
 	ipAllocateCmd.Flags().StringP("project", "", "", "the project of the ip address [required]")
 	ipAllocateCmd.Flags().StringSliceP("tags", "", []string{}, "set tags of the ip address [optional]")
-	must(ipAllocateCmd.MarkFlagRequired("name"))
-	must(ipAllocateCmd.MarkFlagRequired("description"))
-	must(ipAllocateCmd.MarkFlagRequired("network"))
-	must(ipAllocateCmd.MarkFlagRequired("project"))
-	must(ipAllocateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	genericcli.Must(ipAllocateCmd.MarkFlagRequired("name"))
+	genericcli.Must(ipAllocateCmd.MarkFlagRequired("description"))
+	genericcli.Must(ipAllocateCmd.MarkFlagRequired("network"))
+	genericcli.Must(ipAllocateCmd.MarkFlagRequired("project"))
+	genericcli.Must(ipAllocateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 
 	return ipCmd
 }
