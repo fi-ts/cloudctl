@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/fi-ts/cloud-go/api/models"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"gopkg.in/yaml.v3"
 
 	"github.com/fi-ts/cloud-go/api/client/project"
@@ -84,14 +85,14 @@ func newProjectCmd(c *config) *cobra.Command {
 	projectCreateCmd.Flags().Int32("cluster-quota", 0, "cluster quota")
 	projectCreateCmd.Flags().Int32("machine-quota", 0, "machine quota")
 	projectCreateCmd.Flags().Int32("ip-quota", 0, "ip quota")
-	must(projectCreateCmd.MarkFlagRequired("name"))
-	must(projectCreateCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
+	genericcli.Must(projectCreateCmd.MarkFlagRequired("name"))
+	genericcli.Must(projectCreateCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
 
 	projectListCmd.Flags().String("id", "", "show projects of given id")
 	projectListCmd.Flags().String("name", "", "show projects of given name")
 	projectListCmd.Flags().String("tenant", "", "show projects of given tenant")
-	must(projectListCmd.RegisterFlagCompletionFunc("id", c.comp.ProjectListCompletion))
-	must(projectListCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
+	genericcli.Must(projectListCmd.RegisterFlagCompletionFunc("id", c.comp.ProjectListCompletion))
+	genericcli.Must(projectListCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
 
 	projectApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
 	Example project update:

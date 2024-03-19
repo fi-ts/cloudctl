@@ -9,6 +9,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/fi-ts/cloudctl/cmd/output"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
@@ -295,13 +296,13 @@ postgres=#
 	postgresCreateCmd.Flags().StringP("dedicated-load-balancer-ip", "", "", "an existing ip address for a dedicated load balancer [optional]")
 	postgresCreateCmd.Flags().StringP("auto-assign-ip-from", "", "", "a network used for auto-assigning an ip for a dedicated load balancer [optional]")
 	postgresCreateCmd.Flags().IntP("dedicated-load-balancer-port", "", 0, "a port for a dedicated load balancer [optional]")
-	must(postgresCreateCmd.MarkFlagRequired("description"))
-	must(postgresCreateCmd.MarkFlagRequired("project"))
-	must(postgresCreateCmd.MarkFlagRequired("partition"))
-	must(postgresCreateCmd.MarkFlagRequired("backup-config"))
-	must(postgresCreateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-	must(postgresCreateCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
-	must(postgresCreateCmd.RegisterFlagCompletionFunc("version", c.comp.PostgresListVersionsCompletion))
+	genericcli.Must(postgresCreateCmd.MarkFlagRequired("description"))
+	genericcli.Must(postgresCreateCmd.MarkFlagRequired("project"))
+	genericcli.Must(postgresCreateCmd.MarkFlagRequired("partition"))
+	genericcli.Must(postgresCreateCmd.MarkFlagRequired("backup-config"))
+	genericcli.Must(postgresCreateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	genericcli.Must(postgresCreateCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
+	genericcli.Must(postgresCreateCmd.RegisterFlagCompletionFunc("version", c.comp.PostgresListVersionsCompletion))
 
 	// CreateStandby
 	postgresCreateStandbyCmd.Flags().StringP("primary-postgres-id", "", "", "id of the primary database")
@@ -314,12 +315,12 @@ postgres=#
 	postgresCreateStandbyCmd.Flags().StringP("dedicated-load-balancer-ip", "", "", "an existing ip address for a dedicated load balancer [optional]")
 	postgresCreateStandbyCmd.Flags().StringP("auto-assign-ip-from", "", "", "a network used for auto-assigning an ip for a dedicated load balancer [optional]")
 	postgresCreateStandbyCmd.Flags().IntP("dedicated-load-balancer-port", "", 0, "a port for a dedicated load balancer [optional]")
-	must(postgresCreateStandbyCmd.MarkFlagRequired("primary-postgres-id"))
-	must(postgresCreateStandbyCmd.MarkFlagRequired("description"))
-	must(postgresCreateStandbyCmd.MarkFlagRequired("partition"))
-	must(postgresCreateStandbyCmd.MarkFlagRequired("backup-config"))
-	must(postgresCreateStandbyCmd.RegisterFlagCompletionFunc("primary-postgres-id", c.comp.PostgresListCompletion))
-	must(postgresCreateStandbyCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
+	genericcli.Must(postgresCreateStandbyCmd.MarkFlagRequired("primary-postgres-id"))
+	genericcli.Must(postgresCreateStandbyCmd.MarkFlagRequired("description"))
+	genericcli.Must(postgresCreateStandbyCmd.MarkFlagRequired("partition"))
+	genericcli.Must(postgresCreateStandbyCmd.MarkFlagRequired("backup-config"))
+	genericcli.Must(postgresCreateStandbyCmd.RegisterFlagCompletionFunc("primary-postgres-id", c.comp.PostgresListCompletion))
+	genericcli.Must(postgresCreateStandbyCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
 
 	// PromoteToPrimary
 	postgresPromoteToPrimaryCmd.Flags().BoolP("synchronous", "", false, "make the replication synchronous")
@@ -332,9 +333,9 @@ postgres=#
 	postgresRestoreCmd.Flags().StringP("partition", "", "", "partition where the database should be created. Changing the partition compared to the source database requires administrative privileges")
 	postgresRestoreCmd.Flags().StringSliceP("labels", "", []string{}, "labels to add to that postgres database")
 	postgresRestoreCmd.Flags().StringSliceP("maintenance", "", []string{"Sun:22:00-23:00"}, "time specification of the automatic maintenance in the form Weekday:HH:MM-HH-MM [optional]")
-	must(postgresRestoreCmd.MarkFlagRequired("source-postgres-id"))
-	must(postgresRestoreCmd.RegisterFlagCompletionFunc("source-postgres-id", c.comp.PostgresListCompletion))
-	must(postgresRestoreCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
+	genericcli.Must(postgresRestoreCmd.MarkFlagRequired("source-postgres-id"))
+	genericcli.Must(postgresRestoreCmd.RegisterFlagCompletionFunc("source-postgres-id", c.comp.PostgresListCompletion))
+	genericcli.Must(postgresRestoreCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
 
 	// Update
 	postgresUpdateCmd.Flags().IntP("replicas", "", 1, "replicas of the database [optional]")
@@ -355,8 +356,8 @@ postgres=#
 	postgresListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
 	postgresListCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
 
-	must(postgresListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-	must(postgresListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	genericcli.Must(postgresListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	genericcli.Must(postgresListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 
 	postgresApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
 	Example postgres update:
@@ -370,7 +371,7 @@ postgres=#
 	`)
 
 	postgresConnectionStringCmd.Flags().StringP("type", "", "psql", "the type of the connectionstring to create, can be one of psql|jdbc")
-	must(postgresConnectionStringCmd.RegisterFlagCompletionFunc("type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	genericcli.Must(postgresConnectionStringCmd.RegisterFlagCompletionFunc("type", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"jdbc", "psql"}, cobra.ShellCompDirectiveNoFileComp
 	}))
 
@@ -384,25 +385,25 @@ postgres=#
 	postgresBackupCreateCmd.Flags().StringP("s3-accesskey", "", "", "s3-accesskey")
 	postgresBackupCreateCmd.Flags().StringP("s3-secretkey", "", "", "s3-secretkey")
 	postgresBackupCreateCmd.Flags().StringP("s3-encryptionkey", "", "", "s3 encryption key, enables sse (server side encryption) if given [optional]")
-	must(postgresBackupCreateCmd.MarkFlagRequired("name"))
-	must(postgresBackupCreateCmd.MarkFlagRequired("project"))
-	must(postgresBackupCreateCmd.MarkFlagRequired("s3-endpoint"))
-	must(postgresBackupCreateCmd.MarkFlagRequired("s3-accesskey"))
-	must(postgresBackupCreateCmd.MarkFlagRequired("s3-secretkey"))
+	genericcli.Must(postgresBackupCreateCmd.MarkFlagRequired("name"))
+	genericcli.Must(postgresBackupCreateCmd.MarkFlagRequired("project"))
+	genericcli.Must(postgresBackupCreateCmd.MarkFlagRequired("s3-endpoint"))
+	genericcli.Must(postgresBackupCreateCmd.MarkFlagRequired("s3-accesskey"))
+	genericcli.Must(postgresBackupCreateCmd.MarkFlagRequired("s3-secretkey"))
 
 	postgresBackupAutoCreateCmd.Flags().StringP("name", "", "", "name of the backup config")
 	postgresBackupAutoCreateCmd.Flags().StringP("project", "", "", "project of the backup config")
 	postgresBackupAutoCreateCmd.Flags().StringP("schedule", "", "30 00 * * *", "backup schedule in cron syntax")
 	postgresBackupAutoCreateCmd.Flags().Int32P("retention", "", int32(10), "number of backups per database to retain")
 	postgresBackupAutoCreateCmd.Flags().StringP("partition", "", "", "the postgres partition this backup configuration is mainly used in. This e.g. automatically selects the recommended S3 partition for the (auto-created) S3 bucket.")
-	must(postgresBackupAutoCreateCmd.MarkFlagRequired("name"))
-	must(postgresBackupAutoCreateCmd.MarkFlagRequired("project"))
-	must(postgresBackupAutoCreateCmd.MarkFlagRequired("partition"))
+	genericcli.Must(postgresBackupAutoCreateCmd.MarkFlagRequired("name"))
+	genericcli.Must(postgresBackupAutoCreateCmd.MarkFlagRequired("project"))
+	genericcli.Must(postgresBackupAutoCreateCmd.MarkFlagRequired("partition"))
 
 	postgresBackupUpdateCmd.Flags().StringP("id", "", "", "id of the database backup")
 	postgresBackupUpdateCmd.Flags().StringP("schedule", "", "", "backup schedule in cron syntax [optional]")
 	postgresBackupUpdateCmd.Flags().Int32P("retention", "", int32(0), "number of backups per database to retain [optional]")
-	must(postgresBackupUpdateCmd.MarkFlagRequired("id"))
+	genericcli.Must(postgresBackupUpdateCmd.MarkFlagRequired("id"))
 
 	return postgresCmd
 }
@@ -839,7 +840,7 @@ func (c *config) postgresAcceptRestore(args []string) error {
 		return err
 	}
 
-	must(output.New().Print(pg))
+	genericcli.Must(output.New().Print(pg))
 
 	fmt.Println("Has the restore finished successfully?")
 	err = helper.Prompt("(type yes to proceed):", "yes")
@@ -918,7 +919,7 @@ func (c *config) postgresDelete(args []string) error {
 	}
 
 	if !viper.GetBool("yes-i-really-mean-it") {
-		must(output.New().Print(pg))
+		genericcli.Must(output.New().Print(pg))
 
 		idParts := strings.Split(*pg.ID, "-")
 		firstPartOfPostgresID := idParts[0]
