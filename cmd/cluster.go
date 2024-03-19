@@ -53,7 +53,6 @@ func newClusterCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterCreate()
 		},
-		PreRun: bindPFlags,
 	}
 
 	clusterListCmd := &cobra.Command{
@@ -63,7 +62,6 @@ func newClusterCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterList()
 		},
-		PreRun: bindPFlags,
 	}
 	clusterDeleteCmd := &cobra.Command{
 		Use:     "delete <clusterid>",
@@ -73,7 +71,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterDelete(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterDescribeCmd := &cobra.Command{
 		Use:   "describe <clusterid>",
@@ -82,7 +79,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterDescribe(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterKubeconfigCmd := &cobra.Command{
 		Use:   "kubeconfig <clusterid>",
@@ -91,7 +87,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterKubeconfig(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 
 	clusterReconcileCmd := &cobra.Command{
@@ -101,7 +96,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.reconcileCluster(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterUpdateCmd := &cobra.Command{
 		Use:   "update <clusterid>",
@@ -110,7 +104,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.updateCluster(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterInputsCmd := &cobra.Command{
 		Use:   "inputs",
@@ -118,7 +111,6 @@ func newClusterCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterInputs()
 		},
-		PreRun: bindPFlags,
 	}
 	clusterMachineCmd := &cobra.Command{
 		Use:     "machine",
@@ -133,7 +125,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMachines(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterIssuesCmd := &cobra.Command{
 		Use:     "issues [<clusterid>]",
@@ -143,7 +134,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterIssues(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterMonitoringSecretCmd := &cobra.Command{
 		Use:   "monitoring-secret <clusterid>",
@@ -152,7 +142,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMonitoringSecret(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterMachineSSHCmd := &cobra.Command{
 		Use:   "ssh <clusterid>",
@@ -161,7 +150,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMachineSSH(args, false)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterMachineConsoleCmd := &cobra.Command{
 		Use:   "console <clusterid>",
@@ -170,7 +158,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMachineSSH(args, true)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterMachineResetCmd := &cobra.Command{
 		Use:   "reset <clusterid>",
@@ -179,7 +166,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMachineReset(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterMachineCycleCmd := &cobra.Command{
 		Use:   "cycle <clusterid>",
@@ -188,7 +174,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMachineCycle(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterMachineReinstallCmd := &cobra.Command{
 		Use:   "reinstall <clusterid>",
@@ -197,7 +182,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMachineReinstall(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterMachinePackagesCmd := &cobra.Command{
 		Use:   "packages <clusterid>",
@@ -206,7 +190,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMachinePackages(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterLogsCmd := &cobra.Command{
 		Use:   "logs <clusterid>",
@@ -215,7 +198,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterLogs(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterDNSManifestCmd := &cobra.Command{
 		Use:   "dns-manifest <clusterid>",
@@ -224,7 +206,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterDNSManifest(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 
 	clusterCreateCmd.Flags().String("name", "", "name of the cluster, max 10 characters. [required]")

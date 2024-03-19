@@ -27,7 +27,6 @@ func newTenantCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.tenantList()
 		},
-		PreRun: bindPFlags,
 	}
 	tenantDescribeCmd := &cobra.Command{
 		Use:   "describe <tenantID>",
@@ -35,7 +34,6 @@ func newTenantCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.tenantDescribe(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.TenantListCompletion,
 	}
 	tenantEditCmd := &cobra.Command{
@@ -44,7 +42,6 @@ func newTenantCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.tenantEdit(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.TenantListCompletion,
 	}
 	tenantApplyCmd := &cobra.Command{
@@ -53,7 +50,6 @@ func newTenantCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.tenantApply()
 		},
-		PreRun: bindPFlags,
 	}
 
 	tenantListCmd.Flags().String("id", "", "show projects of given id")

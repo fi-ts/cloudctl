@@ -25,7 +25,6 @@ func newVolumeCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.volumeFind()
 		},
-		PreRun: bindPFlags,
 	}
 	volumeDescribeCmd := &cobra.Command{
 		Use:   "describe <volume>",
@@ -34,7 +33,6 @@ func newVolumeCmd(c *config) *cobra.Command {
 			return c.volumeDescribe(args)
 		},
 		ValidArgsFunction: c.comp.VolumeListCompletion,
-		PreRun:            bindPFlags,
 	}
 	volumeDeleteCmd := &cobra.Command{
 		Use:     "delete <volume>",
@@ -44,7 +42,6 @@ func newVolumeCmd(c *config) *cobra.Command {
 			return c.volumeDelete(args)
 		},
 		ValidArgsFunction: c.comp.VolumeListCompletion,
-		PreRun:            bindPFlags,
 	}
 	volumeManifestCmd := &cobra.Command{
 		Use:   "manifest <volume>",
@@ -54,7 +51,6 @@ func newVolumeCmd(c *config) *cobra.Command {
 			return c.volumeManifest(args)
 		},
 		ValidArgsFunction: c.comp.VolumeListCompletion,
-		PreRun:            bindPFlags,
 	}
 	volumeEncryptionSecretManifestCmd := &cobra.Command{
 		Use:   "encryption-secret-manifest",
@@ -63,7 +59,6 @@ func newVolumeCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.volumeEncryptionSecretManifest()
 		},
-		PreRun: bindPFlags,
 	}
 	volumeClusterInfoCmd := &cobra.Command{
 		Use:   "clusterinfo",
@@ -71,7 +66,6 @@ func newVolumeCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.volumeClusterInfo()
 		},
-		PreRun: bindPFlags,
 	}
 
 	snapshotCmd := &cobra.Command{
@@ -86,7 +80,6 @@ func newVolumeCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.snapshotFind()
 		},
-		PreRun: bindPFlags,
 	}
 	snapshotDescribeCmd := &cobra.Command{
 		Use:   "describe <snapshot>",
@@ -94,7 +87,6 @@ func newVolumeCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.snapshotDescribe(args)
 		},
-		PreRun: bindPFlags,
 	}
 	snapshotDeleteCmd := &cobra.Command{
 		Use:     "delete <snapshot>",
@@ -103,7 +95,6 @@ func newVolumeCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.snapshotDelete(args)
 		},
-		PreRun: bindPFlags,
 	}
 
 	snapshotListCmd.Flags().StringP("snapshotid", "", "", "snapshotid to filter [optional]")

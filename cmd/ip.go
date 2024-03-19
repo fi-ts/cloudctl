@@ -26,7 +26,6 @@ func newIPCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.ipList()
 		},
-		PreRun: bindPFlags,
 	}
 	ipStaticCmd := &cobra.Command{
 		Use:   "static <ip>",
@@ -34,7 +33,6 @@ func newIPCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.ipStatic(args)
 		},
-		PreRun: bindPFlags,
 	}
 	ipAllocateCmd := &cobra.Command{
 		Use:   "allocate <ip>",
@@ -42,7 +40,6 @@ func newIPCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.ipAllocate()
 		},
-		PreRun: bindPFlags,
 	}
 	ipFreeCmd := &cobra.Command{
 		Use:     "delete <ip>",
@@ -51,7 +48,6 @@ func newIPCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.ipFree(args)
 		},
-		PreRun: bindPFlags,
 	}
 
 	ipCmd.AddCommand(ipListCmd)

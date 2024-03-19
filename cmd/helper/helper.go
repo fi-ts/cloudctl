@@ -8,6 +8,7 @@ import (
 	"math"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -183,4 +184,17 @@ func MustPrintKubernetesResource(in any) {
 func ClientNoAuth() runtime.ClientAuthInfoWriterFunc {
 	noAuth := func(_ runtime.ClientRequest, _ strfmt.Registry) error { return nil }
 	return runtime.ClientAuthInfoWriterFunc(noAuth)
+}
+
+func ExpandHomeDir(path string) (string, error) {
+	if !strings.HasPrefix(path, "~/") {
+		return path, nil
+	}
+
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("unable to expand home dir: %w", err)
+	}
+
+	return filepath.Join(homedir, strings.TrimLeft(path, "~/")), nil
 }

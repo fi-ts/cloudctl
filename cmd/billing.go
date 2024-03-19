@@ -49,7 +49,6 @@ func newBillingCmd(c *config) *cobra.Command {
 			}
 			return c.projectsBilling()
 		},
-		PreRun: bindPFlags,
 	}
 	containerBillingCmd := &cobra.Command{
 		Use:   "container",
@@ -69,7 +68,6 @@ export CLOUDCTL_COSTS_MEMORY_GI_HOUR=0.01  # costs per memory hour
 			}
 			return c.containerUsage()
 		},
-		PreRun: bindPFlags,
 	}
 	clusterBillingCmd := &cobra.Command{
 		Use:   "cluster",
@@ -88,7 +86,6 @@ export CLOUDCTL_COSTS_HOUR=0.01        # costs per hour
 			}
 			return c.clusterUsage()
 		},
-		PreRun: bindPFlags,
 	}
 	ipBillingCmd := &cobra.Command{
 		Use:   "ip",
@@ -107,7 +104,6 @@ export CLOUDCTL_COSTS_HOUR=0.01        # costs per hour
 			}
 			return c.ipUsage()
 		},
-		PreRun: bindPFlags,
 	}
 	machineBillingCmd := &cobra.Command{
 		Use:   "machine",
@@ -126,7 +122,6 @@ export CLOUDCTL_COSTS_HOUR=0.01        # costs per hour
 			}
 			return c.machineUsage()
 		},
-		PreRun: bindPFlags,
 	}
 	productOptionBillingCmd := &cobra.Command{
 		Use:   "product-option",
@@ -145,7 +140,6 @@ export CLOUDCTL_COSTS_HOUR=0.01        # costs per hour
 			}
 			return c.productOptionUsage()
 		},
-		PreRun: bindPFlags,
 	}
 	networkTrafficBillingCmd := &cobra.Command{
 		Use:   "network-traffic",
@@ -166,7 +160,6 @@ export CLOUDCTL_COSTS_TOTAL_NETWORK_TRAFFIC_GI=0.01           # costs per gi
 			}
 			return c.networkTrafficUsage()
 		},
-		PreRun: bindPFlags,
 	}
 	s3BillingCmd := &cobra.Command{
 		Use:   "s3",
@@ -185,7 +178,6 @@ export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01        # costs per storage hour
 			}
 			return c.s3Usage()
 		},
-		PreRun: bindPFlags,
 	}
 	volumeBillingCmd := &cobra.Command{
 		Use:   "volume",
@@ -204,7 +196,6 @@ export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01        # costs per capacity hour
 			}
 			return c.volumeUsage()
 		},
-		PreRun: bindPFlags,
 	}
 	postgresBillingCmd := &cobra.Command{
 		Use:   "postgres",
@@ -225,7 +216,6 @@ export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01 # Costs per capacity hour
 			}
 			return c.postgresUsage()
 		},
-		PreRun: bindPFlags,
 	}
 
 	billingCmd.AddCommand(projectBillingCmd)
