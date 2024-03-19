@@ -14,6 +14,7 @@ import (
 	"github.com/fi-ts/cloudctl/cmd/completion"
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/fi-ts/cloudctl/pkg/api"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -40,11 +41,11 @@ func newRootCmd(cfg *config) *cobra.Command {
 		SilenceUsage: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			viper.SetFs(cfg.fs)
-			must(viper.BindPFlags(cmd.Flags()))
-			must(viper.BindPFlags(cmd.PersistentFlags()))
+			genericcli.Must(viper.BindPFlags(cmd.Flags()))
+			genericcli.Must(viper.BindPFlags(cmd.PersistentFlags()))
 			// we cannot instantiate the config earlier because
 			// cobra flags do not work so early in the game
-			must(initConfigWithViperCtx(cfg))
+			genericcli.Must(initConfigWithViperCtx(cfg))
 
 			return nil
 		},
