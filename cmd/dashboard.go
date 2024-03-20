@@ -47,7 +47,6 @@ func newDashboardCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runDashboard(c.cloud)
 		},
-		PreRun: bindPFlags,
 	}
 
 	tabs := dashboardTabs(nil, nil, nil)

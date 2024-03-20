@@ -32,7 +32,6 @@ func newHealthCmd(c *config) *cobra.Command {
 
 			return output.New().Print(resp.Payload.Services)
 		},
-		PreRun: bindPFlags,
 	}
 	return healthCmd
 }

@@ -28,7 +28,6 @@ func newAuditCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.auditList()
 		},
-		PreRun: bindPFlags,
 	}
 	auditDescribeCmd := &cobra.Command{
 		Use:   "describe <rqid>",
@@ -36,7 +35,6 @@ func newAuditCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.auditDescribe(args)
 		},
-		PreRun: bindPFlags,
 	}
 
 	auditDescribeCmd.Flags().String("phase", "response", "phase of the audit trace. One of [request, response, single, error, opened, closed]")

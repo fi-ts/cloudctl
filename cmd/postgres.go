@@ -73,7 +73,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresCreate()
 		},
-		PreRun: bindPFlags,
 	}
 	postgresCreateStandbyCmd := &cobra.Command{
 		Use:   "create-standby",
@@ -81,7 +80,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresCreateStandby()
 		},
-		PreRun: bindPFlags,
 	}
 	postgresPromoteToPrimaryCmd := &cobra.Command{
 		Use:   "promote-to-primary",
@@ -89,7 +87,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresPromoteToPrimary(args)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresDemoteToStandbyCmd := &cobra.Command{
 		Use:   "demote-to-standby",
@@ -97,7 +94,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresDemoteToStandby(args)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresRestoreCmd := &cobra.Command{
 		Use:   "restore",
@@ -105,7 +101,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresRestore()
 		},
-		PreRun: bindPFlags,
 	}
 	postgresApplyCmd := &cobra.Command{
 		Use:   "apply",
@@ -113,7 +108,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresApply()
 		},
-		PreRun: bindPFlags,
 	}
 	postgresEditCmd := &cobra.Command{
 		Use:   "edit",
@@ -121,7 +115,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresEdit(args)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresUpdateCmd := &cobra.Command{
 		Use:   "update",
@@ -129,7 +122,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresUpdate(args)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresAcceptRestoreCmd := &cobra.Command{
 		Use:   "restore-accepted",
@@ -137,7 +129,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresAcceptRestore(args)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresListCmd := &cobra.Command{
 		Use:     "list",
@@ -146,7 +137,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresFind()
 		},
-		PreRun: bindPFlags,
 	}
 	postgresListBackupsCmd := &cobra.Command{
 		Use:   "list-backups",
@@ -154,7 +144,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresListBackups(args)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresDeleteCmd := &cobra.Command{
 		Use:     "delete <postgres>",
@@ -163,7 +152,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresDelete(args)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresDescribeCmd := &cobra.Command{
 		Use:   "describe <postgres>",
@@ -171,7 +159,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresDescribe(args)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresConnectionStringCmd := &cobra.Command{
 		Use:   "connectionstring <postgres>",
@@ -179,7 +166,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresConnectionString(args)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresVersionsCmd := &cobra.Command{
 		Use:   "version",
@@ -187,7 +173,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresVersions()
 		},
-		PreRun: bindPFlags,
 	}
 	postgresPartitionsCmd := &cobra.Command{
 		Use:   "partition",
@@ -195,7 +180,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresPartitions()
 		},
-		PreRun: bindPFlags,
 	}
 	postgresBackupCmd := &cobra.Command{
 		Use:   "backup-config",
@@ -208,7 +192,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresBackupCreate(false)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresBackupAutoCreateCmd := &cobra.Command{
 		Use:   "auto-create",
@@ -216,7 +199,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresBackupCreate(true)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresBackupUpdateCmd := &cobra.Command{
 		Use:   "update",
@@ -224,7 +206,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresBackupUpdate()
 		},
-		PreRun: bindPFlags,
 	}
 	postgresBackupListCmd := &cobra.Command{
 		Use:     "list",
@@ -233,7 +214,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresBackupList()
 		},
-		PreRun: bindPFlags,
 	}
 	postgresBackupDescribeCmd := &cobra.Command{
 		Use:   "describe",
@@ -241,7 +221,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresBackupDescribe(args)
 		},
-		PreRun: bindPFlags,
 	}
 	postgresBackupDeleteCmd := &cobra.Command{
 		Use:     "delete <backup-config>",
@@ -250,7 +229,6 @@ postgres=#
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.postgresBackupDelete(args)
 		},
-		PreRun: bindPFlags,
 	}
 
 	postgresCmd.AddCommand(postgresBackupCmd)

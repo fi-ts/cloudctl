@@ -29,7 +29,6 @@ func newProjectCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.projectCreate()
 		},
-		PreRun: bindPFlags,
 	}
 	projectDescribeCmd := &cobra.Command{
 		Use:   "describe <projectID>",
@@ -37,7 +36,6 @@ func newProjectCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.projectDescribe(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.ProjectListCompletion,
 	}
 	projectDeleteCmd := &cobra.Command{
@@ -47,7 +45,6 @@ func newProjectCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.projectDelete(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.ProjectListCompletion,
 	}
 	projectApplyCmd := &cobra.Command{
@@ -56,7 +53,6 @@ func newProjectCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.projectApply()
 		},
-		PreRun: bindPFlags,
 	}
 	projectEditCmd := &cobra.Command{
 		Use:   "edit <projectID>",
@@ -64,7 +60,6 @@ func newProjectCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.projectEdit(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.ProjectListCompletion,
 	}
 	projectListCmd := &cobra.Command{
@@ -74,7 +69,6 @@ func newProjectCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.projectList()
 		},
-		PreRun: bindPFlags,
 	}
 
 	projectCreateCmd.Flags().String("name", "", "name of the project, max 10 characters. [required]")

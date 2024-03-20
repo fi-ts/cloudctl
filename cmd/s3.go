@@ -24,7 +24,6 @@ func newS3Cmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.s3Describe()
 		},
-		PreRun: bindPFlags,
 	}
 	s3CreateCmd := &cobra.Command{
 		Use:   "create",
@@ -32,7 +31,6 @@ func newS3Cmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.s3Create()
 		},
-		PreRun: bindPFlags,
 	}
 	s3DeleteCmd := &cobra.Command{
 		Use:     "delete",
@@ -41,7 +39,6 @@ func newS3Cmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.s3Delete()
 		},
-		PreRun: bindPFlags,
 	}
 	s3ListCmd := &cobra.Command{
 		Use:     "list",
@@ -50,7 +47,6 @@ func newS3Cmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.s3List()
 		},
-		PreRun: bindPFlags,
 	}
 	s3PartitionListCmd := &cobra.Command{
 		Use:     "partitions",
@@ -59,7 +55,6 @@ func newS3Cmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.s3ListPartitions()
 		},
-		PreRun: bindPFlags,
 	}
 	s3AddKeyCmd := &cobra.Command{
 		Use:   "add-key",
@@ -67,7 +62,6 @@ func newS3Cmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.s3AddKey()
 		},
-		PreRun: bindPFlags,
 	}
 	s3RemoveKeyCmd := &cobra.Command{
 		Use:   "remove-key",
@@ -75,7 +69,6 @@ func newS3Cmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.s3RemoveKey()
 		},
-		PreRun: bindPFlags,
 	}
 
 	s3CreateCmd.Flags().StringP("id", "i", "", "id of the s3 user [required]")
