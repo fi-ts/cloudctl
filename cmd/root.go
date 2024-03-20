@@ -140,12 +140,14 @@ func initConfigWithViperCtx(cfg *config) error {
 		}
 	}
 
-	kubeconfigPath, err := helper.ExpandHomeDir(viper.GetString("kubeconfig"))
-	if err != nil {
-		return fmt.Errorf("unable to get kubeconfig path: %w", err)
-	}
+	if viper.IsSet("kubeconfig") {
+		kubeconfigPath, err := helper.ExpandHomeDir(viper.GetString("kubeconfig"))
+		if err != nil {
+			return fmt.Errorf("unable to get kubeconfig path: %w", err)
+		}
 
-	viper.Set("kubeconfig", kubeconfigPath)
+		viper.Set("kubeconfig", kubeconfigPath)
+	}
 
 	ctx := api.MustDefaultContext()
 
