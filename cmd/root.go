@@ -184,7 +184,7 @@ func initConfigWithViperCtx(cfg *config) error {
 	}
 
 	cfg.cloud = cloud
-	cfg.comp = completion.NewCompletion(cloud)
+	cfg.comp.SetClient(cloud)
 
 	parsedURL, err := url.Parse(driverURL)
 	if err != nil {
