@@ -17,8 +17,8 @@ import (
 func newIPCmd(c *config) *cobra.Command {
 	ipCmd := &cobra.Command{
 		Use:   "ip",
-		Short: "manage ips",
-		Long:  "TODO",
+		Short: "manage IPs",
+		Long:  "manage static IP addresses for your projects, which can be utilized for the service type load balancer of your clusters.",
 	}
 	ipListCmd := &cobra.Command{
 		Use:     "list",

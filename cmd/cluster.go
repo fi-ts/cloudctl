@@ -257,6 +257,8 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().Bool("encrypted-storage-classes", false, "enables the deployment of encrypted duros storage classes into the cluster. please refer to the user manual to properly use volume encryption. [optional]")
 	clusterCreateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster [optional]")
 	clusterCreateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes! [optional]")
+	clusterCreateCmd.Flags().String("maintenance-begin", "220000+0100", "defines the beginning of the nightly maintenance time window (e.g. for autoupdates) in the format HHMMSS+ZONE, e.g. \"220000+0100\". [optional]")
+	clusterCreateCmd.Flags().String("maintenance-end", "233000+0100", "defines the end of the nightly maintenance time window (e.g. for autoupdates) in the format HHMMSS+ZONE, e.g. \"233000+0100\". [optional]")
 	clusterCreateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
 	clusterCreateCmd.Flags().String("max-pods-per-node", "", "set number of maximum pods per node (default: 510). Lower numbers allow for more node per cluster. [optional]")
 	clusterCreateCmd.Flags().String("cni", "", "the network plugin used in this cluster, defaults to calico. please note that cilium support is still Alpha and we are happy to receive feedback. [optional]")
@@ -348,6 +350,8 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().String("maxunavailable", "", "max number (e.g. 0) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
+	clusterUpdateCmd.Flags().String("maintenance-begin", "", "defines the beginning of the nightly maintenance time window (e.g. for autoupdates) in the format HHMMSS+ZONE, e.g. \"220000+0100\". [optional]")
+	clusterUpdateCmd.Flags().String("maintenance-end", "", "defines the end of the nightly maintenance time window (e.g. for autoupdates) in the format HHMMSS+ZONE, e.g. \"233000+0100\". [optional]")
 	clusterUpdateCmd.Flags().Bool("encrypted-storage-classes", false, "enables the deployment of encrypted duros storage classes into the cluster. please refer to the user manual to properly use volume encryption.")
 	clusterUpdateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
 	clusterUpdateCmd.Flags().BoolP("disable-custom-default-storage-class", "", false, "if set to true, no default class is deployed, you have to set one of your storageclasses manually to default")
@@ -534,8 +538,8 @@ WARNING: You are going to create a cluster that has no default internet access w
 	// FIXME helper and validation
 	networks := viper.GetStringSlice("external-networks")
 	egress := viper.GetStringSlice("egress")
-	maintenanceBegin := "220000+0100"
-	maintenanceEnd := "233000+0100"
+	maintenanceBegin := viper.GetString("maintenance-begin")
+	maintenanceEnd := viper.GetString("maintenance-end")
 
 	version := viper.GetString("version")
 	if version == "" {
@@ -1167,6 +1171,20 @@ func (c *config) updateCluster(args []string) error {
 	if viper.IsSet("autoupdate-machineimages") {
 		auto := viper.GetBool("autoupdate-machineimages")
 		cur.Maintenance.AutoUpdate.MachineImage = &auto
+	}
+	if viper.IsSet("maintenance-begin") {
+		begin := viper.GetString("maintenance-begin")
+		if cur.Maintenance.TimeWindow == nil {
+			cur.Maintenance.TimeWindow = &models.V1MaintenanceTimeWindow{}
+		}
+		cur.Maintenance.TimeWindow.Begin = &begin
+	}
+	if viper.IsSet("maintenance-end") {
+		if cur.Maintenance.TimeWindow == nil {
+			cur.Maintenance.TimeWindow = &models.V1MaintenanceTimeWindow{}
+		}
+		end := viper.GetString("maintenance-end")
+		cur.Maintenance.TimeWindow.End = &end
 	}
 
 	updateCausesDowntime := false
