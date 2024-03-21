@@ -102,6 +102,8 @@ github.com/fi-ts/accounting-go v0.9.1 h1:NFcsGg6l3tsK87khKgHQCtP242hiLsFYMPtKU+a
 github.com/fi-ts/accounting-go v0.9.1/go.mod h1:8ga8xix70wTxZNwdb0Ye4cEmL1miY6SeUio4vQLMBaI=
 github.com/fi-ts/cloud-go v0.25.0 h1:+jDIMoEJ6i8BmRtUrbm3Rgs35Sqe3El5RKKsMzBayMA=
 github.com/fi-ts/cloud-go v0.25.0/go.mod h1:FFod3G37QPbDDL7umk09EBAJocTSe68nY4gF6tOJSko=
+github.com/fi-ts/cloud-go v0.25.1-0.20240321171939-33eaa5d9b6ae h1:bApFYgmBB3sZtCsb2Rome9lF/GEBjRAUZSmaztAD1YU=
+github.com/fi-ts/cloud-go v0.25.1-0.20240321171939-33eaa5d9b6ae/go.mod h1:FFod3G37QPbDDL7umk09EBAJocTSe68nY4gF6tOJSko=
 github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHkI4W8=
 github.com/frankban/quicktest v1.14.6/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
 github.com/fsnotify/fsnotify v1.7.0 h1:8JEhPFa5W2WU7YfeZzPNqzMP6Lwt7L2715Ggo0nosvA=
