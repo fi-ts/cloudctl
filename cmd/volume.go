@@ -181,11 +181,11 @@ func newVolumeCmd(c *config) *cobra.Command {
 	volumeClusterInfoCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
 	must(volumeClusterInfoCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 
-	volumeSetQoSCmd.Flags().StringP("policyid", "", "", "the new qos policy of the volume")
+	volumeSetQoSCmd.Flags().StringP("qos-id", "", "", "the id of the new qos policy of the volume")
+	volumeSetQoSCmd.Flags().StringP("qos-name", "", "", "the name of the new qos policy of the volume")
 
-	must(volumeSetQoSCmd.MarkFlagRequired("policyid"))
-
-	must(volumeSetQoSCmd.RegisterFlagCompletionFunc("policyid", c.comp.PolicyListCompletion))
+	must(volumeSetQoSCmd.RegisterFlagCompletionFunc("qos-id", c.comp.PolicyIDListCompletion))
+	must(volumeSetQoSCmd.RegisterFlagCompletionFunc("qos-name", c.comp.PolicyNameListCompletion))
 
 	return volumeCmd
 }
@@ -274,12 +274,14 @@ func (c *config) volumeSetQoS(args []string) error {
 	if err != nil {
 		return err
 	}
-	policyId := helper.ViperString("policyid")
+	policyId := helper.ViperString("qos-id")
+	policyName := helper.ViperString("qos-name")
 
 	params := volume.NewSetVolumeQoSPolicyParams().
 		WithID(*vol.VolumeID).
 		WithBody(&models.V1VolumeSetQoSPolicyRequest{
-			QoSPolicyID: policyId,
+			QoSPolicyID:   policyId,
+			QoSPolicyName: policyName,
 		})
 
 	resp, err := c.cloud.Volume.SetVolumeQoSPolicy(params, nil)

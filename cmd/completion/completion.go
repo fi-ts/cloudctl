@@ -158,7 +158,7 @@ func (c *Completion) PartitionListCompletion(cmd *cobra.Command, args []string, 
 	return sc.Payload.Partitions, cobra.ShellCompDirectiveNoFileComp
 }
 
-func (c *Completion) PolicyListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func (c *Completion) PolicyIDListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	request := volume.NewListPoliciesParams()
 	sc, err := c.cloud.Volume.ListPolicies(request, nil)
 	if err != nil {
@@ -172,6 +172,22 @@ func (c *Completion) PolicyListCompletion(cmd *cobra.Command, args []string, toC
 		policyids = append(policyids, *policy.QoSPolicyID)
 	}
 	return policyids, cobra.ShellCompDirectiveNoFileComp
+}
+
+func (c *Completion) PolicyNameListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	request := volume.NewListPoliciesParams()
+	sc, err := c.cloud.Volume.ListPolicies(request, nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	policyNames := make([]string, 0, len(sc.Payload))
+	for _, policy := range sc.Payload {
+		if policy.Name == nil {
+			continue
+		}
+		policyNames = append(policyNames, *policy.Name)
+	}
+	return policyNames, cobra.ShellCompDirectiveNoFileComp
 }
 
 func (c *Completion) SeedListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
