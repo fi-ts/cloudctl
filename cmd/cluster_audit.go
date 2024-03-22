@@ -33,7 +33,6 @@ func newClusterAuditCmd(c *config) *cobra.Command {
 			}
 			return fmt.Errorf("no command specified")
 		},
-		PreRun: bindPFlags,
 	}
 	modeCmd := &cobra.Command{
 		Use:   "mode --cluster-id=<clusterid>",
@@ -51,7 +50,6 @@ func newClusterAuditCmd(c *config) *cobra.Command {
 			"blocking\tBlock API server responses on processing each individual event.",
 			"blocking-strict\tSame as blocking, but when there is a failure during audit logging at the RequestReceived stage, the whole request to the kube-apiserver fails. This is the default.",
 		},
-		PreRun: bindPFlags,
 	}
 	policyCmd := &cobra.Command{
 		Use:     "policy --cluster-id=<clusterid>",
@@ -60,7 +58,6 @@ func newClusterAuditCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.auditPolicy()
 		},
-		PreRun: bindPFlags,
 	}
 	splunkCmd := &cobra.Command{
 		Use:   "splunk --cluster-id=<clusterid>",
@@ -68,7 +65,6 @@ func newClusterAuditCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.splunk()
 		},
-		PreRun: bindPFlags,
 	}
 	clusterForwardingCmd := &cobra.Command{
 		Use:   "cluster-forwarding --cluster-id=<clusterid>",
@@ -77,7 +73,6 @@ func newClusterAuditCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.clusterForwarding()
 		},
-		PreRun: bindPFlags,
 	}
 
 	clusterAuditCmd.Flags().Bool("disabled", false, "disables the entire audit functionality, enable again with --disabled=false, requires --yes-i-really-mean-it flag")

@@ -25,6 +25,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/gosimple/slug"
 	"github.com/metal-stack/metal-lib/auth"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 
 	"github.com/fi-ts/cloud-go/api/models"
@@ -53,7 +54,6 @@ func newClusterCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterCreate()
 		},
-		PreRun: bindPFlags,
 	}
 
 	clusterListCmd := &cobra.Command{
@@ -63,7 +63,6 @@ func newClusterCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterList()
 		},
-		PreRun: bindPFlags,
 	}
 	clusterDeleteCmd := &cobra.Command{
 		Use:     "delete <clusterid>",
@@ -73,7 +72,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterDelete(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterDescribeCmd := &cobra.Command{
 		Use:   "describe <clusterid>",
@@ -82,7 +80,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterDescribe(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterKubeconfigCmd := &cobra.Command{
 		Use:   "kubeconfig <clusterid>",
@@ -91,7 +88,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterKubeconfig(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 
 	clusterReconcileCmd := &cobra.Command{
@@ -101,7 +97,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.reconcileCluster(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterUpdateCmd := &cobra.Command{
 		Use:   "update <clusterid>",
@@ -110,7 +105,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.updateCluster(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterInputsCmd := &cobra.Command{
 		Use:   "inputs",
@@ -118,7 +112,6 @@ func newClusterCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterInputs()
 		},
-		PreRun: bindPFlags,
 	}
 	clusterMachineCmd := &cobra.Command{
 		Use:     "machine",
@@ -133,7 +126,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMachines(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterIssuesCmd := &cobra.Command{
 		Use:     "issues [<clusterid>]",
@@ -143,7 +135,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterIssues(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterMonitoringSecretCmd := &cobra.Command{
 		Use:   "monitoring-secret <clusterid>",
@@ -152,7 +143,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMonitoringSecret(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterMachineSSHCmd := &cobra.Command{
 		Use:   "ssh <clusterid>",
@@ -161,7 +151,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMachineSSH(args, false)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterMachineConsoleCmd := &cobra.Command{
 		Use:   "console <clusterid>",
@@ -170,7 +159,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMachineSSH(args, true)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterMachineResetCmd := &cobra.Command{
 		Use:   "reset <clusterid>",
@@ -179,7 +167,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMachineReset(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterMachineCycleCmd := &cobra.Command{
 		Use:   "cycle <clusterid>",
@@ -188,7 +175,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMachineCycle(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterMachineReinstallCmd := &cobra.Command{
 		Use:   "reinstall <clusterid>",
@@ -197,7 +183,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMachineReinstall(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterMachinePackagesCmd := &cobra.Command{
 		Use:   "packages <clusterid>",
@@ -206,7 +191,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterMachinePackages(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterLogsCmd := &cobra.Command{
 		Use:   "logs <clusterid>",
@@ -215,7 +199,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterLogs(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 	clusterDNSManifestCmd := &cobra.Command{
 		Use:   "dns-manifest <clusterid>",
@@ -224,7 +207,6 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterDNSManifest(args)
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
-		PreRun:            bindPFlags,
 	}
 
 	clusterCreateCmd.Flags().String("name", "", "name of the cluster, max 10 characters. [required]")
@@ -256,6 +238,8 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().Bool("encrypted-storage-classes", false, "enables the deployment of encrypted duros storage classes into the cluster. please refer to the user manual to properly use volume encryption. [optional]")
 	clusterCreateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster [optional]")
 	clusterCreateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes! [optional]")
+	clusterCreateCmd.Flags().String("maintenance-begin", "220000+0100", "defines the beginning of the nightly maintenance time window (e.g. for autoupdates) in the format HHMMSS+ZONE, e.g. \"220000+0100\". [optional]")
+	clusterCreateCmd.Flags().String("maintenance-end", "233000+0100", "defines the end of the nightly maintenance time window (e.g. for autoupdates) in the format HHMMSS+ZONE, e.g. \"233000+0100\". [optional]")
 	clusterCreateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
 	clusterCreateCmd.Flags().String("max-pods-per-node", "", "set number of maximum pods per node (default: 510). Lower numbers allow for more node per cluster. [optional]")
 	clusterCreateCmd.Flags().String("cni", "", "the network plugin used in this cluster, defaults to calico. please note that cilium support is still Alpha and we are happy to receive feedback. [optional]")
@@ -265,31 +249,31 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-allowed-cidrs [optional].")
 	clusterCreateCmd.Flags().String("network-isolation", "", "defines restrictions to external network communication for the cluster, can be one of baseline|restricted|isolated. baseline sets no special restrictions to external networks, restricted by default only allows external traffic to explicitly allowed destinations, forbidden disallows communication with external networks except for a limited set of networks. Please consult the documentation for detailed descriptions of the individual modes as these cannot be altered anymore after creation. [optional]")
 
-	must(clusterCreateCmd.MarkFlagRequired("name"))
-	must(clusterCreateCmd.MarkFlagRequired("project"))
-	must(clusterCreateCmd.MarkFlagRequired("partition"))
-	must(clusterCreateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-	must(clusterCreateCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-	must(clusterCreateCmd.RegisterFlagCompletionFunc("seed", c.comp.SeedListCompletion))
-	must(clusterCreateCmd.RegisterFlagCompletionFunc("external-networks", c.comp.NetworkListCompletion))
-	must(clusterCreateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
-	must(clusterCreateCmd.RegisterFlagCompletionFunc("machinetype", c.comp.MachineTypeListCompletion))
-	must(clusterCreateCmd.RegisterFlagCompletionFunc("machineimage", c.comp.MachineImageListCompletion))
-	must(clusterCreateCmd.RegisterFlagCompletionFunc("firewalltype", c.comp.FirewallTypeListCompletion))
-	must(clusterCreateCmd.RegisterFlagCompletionFunc("firewallimage", c.comp.FirewallImageListCompletion))
-	must(clusterCreateCmd.RegisterFlagCompletionFunc("firewallcontroller", c.comp.FirewallControllerVersionListCompletion))
-	must(clusterCreateCmd.RegisterFlagCompletionFunc("purpose", c.comp.ClusterPurposeListCompletion))
-	must(clusterCreateCmd.RegisterFlagCompletionFunc("default-pod-security-standard", c.comp.PodSecurityListCompletion))
-	must(clusterCreateCmd.RegisterFlagCompletionFunc("cri", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	genericcli.Must(clusterCreateCmd.MarkFlagRequired("name"))
+	genericcli.Must(clusterCreateCmd.MarkFlagRequired("project"))
+	genericcli.Must(clusterCreateCmd.MarkFlagRequired("partition"))
+	genericcli.Must(clusterCreateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	genericcli.Must(clusterCreateCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	genericcli.Must(clusterCreateCmd.RegisterFlagCompletionFunc("seed", c.comp.SeedListCompletion))
+	genericcli.Must(clusterCreateCmd.RegisterFlagCompletionFunc("external-networks", c.comp.NetworkListCompletion))
+	genericcli.Must(clusterCreateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
+	genericcli.Must(clusterCreateCmd.RegisterFlagCompletionFunc("machinetype", c.comp.MachineTypeListCompletion))
+	genericcli.Must(clusterCreateCmd.RegisterFlagCompletionFunc("machineimage", c.comp.MachineImageListCompletion))
+	genericcli.Must(clusterCreateCmd.RegisterFlagCompletionFunc("firewalltype", c.comp.FirewallTypeListCompletion))
+	genericcli.Must(clusterCreateCmd.RegisterFlagCompletionFunc("firewallimage", c.comp.FirewallImageListCompletion))
+	genericcli.Must(clusterCreateCmd.RegisterFlagCompletionFunc("firewallcontroller", c.comp.FirewallControllerVersionListCompletion))
+	genericcli.Must(clusterCreateCmd.RegisterFlagCompletionFunc("purpose", c.comp.ClusterPurposeListCompletion))
+	genericcli.Must(clusterCreateCmd.RegisterFlagCompletionFunc("default-pod-security-standard", c.comp.PodSecurityListCompletion))
+	genericcli.Must(clusterCreateCmd.RegisterFlagCompletionFunc("cri", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{"containerd"}, cobra.ShellCompDirectiveNoFileComp
 	}))
-	must(clusterCreateCmd.RegisterFlagCompletionFunc("cni", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	genericcli.Must(clusterCreateCmd.RegisterFlagCompletionFunc("cni", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{
 			"calico\tcalico networking plugin. this is the cluster default.",
 			"cilium\tcilium networking plugin. please note that cilium support is still Alpha and we are happy to receive feedback.",
 		}, cobra.ShellCompDirectiveNoFileComp
 	}))
-	must(clusterCreateCmd.RegisterFlagCompletionFunc("network-isolation", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	genericcli.Must(clusterCreateCmd.RegisterFlagCompletionFunc("network-isolation", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{
 			models.V1ClusterCreateRequestNetworkAccessTypeBaseline + "\tno special restrictions for external network traffic, service type loadbalancer possible in all networks",
 			models.V1ClusterCreateRequestNetworkAccessTypeRestricted + "\texternal network traffic needs to be allowed explicitly, own cluster wide network policies possible, service type loadbalancer possible in all networks",
@@ -308,13 +292,13 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterListCmd.Flags().String("tenant", "", "show clusters of given tenant")
 	clusterListCmd.Flags().StringSlice("labels", nil, "show clusters of given labels")
 	clusterListCmd.Flags().String("purpose", "", "show clusters of given purpose")
-	must(clusterListCmd.RegisterFlagCompletionFunc("id", c.comp.ClusterListCompletion))
-	must(clusterListCmd.RegisterFlagCompletionFunc("name", c.comp.ClusterNameCompletion))
-	must(clusterListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-	must(clusterListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-	must(clusterListCmd.RegisterFlagCompletionFunc("seed", c.comp.SeedListCompletion))
-	must(clusterListCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
-	must(clusterListCmd.RegisterFlagCompletionFunc("purpose", c.comp.ClusterPurposeListCompletion))
+	genericcli.Must(clusterListCmd.RegisterFlagCompletionFunc("id", c.comp.ClusterListCompletion))
+	genericcli.Must(clusterListCmd.RegisterFlagCompletionFunc("name", c.comp.ClusterNameCompletion))
+	genericcli.Must(clusterListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	genericcli.Must(clusterListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	genericcli.Must(clusterListCmd.RegisterFlagCompletionFunc("seed", c.comp.SeedListCompletion))
+	genericcli.Must(clusterListCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
+	genericcli.Must(clusterListCmd.RegisterFlagCompletionFunc("purpose", c.comp.ClusterPurposeListCompletion))
 
 	// Cluster update --------------------------------------------------------------------
 	clusterUpdateCmd.Flags().String("workergroup", "", "the name of the worker group to apply updates to, only required when there are multiple worker groups.")
@@ -347,6 +331,8 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().String("maxunavailable", "", "max number (e.g. 0) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
+	clusterUpdateCmd.Flags().String("maintenance-begin", "", "defines the beginning of the nightly maintenance time window (e.g. for autoupdates) in the format HHMMSS+ZONE, e.g. \"220000+0100\". [optional]")
+	clusterUpdateCmd.Flags().String("maintenance-end", "", "defines the end of the nightly maintenance time window (e.g. for autoupdates) in the format HHMMSS+ZONE, e.g. \"233000+0100\". [optional]")
 	clusterUpdateCmd.Flags().Bool("encrypted-storage-classes", false, "enables the deployment of encrypted duros storage classes into the cluster. please refer to the user manual to properly use volume encryption.")
 	clusterUpdateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
 	clusterUpdateCmd.Flags().BoolP("disable-custom-default-storage-class", "", false, "if set to true, no default class is deployed, you have to set one of your storageclasses manually to default")
@@ -357,19 +343,19 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-remove-from-allowed-cidrs", []string{}, "comma-separated list of external CIDRs to be removed from the allowed CIDRs to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterUpdateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-* [optional].")
 
-	must(clusterUpdateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
-	must(clusterUpdateCmd.RegisterFlagCompletionFunc("workerversion", c.comp.VersionListCompletion))
-	must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewalltype", c.comp.FirewallTypeListCompletion))
-	must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewallimage", c.comp.FirewallImageListCompletion))
-	must(clusterUpdateCmd.RegisterFlagCompletionFunc("seed", c.comp.SeedListCompletion))
-	must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewallcontroller", c.comp.FirewallControllerVersionListCompletion))
-	must(clusterUpdateCmd.RegisterFlagCompletionFunc("machinetype", c.comp.MachineTypeListCompletion))
-	must(clusterUpdateCmd.RegisterFlagCompletionFunc("machineimage", c.comp.MachineImageListCompletion))
-	must(clusterUpdateCmd.RegisterFlagCompletionFunc("purpose", c.comp.ClusterPurposeListCompletion))
-	must(clusterUpdateCmd.RegisterFlagCompletionFunc("default-pod-security-standard", c.comp.PodSecurityListCompletion))
+	genericcli.Must(clusterUpdateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
+	genericcli.Must(clusterUpdateCmd.RegisterFlagCompletionFunc("workerversion", c.comp.VersionListCompletion))
+	genericcli.Must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewalltype", c.comp.FirewallTypeListCompletion))
+	genericcli.Must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewallimage", c.comp.FirewallImageListCompletion))
+	genericcli.Must(clusterUpdateCmd.RegisterFlagCompletionFunc("seed", c.comp.SeedListCompletion))
+	genericcli.Must(clusterUpdateCmd.RegisterFlagCompletionFunc("firewallcontroller", c.comp.FirewallControllerVersionListCompletion))
+	genericcli.Must(clusterUpdateCmd.RegisterFlagCompletionFunc("machinetype", c.comp.MachineTypeListCompletion))
+	genericcli.Must(clusterUpdateCmd.RegisterFlagCompletionFunc("machineimage", c.comp.MachineImageListCompletion))
+	genericcli.Must(clusterUpdateCmd.RegisterFlagCompletionFunc("purpose", c.comp.ClusterPurposeListCompletion))
+	genericcli.Must(clusterUpdateCmd.RegisterFlagCompletionFunc("default-pod-security-standard", c.comp.PodSecurityListCompletion))
 
 	clusterInputsCmd.Flags().String("partition", "", "partition of the constraints.")
-	must(clusterInputsCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	genericcli.Must(clusterInputsCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 
 	// Cluster dns manifest --------------------------------------------------------------------
 	clusterDNSManifestCmd.Flags().String("type", "ingress", "either of type ingress or service")
@@ -380,33 +366,33 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterDNSManifestCmd.Flags().String("backend-name", "my-backend", "the name of the backend")
 	clusterDNSManifestCmd.Flags().Int32("backend-port", 443, "the port of the backend")
 	clusterDNSManifestCmd.Flags().String("ingress-class", "nginx", "the ingress class name")
-	must(clusterDNSManifestCmd.RegisterFlagCompletionFunc("type", cobra.FixedCompletions([]string{"ingress", "service"}, cobra.ShellCompDirectiveNoFileComp)))
+	genericcli.Must(clusterDNSManifestCmd.RegisterFlagCompletionFunc("type", cobra.FixedCompletions([]string{"ingress", "service"}, cobra.ShellCompDirectiveNoFileComp)))
 
 	// Cluster machine ... --------------------------------------------------------------------
 	clusterMachineSSHCmd.Flags().String("machineid", "", "machine to connect to.")
-	must(clusterMachineSSHCmd.MarkFlagRequired("machineid"))
-	must(clusterMachineSSHCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterFirewallListCompletion))
+	genericcli.Must(clusterMachineSSHCmd.MarkFlagRequired("machineid"))
+	genericcli.Must(clusterMachineSSHCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterFirewallListCompletion))
 
 	clusterMachineConsoleCmd.Flags().String("machineid", "", "machine to connect to.")
-	must(clusterMachineConsoleCmd.MarkFlagRequired("machineid"))
-	must(clusterMachineConsoleCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterMachineListCompletion))
+	genericcli.Must(clusterMachineConsoleCmd.MarkFlagRequired("machineid"))
+	genericcli.Must(clusterMachineConsoleCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterMachineListCompletion))
 
 	clusterMachineResetCmd.Flags().String("machineid", "", "machine to reset.")
-	must(clusterMachineResetCmd.MarkFlagRequired("machineid"))
-	must(clusterMachineResetCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterMachineListCompletion))
+	genericcli.Must(clusterMachineResetCmd.MarkFlagRequired("machineid"))
+	genericcli.Must(clusterMachineResetCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterMachineListCompletion))
 
 	clusterMachineCycleCmd.Flags().String("machineid", "", "machine to reset.")
-	must(clusterMachineCycleCmd.MarkFlagRequired("machineid"))
-	must(clusterMachineCycleCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterMachineListCompletion))
+	genericcli.Must(clusterMachineCycleCmd.MarkFlagRequired("machineid"))
+	genericcli.Must(clusterMachineCycleCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterMachineListCompletion))
 
 	clusterMachineReinstallCmd.Flags().String("machineid", "", "machine to reinstall.")
 	clusterMachineReinstallCmd.Flags().String("machineimage", "", "image to reinstall (optional).")
-	must(clusterMachineReinstallCmd.MarkFlagRequired("machineid"))
-	must(clusterMachineReinstallCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterMachineListCompletion))
+	genericcli.Must(clusterMachineReinstallCmd.MarkFlagRequired("machineid"))
+	genericcli.Must(clusterMachineReinstallCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterMachineListCompletion))
 
 	clusterMachinePackagesCmd.Flags().String("machineid", "", "machine to connect to.")
-	must(clusterMachinePackagesCmd.MarkFlagRequired("machineid"))
-	must(clusterMachinePackagesCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterMachineListCompletion))
+	genericcli.Must(clusterMachinePackagesCmd.MarkFlagRequired("machineid"))
+	genericcli.Must(clusterMachinePackagesCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterMachineListCompletion))
 
 	clusterMachineCmd.AddCommand(clusterMachineListCmd)
 	clusterMachineCmd.AddCommand(clusterMachineSSHCmd)
@@ -417,7 +403,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterMachineCmd.AddCommand(clusterMachinePackagesCmd)
 
 	clusterReconcileCmd.Flags().String("operation", models.V1ClusterReconcileRequestOperationReconcile, fmt.Sprintf("Executes a cluster \"reconcile\" operation, can be one of %s.", strings.Join(completion.ClusterReconcileOperations, "|")))
-	must(clusterReconcileCmd.RegisterFlagCompletionFunc("operation", c.comp.ClusterReconcileOperationCompletion))
+	genericcli.Must(clusterReconcileCmd.RegisterFlagCompletionFunc("operation", c.comp.ClusterReconcileOperationCompletion))
 
 	clusterIssuesCmd.Flags().String("id", "", "show clusters of given id")
 	clusterIssuesCmd.Flags().String("name", "", "show clusters of given name")
@@ -425,10 +411,10 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterIssuesCmd.Flags().String("partition", "", "show clusters in partition")
 	clusterIssuesCmd.Flags().String("tenant", "", "show clusters of given tenant")
 
-	must(clusterIssuesCmd.RegisterFlagCompletionFunc("name", c.comp.ClusterNameCompletion))
-	must(clusterIssuesCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-	must(clusterIssuesCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-	must(clusterIssuesCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
+	genericcli.Must(clusterIssuesCmd.RegisterFlagCompletionFunc("name", c.comp.ClusterNameCompletion))
+	genericcli.Must(clusterIssuesCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	genericcli.Must(clusterIssuesCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	genericcli.Must(clusterIssuesCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
 
 	clusterKubeconfigCmd.Flags().Bool("merge", false, "merges the cluster's kubeconfig into the current active kubeconfig, otherwise an individual kubeconfig is printed to console only")
 	clusterKubeconfigCmd.Flags().Bool("set-context", false, "when setting the merge parameter to true, immediately activates the cluster's context")
@@ -533,8 +519,8 @@ WARNING: You are going to create a cluster that has no default internet access w
 	// FIXME helper and validation
 	networks := viper.GetStringSlice("external-networks")
 	egress := viper.GetStringSlice("egress")
-	maintenanceBegin := "220000+0100"
-	maintenanceEnd := "233000+0100"
+	maintenanceBegin := viper.GetString("maintenance-begin")
+	maintenanceEnd := viper.GetString("maintenance-end")
 
 	version := viper.GetString("version")
 	if version == "" {
@@ -1167,6 +1153,20 @@ func (c *config) updateCluster(args []string) error {
 		auto := viper.GetBool("autoupdate-machineimages")
 		cur.Maintenance.AutoUpdate.MachineImage = &auto
 	}
+	if viper.IsSet("maintenance-begin") {
+		begin := viper.GetString("maintenance-begin")
+		if cur.Maintenance.TimeWindow == nil {
+			cur.Maintenance.TimeWindow = &models.V1MaintenanceTimeWindow{}
+		}
+		cur.Maintenance.TimeWindow.Begin = &begin
+	}
+	if viper.IsSet("maintenance-end") {
+		if cur.Maintenance.TimeWindow == nil {
+			cur.Maintenance.TimeWindow = &models.V1MaintenanceTimeWindow{}
+		}
+		end := viper.GetString("maintenance-end")
+		cur.Maintenance.TimeWindow.End = &end
+	}
 
 	updateCausesDowntime := false
 	if firewallImage != "" {
@@ -1345,7 +1345,7 @@ func (c *config) clusterDelete(args []string) error {
 		return err
 	}
 
-	must(output.New().Print(resp.Payload))
+	genericcli.Must(output.New().Print(resp.Payload))
 
 	firstPartOfClusterID := strings.Split(*resp.Payload.ID, "-")[0]
 	fmt.Println("Please answer some security questions to delete this cluster")
@@ -1461,7 +1461,7 @@ func (c *config) clusterMachines(args []string) error {
 	}
 
 	fmt.Println("Cluster:")
-	must(output.New().Print(shoot.Payload))
+	genericcli.Must(output.New().Print(shoot.Payload))
 
 	ms := shoot.Payload.Machines
 	ms = append(ms, shoot.Payload.Firewalls...)

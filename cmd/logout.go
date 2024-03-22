@@ -27,7 +27,6 @@ func newLogoutCmd(c *config) *cobra.Command {
 
 			return nil
 		},
-		PreRun: bindPFlags,
 	}
 	return logoutCmd
 }

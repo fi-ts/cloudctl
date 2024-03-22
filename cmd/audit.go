@@ -10,6 +10,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/go-openapi/strfmt"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -27,7 +28,6 @@ func newAuditCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.auditList()
 		},
-		PreRun: bindPFlags,
 	}
 	auditDescribeCmd := &cobra.Command{
 		Use:   "describe <rqid>",
@@ -35,13 +35,12 @@ func newAuditCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.auditDescribe(args)
 		},
-		PreRun: bindPFlags,
 	}
 
 	auditDescribeCmd.Flags().String("phase", "response", "phase of the audit trace. One of [request, response, single, error, opened, closed]")
 	auditDescribeCmd.Flags().Bool("prettify-body", false, "attempts to interpret the body as json and prettifies it")
 
-	must(auditDescribeCmd.RegisterFlagCompletionFunc("phase", c.comp.AuditPhaseCompletion))
+	genericcli.Must(auditDescribeCmd.RegisterFlagCompletionFunc("phase", c.comp.AuditPhaseCompletion))
 
 	auditListCmd.Flags().StringP("query", "q", "", "filters audit trace body payloads for the given text.")
 
@@ -67,8 +66,8 @@ func newAuditCmd(c *config) *cobra.Command {
 
 	auditListCmd.Flags().Int64("limit", 100, "limit the number of audit traces.")
 
-	must(auditListCmd.RegisterFlagCompletionFunc("type", c.comp.AuditTypeCompletion))
-	must(auditListCmd.RegisterFlagCompletionFunc("phase", c.comp.AuditPhaseCompletion))
+	genericcli.Must(auditListCmd.RegisterFlagCompletionFunc("type", c.comp.AuditTypeCompletion))
+	genericcli.Must(auditListCmd.RegisterFlagCompletionFunc("phase", c.comp.AuditPhaseCompletion))
 
 	auditCmd.AddCommand(auditDescribeCmd)
 	auditCmd.AddCommand(auditListCmd)

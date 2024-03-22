@@ -32,7 +32,6 @@ func newVersionCmd(c *config) *cobra.Command {
 			}
 			return nil
 		},
-		PreRun: bindPFlags,
 	}
 	return versionCmd
 }

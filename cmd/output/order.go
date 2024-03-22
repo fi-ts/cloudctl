@@ -154,7 +154,7 @@ func (s ShootTablePrinter) Order(data []*models.V1ClusterResponse) {
 					if err != nil {
 						return false
 					}
-					btime, _ := time.Parse(time.RFC3339, *B.Status.LastOperation.LastUpdateTime)
+					btime, err := time.Parse(time.RFC3339, *B.Status.LastOperation.LastUpdateTime)
 					if err != nil {
 						return true
 					}

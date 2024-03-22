@@ -37,10 +37,8 @@ type Completion struct {
 	cloud *client.CloudAPI
 }
 
-func NewCompletion(cloud *client.CloudAPI) *Completion {
-	return &Completion{
-		cloud: cloud,
-	}
+func (c *Completion) SetClient(client *client.CloudAPI) {
+	c.cloud = client
 }
 
 func (c *Completion) ContextListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
