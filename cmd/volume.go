@@ -52,7 +52,6 @@ func newVolumeCmd(c *config) *cobra.Command {
 			return c.volumeSetQoS(args)
 		},
 		ValidArgsFunction: c.comp.VolumeListCompletion,
-		PreRun:            bindPFlags,
 	}
 	volumeManifestCmd := &cobra.Command{
 		Use:   "manifest <volume>",
@@ -120,7 +119,6 @@ func newVolumeCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.listQoSPolicies()
 		},
-		PreRun: bindPFlags,
 	}
 
 	snapshotListCmd.Flags().StringP("snapshotid", "", "", "snapshotid to filter [optional]")
@@ -176,8 +174,8 @@ func newVolumeCmd(c *config) *cobra.Command {
 	volumeSetQoSCmd.Flags().StringP("qos-id", "", "", "the id of the new qos policy of the volume")
 	volumeSetQoSCmd.Flags().StringP("qos-name", "", "", "the name of the new qos policy of the volume")
 
-	must(volumeSetQoSCmd.RegisterFlagCompletionFunc("qos-id", c.comp.PolicyIDListCompletion))
-	must(volumeSetQoSCmd.RegisterFlagCompletionFunc("qos-name", c.comp.PolicyNameListCompletion))
+	genericcli.Must(volumeSetQoSCmd.RegisterFlagCompletionFunc("qos-id", c.comp.PolicyIDListCompletion))
+	genericcli.Must(volumeSetQoSCmd.RegisterFlagCompletionFunc("qos-name", c.comp.PolicyNameListCompletion))
 
 	return volumeCmd
 }
