@@ -56,7 +56,9 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 			replica = fmt.Sprintf("%d", *vol.ReplicaCount)
 		}
 		qos := ""
-		if vol.QosPolicyUUID != nil {
+		if vol.QosPolicyName != nil {
+			qos = *vol.QosPolicyName
+		} else if vol.QosPolicyUUID != nil {
 			qos = *vol.QosPolicyUUID
 		}
 		sc := ""
