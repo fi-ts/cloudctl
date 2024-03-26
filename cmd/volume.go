@@ -44,6 +44,15 @@ func newVolumeCmd(c *config) *cobra.Command {
 		},
 		ValidArgsFunction: c.comp.VolumeListCompletion,
 	}
+	volumeSetQoSCmd := &cobra.Command{
+		Use:     "set-qos <volume>",
+		Aliases: []string{"set-qos"},
+		Short:   "sets the qos policy of the volume",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.volumeSetQoS(args)
+		},
+		ValidArgsFunction: c.comp.VolumeListCompletion,
+	}
 	volumeManifestCmd := &cobra.Command{
 		Use:   "manifest <volume>",
 		Short: "print a manifest for a volume",
@@ -98,6 +107,20 @@ func newVolumeCmd(c *config) *cobra.Command {
 		},
 	}
 
+	qosCmd := &cobra.Command{
+		Use:   "qos",
+		Short: "manage qos policies",
+		Long:  "list qos policies",
+	}
+	qosListCmd := &cobra.Command{
+		Use:     "list",
+		Short:   "list qos policies",
+		Aliases: []string{"ls"},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.listQoSPolicies()
+		},
+	}
+
 	snapshotListCmd.Flags().StringP("snapshotid", "", "", "snapshotid to filter [optional]")
 	snapshotListCmd.Flags().StringP("project", "", "", "project to filter")
 	snapshotListCmd.Flags().StringP("name", "", "", "name to filter")
@@ -118,12 +141,16 @@ func newVolumeCmd(c *config) *cobra.Command {
 	snapshotCmd.AddCommand(snapshotDeleteCmd)
 	volumeCmd.AddCommand(snapshotCmd)
 
+	qosCmd.AddCommand(qosListCmd)
+	volumeCmd.AddCommand(qosCmd)
+
 	volumeCmd.AddCommand(volumeListCmd)
 	volumeCmd.AddCommand(volumeDeleteCmd)
 	volumeCmd.AddCommand(volumeDescribeCmd)
 	volumeCmd.AddCommand(volumeManifestCmd)
 	volumeCmd.AddCommand(volumeEncryptionSecretManifestCmd)
 	volumeCmd.AddCommand(volumeClusterInfoCmd)
+	volumeCmd.AddCommand(volumeSetQoSCmd)
 
 	volumeListCmd.Flags().StringP("volumeid", "", "", "volumeid to filter [optional]")
 	volumeListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
@@ -143,6 +170,12 @@ func newVolumeCmd(c *config) *cobra.Command {
 
 	volumeClusterInfoCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
 	genericcli.Must(volumeClusterInfoCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+
+	volumeSetQoSCmd.Flags().StringP("qos-id", "", "", "the id of the new qos policy of the volume")
+	volumeSetQoSCmd.Flags().StringP("qos-name", "", "", "the name of the new qos policy of the volume")
+
+	genericcli.Must(volumeSetQoSCmd.RegisterFlagCompletionFunc("qos-id", c.comp.PolicyIDListCompletion))
+	genericcli.Must(volumeSetQoSCmd.RegisterFlagCompletionFunc("qos-name", c.comp.PolicyNameListCompletion))
 
 	return volumeCmd
 }
@@ -223,6 +256,28 @@ If used in cronjob for example, volume might not be connected now, but required 
 		return err
 	}
 
+	return output.New().Print(resp.Payload)
+}
+
+func (c *config) volumeSetQoS(args []string) error {
+	vol, err := c.getVolumeFromArgs(args)
+	if err != nil {
+		return err
+	}
+	policyId := helper.ViperString("qos-id")
+	policyName := helper.ViperString("qos-name")
+
+	params := volume.NewSetVolumeQoSPolicyParams().
+		WithID(*vol.VolumeID).
+		WithBody(&models.V1VolumeSetQoSPolicyRequest{
+			QoSPolicyID:   policyId,
+			QoSPolicyName: policyName,
+		})
+
+	resp, err := c.cloud.Volume.SetVolumeQoSPolicy(params, nil)
+	if err != nil {
+		return err
+	}
 	return output.New().Print(resp.Payload)
 }
 
@@ -326,5 +381,13 @@ delete snapshot: %q, all data will be lost forever.
 		return err
 	}
 
+	return output.New().Print(resp.Payload)
+}
+
+func (c *config) listQoSPolicies() error {
+	resp, err := c.cloud.Volume.ListPolicies(volume.NewListPoliciesParams(), nil)
+	if err != nil {
+		return err
+	}
 	return output.New().Print(resp.Payload)
 }

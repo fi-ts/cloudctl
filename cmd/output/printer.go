@@ -291,6 +291,10 @@ func (t tablePrinter) Print(data interface{}) error {
 		SnapshotTablePrinter{t}.Print(d)
 	case *models.V1SnapshotResponse:
 		SnapshotTablePrinter{t}.Print(pointer.WrapInSlice(d))
+	case []*models.V1QoSPolicyResponse:
+		QoSPolicyTablePrinter{t}.Print(d)
+	case *models.V1QoSPolicyResponse:
+		QoSPolicyTablePrinter{t}.Print(pointer.WrapInSlice(d))
 	case []*models.V1StorageClusterInfo:
 		VolumeClusterInfoTablePrinter{t}.Print(d)
 	case models.V1PostgresPartitionsResponse:
