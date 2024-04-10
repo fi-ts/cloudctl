@@ -262,7 +262,7 @@ postgres=#
 	postgresCreateCmd.Flags().StringP("project", "", "", "project of the database")
 	postgresCreateCmd.Flags().StringP("partition", "", "", "partition where the database should be created")
 	postgresCreateCmd.Flags().IntP("replicas", "", 1, "replicas of the database")
-	postgresCreateCmd.Flags().StringP("version", "", "12", "version of the database") // FIXME add possible values
+	postgresCreateCmd.Flags().StringP("version", "", "", "version of the database")
 	postgresCreateCmd.Flags().StringSliceP("sources", "", []string{"0.0.0.0/0"}, "networks which should be allowed to connect in CIDR notation")
 	postgresCreateCmd.Flags().StringSliceP("labels", "", []string{}, "labels to add to that postgres database")
 	postgresCreateCmd.Flags().StringP("cpu", "", "500m", "cpus for the database")
@@ -278,6 +278,7 @@ postgres=#
 	genericcli.Must(postgresCreateCmd.MarkFlagRequired("project"))
 	genericcli.Must(postgresCreateCmd.MarkFlagRequired("partition"))
 	genericcli.Must(postgresCreateCmd.MarkFlagRequired("backup-config"))
+	genericcli.Must(postgresCreateCmd.MarkFlagRequired("version"))
 	genericcli.Must(postgresCreateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	genericcli.Must(postgresCreateCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
 	genericcli.Must(postgresCreateCmd.RegisterFlagCompletionFunc("version", c.comp.PostgresListVersionsCompletion))
