@@ -90,11 +90,13 @@ func newClusterAuditCmd(c *config) *cobra.Command {
 	clusterForwardingCmd.Flags().Bool("enabled", false, "enables cluster-forwarding audit backend for this cluster.")
 
 	splunkCmd.Flags().Bool("enabled", false, "enables splunk audit backend for this cluster, if enabled without any specific settings, the provider-default splunk backend will be used.")
-	splunkCmd.Flags().String("host", "", "the splunk host to configure.")
+	splunkCmd.Flags().String("host", "", "the splunk host (name or IP) to configure.")
 	splunkCmd.Flags().String("index", "", "the splunk index to configure.")
 	splunkCmd.Flags().String("port", "", "the splunk port to configure.")
 	splunkCmd.Flags().String("token", "", "the splunk token used to authenticate against the splunk endpoint.")
+	splunkCmd.Flags().Bool("tls", false, "enables tls encryption of the splunk connection.")
 	splunkCmd.Flags().String("ca", "", "the path to a ca used for tls connection to splunk endpoint.")
+	splunkCmd.Flags().String("tlshost", "", "the hostname of the splunk host to use for tls SNI and/or certificate verification")
 
 	clusterAuditCmd.AddCommand(modeCmd, policyCmd, splunkCmd, clusterForwardingCmd)
 
@@ -212,14 +214,18 @@ func (c *auditCmd) splunk() error {
 	if viper.IsSet("token") {
 		auditConfigration.Backends.Splunk.Token = pointer.Pointer(viper.GetString("token"))
 	}
+	if viper.IsSet("tls") {
+		auditConfigration.Backends.Splunk.TLS = pointer.Pointer(viper.GetBool("tls"))
+	}
 	if viper.IsSet("ca") {
 		ca, err := os.ReadFile(viper.GetString("ca"))
 		if err != nil {
 			return err
 		}
-
-		auditConfigration.Backends.Splunk.TLS = pointer.Pointer(true)
 		auditConfigration.Backends.Splunk.Ca = pointer.Pointer(string(ca))
+	}
+	if viper.IsSet("tlshost") {
+		auditConfigration.Backends.Splunk.Tlshost = viper.GetString("tlshost")
 	}
 
 	_, err := c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
