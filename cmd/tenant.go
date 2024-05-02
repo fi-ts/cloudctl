@@ -8,6 +8,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/fi-ts/cloudctl/cmd/output"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"gopkg.in/yaml.v3"
 
 	"github.com/fi-ts/cloud-go/api/client/tenant"
@@ -27,7 +28,6 @@ func newTenantCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.tenantList()
 		},
-		PreRun: bindPFlags,
 	}
 	tenantDescribeCmd := &cobra.Command{
 		Use:   "describe <tenantID>",
@@ -35,7 +35,6 @@ func newTenantCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.tenantDescribe(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.TenantListCompletion,
 	}
 	tenantEditCmd := &cobra.Command{
@@ -44,7 +43,6 @@ func newTenantCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.tenantEdit(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.TenantListCompletion,
 	}
 	tenantApplyCmd := &cobra.Command{
@@ -53,12 +51,11 @@ func newTenantCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.tenantApply()
 		},
-		PreRun: bindPFlags,
 	}
 
 	tenantListCmd.Flags().String("id", "", "show projects of given id")
 	tenantListCmd.Flags().String("name", "", "show projects of given name")
-	must(tenantListCmd.RegisterFlagCompletionFunc("id", c.comp.TenantListCompletion))
+	genericcli.Must(tenantListCmd.RegisterFlagCompletionFunc("id", c.comp.TenantListCompletion))
 
 	tenantApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
 	Example tenant update:

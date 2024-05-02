@@ -104,7 +104,6 @@ func newLoginCmd(c *config) *cobra.Command {
 
 			return nil
 		},
-		PreRun: bindPFlags,
 	}
 	loginCmd.Flags().Bool("print-only", false, "If true, the token is printed to stdout")
 	return loginCmd

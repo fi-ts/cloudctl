@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"log/slog"
 	"net/url"
@@ -11,31 +12,43 @@ import (
 	cloudgo "github.com/fi-ts/cloud-go"
 	"github.com/fi-ts/cloud-go/api/client"
 	"github.com/fi-ts/cloudctl/cmd/completion"
+	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/fi-ts/cloudctl/pkg/api"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var (
-	// will bind all viper flags to subcommands and
-	// prevent overwrite of identical flag names from other commands
-	// see https://github.com/spf13/viper/issues/233#issuecomment-386791444
-	bindPFlags = func(cmd *cobra.Command, args []string) {
-		err := viper.BindPFlags(cmd.Flags())
-		if err != nil {
-			fmt.Printf("error during setup:%v", err)
-			os.Exit(1)
-		}
-	}
+const (
+	binaryName = "cloudctl"
 )
 
-func newRootCmd() *cobra.Command {
-	name := "cloudctl"
+type config struct {
+	fs          afero.Fs
+	out         io.Writer
+	cloud       *client.CloudAPI
+	comp        *completion.Completion
+	consoleHost string
+	log         *slog.Logger
+}
+
+func newRootCmd(cfg *config) *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:          name,
+		Use:          binaryName,
 		Short:        "a cli to manage cloud entities.",
 		Long:         "with cloudctl you can manage kubernetes cluster, view networks et.al.",
 		SilenceUsage: true,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			viper.SetFs(cfg.fs)
+			genericcli.Must(viper.BindPFlags(cmd.Flags()))
+			genericcli.Must(viper.BindPFlags(cmd.PersistentFlags()))
+			// we cannot instantiate the config earlier because
+			// cobra flags do not work so early in the game
+			genericcli.Must(initConfigWithViperCtx(cfg))
+
+			return nil
+		},
 	}
 
 	rootCmd.PersistentFlags().StringP("url", "u", "", "api server address. Can be specified with CLOUDCTL_URL environment variable.")
@@ -55,15 +68,10 @@ func newRootCmd() *cobra.Command {
 	`)
 	rootCmd.PersistentFlags().BoolP("yes-i-really-mean-it", "", false, "skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)")
 
-	must(viper.BindPFlags(rootCmd.Flags()))
-	must(viper.BindPFlags(rootCmd.PersistentFlags()))
-
-	cfg := getConfig(name)
-
 	rootCmd.AddCommand(newAuditCmd(cfg))
 	rootCmd.AddCommand(newClusterCmd(cfg))
 	rootCmd.AddCommand(newDashboardCmd(cfg))
-	rootCmd.AddCommand(newUpdateCmd(cfg, name))
+	rootCmd.AddCommand(newUpdateCmd(cfg, binaryName))
 	rootCmd.AddCommand(newLoginCmd(cfg))
 	rootCmd.AddCommand(newLogoutCmd(cfg))
 	rootCmd.AddCommand(newWhoamiCmd())
@@ -83,7 +91,15 @@ func newRootCmd() *cobra.Command {
 
 // Execute is the entrypoint of the cloudctl application
 func Execute() {
-	cmd := newRootCmd()
+	// the config will be provided with more values on cobra init
+	// cobra flags do not work so early in the game
+	c := &config{
+		fs:   afero.NewOsFs(),
+		out:  os.Stdout,
+		comp: &completion.Completion{},
+	}
+
+	cmd := newRootCmd(c)
 	err := cmd.Execute()
 	if err != nil {
 		if viper.GetBool("debug") {
@@ -93,16 +109,8 @@ func Execute() {
 	}
 }
 
-type config struct {
-	name        string
-	cloud       *client.CloudAPI
-	comp        *completion.Completion
-	consoleHost string
-	log         *slog.Logger
-}
-
-func getConfig(name string) *config {
-	viper.SetEnvPrefix(strings.ToUpper(name))
+func initConfigWithViperCtx(cfg *config) error {
+	viper.SetEnvPrefix(strings.ToUpper(binaryName))
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	viper.AutomaticEnv()
 
@@ -116,12 +124,12 @@ func getConfig(name string) *config {
 		}
 	} else {
 		viper.SetConfigName("config")
-		viper.AddConfigPath(fmt.Sprintf("/etc/%s", name))
+		viper.AddConfigPath(fmt.Sprintf("/etc/%s", binaryName))
 		h, err := os.UserHomeDir()
 		if err != nil {
 			log.Printf("unable to figure out user home directory, skipping config lookup path: %v", err)
 		} else {
-			viper.AddConfigPath(fmt.Sprintf(h+"/.%s", name))
+			viper.AddConfigPath(fmt.Sprintf(h+"/.%s", binaryName))
 		}
 		viper.AddConfigPath(".")
 		if err := viper.ReadInConfig(); err != nil {
@@ -132,12 +140,22 @@ func getConfig(name string) *config {
 		}
 	}
 
+	if viper.IsSet("kubeconfig") {
+		kubeconfigPath, err := helper.ExpandHomeDir(viper.GetString("kubeconfig"))
+		if err != nil {
+			return fmt.Errorf("unable to get kubeconfig path: %w", err)
+		}
+
+		viper.Set("kubeconfig", kubeconfigPath)
+	}
+
 	ctx := api.MustDefaultContext()
 
 	opts := &slog.HandlerOptions{}
 	if viper.GetBool("debug") {
 		opts.Level = slog.LevelDebug
 	}
+	cfg.log = slog.New(slog.NewJSONHandler(os.Stdout, opts))
 
 	driverURL := viper.GetString("url")
 	if driverURL == "" && ctx.ApiURL != "" {
@@ -165,19 +183,14 @@ func getConfig(name string) *config {
 		log.Fatalf("error initializing cloud-api client: %v", err)
 	}
 
-	comp := completion.NewCompletion(cloud)
+	cfg.cloud = cloud
+	cfg.comp.SetClient(cloud)
 
 	parsedURL, err := url.Parse(driverURL)
 	if err != nil {
 		log.Fatalf("could not parse driver url: %v", err)
 	}
-	consoleHost := parsedURL.Host
+	cfg.consoleHost = parsedURL.Host
 
-	return &config{
-		name:        name,
-		cloud:       cloud,
-		comp:        comp,
-		consoleHost: consoleHost,
-		log:         slog.New(slog.NewJSONHandler(os.Stdout, opts)),
-	}
+	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/fi-ts/cloud-go/api/client/volume"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
@@ -25,7 +26,6 @@ func newVolumeCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.volumeFind()
 		},
-		PreRun: bindPFlags,
 	}
 	volumeDescribeCmd := &cobra.Command{
 		Use:   "describe <volume>",
@@ -34,7 +34,6 @@ func newVolumeCmd(c *config) *cobra.Command {
 			return c.volumeDescribe(args)
 		},
 		ValidArgsFunction: c.comp.VolumeListCompletion,
-		PreRun:            bindPFlags,
 	}
 	volumeDeleteCmd := &cobra.Command{
 		Use:     "delete <volume>",
@@ -44,7 +43,6 @@ func newVolumeCmd(c *config) *cobra.Command {
 			return c.volumeDelete(args)
 		},
 		ValidArgsFunction: c.comp.VolumeListCompletion,
-		PreRun:            bindPFlags,
 	}
 	volumeManifestCmd := &cobra.Command{
 		Use:   "manifest <volume>",
@@ -54,7 +52,6 @@ func newVolumeCmd(c *config) *cobra.Command {
 			return c.volumeManifest(args)
 		},
 		ValidArgsFunction: c.comp.VolumeListCompletion,
-		PreRun:            bindPFlags,
 	}
 	volumeEncryptionSecretManifestCmd := &cobra.Command{
 		Use:   "encryption-secret-manifest",
@@ -63,7 +60,6 @@ func newVolumeCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.volumeEncryptionSecretManifest()
 		},
-		PreRun: bindPFlags,
 	}
 	volumeClusterInfoCmd := &cobra.Command{
 		Use:   "clusterinfo",
@@ -71,7 +67,6 @@ func newVolumeCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.volumeClusterInfo()
 		},
-		PreRun: bindPFlags,
 	}
 
 	snapshotCmd := &cobra.Command{
@@ -86,7 +81,6 @@ func newVolumeCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.snapshotFind()
 		},
-		PreRun: bindPFlags,
 	}
 	snapshotDescribeCmd := &cobra.Command{
 		Use:   "describe <snapshot>",
@@ -94,7 +88,6 @@ func newVolumeCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.snapshotDescribe(args)
 		},
-		PreRun: bindPFlags,
 	}
 	snapshotDeleteCmd := &cobra.Command{
 		Use:     "delete <snapshot>",
@@ -103,7 +96,6 @@ func newVolumeCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.snapshotDelete(args)
 		},
-		PreRun: bindPFlags,
 	}
 
 	snapshotListCmd.Flags().StringP("snapshotid", "", "", "snapshotid to filter [optional]")
@@ -114,12 +106,12 @@ func newVolumeCmd(c *config) *cobra.Command {
 	snapshotDescribeCmd.Flags().StringP("project", "", "", "project to filter")
 	snapshotDeleteCmd.Flags().StringP("project", "", "", "project to filter")
 
-	must(snapshotListCmd.MarkFlagRequired("project"))
-	must(snapshotDescribeCmd.MarkFlagRequired("project"))
-	must(snapshotDeleteCmd.MarkFlagRequired("project"))
+	genericcli.Must(snapshotListCmd.MarkFlagRequired("project"))
+	genericcli.Must(snapshotDescribeCmd.MarkFlagRequired("project"))
+	genericcli.Must(snapshotDeleteCmd.MarkFlagRequired("project"))
 
-	must(snapshotListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-	must(snapshotListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	genericcli.Must(snapshotListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	genericcli.Must(snapshotListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 
 	snapshotCmd.AddCommand(snapshotListCmd)
 	snapshotCmd.AddCommand(snapshotDescribeCmd)
@@ -139,9 +131,9 @@ func newVolumeCmd(c *config) *cobra.Command {
 	volumeListCmd.Flags().StringP("tenant", "", "", "tenant to filter [optional]")
 	volumeListCmd.Flags().Bool("only-unbound", false, "show only unbound volumes that are not connected to any hosts, pv may be still present. [optional]")
 
-	must(volumeListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-	must(volumeListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-	must(volumeListCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
+	genericcli.Must(volumeListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	genericcli.Must(volumeListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	genericcli.Must(volumeListCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
 
 	volumeManifestCmd.Flags().StringP("name", "", "restored-pv", "name of the PersistentVolume")
 	volumeManifestCmd.Flags().StringP("namespace", "", "default", "namespace for the PersistentVolume")
@@ -150,7 +142,7 @@ func newVolumeCmd(c *config) *cobra.Command {
 	volumeEncryptionSecretManifestCmd.Flags().StringP("passphrase", "", "please-change-me", "passphrase for the PersistentVolume encryption")
 
 	volumeClusterInfoCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
-	must(volumeClusterInfoCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	genericcli.Must(volumeClusterInfoCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 
 	return volumeCmd
 }
