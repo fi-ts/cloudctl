@@ -37,8 +37,7 @@ type (
 )
 
 const (
-	ImageExpirationDaysDefault      = 14
-	KuberentesExpirationDaysDefault = 14
+	imageExpirationDaysDefault      = 14
 )
 
 type shootStats struct {
@@ -197,13 +196,13 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 	if shoot.CreationTimestamp != nil {
 		age = helper.HumanizeDuration(time.Since(time.Time(*shoot.CreationTimestamp)))
 	}
-	lastReconcilation := ""
+	lastReconciliation := ""
 	if shoot.Status != nil && shoot.Status.LastOperation != nil && shoot.Status.LastOperation.LastUpdateTime != nil {
 		lastUpdate, err := time.Parse(time.RFC3339, *shoot.Status.LastOperation.LastUpdateTime)
 		if err != nil {
-			lastReconcilation = "unknown"
+			lastReconciliation = "unknown"
 		} else {
-			lastReconcilation = helper.HumanizeDuration(time.Since(lastUpdate))
+			lastReconciliation = helper.HumanizeDuration(time.Since(lastUpdate))
 		}
 	}
 
@@ -329,7 +328,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		shootStats.apiServer, shootStats.controlPlane, shootStats.nodes, shootStats.system,
 		size,
 		age,
-		lastReconcilation,
+		lastReconciliation,
 		purpose,
 		privileged,
 		audit,
@@ -399,7 +398,7 @@ func imageExpires(m *models.ModelsV1MachineResponse) error {
 		return nil
 	}
 
-	viper.SetDefault("image-expiration-warning-days", ImageExpirationDaysDefault)
+	viper.SetDefault("image-expiration-warning-days", imageExpirationDaysDefault)
 	expirationWarningDays := viper.GetInt("image-expiration-warning-days")
 	expiresInHours := int(time.Until(t).Hours())
 
@@ -417,7 +416,7 @@ func kubernetesExpires(shoot *models.V1ClusterResponse) error {
 		return nil
 	}
 
-	viper.SetDefault("kubernetes-expiration-warning-days", ImageExpirationDaysDefault)
+	viper.SetDefault("kubernetes-expiration-warning-days", imageExpirationDaysDefault)
 	expirationWarningDays := viper.GetInt("kubernetes-expiration-warning-days")
 	expiresInHours := int(time.Until(time.Time(*shoot.Kubernetes.ExpirationDate)).Hours())
 

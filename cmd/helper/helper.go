@@ -84,11 +84,11 @@ func Prompt(msg, compare string) error {
 	return nil
 }
 
-// Truncate will trim a string in the middle and replace it with elipsis
+// Truncate will trim a string in the middle and replace it with ellipsis
 // FIXME write a test
-func Truncate(input, elipsis string, maxlength int) string {
+func Truncate(input, ellipsis string, maxlength int) string {
 	il := len(input)
-	el := len(elipsis)
+	el := len(ellipsis)
 	if il <= maxlength {
 		return input
 	}
@@ -97,7 +97,7 @@ func Truncate(input, elipsis string, maxlength int) string {
 	}
 	startlength := ((maxlength - el) / 2) - el/2
 
-	output := input[:startlength] + elipsis
+	output := input[:startlength] + ellipsis
 	missing := maxlength - len(output)
 	output = output + input[il-missing:]
 	return output
