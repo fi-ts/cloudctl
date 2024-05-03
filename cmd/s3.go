@@ -16,7 +16,7 @@ func newS3Cmd(c *config) *cobra.Command {
 	s3Cmd := &cobra.Command{
 		Use:   "s3",
 		Short: "manage s3",
-		Long:  "manges access to s3 storage located in different partitions",
+		Long:  "manages access to s3 storage located in different partitions",
 	}
 	s3DescribeCmd := &cobra.Command{
 		Use:   "describe",
