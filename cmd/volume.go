@@ -47,7 +47,7 @@ func newVolumeCmd(c *config) *cobra.Command {
 	volumeManifestCmd := &cobra.Command{
 		Use:   "manifest <volume>",
 		Short: "print a manifest for a volume",
-		Long:  "this is only useful for volumes which are not used in any k8s cluster. With the PersistenVolumeClaim given you can reuse it in a new cluster.",
+		Long:  "this is only useful for volumes which are not used in any k8s cluster. With the PersistentVolumeClaim given you can reuse it in a new cluster.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.volumeManifest(args)
 		},

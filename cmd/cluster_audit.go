@@ -188,29 +188,29 @@ func (c *auditCmd) disable() error {
 }
 
 func (c *auditCmd) splunk() error {
-	auditConfigration := &models.V1Audit{}
+	auditConfiguration := &models.V1Audit{}
 
-	if auditConfigration.Backends == nil {
-		auditConfigration.Backends = &models.V1AuditBackends{}
+	if auditConfiguration.Backends == nil {
+		auditConfiguration.Backends = &models.V1AuditBackends{}
 	}
-	if auditConfigration.Backends.Splunk == nil {
-		auditConfigration.Backends.Splunk = &models.V1AuditBackendSplunk{}
+	if auditConfiguration.Backends.Splunk == nil {
+		auditConfiguration.Backends.Splunk = &models.V1AuditBackendSplunk{}
 	}
 
 	if viper.IsSet("enabled") {
-		auditConfigration.Backends.Splunk.Enabled = pointer.Pointer(viper.GetBool("enabled"))
+		auditConfiguration.Backends.Splunk.Enabled = pointer.Pointer(viper.GetBool("enabled"))
 	}
 	if viper.IsSet("host") {
-		auditConfigration.Backends.Splunk.Host = pointer.Pointer(viper.GetString("host"))
+		auditConfiguration.Backends.Splunk.Host = pointer.Pointer(viper.GetString("host"))
 	}
 	if viper.IsSet("index") {
-		auditConfigration.Backends.Splunk.Index = pointer.Pointer(viper.GetString("index"))
+		auditConfiguration.Backends.Splunk.Index = pointer.Pointer(viper.GetString("index"))
 	}
 	if viper.IsSet("port") {
-		auditConfigration.Backends.Splunk.Port = pointer.Pointer(viper.GetString("port"))
+		auditConfiguration.Backends.Splunk.Port = pointer.Pointer(viper.GetString("port"))
 	}
 	if viper.IsSet("token") {
-		auditConfigration.Backends.Splunk.Token = pointer.Pointer(viper.GetString("token"))
+		auditConfiguration.Backends.Splunk.Token = pointer.Pointer(viper.GetString("token"))
 	}
 	if viper.IsSet("ca") {
 		ca, err := os.ReadFile(viper.GetString("ca"))
@@ -218,13 +218,13 @@ func (c *auditCmd) splunk() error {
 			return err
 		}
 
-		auditConfigration.Backends.Splunk.TLS = pointer.Pointer(true)
-		auditConfigration.Backends.Splunk.Ca = pointer.Pointer(string(ca))
+		auditConfiguration.Backends.Splunk.TLS = pointer.Pointer(true)
+		auditConfiguration.Backends.Splunk.Ca = pointer.Pointer(string(ca))
 	}
 
 	_, err := c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
 		ID:    pointer.Pointer(viper.GetString("cluster-id")),
-		Audit: auditConfigration,
+		Audit: auditConfiguration,
 	}), nil)
 	if err != nil {
 		return err
@@ -234,22 +234,22 @@ func (c *auditCmd) splunk() error {
 }
 
 func (c *auditCmd) clusterForwarding() error {
-	auditConfigration := &models.V1Audit{}
+	auditConfiguration := &models.V1Audit{}
 
-	if auditConfigration.Backends == nil {
-		auditConfigration.Backends = &models.V1AuditBackends{}
+	if auditConfiguration.Backends == nil {
+		auditConfiguration.Backends = &models.V1AuditBackends{}
 	}
-	if auditConfigration.Backends.ClusterForwarding == nil {
-		auditConfigration.Backends.ClusterForwarding = &models.V1AuditBackendClusterForwarding{}
+	if auditConfiguration.Backends.ClusterForwarding == nil {
+		auditConfiguration.Backends.ClusterForwarding = &models.V1AuditBackendClusterForwarding{}
 	}
 
 	if viper.IsSet("enabled") {
-		auditConfigration.Backends.ClusterForwarding.Enabled = pointer.Pointer(viper.GetBool("enabled"))
+		auditConfiguration.Backends.ClusterForwarding.Enabled = pointer.Pointer(viper.GetBool("enabled"))
 	}
 
 	_, err := c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
 		ID:    pointer.Pointer(viper.GetString("cluster-id")),
-		Audit: auditConfigration,
+		Audit: auditConfiguration,
 	}), nil)
 	if err != nil {
 		return err
