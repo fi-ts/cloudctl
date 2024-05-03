@@ -55,7 +55,7 @@ func newRootCmd(cfg *config) *cobra.Command {
 	rootCmd.PersistentFlags().String("apitoken", "", "api token to authenticate. Can be specified with CLOUDCTL_APITOKEN environment variable.")
 	rootCmd.PersistentFlags().String("kubeconfig", "", "Path to the kube-config to use for authentication and authorization. Is updated by login. Uses default path if not specified.")
 	rootCmd.PersistentFlags().StringP("order", "", "", "order by (comma separated) column(s)")
-	rootCmd.PersistentFlags().BoolP("no-headers", "", false, "ommit headers in tables")
+	rootCmd.PersistentFlags().BoolP("no-headers", "", false, "omit headers in tables")
 	rootCmd.PersistentFlags().BoolP("debug", "", false, "enable debug")
 	rootCmd.PersistentFlags().Bool("force-color", false, "force colored output even without tty")
 	rootCmd.PersistentFlags().StringP("output-format", "o", "table", "output format (table|wide|markdown|json|yaml|template), wide is a table with more columns.")

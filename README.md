@@ -438,7 +438,7 @@ Static ip addresses must freed before their project can be deleted.
 
 ## Billing
 
-The usage is calculated always withing a time window. The beginning of the time window can be specified by `--from` and if required `--to` specifies the end of the time window to look at. The end defaults to `now`.
+The usage is calculated always within a time window. The beginning of the time window can be specified by `--from` and if required `--to` specifies the end of the time window to look at. The end defaults to `now`.
 
 Example calculation:
 

@@ -137,7 +137,7 @@ func (p PostgresBackupsTablePrinter) Print(data []*models.V1PostgresBackupConfig
 	if p.order == "" {
 		p.order = "date"
 	}
-	// FIXME oder is no implemented
+	// FIXME order is no implemented
 	for _, b := range data {
 		createdBy := ""
 		if b.CreatedBy != nil {
