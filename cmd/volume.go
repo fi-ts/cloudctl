@@ -5,6 +5,7 @@ import (
 
 	"github.com/fi-ts/cloud-go/api/client/volume"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
@@ -266,6 +267,13 @@ func (c *config) volumeSetQoS(args []string) error {
 	}
 	policyId := helper.ViperString("qos-id")
 	policyName := helper.ViperString("qos-name")
+
+	if pointer.SafeDeref(policyId) == "" && pointer.SafeDeref(policyName) == "" {
+		return fmt.Errorf("either qos-id or qos-name must be specified")
+	}
+	if pointer.SafeDeref(policyId) != "" && pointer.SafeDeref(policyName) != "" {
+		return fmt.Errorf("either qos-id or qos-name must be specified, not both")
+	}
 
 	params := volume.NewSetVolumeQoSPolicyParams().
 		WithID(*vol.VolumeID).
