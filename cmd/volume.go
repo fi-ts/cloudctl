@@ -261,7 +261,7 @@ If used in cronjob for example, volume might not be connected now, but required 
 }
 
 func (c *config) volumeSetQoS(args []string) error {
-	vol, err := c.getVolumeFromArgs(args)
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
@@ -276,7 +276,7 @@ func (c *config) volumeSetQoS(args []string) error {
 	}
 
 	params := volume.NewSetVolumeQoSPolicyParams().
-		WithID(*vol.VolumeID).
+		WithID(id).
 		WithBody(&models.V1VolumeSetQoSPolicyRequest{
 			QoSPolicyID:   policyId,
 			QoSPolicyName: policyName,
