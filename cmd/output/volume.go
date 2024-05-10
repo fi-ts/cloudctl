@@ -7,6 +7,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8syaml "sigs.k8s.io/yaml"
@@ -23,11 +24,14 @@ type (
 	SnapshotTablePrinter struct {
 		tablePrinter
 	}
+	QoSPolicyTablePrinter struct {
+		tablePrinter
+	}
 )
 
-// Print an volume as table
+// Print a volume as table
 func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
-	p.shortHeader = []string{"ID", "Name", "Size", "Usage", "Replicas", "StorageClass", "Project", "Tenant", "Partition"}
+	p.shortHeader = []string{"ID", "Name", "Size", "Usage", "Replicas", "QoS", "StorageClass", "Project", "Tenant", "Partition"}
 	p.wideHeader = append(p.shortHeader, "Nodes")
 	p.Order(data)
 
@@ -52,6 +56,12 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 		if vol.ReplicaCount != nil {
 			replica = fmt.Sprintf("%d", *vol.ReplicaCount)
 		}
+		qos := ""
+		if vol.QosPolicyName != nil {
+			qos = *vol.QosPolicyName
+		} else if vol.QosPolicyUUID != nil {
+			qos = *vol.QosPolicyUUID
+		}
 		sc := ""
 		if vol.StorageClass != nil {
 			sc = *vol.StorageClass
@@ -71,7 +81,7 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 
 		nodes := ConnectedHosts(vol)
 
-		short := []string{volumeID, name, size, usage, replica, sc, project, tenant, partition}
+		short := []string{volumeID, name, size, usage, replica, qos, sc, project, tenant, partition}
 		wide := append(short, strings.Join(nodes, "\n"))
 
 		p.addWideData(wide, vol)
@@ -298,6 +308,72 @@ func (p VolumeClusterInfoTablePrinter) Print(data []*models.V1StorageClusterInfo
 
 		p.addWideData(wide, info)
 		p.addShortData(short, info)
+	}
+	p.render()
+}
+
+// Print a QoS Policy as table
+func (p QoSPolicyTablePrinter) Print(data []*models.V1QoSPolicyResponse) {
+	p.shortHeader = []string{"ID", "Name", "Partition", "Description", "State", "Read", "Write"}
+	p.wideHeader = p.shortHeader
+
+	for _, qos := range data {
+		id := ""
+		if qos.QoSPolicyID != nil {
+			id = *qos.QoSPolicyID
+		}
+		name := ""
+		if qos.Name != nil {
+			name = *qos.Name
+		}
+		partition := ""
+		if qos.Partition != nil {
+			partition = *qos.Partition
+		}
+		description := ""
+		longDescription := ""
+		if qos.Description != nil {
+			longDescription = *qos.Description
+			description = genericcli.TruncateEnd(*qos.Description, 40)
+		}
+		state := ""
+		if qos.State != nil {
+			state = *qos.State
+		}
+		read := ""
+		write := ""
+		if qos.Limit != nil {
+			if l := qos.Limit.Bandwidth; l != nil {
+				if l.Read != nil {
+					read = fmt.Sprintf("%d MB/s", *l.Read)
+				}
+				if l.Write != nil {
+					write = fmt.Sprintf("%d MB/s", *l.Write)
+				}
+			}
+			if l := qos.Limit.IOPS; l != nil {
+				if l.Read != nil {
+					read = fmt.Sprintf("%d IOPS", *l.Read)
+				}
+				if l.Write != nil {
+					write = fmt.Sprintf("%d IOPS", *l.Write)
+				}
+			}
+			if l := qos.Limit.IOPSPerGB; l != nil {
+				if l.Read != nil {
+					read = fmt.Sprintf("%d IOPS/GB", *l.Read)
+				}
+				if l.Write != nil {
+					write = fmt.Sprintf("%d IOPS/GB", *l.Write)
+				}
+			}
+		}
+
+		short := []string{id, name, partition, description, state, read, write}
+		wide := []string{id, name, partition, longDescription, state, read, write}
+
+		p.addWideData(wide, wide)
+		p.addShortData(short, qos)
 	}
 	p.render()
 }

@@ -1279,7 +1279,7 @@ func (p PostgresBackupEntryTablePrinter) Order(data []*models.V1PostgresBackupEn
 	}
 }
 
-// Order cluster
+// Order volume
 func (s VolumeTablePrinter) Order(data []*models.V1VolumeResponse) {
 	cols := strings.Split(s.order, ",")
 	if len(cols) > 0 {
@@ -1326,7 +1326,7 @@ func (s VolumeTablePrinter) Order(data []*models.V1VolumeResponse) {
 	}
 }
 
-// Order cluster
+// Order snapshot
 func (s SnapshotTablePrinter) Order(data []*models.V1SnapshotResponse) {
 	cols := strings.Split(s.order, ",")
 	if len(cols) > 0 {
