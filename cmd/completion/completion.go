@@ -231,7 +231,7 @@ func (c *Completion) VolumeListCompletion(cmd *cobra.Command, args []string, toC
 		if v.VolumeID == nil {
 			continue
 		}
-		names = append(names, *v.VolumeID)
+		names = append(names, *v.VolumeID+"\t"+pointer.SafeDeref(v.VolumeName))
 	}
 	sort.Strings(names)
 	return names, cobra.ShellCompDirectiveDefault
