@@ -313,10 +313,15 @@ func (p VolumeClusterInfoTablePrinter) Print(data []*models.V1StorageClusterInfo
 
 // Print a QoS Policy as table
 func (p QoSPolicyTablePrinter) Print(data []*models.V1QoSPolicyResponse) {
-	p.shortHeader = []string{"ID", "Name", "Description", "State", "Read", "Write"}
+	p.shortHeader = []string{"Partition", "ID", "Name", "Description", "State", "Read", "Write"}
 	p.wideHeader = p.shortHeader
 
 	for _, qos := range data {
+		partition := ""
+		if qos.Partition != nil {
+			partition = *qos.Partition
+		}
+
 		id := ""
 		if qos.QoSPolicyID != nil {
 			id = *qos.QoSPolicyID
@@ -362,7 +367,7 @@ func (p QoSPolicyTablePrinter) Print(data []*models.V1QoSPolicyResponse) {
 			}
 		}
 
-		short := []string{id, name, description, state, read, write}
+		short := []string{partition, id, name, description, state, read, write}
 		wide := short
 
 		p.addWideData(wide, qos)
