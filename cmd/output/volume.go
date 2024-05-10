@@ -7,6 +7,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8syaml "sigs.k8s.io/yaml"
@@ -313,15 +314,10 @@ func (p VolumeClusterInfoTablePrinter) Print(data []*models.V1StorageClusterInfo
 
 // Print a QoS Policy as table
 func (p QoSPolicyTablePrinter) Print(data []*models.V1QoSPolicyResponse) {
-	p.shortHeader = []string{"Partition", "ID", "Name", "Description", "State", "Read", "Write"}
+	p.shortHeader = []string{"ID", "Name", "Partition", "Description", "State", "Read", "Write"}
 	p.wideHeader = p.shortHeader
 
 	for _, qos := range data {
-		partition := ""
-		if qos.Partition != nil {
-			partition = *qos.Partition
-		}
-
 		id := ""
 		if qos.QoSPolicyID != nil {
 			id = *qos.QoSPolicyID
@@ -330,9 +326,15 @@ func (p QoSPolicyTablePrinter) Print(data []*models.V1QoSPolicyResponse) {
 		if qos.Name != nil {
 			name = *qos.Name
 		}
+		partition := ""
+		if qos.Partition != nil {
+			partition = *qos.Partition
+		}
 		description := ""
+		longDescription := ""
 		if qos.Description != nil {
-			description = *qos.Description
+			longDescription = *qos.Description
+			description = genericcli.TruncateEnd(*qos.Description, 40)
 		}
 		state := ""
 		if qos.State != nil {
@@ -367,10 +369,10 @@ func (p QoSPolicyTablePrinter) Print(data []*models.V1QoSPolicyResponse) {
 			}
 		}
 
-		short := []string{partition, id, name, description, state, read, write}
-		wide := short
+		short := []string{id, name, partition, description, state, read, write}
+		wide := []string{id, name, partition, longDescription, state, read, write}
 
-		p.addWideData(wide, qos)
+		p.addWideData(wide, wide)
 		p.addShortData(short, qos)
 	}
 	p.render()
