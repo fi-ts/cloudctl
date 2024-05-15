@@ -76,6 +76,9 @@ func (t *tablePrinter) render() {
 			if len(row) < 1 {
 				continue
 			}
+			if len(row[0]) == 0 {
+				continue
+			}
 			fmt.Println(row[0])
 		}
 		t.shortData = [][]string{}
