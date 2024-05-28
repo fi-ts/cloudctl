@@ -237,7 +237,8 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. [optional]")
 	clusterCreateCmd.Flags().Bool("encrypted-storage-classes", false, "enables the deployment of encrypted duros storage classes into the cluster. please refer to the user manual to properly use volume encryption. [optional]")
 	clusterCreateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster [optional]")
-	clusterCreateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes! [optional]")
+	clusterCreateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this rolls worker nodes! [optional]")
+	clusterCreateCmd.Flags().Bool("autoupdate-firewallimage", false, "enables automatic updates of the firewall image, be aware that this deletes rolls firewalls! [optional]")
 	clusterCreateCmd.Flags().String("maintenance-begin", "220000+0100", "defines the beginning of the nightly maintenance time window (e.g. for autoupdates) in the format HHMMSS+ZONE, e.g. \"220000+0100\". [optional]")
 	clusterCreateCmd.Flags().String("maintenance-end", "233000+0100", "defines the end of the nightly maintenance time window (e.g. for autoupdates) in the format HHMMSS+ZONE, e.g. \"233000+0100\". [optional]")
 	clusterCreateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
@@ -331,6 +332,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().String("maxunavailable", "", "max number (e.g. 0) or percentage (e.g. 10%) of workers that can be unavailable during a update of the cluster.")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster")
 	clusterUpdateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this deletes worker nodes!")
+	clusterUpdateCmd.Flags().Bool("autoupdate-firewallimage", false, "enables automatic updates of the firewall image, be aware that this deletes rolls firewalls! [optional]")
 	clusterUpdateCmd.Flags().String("maintenance-begin", "", "defines the beginning of the nightly maintenance time window (e.g. for autoupdates) in the format HHMMSS+ZONE, e.g. \"220000+0100\". [optional]")
 	clusterUpdateCmd.Flags().String("maintenance-end", "", "defines the end of the nightly maintenance time window (e.g. for autoupdates) in the format HHMMSS+ZONE, e.g. \"233000+0100\". [optional]")
 	clusterUpdateCmd.Flags().Bool("encrypted-storage-classes", false, "enables the deployment of encrypted duros storage classes into the cluster. please refer to the user manual to properly use volume encryption.")
@@ -626,7 +628,11 @@ WARNING: You are going to create a cluster that has no default internet access w
 		NetworkAccessType:         networkAccessType,
 	}
 
-	if viper.IsSet("autoupdate-kubernetes") || viper.IsSet("autoupdate-machineimages") || purpose == string(v1beta1.ShootPurposeEvaluation) {
+	if viper.IsSet("autoupdate-kubernetes") ||
+		viper.IsSet("autoupdate-machineimages") ||
+		viper.IsSet("autoupdate-firewallimage") ||
+		purpose == string(v1beta1.ShootPurposeEvaluation) {
+
 		scr.Maintenance.AutoUpdate = &models.V1MaintenanceAutoUpdate{}
 
 		// default to true for evaluation clusters
@@ -640,6 +646,10 @@ WARNING: You are going to create a cluster that has no default internet access w
 		if viper.IsSet("autoupdate-machineimages") {
 			auto := viper.GetBool("autoupdate-machineimages")
 			scr.Maintenance.AutoUpdate.MachineImage = &auto
+		}
+		if viper.IsSet("autoupdate-firewallimage") {
+			auto := viper.GetBool("autoupdate-firewallimage")
+			scr.Maintenance.AutoUpdate.FirewallImage = &auto
 		}
 	}
 
@@ -992,6 +1002,7 @@ func (c *config) updateCluster(args []string) error {
 			AutoUpdate: &models.V1MaintenanceAutoUpdate{
 				KubernetesVersion: current.Maintenance.AutoUpdate.KubernetesVersion,
 				MachineImage:      current.Maintenance.AutoUpdate.MachineImage,
+				FirewallImage:     current.Maintenance.AutoUpdate.FirewallImage,
 			},
 		},
 		ClusterFeatures:           &clusterFeatures,
@@ -1152,6 +1163,10 @@ func (c *config) updateCluster(args []string) error {
 	if viper.IsSet("autoupdate-machineimages") {
 		auto := viper.GetBool("autoupdate-machineimages")
 		cur.Maintenance.AutoUpdate.MachineImage = &auto
+	}
+	if viper.IsSet("autoupdate-firewallimage") {
+		auto := viper.GetBool("autoupdate-firewallimage")
+		cur.Maintenance.AutoUpdate.FirewallImage = &auto
 	}
 	if viper.IsSet("maintenance-begin") {
 		begin := viper.GetString("maintenance-begin")
