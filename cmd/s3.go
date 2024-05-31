@@ -250,8 +250,7 @@ func (c *config) s3Delete() error {
 	response, err := c.cloud.S3.Deletes3(request, nil)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			fmt.Fprintf(c.out, "the server took too long to respond. for s3 users with a lot of data the deletion may take longer than configured request timeout. please check again if the deletion was carried out successfully at a later point in time.")
-			return nil
+			return fmt.Errorf("the server took too long to respond. for s3 users with a lot of data the deletion may take longer than configured request timeout. please check again if the deletion was carried out successfully at a later point in time.")
 		}
 		return err
 	}
