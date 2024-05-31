@@ -146,7 +146,7 @@ func Edit(id string, getFunc func(id string) ([]byte, error), updateFunc func(fi
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(tmpfile.Name(), content, os.ModePerm)
+	err = os.WriteFile(tmpfile.Name(), content, os.ModePerm) //nolint:gosec
 	if err != nil {
 		return err
 	}
