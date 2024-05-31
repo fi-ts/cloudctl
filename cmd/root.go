@@ -15,6 +15,7 @@ import (
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/fi-ts/cloudctl/pkg/api"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -25,12 +26,14 @@ const (
 )
 
 type config struct {
-	fs          afero.Fs
-	out         io.Writer
-	cloud       *client.CloudAPI
-	comp        *completion.Completion
-	consoleHost string
-	log         *slog.Logger
+	fs              afero.Fs
+	out             io.Writer
+	cloud           *client.CloudAPI
+	comp            *completion.Completion
+	consoleHost     string
+	log             *slog.Logger
+	describePrinter printers.Printer
+	listPrinter     printers.Printer
 }
 
 func newRootCmd(cfg *config) *cobra.Command {
@@ -150,6 +153,9 @@ func initConfigWithViperCtx(cfg *config) error {
 	}
 
 	ctx := api.MustDefaultContext()
+
+	cfg.listPrinter = newPrinterFromCLI(cfg.out)
+	cfg.describePrinter = defaultToYAMLPrinter(cfg.out)
 
 	opts := &slog.HandlerOptions{}
 	if viper.GetBool("debug") {

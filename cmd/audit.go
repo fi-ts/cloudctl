@@ -8,7 +8,6 @@ import (
 
 	"github.com/fi-ts/cloud-go/api/client/audit"
 	"github.com/fi-ts/cloud-go/api/models"
-	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/go-openapi/strfmt"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/spf13/cobra"
@@ -106,7 +105,7 @@ func (c *config) auditList() error {
 		return err
 	}
 
-	return output.New().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *config) auditDescribe(args []string) error {
@@ -139,7 +138,7 @@ func (c *config) auditDescribe(args []string) error {
 		}
 	}
 
-	return output.New().Print(trace)
+	return c.describePrinter.Print(trace)
 }
 
 func eventuallyRelativeDateTime(s string) (strfmt.DateTime, error) {

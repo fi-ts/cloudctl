@@ -199,7 +199,7 @@ func (c *config) volumeFind() error {
 		if viper.GetBool("only-unbound") {
 			volumes = onlyUnboundVolumes(volumes)
 		}
-		return output.New().Print(volumes)
+		return c.listPrinter.Print(volumes)
 	}
 	resp, err := c.cloud.Volume.ListVolumes(nil, nil)
 	if err != nil {
@@ -209,7 +209,7 @@ func (c *config) volumeFind() error {
 	if viper.GetBool("only-unbound") {
 		volumes = onlyUnboundVolumes(volumes)
 	}
-	return output.New().Print(volumes)
+	return c.listPrinter.Print(volumes)
 }
 
 func onlyUnboundVolumes(volumes []*models.V1VolumeResponse) (result []*models.V1VolumeResponse) {
@@ -228,7 +228,7 @@ func (c *config) volumeDescribe(args []string) error {
 	if err != nil {
 		return err
 	}
-	return output.New().Print(vol)
+	return c.listPrinter.Print(vol)
 }
 
 func (c *config) volumeDelete(args []string) error {
@@ -257,7 +257,7 @@ If used in cronjob for example, volume might not be connected now, but required 
 		return err
 	}
 
-	return output.New().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *config) volumeSetQoS(args []string) error {
@@ -286,7 +286,7 @@ func (c *config) volumeSetQoS(args []string) error {
 	if err != nil {
 		return err
 	}
-	return output.New().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *config) volumeClusterInfo() error {
@@ -295,7 +295,7 @@ func (c *config) volumeClusterInfo() error {
 	if err != nil {
 		return err
 	}
-	return output.New().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *config) volumeManifest(args []string) error {
@@ -356,7 +356,7 @@ func (c *config) snapshotFind() error {
 	if err != nil {
 		return err
 	}
-	return output.New().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *config) snapshotDescribe(args []string) error {
@@ -364,7 +364,7 @@ func (c *config) snapshotDescribe(args []string) error {
 	if err != nil {
 		return err
 	}
-	return output.New().Print(snap)
+	return c.listPrinter.Print(snap)
 }
 
 func (c *config) snapshotDelete(args []string) error {
@@ -389,7 +389,7 @@ delete snapshot: %q, all data will be lost forever.
 		return err
 	}
 
-	return output.New().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *config) listQoSPolicies() error {
@@ -397,5 +397,5 @@ func (c *config) listQoSPolicies() error {
 	if err != nil {
 		return err
 	}
-	return output.New().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }

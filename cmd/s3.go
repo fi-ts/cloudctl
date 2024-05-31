@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/fi-ts/cloud-go/api/models"
-	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 
 	"github.com/fi-ts/cloud-go/api/client/s3"
@@ -187,7 +186,7 @@ func (c *config) s3Describe() error {
 	default:
 		return fmt.Errorf("unsupported s3 client configuration:%s", client)
 	}
-	return output.New().Print(response.Payload)
+	return c.describePrinter.Print(response.Payload)
 }
 
 func (c *config) s3Create() error {
@@ -224,7 +223,7 @@ func (c *config) s3Create() error {
 		return err
 	}
 
-	return output.New().Print(response.Payload)
+	return c.describePrinter.Print(response.Payload)
 }
 
 func (c *config) s3Delete() error {
@@ -250,7 +249,7 @@ func (c *config) s3Delete() error {
 		return err
 	}
 
-	return output.New().Print(response.Payload)
+	return c.describePrinter.Print(response.Payload)
 }
 
 func (c *config) s3AddKey() error {
@@ -282,7 +281,7 @@ func (c *config) s3AddKey() error {
 		return err
 	}
 
-	return output.New().Print(response.Payload)
+	return c.describePrinter.Print(response.Payload)
 }
 
 func (c *config) s3RemoveKey() error {
@@ -310,7 +309,7 @@ func (c *config) s3RemoveKey() error {
 		return err
 	}
 
-	return output.New().Print(response.Payload)
+	return c.describePrinter.Print(response.Payload)
 }
 
 func (c *config) s3List() error {
@@ -330,7 +329,7 @@ func (c *config) s3List() error {
 	}
 
 	if project == "" {
-		return output.New().Print(response.Payload)
+		return c.listPrinter.Print(response.Payload)
 	}
 
 	var result []*models.V1S3Response
@@ -339,7 +338,7 @@ func (c *config) s3List() error {
 			result = append(result, s3)
 		}
 	}
-	return output.New().Print(result)
+	return c.listPrinter.Print(result)
 }
 
 func (c *config) s3ListPartitions() error {
@@ -349,5 +348,5 @@ func (c *config) s3ListPartitions() error {
 	if err != nil {
 		return err
 	}
-	return output.New().Print(response.Payload)
+	return c.listPrinter.Print(response.Payload)
 }

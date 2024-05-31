@@ -709,7 +709,7 @@ WARNING: You are going to create a cluster that has no default internet access w
 	if err != nil {
 		return err
 	}
-	return output.New().Print(shoot.Payload)
+	return c.describePrinter.Print(shoot.Payload)
 }
 
 func (c *config) clusterList() error {
@@ -765,7 +765,7 @@ func (c *config) clusterList() error {
 		if err != nil {
 			return err
 		}
-		return output.New().Print(response.Payload)
+		return c.listPrinter.Print(response.Payload)
 	}
 
 	request := cluster.NewListClustersParams()
@@ -773,7 +773,7 @@ func (c *config) clusterList() error {
 	if err != nil {
 		return err
 	}
-	return output.New().Print(shoots.Payload)
+	return c.listPrinter.Print(shoots.Payload)
 }
 
 func (c *config) clusterKubeconfig(args []string) error {
@@ -886,7 +886,7 @@ func (c *config) reconcileCluster(args []string) error {
 	if err != nil {
 		return err
 	}
-	return output.New().Print(shoot.Payload)
+	return c.describePrinter.Print(shoot.Payload)
 }
 
 func (c *config) updateCluster(args []string) error {
@@ -1326,7 +1326,7 @@ func (c *config) updateCluster(args []string) error {
 	if err != nil {
 		return err
 	}
-	return output.New().Print(shoot.Payload)
+	return c.describePrinter.Print(shoot.Payload)
 }
 
 func (c *config) clusterDelete(args []string) error {
@@ -1345,7 +1345,7 @@ func (c *config) clusterDelete(args []string) error {
 		return err
 	}
 
-	genericcli.Must(output.New().Print(resp.Payload))
+	genericcli.Must(c.listPrinter.Print(resp.Payload))
 
 	firstPartOfClusterID := strings.Split(*resp.Payload.ID, "-")[0]
 	fmt.Println("Please answer some security questions to delete this cluster")
@@ -1364,7 +1364,7 @@ func (c *config) clusterDelete(args []string) error {
 	if err != nil {
 		return err
 	}
-	return output.New().Print(cl.Payload)
+	return c.describePrinter.Print(cl.Payload)
 }
 
 func (c *config) clusterDescribe(args []string) error {
@@ -1381,7 +1381,7 @@ func (c *config) clusterDescribe(args []string) error {
 	if err != nil {
 		return err
 	}
-	return output.New().Print(shoot.Payload)
+	return c.describePrinter.Print(shoot.Payload)
 }
 
 func (c *config) clusterIssues(args []string) error {
@@ -1420,7 +1420,7 @@ func (c *config) clusterIssues(args []string) error {
 			if err != nil {
 				return err
 			}
-			return output.New().Print(output.ShootIssuesResponses(response.Payload))
+			return c.listPrinter.Print(output.ShootIssuesResponses(response.Payload))
 		}
 
 		request := cluster.NewListClustersParams().WithReturnMachines(&boolTrue)
@@ -1428,7 +1428,7 @@ func (c *config) clusterIssues(args []string) error {
 		if err != nil {
 			return err
 		}
-		return output.New().Print(output.ShootIssuesResponses(shoots.Payload))
+		return c.listPrinter.Print(output.ShootIssuesResponses(shoots.Payload))
 	}
 
 	ci, err := c.clusterID("issues", args)
@@ -1441,7 +1441,7 @@ func (c *config) clusterIssues(args []string) error {
 	if err != nil {
 		return err
 	}
-	return output.New().Print(output.ShootIssuesResponse(shoot.Payload))
+	return c.listPrinter.Print(output.ShootIssuesResponse(shoot.Payload))
 }
 
 func (c *config) clusterMachines(args []string) error {
@@ -1456,17 +1456,17 @@ func (c *config) clusterMachines(args []string) error {
 		return err
 	}
 
-	if output.New().Type() != "table" {
-		return output.New().Print(shoot.Payload)
+	if viper.GetString("output-format") != "table" {
+		return c.describePrinter.Print(shoot.Payload)
 	}
 
 	fmt.Println("Cluster:")
-	genericcli.Must(output.New().Print(shoot.Payload))
+	genericcli.Must(c.listPrinter.Print(shoot.Payload))
 
 	ms := shoot.Payload.Machines
 	ms = append(ms, shoot.Payload.Firewalls...)
 	fmt.Println("\nMachines:")
-	return output.New().Print(ms)
+	return c.listPrinter.Print(ms)
 }
 
 func (c *config) clusterLogs(args []string) error {
@@ -1489,13 +1489,13 @@ func (c *config) clusterLogs(args []string) error {
 		lastErrors = shoot.Payload.Status.LastErrors
 	}
 
-	if output.New().Type() != "table" {
+	if viper.GetString("output-format") != "table" {
 		type s struct {
 			Conditions    []*models.V1beta1Condition
 			LastOperation *models.V1beta1LastOperation
 			LastErrors    []*models.V1beta1LastError
 		}
-		return output.New().Print(s{
+		return c.describePrinter.Print(s{
 			Conditions:    conditions,
 			LastOperation: lastOperation,
 			LastErrors:    lastErrors,
@@ -1503,19 +1503,19 @@ func (c *config) clusterLogs(args []string) error {
 	}
 
 	fmt.Println("Conditions:")
-	err = output.New().Print(conditions)
+	err = c.listPrinter.Print(conditions)
 	if err != nil {
 		return err
 	}
 
 	fmt.Println("\nLast Errors:")
-	err = output.New().Print(lastErrors)
+	err = c.listPrinter.Print(lastErrors)
 	if err != nil {
 		return err
 	}
 
 	fmt.Println("\nLast Operation:")
-	return output.New().Print(lastOperation)
+	return c.listPrinter.Print(lastOperation)
 }
 
 func (c *config) clusterInputs() error {
@@ -1529,7 +1529,7 @@ func (c *config) clusterInputs() error {
 		return err
 	}
 
-	return output.New().Print(sc)
+	return c.describePrinter.Print(sc)
 }
 
 func (c *config) clusterDNSManifest(args []string) error {
@@ -1673,7 +1673,7 @@ func (c *config) clusterMachineReset(args []string) error {
 	ms := shoot.Payload.Machines
 	ms = append(ms, shoot.Payload.Firewalls...)
 
-	return output.New().Print(ms)
+	return c.listPrinter.Print(ms)
 }
 
 func (c *config) clusterMachineCycle(args []string) error {
@@ -1695,7 +1695,7 @@ func (c *config) clusterMachineCycle(args []string) error {
 	ms := shoot.Payload.Machines
 	ms = append(ms, shoot.Payload.Firewalls...)
 
-	return output.New().Print(ms)
+	return c.listPrinter.Print(ms)
 }
 
 func (c *config) clusterMachineReinstall(args []string) error {
@@ -1721,7 +1721,7 @@ func (c *config) clusterMachineReinstall(args []string) error {
 	ms := shoot.Payload.Machines
 	ms = append(ms, shoot.Payload.Firewalls...)
 
-	return output.New().Print(ms)
+	return c.listPrinter.Print(ms)
 }
 
 func (c *config) clusterMachinePackages(args []string) error {
@@ -1785,7 +1785,7 @@ func (c *config) clusterMonitoringSecret(args []string) error {
 		return err
 	}
 
-	return output.New().Print(secret.Payload)
+	return c.describePrinter.Print(secret.Payload)
 }
 
 func (c *config) clusterMachineSSH(args []string, console bool) error {

@@ -6,7 +6,6 @@ import (
 
 	"github.com/fi-ts/cloud-go/api/client/accounting"
 	"github.com/fi-ts/cloud-go/api/models"
-	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/jinzhu/now"
@@ -413,7 +412,7 @@ func (c *config) projectsBilling() error {
 		return err
 	}
 
-	return output.New().Print(response.Payload)
+	return c.listPrinter.Print(response.Payload)
 }
 
 func (c *config) clusterUsage() error {
@@ -447,7 +446,7 @@ func (c *config) clusterUsageJSON(cur *models.V1ClusterUsageRequest) error {
 		return err
 	}
 
-	return output.New().Print(response.Payload)
+	return c.listPrinter.Print(response.Payload)
 }
 
 func (c *config) clusterUsageCSV(cur *models.V1ClusterUsageRequest) error {
@@ -493,7 +492,7 @@ func (c *config) machineUsage() error {
 		return err
 	}
 
-	return output.New().Print(response.Payload)
+	return c.listPrinter.Print(response.Payload)
 }
 
 func (c *config) productOptionUsage() error {
@@ -520,7 +519,7 @@ func (c *config) productOptionUsage() error {
 		return err
 	}
 
-	return output.New().Print(response.Payload)
+	return c.listPrinter.Print(response.Payload)
 }
 
 func (c *config) containerUsage() error {
@@ -560,7 +559,7 @@ func (c *config) containerUsageJSON(cur *models.V1ContainerUsageRequest) error {
 		return err
 	}
 
-	return output.New().Print(response.Payload)
+	return c.listPrinter.Print(response.Payload)
 }
 
 func (c *config) containerUsageCSV(cur *models.V1ContainerUsageRequest) error {
@@ -607,7 +606,7 @@ func (c *config) ipUsageJSON(iur *models.V1IPUsageRequest) error {
 		return err
 	}
 
-	return output.New().Print(response.Payload)
+	return c.listPrinter.Print(response.Payload)
 }
 
 func (c *config) ipUsageCSV(iur *models.V1IPUsageRequest) error {
@@ -657,7 +656,7 @@ func (c *config) networkTrafficUsageJSON(cur *models.V1NetworkUsageRequest) erro
 		return err
 	}
 
-	return output.New().Print(response.Payload)
+	return c.listPrinter.Print(response.Payload)
 }
 
 func (c *config) networkTrafficUsageCSV(cur *models.V1NetworkUsageRequest) error {
@@ -701,7 +700,7 @@ func (c *config) s3UsageJSON(sur *models.V1S3UsageRequest) error {
 		return err
 	}
 
-	return output.New().Print(response.Payload)
+	return c.listPrinter.Print(response.Payload)
 }
 
 func (c *config) s3UsageCSV(sur *models.V1S3UsageRequest) error {
@@ -754,7 +753,7 @@ func (c *config) volumeUsageJSON(vur *models.V1VolumeUsageRequest) error {
 		return err
 	}
 
-	return output.New().Print(response.Payload)
+	return c.listPrinter.Print(response.Payload)
 }
 
 func (c *config) volumeUsageCSV(vur *models.V1VolumeUsageRequest) error {
@@ -807,7 +806,7 @@ func (c *config) postgresUsageJSON(cur *models.V1PostgresUsageRequest) error {
 		return err
 	}
 
-	return output.New().Print(response.Payload)
+	return c.listPrinter.Print(response.Payload)
 }
 
 func (c *config) postgresUsageCSV(cur *models.V1PostgresUsageRequest) error {
