@@ -238,7 +238,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().Bool("encrypted-storage-classes", false, "enables the deployment of encrypted duros storage classes into the cluster. please refer to the user manual to properly use volume encryption. [optional]")
 	clusterCreateCmd.Flags().BoolP("autoupdate-kubernetes", "", false, "enables automatic updates of the kubernetes patch version of the cluster [optional]")
 	clusterCreateCmd.Flags().BoolP("autoupdate-machineimages", "", false, "enables automatic updates of the worker node images of the cluster, be aware that this rolls worker nodes! [optional]")
-	clusterCreateCmd.Flags().Bool("autoupdate-firewallimage", false, "enables automatic updates of the firewall image, be aware that this deletes rolls firewalls! [optional]")
+	clusterCreateCmd.Flags().Bool("autoupdate-firewallimage", false, "enables automatic updates of the firewall image, be aware that this rolls firewalls! [optional]")
 	clusterCreateCmd.Flags().String("maintenance-begin", "220000+0100", "defines the beginning of the nightly maintenance time window (e.g. for autoupdates) in the format HHMMSS+ZONE, e.g. \"220000+0100\". [optional]")
 	clusterCreateCmd.Flags().String("maintenance-end", "233000+0100", "defines the end of the nightly maintenance time window (e.g. for autoupdates) in the format HHMMSS+ZONE, e.g. \"233000+0100\". [optional]")
 	clusterCreateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
