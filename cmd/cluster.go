@@ -1544,7 +1544,7 @@ func (c *config) clusterInputs() error {
 		return err
 	}
 
-	return c.describePrinter.Print(sc)
+	return c.describePrinter.Print(sc.Payload)
 }
 
 func (c *config) clusterDNSManifest(args []string) error {
