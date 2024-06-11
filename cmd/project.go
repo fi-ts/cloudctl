@@ -12,7 +12,6 @@ import (
 
 	"github.com/fi-ts/cloud-go/api/client/project"
 	"github.com/fi-ts/cloudctl/cmd/helper"
-	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -158,7 +157,7 @@ func (c *config) projectCreate() error {
 		return err
 	}
 
-	return output.New().Print(response.Payload)
+	return c.listPrinter.Print(response.Payload)
 }
 
 func (c *config) projectDescribe(args []string) error {
@@ -174,7 +173,7 @@ func (c *config) projectDescribe(args []string) error {
 		return err
 	}
 
-	return output.New().Print(p.Payload)
+	return c.listPrinter.Print(p.Payload)
 }
 
 func (c *config) projectDelete(args []string) error {
@@ -190,7 +189,7 @@ func (c *config) projectDelete(args []string) error {
 		return err
 	}
 
-	return output.New().Print(response.Payload)
+	return c.listPrinter.Print(response.Payload)
 }
 
 func (c *config) projectList() error {
@@ -209,7 +208,7 @@ func (c *config) projectList() error {
 			return err
 		}
 
-		return output.New().Print(response.Payload.Projects)
+		return c.listPrinter.Print(response.Payload.Projects)
 	}
 
 	request := project.NewListProjectsParams()
@@ -217,7 +216,7 @@ func (c *config) projectList() error {
 	if err != nil {
 		return err
 	}
-	return output.New().Print(response.Payload.Projects)
+	return c.listPrinter.Print(response.Payload.Projects)
 }
 
 func (c *config) projectID(verb string, args []string) (string, error) {
@@ -294,7 +293,7 @@ func (c *config) projectApply() error {
 			continue
 		}
 	}
-	return output.New().Print(response)
+	return c.listPrinter.Print(response)
 }
 
 func (c *config) projectEdit(args []string) error {
@@ -330,7 +329,7 @@ func (c *config) projectEdit(args []string) error {
 		if err != nil {
 			return err
 		}
-		return output.New().Print(uresp.Payload)
+		return c.listPrinter.Print(uresp.Payload)
 	}
 
 	return helper.Edit(id, getFunc, updateFunc)

@@ -10,22 +10,20 @@ import (
 	"text/template"
 
 	"github.com/fatih/color"
-	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/pkg/api"
 	sprig "github.com/go-task/slim-sprig/v3"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/spf13/viper"
 
 	"github.com/olekukonko/tablewriter"
-	"gopkg.in/yaml.v3"
 )
 
 type (
 	// Printer main Interface for implementations which spits out to specified Writer
 	Printer interface {
 		Print(data interface{}) error
-		Type() string
 	}
 	tablePrinter struct {
 		table       *tablewriter.Table
@@ -39,14 +37,6 @@ type (
 		shortData   [][]string
 		wideData    [][]string
 		outWriter   io.Writer
-	}
-	// jsonPrinter returns the model in json format
-	jsonPrinter struct {
-		outWriter io.Writer
-	}
-	// yamlPrinter returns the model in yaml format
-	yamlPrinter struct {
-		outWriter io.Writer
 	}
 )
 
@@ -155,13 +145,9 @@ func newPrinter(format, order, tpl string, noHeaders bool, writer io.Writer) (Pr
 	var printer Printer
 	switch format {
 	case "yaml":
-		printer = &yamlPrinter{
-			outWriter: writer,
-		}
+		printer = printers.NewYAMLPrinter().WithOut(writer)
 	case "json":
-		printer = &jsonPrinter{
-			outWriter: writer,
-		}
+		printer = printers.NewJSONPrinter().WithOut(writer)
 	case "table", "wide":
 		printer = newTablePrinter(format, order, noHeaders, nil, writer)
 	case "template":
@@ -316,54 +302,10 @@ func (t tablePrinter) Print(data interface{}) error {
 		PostgresBackupEntryTablePrinter{t}.Print(d)
 	case []*models.V1S3PartitionResponse:
 		S3PartitionTablePrinter{t}.Print(d)
-	case *models.V1ClusterMonitoringSecretResponse:
-		return yamlPrinter{
-			outWriter: t.outWriter,
-		}.Print(d)
-	case *models.V1S3CredentialsResponse, *models.V1S3Response:
-		return yamlPrinter{
-			outWriter: t.outWriter,
-		}.Print(d)
 	case *api.Contexts:
 		ContextPrinter{t}.Print(d)
-	case api.Version:
-		return yamlPrinter{
-			outWriter: t.outWriter,
-		}.Print(d)
-	case *cluster.ListConstraintsOK:
-		return yamlPrinter{
-			outWriter: t.outWriter,
-		}.Print(d)
 	default:
 		return fmt.Errorf("unknown table printer for type: %T", d)
 	}
 	return nil
-}
-
-// Print a model in json format
-func (j jsonPrinter) Print(data interface{}) error {
-	json, err := json.MarshalIndent(data, "", "    ")
-	if err != nil {
-		return fmt.Errorf("unable to marshal to json:%w", err)
-	}
-	fmt.Fprintf(j.outWriter, "%s\n", string(json))
-	return nil
-}
-
-func (j jsonPrinter) Type() string {
-	return "json"
-}
-
-// Print a model in yaml format
-func (y yamlPrinter) Print(data interface{}) error {
-	yml, err := yaml.Marshal(data)
-	if err != nil {
-		return fmt.Errorf("unable to marshal to yaml:%w", err)
-	}
-	fmt.Fprintf(y.outWriter, "%s", string(yml))
-	return nil
-}
-
-func (y yamlPrinter) Type() string {
-	return "yaml"
 }
