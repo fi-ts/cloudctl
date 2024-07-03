@@ -1026,7 +1026,7 @@ func (c *config) updateCluster(args []string) error {
 				}
 			}
 			if worker == nil && !removeworkergroup {
-				fmt.Printf("Adding a new worker group to the cluster:%q. Please note that running multiple worker groups leads to higher basic costs of the cluster!\n", *current.Name)
+				fmt.Printf("Adding a new worker group to cluster:%q. Please note that running multiple worker groups leads to higher basic costs of the cluster!\n", *current.Name)
 				err = helper.Prompt("Are you sure? (y/n)", "y")
 				if err != nil {
 					return err
