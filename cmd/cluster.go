@@ -1026,7 +1026,7 @@ func (c *config) updateCluster(args []string) error {
 				}
 			}
 			if worker == nil && !removeworkergroup {
-				fmt.Println("Adding a new worker group to the cluster. Please note that running multiple worker groups leads to higher basic costs of the cluster!")
+				fmt.Printf("Adding a new worker group to the cluster:%q. Please note that running multiple worker groups leads to higher basic costs of the cluster!\n", *current.Name)
 				err = helper.Prompt("Are you sure? (y/n)", "y")
 				if err != nil {
 					return err
@@ -1056,7 +1056,7 @@ func (c *config) updateCluster(args []string) error {
 				return fmt.Errorf("worker group %s not found", workergroupname)
 			}
 
-			fmt.Println("WARNING. Removing a worker group cannot be undone and causes the loss of local data on the deleted nodes.")
+			fmt.Printf("WARNING. Removing a worker group from cluster:%q cannot be undone and causes the loss of local data on the deleted nodes.\n", *current.Name)
 			err = helper.Prompt("Are you sure? (y/n)", "y")
 			if err != nil {
 				return err
@@ -1086,7 +1086,7 @@ func (c *config) updateCluster(args []string) error {
 					}
 				}
 				if int(maxsize) < c {
-					fmt.Println("WARNING. New maxsize is lower than currently active machines. A random worker node which is still in use will be removed.")
+					fmt.Printf("WARNING. New maxsize of cluster:%q is lower than currently active machines. A random worker node which is still in use will be removed.\n", *current.Name)
 					err = helper.Prompt("Are you sure? (y/n)", "y")
 					if err != nil {
 						return err
@@ -1135,7 +1135,7 @@ func (c *config) updateCluster(args []string) error {
 
 			if viper.IsSet("workerversion") {
 				if pointer.SafeDeref(worker.KubernetesVersion) != "" && workergroupKubernetesVersion == "" {
-					fmt.Println("WARNING. Removing the worker version override may update your worker nodes to the version of the api server.")
+					fmt.Printf("WARNING. Removing the worker version override of cluster:%q may update your worker nodes to the version of the api server.\n", *current.Name)
 					err = helper.Prompt("Are you sure? (y/n)", "y")
 					if err != nil {
 						return err
@@ -1225,7 +1225,7 @@ func (c *config) updateCluster(args []string) error {
 		}
 
 		if viper.IsSet("enable-kube-apiserver-acl") && viper.GetBool("enable-kube-apiserver-acl") {
-			fmt.Println("WARNING: Restricting access to the kube-apiserver prevents FI-TS operators from helping you in case of any issues in your cluster.")
+			fmt.Printf("WARNING: Restricting access of cluster:%q to the kube-apiserver prevents FI-TS operators from helping you in case of any issues in your cluster.\n", *current.Name)
 			err = helper.Prompt("Are you sure? (y/n)", "y")
 			if err != nil {
 				return err
@@ -1329,7 +1329,7 @@ func (c *config) updateCluster(args []string) error {
 	}
 
 	if updateCausesDowntime && !viper.GetBool("yes-i-really-mean-it") {
-		fmt.Println("This cluster update will cause downtime.")
+		fmt.Printf("This update of cluster:%q will cause downtime.\n", *current.Name)
 		err = helper.Prompt("Are you sure? (y/n)", "y")
 		if err != nil {
 			return err
