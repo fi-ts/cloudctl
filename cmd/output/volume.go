@@ -31,7 +31,7 @@ type (
 
 // Print a volume as table
 func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
-	p.shortHeader = []string{"ID", "Name", "Size", "Usage", "Replicas", "QoS", "StorageClass", "Project", "Tenant", "Partition"}
+	p.shortHeader = []string{"ID", "Name", "Size", "Usage", "Replicas", "QoS", "Project", "Tenant", "Partition"}
 	p.wideHeader = append(p.shortHeader, "Nodes")
 	p.Order(data)
 
@@ -62,10 +62,6 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 		} else if vol.QosPolicyUUID != nil {
 			qos = *vol.QosPolicyUUID
 		}
-		sc := ""
-		if vol.StorageClass != nil {
-			sc = *vol.StorageClass
-		}
 		partition := ""
 		if vol.PartitionID != nil {
 			partition = *vol.PartitionID
@@ -81,7 +77,7 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 
 		nodes := ConnectedHosts(vol)
 
-		short := []string{volumeID, name, size, usage, replica, qos, sc, project, tenant, partition}
+		short := []string{volumeID, name, size, usage, replica, qos, project, tenant, partition}
 		wide := append(short, strings.Join(nodes, "\n"))
 
 		p.addWideData(wide, vol)
@@ -199,16 +195,16 @@ spec:
 	persistentVolumeReclaimPolicy: Delete
 	storageClassName: partition-silver
 */
-func VolumeManifest(v models.V1VolumeResponse, name, namespace string) error {
+func VolumeManifest(v models.V1VolumeResponse, name, namespace, sc string) error {
 	filesystem := corev1.PersistentVolumeFilesystem
 	pv := corev1.PersistentVolume{
 		TypeMeta:   v1.TypeMeta{Kind: "PersistentVolume", APIVersion: "v1"},
 		ObjectMeta: v1.ObjectMeta{Name: name, Namespace: namespace},
 		Spec: corev1.PersistentVolumeSpec{
-			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-			VolumeMode:  &filesystem,
+			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+			VolumeMode:       &filesystem,
+			StorageClassName: sc,
 			// FIXME add Capacity once figured out
-			StorageClassName: *v.StorageClass,
 			PersistentVolumeSource: corev1.PersistentVolumeSource{
 				CSI: &corev1.CSIPersistentVolumeSource{
 					Driver:       "csi.lightbitslabs.com",

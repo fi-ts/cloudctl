@@ -94,10 +94,10 @@ github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1m
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/fatih/color v1.17.0 h1:GlRw1BRJxkpqUCBKzKOw098ed57fEsKeNjpTe3cSjK4=
 github.com/fatih/color v1.17.0/go.mod h1:YZ7TlrGPkiz6ku9fK3TLD/pl3CpsiFyu8N92HLgmosI=
-github.com/fi-ts/accounting-go v0.9.2 h1:3LaWxHgnbSeViFPfVQZcSdXAvyfaG1sOEb7LS6d9UeA=
-github.com/fi-ts/accounting-go v0.9.2/go.mod h1:ARKouuFYUV44xUKytAlczpzoti/S+o+PnXCN5BQA6nQ=
-github.com/fi-ts/cloud-go v0.26.8 h1:blNM+rD1veHI62UbTLRpuZNWbaOUufaK8pZqUT88tME=
-github.com/fi-ts/cloud-go v0.26.8/go.mod h1:TCJq1PpsHzBpi37M2JWIp9/NvhJcqwgkah7KKul6pkQ=
+github.com/fi-ts/accounting-go v0.9.3-0.20240729115333-3611eeda361c h1:kFZocqtDgiOP+5eYK20GhfLmXKHHrOSg0VV9E+hTyF0=
+github.com/fi-ts/accounting-go v0.9.3-0.20240729115333-3611eeda361c/go.mod h1:ARKouuFYUV44xUKytAlczpzoti/S+o+PnXCN5BQA6nQ=
+github.com/fi-ts/cloud-go v0.26.9-0.20240729115925-e592c1646499 h1:qZEPidDkZ3bOo7j8TfIqI3r/Xo/ABMZD0dD07TyHHAk=
+github.com/fi-ts/cloud-go v0.26.9-0.20240729115925-e592c1646499/go.mod h1:TCJq1PpsHzBpi37M2JWIp9/NvhJcqwgkah7KKul6pkQ=
 github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHkI4W8=
 github.com/frankban/quicktest v1.14.6/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
 github.com/fsnotify/fsnotify v1.7.0 h1:8JEhPFa5W2WU7YfeZzPNqzMP6Lwt7L2715Ggo0nosvA=

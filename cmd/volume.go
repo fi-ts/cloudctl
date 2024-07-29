@@ -165,6 +165,7 @@ func newVolumeCmd(c *config) *cobra.Command {
 
 	volumeManifestCmd.Flags().StringP("name", "", "restored-pv", "name of the PersistentVolume")
 	volumeManifestCmd.Flags().StringP("namespace", "", "default", "namespace for the PersistentVolume")
+	volumeManifestCmd.Flags().StringP("storage-class-name", "", "", "the storage class for the PersistentVolume")
 
 	volumeEncryptionSecretManifestCmd.Flags().StringP("namespace", "", "default", "namespace for the PersistentVolume encryption secret")
 	volumeEncryptionSecretManifestCmd.Flags().StringP("passphrase", "", "please-change-me", "passphrase for the PersistentVolume encryption")
@@ -303,10 +304,18 @@ func (c *config) volumeManifest(args []string) error {
 	if err != nil {
 		return err
 	}
-	name := viper.GetString("name")
-	namespace := viper.GetString("namespace")
 
-	return output.VolumeManifest(*volume, name, namespace)
+	var (
+		name      = viper.GetString("name")
+		namespace = viper.GetString("namespace")
+		sc        = viper.GetString("storage-class-name")
+	)
+
+	if sc == "" {
+		return fmt.Errorf("a storage class name must be provided, this cannot be derived automatically")
+	}
+
+	return output.VolumeManifest(*volume, name, namespace, sc)
 }
 
 func (c *config) volumeEncryptionSecretManifest() error {
