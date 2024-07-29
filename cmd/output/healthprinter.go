@@ -4,6 +4,7 @@ import (
 	"sort"
 
 	"github.com/fi-ts/cloud-go/api/models"
+	"golang.org/x/exp/maps"
 )
 
 type (
@@ -60,7 +61,11 @@ func (p HealthTablePrinter) PrintServices(services map[string]models.RestHealthR
 		p.addShortData(wide, s)
 
 		i := 0
-		for sname, sresult := range s.Services {
+		skeys := maps.Keys(s.Services)
+		sort.Strings(skeys)
+
+		for _, sname := range skeys {
+			sresult := s.Services[sname]
 			prefix := "├"
 			if i == len(s.Services)-1 {
 				prefix = "└"
