@@ -297,6 +297,7 @@ func (d *dashboard) Render() {
 		apiVersion       = "unknown"
 		apiHealth        = "unknown"
 		apiHealthMessage string
+		releaseVersion   = "unknown"
 
 		lastErr error
 	)
@@ -318,7 +319,7 @@ func (d *dashboard) Render() {
 			coloredHealth = apiHealth
 		}
 
-		versionLine := fmt.Sprintf("cloud-api %s (API Health: %s), cloudctl %s (%s)", apiVersion, coloredHealth, v.Version, v.GitSHA1)
+		versionLine := fmt.Sprintf("cloud-api %s (API Health: %s), cloudctl %s (%s), release %s", apiVersion, coloredHealth, v.Version, v.GitSHA1, releaseVersion)
 		fetchInfoLine := fmt.Sprintf("Last Update: %s", time.Now().Format("15:04:05"))
 		if lastErr != nil {
 			fetchInfoLine += fmt.Sprintf(", [Update Error: %s](fg:red)", lastErr)
@@ -338,6 +339,7 @@ func (d *dashboard) Render() {
 		return
 	}
 	apiVersion = *infoResp.Payload.Version
+	releaseVersion = infoResp.Payload.ReleaseVersion
 
 	healthResp, err := d.cloud.Health.Health(health.NewHealthParams().WithContext(ctx), nil)
 	if err != nil {
