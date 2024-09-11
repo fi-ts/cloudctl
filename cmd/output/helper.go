@@ -74,13 +74,6 @@ func sortIPs(v1ips []*models.ModelsV1IPResponse) []*models.ModelsV1IPResponse {
 	return result
 }
 
-func StrDeref(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
 func printStringSlice(s []string) {
 	var dashed []string
 	for _, elem := range s {
