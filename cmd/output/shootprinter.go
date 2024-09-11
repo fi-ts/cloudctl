@@ -102,7 +102,7 @@ func (s ShootLastOperationTablePrinter) Print(data *models.V1beta1LastOperation)
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Seed", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "LastUpdate", "Purpose", "Privileged", "Audit", "Runtime", "Firewall", "Firewall Controller", "Log accepted conns", "Egress IPs", "Gardener"}
+	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Seed", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "LastUpdate", "Purpose", "Audit", "Firewall", "Firewall Controller", "Log accepted conns", "Egress IPs", "Gardener"}
 	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
 	if s.order == "" {
