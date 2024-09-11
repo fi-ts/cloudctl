@@ -9,6 +9,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/spf13/viper"
 )
 
@@ -37,7 +38,7 @@ type (
 )
 
 const (
-	imageExpirationDaysDefault      = 14
+	imageExpirationDaysDefault = 14
 )
 
 type shootStats struct {
@@ -52,12 +53,12 @@ func (s ShootConditionsTablePrinter) Print(data []*models.V1beta1Condition) {
 	s.shortHeader = []string{"LastTransition", "LastUpdate", "Message", "Reason", "Status", "Type"}
 	for _, condition := range data {
 		wide := []string{
-			strValue(condition.LastTransitionTime),
-			strValue(condition.LastUpdateTime),
-			strValue(condition.Message),
-			strValue(condition.Reason),
-			strValue(condition.Status),
-			strValue(condition.Type),
+			pointer.SafeDeref(condition.LastTransitionTime),
+			pointer.SafeDeref(condition.LastUpdateTime),
+			pointer.SafeDeref(condition.Message),
+			pointer.SafeDeref(condition.Reason),
+			pointer.SafeDeref(condition.Status),
+			pointer.SafeDeref(condition.Type),
 		}
 		short := wide
 		s.addWideData(wide, data)
@@ -73,9 +74,9 @@ func (s ShootLastErrorsTablePrinter) Print(data []*models.V1beta1LastError) {
 		e := e
 
 		wide := []string{
-			strValue(&e.LastUpdateTime),
-			strValue(&e.TaskID),
-			strValue(e.Description),
+			pointer.SafeDeref(&e.LastUpdateTime),
+			pointer.SafeDeref(&e.TaskID),
+			pointer.SafeDeref(e.Description),
 		}
 		short := wide
 		s.addWideData(wide, data)
@@ -88,10 +89,10 @@ func (s ShootLastOperationTablePrinter) Print(data *models.V1beta1LastOperation)
 	s.wideHeader = []string{"Time", "State", "Progress", "Description"}
 	s.shortHeader = []string{"Time", "State", "Progress", "Description"}
 	wide := []string{
-		strValue(data.LastUpdateTime),
-		strValue(data.State),
+		pointer.SafeDeref(data.LastUpdateTime),
+		pointer.SafeDeref(data.State),
 		fmt.Sprintf("%d%% [%s]", *data.Progress, *data.Type),
-		strValue(data.Description),
+		pointer.SafeDeref(data.Description),
 	}
 	short := wide
 	s.addWideData(wide, data)
@@ -102,7 +103,7 @@ func (s ShootLastOperationTablePrinter) Print(data *models.V1beta1LastOperation)
 
 // Print a Shoot as table
 func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Seed", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "LastUpdate", "Purpose", "Privileged", "Audit", "Runtime", "Firewall", "Firewall Controller", "Log accepted conns", "Egress IPs", "Gardener"}
+	s.wideHeader = []string{"UID", "Name", "Version", "Partition", "Seed", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "LastUpdate", "Purpose", "Audit", "Firewall", "Firewall Controller", "Log accepted conns", "Egress IPs", "Gardener"}
 	s.shortHeader = []string{"UID", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
 	if s.order == "" {
@@ -121,7 +122,7 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 }
 
 func (s ShootIssuesTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "", "Name", "Version", "Partition", "Seed", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Audit", "Runtime", "Firewall", "Firewall Controller", "Log accepted conns", "Egress IPs"}
+	s.wideHeader = []string{"UID", "", "Name", "Version", "Partition", "Seed", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Audit", "Firewall", "Firewall Controller", "Log accepted conns", "Egress IPs"}
 	s.shortHeader = []string{"UID", "", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
 	if s.order == "" {
@@ -238,11 +239,6 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		purpose = p[:4]
 	}
 
-	privileged := ""
-	if shoot.Kubernetes.AllowPrivilegedContainers != nil {
-		privileged = fmt.Sprintf("%t", *shoot.Kubernetes.AllowPrivilegedContainers)
-	}
-
 	audit := "Off"
 	if shoot.ControlPlaneFeatureGates != nil {
 		var ca, as bool
@@ -262,17 +258,11 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		}
 	}
 
-	runtimes := []string{}
 	autoScaleMin := int32(0)
 	autoScaleMax := int32(0)
 	for _, w := range shoot.Workers {
 		autoScaleMin += *w.Minimum
 		autoScaleMax += *w.Maximum
-		if w.CRI != nil && *w.CRI != "" {
-			runtimes = append(runtimes, *w.CRI)
-		} else {
-			runtimes = append(runtimes, "docker")
-		}
 	}
 	currentMachines := "x"
 	if shoot.Machines != nil {
@@ -330,9 +320,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		age,
 		lastReconciliation,
 		purpose,
-		privileged,
 		audit,
-		strings.Join(uniqueStringSlice(runtimes), "\n"),
 		firewallImage,
 		firewallController,
 		logAcceptedConnections,

@@ -74,44 +74,10 @@ func sortIPs(v1ips []*models.ModelsV1IPResponse) []*models.ModelsV1IPResponse {
 	return result
 }
 
-// strValue returns the value of a string pointer of not nil, otherwise empty string
-func strValue(strPtr *string) string {
-	if strPtr != nil {
-		return *strPtr
-	}
-	return ""
-}
-
-func StrDeref(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
-func int64Value(i *int64) int64 {
-	if i != nil {
-		return *i
-	}
-	return 0
-}
-
 func printStringSlice(s []string) {
 	var dashed []string
 	for _, elem := range s {
 		dashed = append(dashed, "- "+elem)
 	}
 	fmt.Println(strings.Join(dashed, "\n"))
-}
-
-func uniqueStringSlice(s []string) []string {
-	m := make(map[string]bool)
-	var res []string
-	for _, elem := range s {
-		if _, ok := m[elem]; !ok {
-			m[elem] = true
-			res = append(res, elem)
-		}
-	}
-	return res
 }

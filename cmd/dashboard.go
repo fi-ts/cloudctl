@@ -21,13 +21,12 @@ import (
 	"github.com/fi-ts/cloud-go/api/client/volume"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
-	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/metal-stack/metal-lib/pkg/cache"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/healthstatus"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/metal-stack/metal-lib/rest"
 	"github.com/metal-stack/v"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -305,11 +304,11 @@ func (d *dashboard) Render() {
 	defer func() {
 		var coloredHealth string
 		switch apiHealth {
-		case string(rest.HealthStatusHealthy):
+		case string(healthstatus.HealthStatusHealthy):
 			coloredHealth = "[" + apiHealth + "](fg:green)"
-		case string(rest.HealthStatusDegraded), string(rest.HealthStatusPartiallyUnhealthy):
+		case string(healthstatus.HealthStatusDegraded), string(healthstatus.HealthStatusPartiallyUnhealthy):
 			coloredHealth = "[" + apiHealth + "](fg:yellow)"
-		case string(rest.HealthStatusUnhealthy):
+		case string(healthstatus.HealthStatusUnhealthy):
 			if apiHealthMessage != "" {
 				coloredHealth = "[" + apiHealth + fmt.Sprintf(" (%s)](fg:red)", apiHealthMessage)
 			} else {
@@ -1266,9 +1265,9 @@ func newCache(cloud *client.CloudAPI, expiration time.Duration, partition, tenan
 	return &apiCache{
 		clusters: cache.New(expiration, func(ctx context.Context, _ string) ([]*models.V1ClusterResponse, error) {
 			resp, err := cloud.Cluster.FindClusters(cluster.NewFindClustersParams().WithBody(&models.V1ClusterFindRequest{
-				PartitionID: output.StrDeref(partition),
-				Tenant:      output.StrDeref(tenant),
-				Purpose:     output.StrDeref(purpose),
+				PartitionID: pointer.PointerOrNil(partition),
+				Tenant:      pointer.PointerOrNil(tenant),
+				Purpose:     pointer.PointerOrNil(purpose),
 			}).WithReturnMachines(pointer.Pointer(false)).WithContext(ctx), nil)
 			if err != nil {
 				return nil, err
@@ -1277,8 +1276,8 @@ func newCache(cloud *client.CloudAPI, expiration time.Duration, partition, tenan
 		}),
 		volumes: cache.New(expiration, func(ctx context.Context, _ string) ([]*models.V1VolumeResponse, error) {
 			resp, err := cloud.Volume.FindVolumes(volume.NewFindVolumesParams().WithBody(&models.V1VolumeFindRequest{
-				PartitionID: output.StrDeref(partition),
-				TenantID:    output.StrDeref(tenant),
+				PartitionID: pointer.PointerOrNil(partition),
+				TenantID:    pointer.PointerOrNil(tenant),
 			}).WithContext(ctx), nil)
 			if err != nil {
 				return nil, err

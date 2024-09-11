@@ -222,7 +222,6 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().String("firewallimage", "", "machine image to use for the firewall. [optional]")
 	clusterCreateCmd.Flags().String("firewallcontroller", "", "version of the firewall-controller to use. [optional]")
 	clusterCreateCmd.Flags().BoolP("logacceptedconns", "", false, "also log accepted connections on the cluster firewall [optional]")
-	clusterCreateCmd.Flags().String("cri", "", "container runtime to use, currently only containerd is supported. [optional]")
 	clusterCreateCmd.Flags().Int32("minsize", 1, "minimal workers of the cluster.")
 	clusterCreateCmd.Flags().Int32("maxsize", 1, "maximal workers of the cluster.")
 	clusterCreateCmd.Flags().String("maxsurge", "1", "max number (e.g. 1) or percentage (e.g. 10%) of workers created during a update of the cluster.")
@@ -230,9 +229,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().StringSlice("labels", []string{}, "labels of the cluster")
 	clusterCreateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
 	clusterCreateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <network>:<ip>; e.g.: --egress internet:1.2.3.4,extnet:123.1.1.1 --egress internet:1.2.3.5 [optional]")
-	clusterCreateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster (this is achieved through pod security policies and has no effect anymore on clusters >= v1.25")
 	clusterCreateCmd.Flags().String("default-pod-security-standard", "", "sets default pod security standard for clusters >= v1.23.x, defaults to restricted on clusters >= v1.25 (valid values: empty string, privileged, baseline, restricted)")
-	clusterCreateCmd.Flags().BoolP("disable-pod-security-policies", "", false, "disable pod security policies")
 	clusterCreateCmd.Flags().Duration("healthtimeout", 0, "period (e.g. \"24h\") after which an unhealthy node is declared failed and will be replaced. [optional]")
 	clusterCreateCmd.Flags().Duration("draintimeout", 0, "period (e.g. \"3h\") after which a draining node will be forcefully deleted. [optional]")
 	clusterCreateCmd.Flags().Bool("encrypted-storage-classes", false, "enables the deployment of encrypted duros storage classes into the cluster. please refer to the user manual to properly use volume encryption. [optional]")
@@ -265,9 +262,6 @@ func newClusterCmd(c *config) *cobra.Command {
 	genericcli.Must(clusterCreateCmd.RegisterFlagCompletionFunc("firewallcontroller", c.comp.FirewallControllerVersionListCompletion))
 	genericcli.Must(clusterCreateCmd.RegisterFlagCompletionFunc("purpose", c.comp.ClusterPurposeListCompletion))
 	genericcli.Must(clusterCreateCmd.RegisterFlagCompletionFunc("default-pod-security-standard", c.comp.PodSecurityListCompletion))
-	genericcli.Must(clusterCreateCmd.RegisterFlagCompletionFunc("cri", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return []string{"containerd"}, cobra.ShellCompDirectiveNoFileComp
-	}))
 	genericcli.Must(clusterCreateCmd.RegisterFlagCompletionFunc("cni", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{
 			"calico\tcalico networking plugin. this is the cluster default.",
@@ -320,9 +314,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().String("machineimage", "", "machine image to use for the nodes, must be in the form of <name>-<version> ")
 	clusterUpdateCmd.Flags().StringSlice("addlabels", []string{}, "labels to add to the cluster")
 	clusterUpdateCmd.Flags().StringSlice("removelabels", []string{}, "labels to remove from the cluster")
-	clusterUpdateCmd.Flags().BoolP("allowprivileged", "", false, "allow privileged containers the cluster (this is achieved through pod security policies and has no effect anymore on clusters >=v1.25")
 	clusterUpdateCmd.Flags().String("default-pod-security-standard", "", "set default pod security standard for cluster >=v 1.23.x, send empty string explicitly to disable pod security standards (valid values: empty string, privileged, baseline, restricted)")
-	clusterUpdateCmd.Flags().BoolP("disable-pod-security-policies", "", false, "disable pod security policies")
 	clusterUpdateCmd.Flags().String("purpose", "", fmt.Sprintf("purpose of the cluster, can be one of %s. SLA is only given on production clusters.", strings.Join(completion.ClusterPurposes, "|")))
 	clusterUpdateCmd.Flags().StringSlice("egress", []string{}, "static egress ips per network, must be in the form <networkid>:<semicolon-separated ips>; e.g.: --egress internet:1.2.3.4;1.2.3.5 --egress extnet:123.1.1.1 [optional]. Use \"--egress none\" to remove all egress rules.")
 	clusterUpdateCmd.Flags().StringSlice("external-networks", []string{}, "external networks of the cluster")
@@ -456,7 +448,6 @@ func (c *config) clusterCreate() error {
 	enableNodeLocalDNS := viper.GetBool("enable-node-local-dns")
 	disableForwardToUpstreamDNS := viper.GetBool("disable-forwarding-to-upstream-dns")
 
-	cri := viper.GetString("cri")
 	var cni string
 	if viper.IsSet("cni") {
 		cni = viper.GetString("cni")
@@ -470,17 +461,9 @@ func (c *config) clusterCreate() error {
 	healthtimeout := viper.GetDuration("healthtimeout")
 	draintimeout := viper.GetDuration("draintimeout")
 
-	var allowprivileged *bool
-	if viper.IsSet("allowprivileged") {
-		allowprivileged = pointer.Pointer(viper.GetBool("allowprivileged"))
-	}
 	var defaultPodSecurityStandard *string
 	if viper.IsSet("default-pod-security-standard") {
 		defaultPodSecurityStandard = pointer.Pointer(viper.GetString("default-pod-security-standard"))
-	}
-	var disablePodSecurityPolicies *bool
-	if viper.IsSet("disable-pod-security-policies") {
-		disablePodSecurityPolicies = pointer.Pointer(viper.GetBool("disable-pod-security-policies"))
 	}
 
 	var networkAccessType *string
@@ -570,13 +553,6 @@ WARNING: You are going to create a cluster that has no default internet access w
 		log.Fatal(err)
 	}
 
-	switch cri {
-	case "containerd":
-	case "":
-	default:
-		log.Fatalf("provided cri:%s is not supported, only containerd at the moment", cri)
-	}
-
 	var customDefaultStorageClass *models.V1CustomDefaultStorageClass
 	if viper.IsSet("default-storage-class") {
 		class := viper.GetString("default-storage-class")
@@ -599,17 +575,14 @@ WARNING: You are going to create a cluster that has no default internet access w
 				MaxUnavailable: &maxunavailable,
 				MachineType:    &machineType,
 				MachineImage:   &machineImage,
-				CRI:            &cri,
 			},
 		},
 		FirewallSize:              &firewallType,
 		FirewallImage:             &firewallImage,
 		FirewallControllerVersion: &firewallController,
 		Kubernetes: &models.V1Kubernetes{
-			AllowPrivilegedContainers:  allowprivileged,
 			Version:                    &version,
 			DefaultPodSecurityStandard: defaultPodSecurityStandard,
-			DisablePodSecurityPolicies: disablePodSecurityPolicies,
 		},
 		Maintenance: &models.V1Maintenance{
 			TimeWindow: &models.V1MaintenanceTimeWindow{
@@ -1282,23 +1255,11 @@ func (c *config) updateCluster(args []string) error {
 	if version != "" {
 		k8s.Version = &version
 	}
-	if viper.IsSet("allowprivileged") {
-		if !viper.GetBool("yes-i-really-mean-it") {
-			return fmt.Errorf("--allowprivileged is set but you forgot to add --yes-i-really-mean-it")
-		}
-		k8s.AllowPrivilegedContainers = pointer.Pointer(viper.GetBool("allowprivileged"))
-	}
 	if viper.IsSet("default-pod-security-standard") {
 		if !viper.GetBool("yes-i-really-mean-it") {
 			return fmt.Errorf("--default-pod-security-standard is set but you forgot to add --yes-i-really-mean-it")
 		}
 		k8s.DefaultPodSecurityStandard = pointer.Pointer(viper.GetString("default-pod-security-standard"))
-	}
-	if viper.IsSet("disable-pod-security-policies") {
-		if !viper.GetBool("yes-i-really-mean-it") {
-			return fmt.Errorf("--disable-pod-security-policies set but you forgot to add --yes-i-really-mean-it")
-		}
-		k8s.DisablePodSecurityPolicies = pointer.Pointer(viper.GetBool("disable-pod-security-policies"))
 	}
 
 	cur.Kubernetes = k8s

@@ -59,21 +59,21 @@ func (p ProjectTableDetailPrinter) Print(data *models.V1ProjectResponse) {
 		if qs.Cluster != nil {
 			cq := "∞"
 			if qs.Cluster.Quota != 0 {
-				cq = strconv.FormatInt(int64(qs.Cluster.Quota), 10)
+				cq = strconv.FormatInt(int64(qs.Cluster.Quota), 10) // nolint:gosec
 			}
 			clusterQuota = fmt.Sprintf("%d/%s", qs.Cluster.Used, cq)
 		}
 		if qs.Machine != nil {
 			mq := "∞"
 			if qs.Machine.Quota != 0 {
-				mq = strconv.FormatInt(int64(qs.Machine.Quota), 10)
+				mq = strconv.FormatInt(int64(qs.Machine.Quota), 10) // nolint:gosec
 			}
 			machineQuota = fmt.Sprintf("%d/%s", qs.Machine.Used, mq)
 		}
 		if qs.IP != nil {
 			iq := "∞"
 			if qs.IP.Quota != 0 {
-				iq = strconv.FormatInt(int64(qs.IP.Quota), 10)
+				iq = strconv.FormatInt(int64(qs.IP.Quota), 10) // nolint:gosec
 			}
 			ipQuota = fmt.Sprintf("%d/%s", qs.IP.Used, iq)
 		}
