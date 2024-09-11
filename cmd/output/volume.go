@@ -8,6 +8,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8syaml "sigs.k8s.io/yaml"
@@ -260,29 +261,29 @@ func (p VolumeClusterInfoTablePrinter) Print(data []*models.V1StorageClusterInfo
 			continue
 		}
 
-		partition := strValue(info.Partition)
-		health := strValue(info.Health.State)
-		numdegradedvolumes := int64Value(info.Health.NumDegradedVolumes)
-		numnotavailablevolumes := int64Value(info.Health.NumNotAvailableVolumes)
-		numreadonlyvolumes := int64Value(info.Health.NumReadOnlyVolumes)
-		numinactivenodes := int64Value(info.Health.NumInactiveNodes)
+		partition := pointer.SafeDeref(info.Partition)
+		health := pointer.SafeDeref(info.Health.State)
+		numdegradedvolumes := pointer.SafeDeref(info.Health.NumDegradedVolumes)
+		numnotavailablevolumes := pointer.SafeDeref(info.Health.NumNotAvailableVolumes)
+		numreadonlyvolumes := pointer.SafeDeref(info.Health.NumReadOnlyVolumes)
+		numinactivenodes := pointer.SafeDeref(info.Health.NumInactiveNodes)
 
 		compressionratio := ""
 		if info.Statistics != nil && info.Statistics.CompressionRatio != nil {
 			ratio := *info.Statistics.CompressionRatio
 			compressionratio = fmt.Sprintf("%d%%", int(100.0*(1-ratio)))
 		}
-		effectivephysicalstorage := helper.HumanizeSize(int64Value(info.Statistics.EffectivePhysicalStorage))
-		freephysicalstorage := helper.HumanizeSize(int64Value(info.Statistics.FreePhysicalStorage))
-		physicalusedstorage := helper.HumanizeSize(int64Value(info.Statistics.PhysicalUsedStorage))
+		effectivephysicalstorage := helper.HumanizeSize(pointer.SafeDeref(info.Statistics.EffectivePhysicalStorage))
+		freephysicalstorage := helper.HumanizeSize(pointer.SafeDeref(info.Statistics.FreePhysicalStorage))
+		physicalusedstorage := helper.HumanizeSize(pointer.SafeDeref(info.Statistics.PhysicalUsedStorage))
 
-		estimatedfreelogicalstorage := helper.HumanizeSize(int64Value(info.Statistics.EstimatedFreeLogicalStorage))
-		estimatedlogicalstorage := helper.HumanizeSize(int64Value(info.Statistics.EstimatedLogicalStorage))
-		logicalstorage := helper.HumanizeSize(int64Value(info.Statistics.LogicalStorage))
-		logicalusedstorage := helper.HumanizeSize(int64Value(info.Statistics.LogicalUsedStorage))
-		installedphysicalstorage := helper.HumanizeSize(int64Value(info.Statistics.InstalledPhysicalStorage))
-		managedphysicalstorage := helper.HumanizeSize(int64Value(info.Statistics.ManagedPhysicalStorage))
-		// physicalusedstorageincludingparity := helper.HumanizeSize(int64Value(info.Statistics.PhysicalUsedStorageIncludingParity))
+		estimatedfreelogicalstorage := helper.HumanizeSize(pointer.SafeDeref(info.Statistics.EstimatedFreeLogicalStorage))
+		estimatedlogicalstorage := helper.HumanizeSize(pointer.SafeDeref(info.Statistics.EstimatedLogicalStorage))
+		logicalstorage := helper.HumanizeSize(pointer.SafeDeref(info.Statistics.LogicalStorage))
+		logicalusedstorage := helper.HumanizeSize(pointer.SafeDeref(info.Statistics.LogicalUsedStorage))
+		installedphysicalstorage := helper.HumanizeSize(pointer.SafeDeref(info.Statistics.InstalledPhysicalStorage))
+		managedphysicalstorage := helper.HumanizeSize(pointer.SafeDeref(info.Statistics.ManagedPhysicalStorage))
+		// physicalusedstorageincludingparity := helper.HumanizeSize(pointer.SafeDeref(info.Statistics.PhysicalUsedStorageIncludingParity))
 
 		version := "n/a"
 		if info.MinVersionInCluster != nil {

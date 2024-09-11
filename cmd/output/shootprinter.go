@@ -9,6 +9,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/spf13/viper"
 )
 
@@ -52,12 +53,12 @@ func (s ShootConditionsTablePrinter) Print(data []*models.V1beta1Condition) {
 	s.shortHeader = []string{"LastTransition", "LastUpdate", "Message", "Reason", "Status", "Type"}
 	for _, condition := range data {
 		wide := []string{
-			strValue(condition.LastTransitionTime),
-			strValue(condition.LastUpdateTime),
-			strValue(condition.Message),
-			strValue(condition.Reason),
-			strValue(condition.Status),
-			strValue(condition.Type),
+			pointer.SafeDeref(condition.LastTransitionTime),
+			pointer.SafeDeref(condition.LastUpdateTime),
+			pointer.SafeDeref(condition.Message),
+			pointer.SafeDeref(condition.Reason),
+			pointer.SafeDeref(condition.Status),
+			pointer.SafeDeref(condition.Type),
 		}
 		short := wide
 		s.addWideData(wide, data)
@@ -73,9 +74,9 @@ func (s ShootLastErrorsTablePrinter) Print(data []*models.V1beta1LastError) {
 		e := e
 
 		wide := []string{
-			strValue(&e.LastUpdateTime),
-			strValue(&e.TaskID),
-			strValue(e.Description),
+			pointer.SafeDeref(&e.LastUpdateTime),
+			pointer.SafeDeref(&e.TaskID),
+			pointer.SafeDeref(e.Description),
 		}
 		short := wide
 		s.addWideData(wide, data)
@@ -88,10 +89,10 @@ func (s ShootLastOperationTablePrinter) Print(data *models.V1beta1LastOperation)
 	s.wideHeader = []string{"Time", "State", "Progress", "Description"}
 	s.shortHeader = []string{"Time", "State", "Progress", "Description"}
 	wide := []string{
-		strValue(data.LastUpdateTime),
-		strValue(data.State),
+		pointer.SafeDeref(data.LastUpdateTime),
+		pointer.SafeDeref(data.State),
 		fmt.Sprintf("%d%% [%s]", *data.Progress, *data.Type),
-		strValue(data.Description),
+		pointer.SafeDeref(data.Description),
 	}
 	short := wide
 	s.addWideData(wide, data)

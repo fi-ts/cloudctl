@@ -8,6 +8,7 @@ import (
 
 	"github.com/fi-ts/cloud-go/api/models"
 	metalmodels "github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 )
 
 type (
@@ -43,13 +44,13 @@ func (m MachineTablePrinter) Print(data []*models.ModelsV1MachineResponse) {
 		// status := strValue(machine.Liveliness)
 		var sizeID string
 		if machine.Size != nil {
-			sizeID = strValue(machine.Size.ID)
+			sizeID = pointer.SafeDeref(machine.Size.ID)
 		}
 		var partitionID string
 		if machine.Partition != nil {
-			partitionID = strValue(machine.Partition.ID)
+			partitionID = pointer.SafeDeref(machine.Partition.ID)
 		}
-		hostname := strValue(alloc.Hostname)
+		hostname := pointer.SafeDeref(alloc.Hostname)
 		//truncatedHostname := truncate(hostname, "...", 30)
 
 		var nwIPs []string
@@ -59,9 +60,9 @@ func (m MachineTablePrinter) Print(data []*models.ModelsV1MachineResponse) {
 		ips := strings.Join(nwIPs, "\n")
 		image := ""
 		if alloc.Image != nil {
-			image = strValue(alloc.Image.ID)
+			image = pointer.SafeDeref(alloc.Image.ID)
 		}
-		started := strValue(alloc.Created)
+		started := pointer.SafeDeref(alloc.Created)
 		age := ""
 		format := "2006-01-02T15:04:05.999Z"
 		created, err := time.Parse(format, *alloc.Created)
@@ -85,7 +86,7 @@ func (m MachineTablePrinter) Print(data []*models.ModelsV1MachineResponse) {
 			when = humanizeDuration(since)
 			lastEvent = *machine.Events.Log[0].Event
 		}
-		status := strValue(machine.Liveliness)
+		status := pointer.SafeDeref(machine.Liveliness)
 		statusEmoji := ""
 		switch status {
 		case "Alive":
