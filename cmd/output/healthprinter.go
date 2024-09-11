@@ -1,10 +1,11 @@
 package output
 
 import (
+	"maps"
+	"slices"
 	"sort"
 
 	"github.com/fi-ts/cloud-go/api/models"
-	"golang.org/x/exp/maps"
 )
 
 type (
@@ -34,7 +35,7 @@ func (p HealthTablePrinter) Print(health *models.RestHealthResponse) {
 	p.render()
 }
 
-func (p HealthTablePrinter) PrintServices(services map[string]models.RestHealthResult) {
+func (p HealthTablePrinter) PrintServices(services map[string]models.RestHealthResponse) {
 	p.wideHeader = []string{"Service", "Status", "Message"}
 	p.shortHeader = p.wideHeader
 
@@ -62,9 +63,9 @@ func (p HealthTablePrinter) PrintServices(services map[string]models.RestHealthR
 
 		i := 0
 		skeys := maps.Keys(s.Services)
-		sort.Strings(skeys)
-
-		for _, sname := range skeys {
+		sortedServiceKeys := slices.Collect(skeys)
+		slices.Sort(sortedServiceKeys)
+		for _, sname := range sortedServiceKeys {
 			sresult := s.Services[sname]
 			prefix := "├"
 			if i == len(s.Services)-1 {

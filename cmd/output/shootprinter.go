@@ -37,7 +37,7 @@ type (
 )
 
 const (
-	imageExpirationDaysDefault      = 14
+	imageExpirationDaysDefault = 14
 )
 
 type shootStats struct {
@@ -121,7 +121,7 @@ func (s ShootTablePrinter) Print(data []*models.V1ClusterResponse) {
 }
 
 func (s ShootIssuesTablePrinter) Print(data []*models.V1ClusterResponse) {
-	s.wideHeader = []string{"UID", "", "Name", "Version", "Partition", "Seed", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Privileged", "Audit", "Runtime", "Firewall", "Firewall Controller", "Log accepted conns", "Egress IPs"}
+	s.wideHeader = []string{"UID", "", "Name", "Version", "Partition", "Seed", "Domain", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose", "Audit", "Firewall", "Firewall Controller", "Log accepted conns", "Egress IPs"}
 	s.shortHeader = []string{"UID", "", "Tenant", "Project", "Name", "Version", "Partition", "Operation", "Progress", "Api", "Control", "Nodes", "System", "Size", "Age", "Purpose"}
 
 	if s.order == "" {
@@ -238,11 +238,6 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		purpose = p[:4]
 	}
 
-	privileged := ""
-	if shoot.Kubernetes.AllowPrivilegedContainers != nil {
-		privileged = fmt.Sprintf("%t", *shoot.Kubernetes.AllowPrivilegedContainers)
-	}
-
 	audit := "Off"
 	if shoot.ControlPlaneFeatureGates != nil {
 		var ca, as bool
@@ -262,17 +257,11 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		}
 	}
 
-	runtimes := []string{}
 	autoScaleMin := int32(0)
 	autoScaleMax := int32(0)
 	for _, w := range shoot.Workers {
 		autoScaleMin += *w.Minimum
 		autoScaleMax += *w.Maximum
-		if w.CRI != nil && *w.CRI != "" {
-			runtimes = append(runtimes, *w.CRI)
-		} else {
-			runtimes = append(runtimes, "docker")
-		}
 	}
 	currentMachines := "x"
 	if shoot.Machines != nil {
@@ -330,9 +319,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		age,
 		lastReconciliation,
 		purpose,
-		privileged,
 		audit,
-		strings.Join(uniqueStringSlice(runtimes), "\n"),
 		firewallImage,
 		firewallController,
 		logAcceptedConnections,

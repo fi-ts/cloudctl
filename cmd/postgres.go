@@ -991,7 +991,7 @@ func (c *config) postgresBackupCreate(autocreate bool) error {
 	name := viper.GetString("name")
 	project := viper.GetString("project")
 	schedule := viper.GetString("schedule")
-	retention := viper.GetInt32("retention")
+	retention := viper.GetInt64("retention")
 	partition := viper.GetString("partition")
 	s3Endpoint := viper.GetString("s3-endpoint")
 	s3Region := viper.GetString("s3-region")

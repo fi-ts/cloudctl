@@ -26,8 +26,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/metal-stack/metal-lib/pkg/cache"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/healthstatus"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/metal-stack/metal-lib/rest"
 	"github.com/metal-stack/v"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -305,11 +305,11 @@ func (d *dashboard) Render() {
 	defer func() {
 		var coloredHealth string
 		switch apiHealth {
-		case string(rest.HealthStatusHealthy):
+		case string(healthstatus.HealthStatusHealthy):
 			coloredHealth = "[" + apiHealth + "](fg:green)"
-		case string(rest.HealthStatusDegraded), string(rest.HealthStatusPartiallyUnhealthy):
+		case string(healthstatus.HealthStatusDegraded), string(healthstatus.HealthStatusPartiallyUnhealthy):
 			coloredHealth = "[" + apiHealth + "](fg:yellow)"
-		case string(rest.HealthStatusUnhealthy):
+		case string(healthstatus.HealthStatusUnhealthy):
 			if apiHealthMessage != "" {
 				coloredHealth = "[" + apiHealth + fmt.Sprintf(" (%s)](fg:red)", apiHealthMessage)
 			} else {
