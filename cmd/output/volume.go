@@ -47,11 +47,11 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 		}
 		size := ""
 		if vol.Size != nil {
-			size = humanize.IBytes(uint64(*vol.Size))
+			size = humanize.IBytes(uint64(*vol.Size)) // nolint:gosec
 		}
 		usage := ""
 		if vol.Statistics != nil && vol.Statistics.LogicalUsedStorage != nil {
-			usage = humanize.IBytes(uint64(*vol.Statistics.LogicalUsedStorage))
+			usage = humanize.IBytes(uint64(*vol.Statistics.LogicalUsedStorage)) // nolint:gosec
 		}
 		replica := ""
 		if vol.ReplicaCount != nil {
@@ -104,7 +104,7 @@ func (p SnapshotTablePrinter) Print(data []*models.V1SnapshotResponse) {
 		}
 		size := ""
 		if snap.Size != nil {
-			size = humanize.IBytes(uint64(*snap.Size))
+			size = humanize.IBytes(uint64(*snap.Size)) // nolint:gosec
 		}
 		partition := ""
 		if snap.PartitionID != nil {
