@@ -1265,9 +1265,9 @@ func newCache(cloud *client.CloudAPI, expiration time.Duration, partition, tenan
 	return &apiCache{
 		clusters: cache.New(expiration, func(ctx context.Context, _ string) ([]*models.V1ClusterResponse, error) {
 			resp, err := cloud.Cluster.FindClusters(cluster.NewFindClustersParams().WithBody(&models.V1ClusterFindRequest{
-				PartitionID: pointer.PointerOrDefault(partition, ""),
-				Tenant:      pointer.PointerOrDefault(tenant, ""),
-				Purpose:     pointer.PointerOrDefault(purpose, ""),
+				PartitionID: pointer.PointerOrNil(partition),
+				Tenant:      pointer.PointerOrNil(tenant),
+				Purpose:     pointer.PointerOrNil(purpose),
 			}).WithReturnMachines(pointer.Pointer(false)).WithContext(ctx), nil)
 			if err != nil {
 				return nil, err
@@ -1276,8 +1276,8 @@ func newCache(cloud *client.CloudAPI, expiration time.Duration, partition, tenan
 		}),
 		volumes: cache.New(expiration, func(ctx context.Context, _ string) ([]*models.V1VolumeResponse, error) {
 			resp, err := cloud.Volume.FindVolumes(volume.NewFindVolumesParams().WithBody(&models.V1VolumeFindRequest{
-				PartitionID: pointer.PointerOrDefault(partition, ""),
-				TenantID:    pointer.PointerOrDefault(tenant, ""),
+				PartitionID: pointer.PointerOrNil(partition),
+				TenantID:    pointer.PointerOrNil(tenant),
 			}).WithContext(ctx), nil)
 			if err != nil {
 				return nil, err
