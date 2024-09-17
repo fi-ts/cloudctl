@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/fatih/color"
-	"github.com/fi-ts/cloudctl/cmd/output"
+	"github.com/fi-ts/cloudctl/cmd/tableprinters"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/spf13/viper"
 )
@@ -19,7 +19,18 @@ func newPrinterFromCLI(out io.Writer) printers.Printer {
 	case "json":
 		printer = printers.NewJSONPrinter().WithOut(out)
 	case "table", "wide", "markdown":
-		printer = output.New()
+		tp := tableprinters.New()
+
+		tablePrinter := printers.NewTablePrinter(&printers.TablePrinterConfig{
+			ToHeaderAndRows: tp.ToHeaderAndRows,
+			Wide:            format == "wide",
+			Markdown:        format == "markdown",
+			NoHeaders:       viper.GetBool("no-headers"),
+		}).WithOut(out)
+
+		tp.SetPrinter(tablePrinter)
+
+		printer = tablePrinter
 	case "template":
 		printer = printers.NewTemplatePrinter(viper.GetString("template")).WithOut(out)
 	default:
