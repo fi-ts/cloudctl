@@ -104,6 +104,7 @@ func newProjectCmd(c *config) *cobra.Command {
 	projectCmd.AddCommand(projectListCmd)
 	projectCmd.AddCommand(projectApplyCmd)
 	projectCmd.AddCommand(projectEditCmd)
+	projectCmd.AddCommand(newMachineReservationsCmd(c))
 
 	return projectCmd
 }
