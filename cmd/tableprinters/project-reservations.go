@@ -13,12 +13,12 @@ import (
 
 func (t *TablePrinter) MachineReservationsTable(data []*models.V1MachineReservationResponse, wide bool) ([]string, [][]string, error) {
 	var (
-		header = []string{"Tenant", "Project", "Size", "Amount", "Partitions"}
+		header = []string{"Tenant", "Project", "Size", "Amount", "Partitions", "Description"}
 		rows   [][]string
 	)
 
 	if wide {
-		header = append(header, "Description", "Labels")
+		header = append(header, "Labels")
 	}
 
 	for _, p := range data {
@@ -28,6 +28,7 @@ func (t *TablePrinter) MachineReservationsTable(data []*models.V1MachineReservat
 			pointer.SafeDeref(p.Sizeid),
 			strconv.Itoa(int(pointer.SafeDeref(p.Amount))),
 			strings.Join(p.Partitionids, ","),
+			genericcli.TruncateEnd(p.Description, 50),
 		}
 
 		if wide {
@@ -37,7 +38,7 @@ func (t *TablePrinter) MachineReservationsTable(data []*models.V1MachineReservat
 			}
 			lbls := strings.Join(labels, "\n")
 
-			row = append(row, genericcli.TruncateEnd(p.Description, 50), lbls)
+			row = append(row, p.Description, lbls)
 		}
 
 		rows = append(rows, row)

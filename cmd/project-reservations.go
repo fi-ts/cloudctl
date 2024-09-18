@@ -59,6 +59,9 @@ func newMachineReservationsCmd(c *config) *cobra.Command {
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("partitions", c.comp.PartitionListCompletion))
 		},
+		EditCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().Bool("force", false, "allows overbooking of a partition")
+		},
 		CreateRequestFromCLI: func() (*models.V1MachineReservationCreateRequest, error) {
 			return &models.V1MachineReservationCreateRequest{
 				Amount:       pointer.PointerOrNil(viper.GetInt32("amount")),
