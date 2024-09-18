@@ -8,7 +8,7 @@ require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.17.0
 	github.com/fi-ts/accounting-go v0.10.0
-	github.com/fi-ts/cloud-go v0.28.1-0.20240917130058-a9bec42d1326
+	github.com/fi-ts/cloud-go v0.28.1-0.20240918115530-982c3cbb2d7a
 	github.com/gardener/gardener v1.91.0
 	github.com/gardener/machine-controller-manager v0.53.1
 	github.com/go-openapi/runtime v0.28.0
@@ -20,7 +20,7 @@ require (
 	github.com/jinzhu/now v1.1.5
 	github.com/metal-stack/duros-go v0.5.1
 	github.com/metal-stack/metal-go v0.34.0
-	github.com/metal-stack/metal-lib v0.18.2
+	github.com/metal-stack/metal-lib v0.18.3-0.20240918090307-0996d850cd26
 	github.com/metal-stack/updater v1.2.2
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5

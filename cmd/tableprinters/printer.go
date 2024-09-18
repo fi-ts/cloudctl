@@ -33,10 +33,17 @@ func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]strin
 
 	// TODO: migrate old output package code to here
 	switch d := data.(type) {
+
+	// project machine reservations
 	case *models.V1MachineReservationResponse:
 		return t.MachineReservationsTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1MachineReservationResponse:
 		return t.MachineReservationsTable(d, wide)
+	case *models.V1MachineReservationUsageResponse:
+		return t.MachineReservationsUsageTable(pointer.WrapInSlice(d), wide)
+	case []*models.V1MachineReservationUsageResponse:
+		return t.MachineReservationsUsageTable(d, wide)
+
 	default:
 		// fallback to old printer for as long as the migration takes:
 		t.t.WithOut(io.Discard)
