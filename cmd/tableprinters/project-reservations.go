@@ -22,26 +22,26 @@ func (t *TablePrinter) MachineReservationsTable(data []*models.V1MachineReservat
 		header = append(header, "Labels")
 	}
 
-	for _, p := range data {
-		sort.Strings(p.Partitionids)
+	for _, rv := range data {
+		sort.Strings(rv.Partitionids)
 
 		row := []string{
-			pointer.SafeDeref(p.Tenant),
-			pointer.SafeDeref(p.Projectid),
-			pointer.SafeDeref(p.Sizeid),
-			strconv.Itoa(int(pointer.SafeDeref(p.Amount))),
-			strings.Join(p.Partitionids, ","),
-			genericcli.TruncateEnd(p.Description, 50),
+			pointer.SafeDeref(rv.Tenant),
+			pointer.SafeDeref(rv.Projectid),
+			pointer.SafeDeref(rv.Sizeid),
+			strconv.Itoa(int(pointer.SafeDeref(rv.Amount))),
+			strings.Join(rv.Partitionids, ","),
+			genericcli.TruncateEnd(rv.Description, 50),
 		}
 
 		if wide {
 			var labels []string
-			for k, v := range p.Labels {
+			for k, v := range rv.Labels {
 				labels = append(labels, k+"="+v)
 			}
 			sort.Strings(labels)
 
-			row = append(row, p.Description, strings.Join(labels, "\n"))
+			row = append(row, rv.Description, strings.Join(labels, "\n"))
 		}
 
 		rows = append(rows, row)
@@ -61,27 +61,29 @@ func (t *TablePrinter) MachineReservationsUsageTable(data []*models.V1MachineRes
 	)
 
 	if wide {
-		header = append(header, "Labels")
+		header = append(header, "Allocations", "Labels")
 	}
 
-	for _, p := range data {
+	for _, rv := range data {
 		reservations := "0"
-		if pointer.SafeDeref(p.Reservations) > 0 {
-			unused := pointer.SafeDeref(p.Reservations) - pointer.SafeDeref(p.Usedreservations)
-			reservations = fmt.Sprintf("%d (%d/%d used)", unused, pointer.SafeDeref(p.Usedreservations), pointer.SafeDeref(p.Reservations))
+		if pointer.SafeDeref(rv.Reservations) > 0 {
+			unused := pointer.SafeDeref(rv.Reservations) - pointer.SafeDeref(rv.Usedreservations)
+			reservations = fmt.Sprintf("%d (%d/%d used)", unused, pointer.SafeDeref(rv.Usedreservations), pointer.SafeDeref(rv.Reservations))
 		}
 
 		row := []string{
-			pointer.SafeDeref(p.Tenant),
-			pointer.SafeDeref(p.Projectid),
-			pointer.SafeDeref(p.Partitionid),
-			pointer.SafeDeref(p.Sizeid),
+			pointer.SafeDeref(rv.Tenant),
+			pointer.SafeDeref(rv.Projectid),
+			pointer.SafeDeref(rv.Partitionid),
+			pointer.SafeDeref(rv.Sizeid),
 			reservations,
 		}
 
 		if wide {
+			row = append(row, fmt.Sprintf("%d", pointer.SafeDeref(rv.Projectallocations)))
+
 			labels := []string{}
-			for k, v := range p.Labels {
+			for k, v := range rv.Labels {
 				labels = append(labels, k+"="+v)
 			}
 			lbls := strings.Join(labels, "\n")
