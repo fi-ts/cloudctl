@@ -20,7 +20,7 @@ require (
 	github.com/jinzhu/now v1.1.5
 	github.com/metal-stack/duros-go v0.5.1
 	github.com/metal-stack/metal-go v0.34.0
-	github.com/metal-stack/metal-lib v0.18.3-0.20240918090307-0996d850cd26
+	github.com/metal-stack/metal-lib v0.18.3-0.20240919071254-1f2cefefaca4
 	github.com/metal-stack/updater v1.2.2
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5

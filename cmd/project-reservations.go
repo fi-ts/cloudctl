@@ -23,16 +23,16 @@ func newMachineReservationsCmd(c *config) *cobra.Command {
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1MachineReservationCreateRequest, *models.V1MachineReservationUpdateRequest, *models.V1MachineReservationResponse]{
-		BinaryName:      binaryName,
-		GenericCLI:      genericcli.NewGenericCLI(w).WithFS(c.fs),
-		Args:            []string{"project", "size"},
-		Singular:        "machine-reservation",
-		Plural:          "machine-reservations",
-		Description:     "manage machine reservations, ids must be provided in the form <project>@<size>",
-		Sorter:          sorters.MachineReservationsSorter(),
-		ValidArgsFn:     c.comp.MachineReservationListCompletion,
-		DescribePrinter: func() printers.Printer { return c.describePrinter },
-		ListPrinter:     func() printers.Printer { return c.listPrinter },
+		BinaryName:         binaryName,
+		MultiArgGenericCLI: genericcli.NewGenericMultiArgCLI(w).WithFS(c.fs),
+		Args:               []string{"project", "size"},
+		Singular:           "machine-reservation",
+		Plural:             "machine-reservations",
+		Description:        "manage machine reservations, ids must be provided in the form <project>@<size>",
+		Sorter:             sorters.MachineReservationsSorter(),
+		ValidArgsFn:        c.comp.MachineReservationListCompletion,
+		DescribePrinter:    func() printers.Printer { return c.describePrinter },
+		ListPrinter:        func() printers.Printer { return c.listPrinter },
 		ListCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("project", "", "show reservations of given project")
 			cmd.Flags().String("size", "", "show reservations of given size")
