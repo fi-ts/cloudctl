@@ -175,7 +175,7 @@ func (m machineReservationsCmd) Get(id ...string) (*models.V1MachineReservationR
 		return rv, nil
 	}
 
-	return nil, fmt.Errorf("no reservation found with size %q for project %q", id[1], id[0])
+	return nil, fmt.Errorf("no reservation found with size %q for project %q", id[m.sizeIndex()], id[m.projectIndex()])
 }
 
 func (m machineReservationsCmd) List() ([]*models.V1MachineReservationResponse, error) {
