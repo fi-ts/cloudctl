@@ -8,7 +8,7 @@ require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.17.0
 	github.com/fi-ts/accounting-go v0.10.0
-	github.com/fi-ts/cloud-go v0.28.1-0.20240918115530-982c3cbb2d7a
+	github.com/fi-ts/cloud-go v0.28.1-0.20240919083529-3d0d03132578
 	github.com/gardener/gardener v1.91.0
 	github.com/gardener/machine-controller-manager v0.53.1
 	github.com/go-openapi/runtime v0.28.0
@@ -26,8 +26,10 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
+	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
+	github.com/undefinedlabs/go-mpatch v1.0.7
 	golang.org/x/sync v0.8.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.29.8
@@ -149,7 +151,6 @@ require (
 	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/cast v1.7.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/tailscale/certstore v0.1.1-0.20231020161753-77811a65f4ff // indirect
