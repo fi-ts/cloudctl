@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/fi-ts/cloud-go/api/client/project"
@@ -135,6 +136,10 @@ func (m machineReservationsCmd) Create(rq *models.V1MachineReservationCreateRequ
 		WithBody(rq).
 		WithForce(pointer.Pointer(viper.GetBool("force"))), nil)
 	if err != nil {
+		var r *project.CreateMachineReservationConflict
+		if errors.As(err, &r) {
+			return nil, genericcli.AlreadyExistsError()
+		}
 		return nil, err
 	}
 

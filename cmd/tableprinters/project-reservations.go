@@ -2,6 +2,7 @@ package tableprinters
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -22,6 +23,8 @@ func (t *TablePrinter) MachineReservationsTable(data []*models.V1MachineReservat
 	}
 
 	for _, p := range data {
+		sort.Strings(p.Partitionids)
+
 		row := []string{
 			pointer.SafeDeref(p.Tenant),
 			pointer.SafeDeref(p.Projectid),
@@ -32,13 +35,13 @@ func (t *TablePrinter) MachineReservationsTable(data []*models.V1MachineReservat
 		}
 
 		if wide {
-			labels := []string{}
+			var labels []string
 			for k, v := range p.Labels {
 				labels = append(labels, k+"="+v)
 			}
-			lbls := strings.Join(labels, "\n")
+			sort.Strings(labels)
 
-			row = append(row, p.Description, lbls)
+			row = append(row, p.Description, strings.Join(labels, "\n"))
 		}
 
 		rows = append(rows, row)
