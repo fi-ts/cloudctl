@@ -5,6 +5,6 @@ import (
 )
 
 type Version struct {
-	Client string                   `yaml:"client"`
-	Server *cloudmodels.RestVersion `yaml:"server,omitempty"`
+	Client string                   `json:"client" yaml:"client"`
+	Server *cloudmodels.RestVersion `json:"server,omitempty" yaml:"server,omitempty"`
 }
