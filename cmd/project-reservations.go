@@ -103,6 +103,7 @@ func newMachineReservationsCmd(c *config) *cobra.Command {
 	genericcli.Must(usageCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
 	genericcli.Must(usageCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	genericcli.Must(usageCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
+	genericcli.AddSortFlag(usageCmd, sorters.MachineReservationsUsageSorter())
 
 	return genericcli.NewCmds(cmdsConfig, usageCmd)
 }
@@ -208,6 +209,11 @@ func (m machineReservationsCmd) machineReservationsUsage() error {
 			Sizeid:    pointer.PointerOrNil(viper.GetString("size")),
 			Tenant:    pointer.PointerOrNil(viper.GetString("tenant")),
 		}), nil)
+	if err != nil {
+		return err
+	}
+
+	err = sorters.MachineReservationsUsageSorter().SortBy(resp.Payload)
 	if err != nil {
 		return err
 	}
