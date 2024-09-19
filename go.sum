@@ -82,8 +82,6 @@ github.com/digitalocean/go-smbios v0.0.0-20180907143718-390a4f403a8e h1:vUmf0yez
 github.com/digitalocean/go-smbios v0.0.0-20180907143718-390a4f403a8e/go.mod h1:YTIHhz/QFSYnu/EhlF2SpU2Uk+32abacUYA5ZPljz1A=
 github.com/dustin/go-humanize v1.0.1 h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=
 github.com/dustin/go-humanize v1.0.1/go.mod h1:Mu1zIs6XwVuF/gI1OepvI0qD18qycQx+mFykh5fBlto=
-github.com/emicklei/go-restful/v3 v3.12.1 h1:PJMDIM/ak7btuL8Ex0iYET9hxM3CI2sjZtzpL63nKAU=
-github.com/emicklei/go-restful/v3 v3.12.1/go.mod h1:6n3XBCmQQb25CM2LCACGz8ukIrRry+4bhvbpWn3mrbc=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1mIlRU8Am5FuJP05cCM98=
@@ -281,8 +279,8 @@ github.com/metal-stack/duros-go v0.5.1 h1:baE/c0AKy9sTOztPhILJLaoMmT17Ajsb+xRMfH
 github.com/metal-stack/duros-go v0.5.1/go.mod h1:Z9mzI9ds2gI8zHC03PUCQvmlWa7WAPukDCUhowtVeOk=
 github.com/metal-stack/metal-go v0.34.0 h1:X4Wlt2OAhsu3Lq+rHSWnWeASmX6CYvOxnL6DxmjnzbU=
 github.com/metal-stack/metal-go v0.34.0/go.mod h1:3MJTYCS4YJz8D8oteTKhjpaAKNMMjMKYDrIy9awHGtQ=
-github.com/metal-stack/metal-lib v0.18.3-0.20240919071254-1f2cefefaca4 h1:yRaTmSEn+aRLl1g/9uXmVLJe0UnwZOmKVYJYfSQnEkI=
-github.com/metal-stack/metal-lib v0.18.3-0.20240919071254-1f2cefefaca4/go.mod h1:GJjipRpHmpd2vjBtsaw9gGk5ZFan7NlShyjIsTdY1x4=
+github.com/metal-stack/metal-lib v0.18.3-0.20240919130905-c0fc9fa493e1 h1:nzv+w8mFFnZO3KqEflMlAKlyJjIWYGIgMBq2R4ZCq00=
+github.com/metal-stack/metal-lib v0.18.3-0.20240919130905-c0fc9fa493e1/go.mod h1:GJjipRpHmpd2vjBtsaw9gGk5ZFan7NlShyjIsTdY1x4=
 github.com/metal-stack/security v0.8.1 h1:4zmVUxZvDWShVvVIxM3XhIv7pTmPe9DvACRIHW6YTsk=
 github.com/metal-stack/security v0.8.1/go.mod h1:OO8ZilZO6fUV5QEmwc7HP/RAjqYrGQxXoYIddJ9TvqE=
 github.com/metal-stack/updater v1.2.2 h1:gnUrnQgfT20QFMDtFBY89opKoBAkdeI/8T2iwMHNdxs=
