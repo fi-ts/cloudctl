@@ -598,7 +598,6 @@ WARNING: You are going to create a cluster that has no default internet access w
 		ClusterFeatures: &models.V1ClusterFeatures{
 			LogAcceptedConnections: &logAcceptedConnections,
 			DurosStorageEncryption: &encryptedStorageClasses,
-			HighAvailability:       &highAvailability,
 		},
 		CustomDefaultStorageClass: customDefaultStorageClass,
 		Cni:                       cni,
@@ -675,6 +674,10 @@ WARNING: You are going to create a cluster that has no default internet access w
 			CIDRs:    viper.GetStringSlice("kube-apiserver-acl-allowed-cidrs"),
 			Disabled: pointer.Pointer(!viper.GetBool("enable-kube-apiserver-acl")),
 		}
+	}
+
+	if viper.IsSet("high-availability") {
+		scr.ClusterFeatures.HighAvailability = &highAvailability
 	}
 
 	egressRules := makeEgressRules(egress)
