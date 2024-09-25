@@ -14,7 +14,7 @@ import (
 
 func (t *TablePrinter) MachineReservationsTable(data []*models.V1MachineReservationResponse, wide bool) ([]string, [][]string, error) {
 	var (
-		header = []string{"Tenant", "Project", "Size", "Amount", "Partitions", "Description"}
+		header = []string{"ID", "Tenant", "Project", "Size", "Amount", "Partitions", "Description"}
 		rows   [][]string
 	)
 
@@ -26,6 +26,7 @@ func (t *TablePrinter) MachineReservationsTable(data []*models.V1MachineReservat
 		sort.Strings(rv.Partitionids)
 
 		row := []string{
+			pointer.SafeDeref(rv.ID),
 			pointer.SafeDeref(rv.Tenant),
 			pointer.SafeDeref(rv.Projectid),
 			pointer.SafeDeref(rv.Sizeid),

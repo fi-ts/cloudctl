@@ -8,6 +8,9 @@ import (
 
 func MachineReservationsSorter() *multisort.Sorter[*models.V1MachineReservationResponse] {
 	return multisort.New(multisort.FieldMap[*models.V1MachineReservationResponse]{
+		"id": func(a, b *models.V1MachineReservationResponse, descending bool) multisort.CompareResult {
+			return multisort.Compare(p.SafeDeref(a.ID), p.SafeDeref(b.ID), descending)
+		},
 		"tenant": func(a, b *models.V1MachineReservationResponse, descending bool) multisort.CompareResult {
 			return multisort.Compare(p.SafeDeref(a.Tenant), p.SafeDeref(b.Tenant), descending)
 		},
@@ -20,11 +23,14 @@ func MachineReservationsSorter() *multisort.Sorter[*models.V1MachineReservationR
 		"amount": func(a, b *models.V1MachineReservationResponse, descending bool) multisort.CompareResult {
 			return multisort.Compare(p.SafeDeref(a.Amount), p.SafeDeref(b.Amount), descending)
 		},
-	}, multisort.Keys{{ID: "tenant"}, {ID: "project"}, {ID: "size"}, {ID: "amount"}})
+	}, multisort.Keys{{ID: "tenant"}, {ID: "project"}, {ID: "size"}, {ID: "id"}})
 }
 
 func MachineReservationsUsageSorter() *multisort.Sorter[*models.V1MachineReservationUsageResponse] {
 	return multisort.New(multisort.FieldMap[*models.V1MachineReservationUsageResponse]{
+		"id": func(a, b *models.V1MachineReservationUsageResponse, descending bool) multisort.CompareResult {
+			return multisort.Compare(p.SafeDeref(a.ID), p.SafeDeref(b.ID), descending)
+		},
 		"tenant": func(a, b *models.V1MachineReservationUsageResponse, descending bool) multisort.CompareResult {
 			return multisort.Compare(p.SafeDeref(a.Tenant), p.SafeDeref(b.Tenant), descending)
 		},
@@ -43,5 +49,5 @@ func MachineReservationsUsageSorter() *multisort.Sorter[*models.V1MachineReserva
 		"unused-reservations": func(a, b *models.V1MachineReservationUsageResponse, descending bool) multisort.CompareResult {
 			return multisort.Compare(p.SafeDeref(a.Usedreservations), p.SafeDeref(b.Usedreservations), descending)
 		},
-	}, multisort.Keys{{ID: "tenant"}, {ID: "project"}, {ID: "partition"}, {ID: "size"}, {ID: "reservations"}})
+	}, multisort.Keys{{ID: "tenant"}, {ID: "project"}, {ID: "partition"}, {ID: "size"}, {ID: "id"}})
 }

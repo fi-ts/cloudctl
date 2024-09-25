@@ -17,6 +17,7 @@ import (
 
 var (
 	machineReservation1 = &models.V1MachineReservationResponse{
+		ID:          pointer.Pointer("1"),
 		Amount:      pointer.Pointer(int32(3)),
 		Description: "for firewalls",
 		Labels: map[string]string{
@@ -29,6 +30,7 @@ var (
 		Tenant:       pointer.Pointer("fits"),
 	}
 	machineReservation2 = &models.V1MachineReservationResponse{
+		ID:          pointer.Pointer("2"),
 		Amount:      pointer.Pointer(int32(3)),
 		Description: "for machines",
 		Labels: map[string]string{
@@ -63,15 +65,15 @@ func Test_ProjectMachineReservationsCmd_MultiResult(t *testing.T) {
 				machineReservation2,
 			},
 			wantTable: pointer.Pointer(`
-TENANT   PROJECT     SIZE     AMOUNT   PARTITIONS                DESCRIPTION
-fits     project-a   size-a   3        partition-a               for firewalls
-fits     project-b   size-b   3        partition-a,partition-b   for machines
+ID   TENANT   PROJECT     SIZE     AMOUNT   PARTITIONS                DESCRIPTION
+1    fits     project-a   size-a   3        partition-a               for firewalls
+2    fits     project-b   size-b   3        partition-a,partition-b   for machines
 `),
 			wantWideTable: pointer.Pointer(`
-TENANT   PROJECT     SIZE     AMOUNT   PARTITIONS                DESCRIPTION     LABELS
-fits     project-a   size-a   3        partition-a               for firewalls   for firewalls   size.metal-stack.io/reserved-at=2024-09-19T08:57:40Z
-                                                                                                    size.metal-stack.io/reserved-by=fits
-fits     project-b   size-b   3        partition-a,partition-b   for machines    for machines    size.metal-stack.io/reserved-by=fits
+ID   TENANT   PROJECT     SIZE     AMOUNT   PARTITIONS                DESCRIPTION     LABELS
+1    fits     project-a   size-a   3        partition-a               for firewalls   for firewalls   size.metal-stack.io/reserved-at=2024-09-19T08:57:40Z
+                                                                                                      size.metal-stack.io/reserved-by=fits
+2    fits     project-b   size-b   3        partition-a,partition-b   for machines    for machines    size.metal-stack.io/reserved-by=fits
 `),
 			template: pointer.Pointer("{{ .sizeid }} {{ .projectid }}"),
 			wantTemplate: pointer.Pointer(`
@@ -79,10 +81,10 @@ size-a project-a
 size-b project-b
 `),
 			wantMarkdown: pointer.Pointer(`
-| TENANT |  PROJECT  |  SIZE  | AMOUNT |       PARTITIONS        |  DESCRIPTION  |
-|--------|-----------|--------|--------|-------------------------|---------------|
-| fits   | project-a | size-a |      3 | partition-a             | for firewalls |
-| fits   | project-b | size-b |      3 | partition-a,partition-b | for machines  |
+| ID | TENANT |  PROJECT  |  SIZE  | AMOUNT |       PARTITIONS        |  DESCRIPTION  |
+|----|--------|-----------|--------|--------|-------------------------|---------------|
+|  1 | fits   | project-a | size-a |      3 | partition-a             | for firewalls |
+|  2 | fits   | project-b | size-b |      3 | partition-a,partition-b | for machines  |
 `),
 		},
 		{
@@ -108,25 +110,6 @@ size-b project-b
 			want: []*models.V1MachineReservationResponse{
 				machineReservation1,
 			},
-			wantTable: pointer.Pointer(`
-TENANT   PROJECT     SIZE     AMOUNT   PARTITIONS    DESCRIPTION
-fits     project-a   size-a   3        partition-a   for firewalls
-		`),
-			wantWideTable: pointer.Pointer(`
-TENANT   PROJECT     SIZE     AMOUNT   PARTITIONS    DESCRIPTION     LABELS
-fits     project-a   size-a   3        partition-a   for firewalls   for firewalls   size.metal-stack.io/reserved-at=2024-09-19T08:57:40Z
-                                                                                        size.metal-stack.io/reserved-by=fits
-
-		`),
-			template: pointer.Pointer("{{ .sizeid }} {{ .projectid }}"),
-			wantTemplate: pointer.Pointer(`
-size-a project-a
-		`),
-			wantMarkdown: pointer.Pointer(`
-| TENANT |  PROJECT  |  SIZE  | AMOUNT | PARTITIONS  |  DESCRIPTION  |
-|--------|-----------|--------|--------|-------------|---------------|
-| fits   | project-a | size-a |      3 | partition-a | for firewalls |
-		`),
 		},
 		{
 			name: "apply",
@@ -203,8 +186,7 @@ size-a project-a
 			},
 			mocks: &testclient.CloudMockFns{
 				Project: func(mock *mock.Mock) {
-					mock.On("DeleteMachineReservation", testcommon.MatchIgnoreContext(t, project.NewDeleteMachineReservationParams().
-						WithProject(machineReservation1.Projectid).WithSize(machineReservation1.Sizeid)), nil).
+					mock.On("DeleteMachineReservation", testcommon.MatchIgnoreContext(t, project.NewDeleteMachineReservationParams().WithID(*machineReservation1.ID)), nil).
 						Return(&project.DeleteMachineReservationOK{Payload: machineReservation1}, nil)
 				},
 			},
@@ -223,47 +205,43 @@ func Test_ProjectMachineReservationsCmd_SingleResult(t *testing.T) {
 		{
 			name: "describe",
 			cmd: func(want *models.V1MachineReservationResponse) []string {
-				return []string{"project", "machine-reservation", "describe", *want.Projectid, *want.Sizeid}
+				return []string{"project", "machine-reservation", "describe", *want.ID}
 			},
 			mocks: &testclient.CloudMockFns{
 				Project: func(mock *mock.Mock) {
-					mock.On("ListMachineReservations", testcommon.MatchIgnoreContext(t, project.NewListMachineReservationsParams().WithBody(&models.V1MachineReservationFindRequest{})), nil).Return(&project.ListMachineReservationsOK{
-						Payload: []*models.V1MachineReservationResponse{
-							machineReservation2,
-							machineReservation1,
-						},
+					mock.On("GetMachineReservation", testcommon.MatchIgnoreContext(t, project.NewGetMachineReservationParams().WithID(*machineReservation1.ID)), nil).Return(&project.GetMachineReservationOK{
+						Payload: machineReservation1,
 					}, nil)
 				},
 			},
 			want: machineReservation1,
 			wantTable: pointer.Pointer(`
-TENANT   PROJECT     SIZE     AMOUNT   PARTITIONS    DESCRIPTION
-fits     project-a   size-a   3        partition-a   for firewalls
+ID   TENANT   PROJECT     SIZE     AMOUNT   PARTITIONS    DESCRIPTION
+1    fits     project-a   size-a   3        partition-a   for firewalls
 `),
 			wantWideTable: pointer.Pointer(`
-TENANT   PROJECT     SIZE     AMOUNT   PARTITIONS    DESCRIPTION     LABELS
-fits     project-a   size-a   3        partition-a   for firewalls   for firewalls   size.metal-stack.io/reserved-at=2024-09-19T08:57:40Z
-                                                                                        size.metal-stack.io/reserved-by=fits
+ID   TENANT   PROJECT     SIZE     AMOUNT   PARTITIONS    DESCRIPTION     LABELS
+1    fits     project-a   size-a   3        partition-a   for firewalls   for firewalls   size.metal-stack.io/reserved-at=2024-09-19T08:57:40Z
+                                                                                          size.metal-stack.io/reserved-by=fits
 `),
 			template: pointer.Pointer("{{ .sizeid }} {{ .projectid }}"),
 			wantTemplate: pointer.Pointer(`
 size-a project-a
 `),
 			wantMarkdown: pointer.Pointer(`
-| TENANT |  PROJECT  |  SIZE  | AMOUNT | PARTITIONS  |  DESCRIPTION  |
-|--------|-----------|--------|--------|-------------|---------------|
-| fits   | project-a | size-a |      3 | partition-a | for firewalls |
+| ID | TENANT |  PROJECT  |  SIZE  | AMOUNT | PARTITIONS  |  DESCRIPTION  |
+|----|--------|-----------|--------|--------|-------------|---------------|
+|  1 | fits   | project-a | size-a |      3 | partition-a | for firewalls |
 `),
 		},
 		{
 			name: "delete",
 			cmd: func(want *models.V1MachineReservationResponse) []string {
-				return []string{"project", "machine-reservation", "rm", *want.Projectid, *want.Sizeid}
+				return []string{"project", "machine-reservation", "rm", *want.ID}
 			},
 			mocks: &testclient.CloudMockFns{
 				Project: func(mock *mock.Mock) {
-					mock.On("DeleteMachineReservation", testcommon.MatchIgnoreContext(t, project.NewDeleteMachineReservationParams().
-						WithProject(machineReservation1.Projectid).WithSize(machineReservation1.Sizeid)), nil).
+					mock.On("DeleteMachineReservation", testcommon.MatchIgnoreContext(t, project.NewDeleteMachineReservationParams().WithID(*machineReservation1.ID)), nil).
 						Return(&project.DeleteMachineReservationOK{Payload: machineReservation1}, nil)
 				},
 			},

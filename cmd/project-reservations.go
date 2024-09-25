@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/fi-ts/cloud-go/api/client/project"
 	"github.com/fi-ts/cloud-go/api/models"
@@ -24,16 +23,15 @@ func newMachineReservationsCmd(c *config) *cobra.Command {
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1MachineReservationCreateRequest, *models.V1MachineReservationUpdateRequest, *models.V1MachineReservationResponse]{
-		BinaryName:         binaryName,
-		MultiArgGenericCLI: genericcli.NewGenericMultiArgCLI(w).WithFS(c.fs),
-		Args:               []string{"project", "size"},
-		Singular:           "machine-reservation",
-		Plural:             "machine-reservations",
-		Description:        "manage machine reservations, ids must be provided in the form <project>@<size>",
-		Sorter:             sorters.MachineReservationsSorter(),
-		ValidArgsFn:        c.comp.MachineReservationListCompletion,
-		DescribePrinter:    func() printers.Printer { return c.describePrinter },
-		ListPrinter:        func() printers.Printer { return c.listPrinter },
+		BinaryName:      binaryName,
+		GenericCLI:      genericcli.NewGenericCLI(w).WithFS(c.fs),
+		Singular:        "machine-reservation",
+		Plural:          "machine-reservations",
+		Description:     "manage machine reservations, ids must be provided in the form <project>@<size>",
+		Sorter:          sorters.MachineReservationsSorter(),
+		ValidArgsFn:     c.comp.MachineReservationListCompletion,
+		DescribePrinter: func() printers.Printer { return c.describePrinter },
+		ListPrinter:     func() printers.Printer { return c.listPrinter },
 		ListCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("project", "", "show reservations of given project")
 			cmd.Flags().String("size", "", "show reservations of given size")
@@ -73,17 +71,16 @@ func newMachineReservationsCmd(c *config) *cobra.Command {
 			}, nil
 		},
 		UpdateRequestFromCLI: func(args []string) (*models.V1MachineReservationUpdateRequest, error) {
-			ids, err := genericcli.GetExactlyNArgs(2, args)
+			id, err := genericcli.GetExactlyOneArg(args)
 			if err != nil {
 				return nil, err
 			}
 
 			return &models.V1MachineReservationUpdateRequest{
+				ID:           &id,
 				Amount:       pointer.PointerOrNil(viper.GetInt32("amount")),
 				Description:  pointer.PointerOrNil(viper.GetString("description")),
 				Partitionids: viper.GetStringSlice("partitions"),
-				Projectid:    &ids[w.projectIndex()],
-				Sizeid:       &ids[w.sizeIndex()],
 			}, nil
 		},
 	}
@@ -108,8 +105,11 @@ func newMachineReservationsCmd(c *config) *cobra.Command {
 	return genericcli.NewCmds(cmdsConfig, usageCmd)
 }
 
-func (m machineReservationsCmd) Convert(r *models.V1MachineReservationResponse) ([]string, *models.V1MachineReservationCreateRequest, *models.V1MachineReservationUpdateRequest, error) {
-	return []string{*r.Projectid, *r.Sizeid}, toMachineReservationCreateRequest(r), toMachineReservationUpdateRequest(r), nil
+func (m machineReservationsCmd) Convert(r *models.V1MachineReservationResponse) (string, *models.V1MachineReservationCreateRequest, *models.V1MachineReservationUpdateRequest, error) {
+	if r.ID == nil {
+		return "", nil, nil, errors.New("id is not defined")
+	}
+	return *r.ID, toMachineReservationCreateRequest(r), toMachineReservationUpdateRequest(r), nil
 }
 
 func toMachineReservationCreateRequest(r *models.V1MachineReservationResponse) *models.V1MachineReservationCreateRequest {
@@ -147,10 +147,8 @@ func (m machineReservationsCmd) Create(rq *models.V1MachineReservationCreateRequ
 	return resp.Payload, nil
 }
 
-func (m machineReservationsCmd) Delete(id ...string) (*models.V1MachineReservationResponse, error) {
-	resp, err := m.cloud.Project.DeleteMachineReservation(project.NewDeleteMachineReservationParams().
-		WithProject(pointer.Pointer(id[m.projectIndex()])).
-		WithSize(pointer.Pointer(id[m.sizeIndex()])), nil)
+func (m machineReservationsCmd) Delete(id string) (*models.V1MachineReservationResponse, error) {
+	resp, err := m.cloud.Project.DeleteMachineReservation(project.NewDeleteMachineReservationParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -158,24 +156,13 @@ func (m machineReservationsCmd) Delete(id ...string) (*models.V1MachineReservati
 	return resp.Payload, nil
 }
 
-func (m machineReservationsCmd) Get(id ...string) (*models.V1MachineReservationResponse, error) {
-	all, err := m.List()
+func (m machineReservationsCmd) Get(id string) (*models.V1MachineReservationResponse, error) {
+	resp, err := m.cloud.Project.GetMachineReservation(project.NewGetMachineReservationParams().WithID(id), nil)
 	if err != nil {
-		return nil, fmt.Errorf("unable to fetch machine reservations: %w", err)
+		return nil, err
 	}
 
-	for _, rv := range all {
-		if id[m.projectIndex()] != pointer.SafeDeref(rv.Projectid) {
-			continue
-		}
-		if id[m.sizeIndex()] != pointer.SafeDeref(rv.Sizeid) {
-			continue
-		}
-
-		return rv, nil
-	}
-
-	return nil, fmt.Errorf("no reservation found with size %q for project %q", id[m.sizeIndex()], id[m.projectIndex()])
+	return resp.Payload, nil
 }
 
 func (m machineReservationsCmd) List() ([]*models.V1MachineReservationResponse, error) {
@@ -219,11 +206,4 @@ func (m machineReservationsCmd) machineReservationsUsage() error {
 	}
 
 	return m.listPrinter.Print(resp.Payload)
-}
-
-func (m machineReservationsCmd) projectIndex() int {
-	return 0
-}
-func (m machineReservationsCmd) sizeIndex() int {
-	return 1
 }
