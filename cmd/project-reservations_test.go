@@ -90,7 +90,7 @@ size-b project-b
 		{
 			name: "list with filters",
 			cmd: func(want []*models.V1MachineReservationResponse) []string {
-				args := []string{"project", "machine-reservation", "list", "--tenant", *want[0].Tenant, "--project", *want[0].Projectid, "--size", *want[0].Sizeid}
+				args := []string{"project", "machine-reservation", "list", "--tenant", *want[0].Tenant, "--project", *want[0].Projectid, "--size", *want[0].Sizeid, "--id", *want[0].ID}
 				assertExhaustiveArgs(t, args, "sort-by")
 				return args
 			},
@@ -100,6 +100,7 @@ size-b project-b
 						Projectid: pointer.Pointer("project-a"),
 						Sizeid:    pointer.Pointer("size-a"),
 						Tenant:    pointer.Pointer("fits"),
+						ID:        pointer.Pointer("1"),
 					})), nil).Return(&project.ListMachineReservationsOK{
 						Payload: []*models.V1MachineReservationResponse{
 							machineReservation1,
