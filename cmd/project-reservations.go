@@ -203,7 +203,12 @@ func (m machineReservationsCmd) machineReservationsUsage() error {
 		return err
 	}
 
-	err = sorters.MachineReservationsUsageSorter().SortBy(resp.Payload)
+	keys, err := genericcli.ParseSortFlags()
+	if err != nil {
+		return err
+	}
+
+	err = sorters.MachineReservationsUsageSorter().SortBy(resp.Payload, keys...)
 	if err != nil {
 		return err
 	}
