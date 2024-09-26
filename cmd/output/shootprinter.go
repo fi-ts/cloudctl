@@ -151,6 +151,9 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 	if shoot.KubeAPIServerACL != nil && !*shoot.KubeAPIServerACL.Disabled {
 		shootStats.apiServer += "🔒"
 	}
+	if shoot.ClusterFeatures != nil && shoot.ClusterFeatures.HighAvailability != nil && *shoot.ClusterFeatures.HighAvailability == "true" {
+		shootStats.apiServer += "🌐"
+	}
 	name := *shoot.Name
 	if shoot.NetworkAccessType != nil {
 		if *shoot.NetworkAccessType == models.V1ClusterCreateRequestNetworkAccessTypeForbidden {
