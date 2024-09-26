@@ -33,9 +33,11 @@ func newMachineReservationsCmd(c *config) *cobra.Command {
 		DescribePrinter: func() printers.Printer { return c.describePrinter },
 		ListPrinter:     func() printers.Printer { return c.listPrinter },
 		ListCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().String("id", "", "show reservations of given id")
 			cmd.Flags().String("project", "", "show reservations of given project")
 			cmd.Flags().String("size", "", "show reservations of given size")
 			cmd.Flags().String("tenant", "", "show reservations of given tenant")
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("id", c.comp.MachineReservationListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
@@ -171,6 +173,7 @@ func (m machineReservationsCmd) List() ([]*models.V1MachineReservationResponse, 
 			Projectid: pointer.PointerOrNil(viper.GetString("project")),
 			Sizeid:    pointer.PointerOrNil(viper.GetString("size")),
 			Tenant:    pointer.PointerOrNil(viper.GetString("tenant")),
+			ID:        pointer.PointerOrNil(viper.GetString("id")),
 		}), nil)
 	if err != nil {
 		return nil, err
