@@ -678,6 +678,13 @@ WARNING: You are going to create a cluster that has no default internet access w
 
 	if viper.IsSet("high-availability-control-plane") {
 		scr.ClusterFeatures.HighAvailability = &highAvailability
+		if err := genericcli.PromptCustom(&genericcli.PromptConfig{
+			Message:     "Enabling the HA control plane feature gate is still a beta feature. You cannot use it in combination with the cluster forwarding backend of the audit extension. Please be aware that you cannot revert this feature gate after it was enabled.",
+			ShowAnswers: true,
+			Out:         c.out,
+		}); err != nil {
+			return err
+		}
 	}
 
 	egressRules := makeEgressRules(egress)
@@ -975,6 +982,17 @@ func (c *config) updateCluster(args []string) error {
 	}
 	if viper.IsSet("high-availability-control-plane") {
 		clusterFeatures.HighAvailability = &highAvailability
+		if v, _ := strconv.ParseBool(highAvailability); v {
+			if v, _ := strconv.ParseBool(highAvailability); v {
+				if err := genericcli.PromptCustom(&genericcli.PromptConfig{
+					Message:     "Enabling the HA control plane feature gate is still a beta feature. You cannot use it in combination with the cluster forwarding backend of the audit extension. Please be aware that you cannot revert this feature gate after it was enabled.",
+					ShowAnswers: true,
+					Out:         c.out,
+				}); err != nil {
+					return err
+				}
+			}
+		}
 	}
 
 	workergroupKubernetesVersion := viper.GetString("workerversion")
