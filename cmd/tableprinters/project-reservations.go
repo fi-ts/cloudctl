@@ -60,7 +60,7 @@ func (t *TablePrinter) MachineReservationsTable(data []*models.V1MachineReservat
 
 func (t *TablePrinter) MachineReservationsUsageTable(data []*models.V1MachineReservationUsageResponse, wide bool) ([]string, [][]string, error) {
 	var (
-		header = []string{"Tenant", "Project", "Partition", "Size", "Reservations"}
+		header = []string{"ID", "Tenant", "Project", "Partition", "Size", "Reservations"}
 		rows   [][]string
 	)
 
@@ -76,6 +76,7 @@ func (t *TablePrinter) MachineReservationsUsageTable(data []*models.V1MachineRes
 		}
 
 		row := []string{
+			pointer.SafeDeref(rv.ID),
 			pointer.SafeDeref(rv.Tenant),
 			pointer.SafeDeref(rv.Projectid),
 			pointer.SafeDeref(rv.Partitionid),
