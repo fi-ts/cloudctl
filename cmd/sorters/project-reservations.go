@@ -48,7 +48,7 @@ func MachineReservationsUsageSorter() *multisort.Sorter[*models.V1MachineReserva
 		"reservations": func(a, b *models.V1MachineReservationUsageResponse, descending bool) multisort.CompareResult {
 			return multisort.Compare(p.SafeDeref(a.Reservations), p.SafeDeref(b.Reservations), descending)
 		},
-		"unused-reservations": func(a, b *models.V1MachineReservationUsageResponse, descending bool) multisort.CompareResult {
+		"used-reservations": func(a, b *models.V1MachineReservationUsageResponse, descending bool) multisort.CompareResult {
 			return multisort.Compare(p.SafeDeref(a.Usedreservations), p.SafeDeref(b.Usedreservations), descending)
 		},
 	}, multisort.Keys{{ID: "tenant"}, {ID: "project"}, {ID: "partition"}, {ID: "size"}, {ID: "id"}})
