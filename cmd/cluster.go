@@ -247,7 +247,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-allowed-cidrs [optional].")
 	clusterCreateCmd.Flags().String("network-isolation", "", "defines restrictions to external network communication for the cluster, can be one of baseline|restricted|isolated. baseline sets no special restrictions to external networks, restricted by default only allows external traffic to explicitly allowed destinations, forbidden disallows communication with external networks except for a limited set of networks. Please consult the documentation for detailed descriptions of the individual modes as these cannot be altered anymore after creation. [optional]")
 	clusterCreateCmd.Flags().Bool("high-availability-control-plane", false, "enables a high availability control plane for the cluster, cannot be disabled again")
-	clusterCreateCmd.Flags().Int64("pod-PID-limit", 1000, "controls the maximum number of process IDs per pod allowed by the kubelet")
+	clusterCreateCmd.Flags().Int64("kubelet-pod-pid-limit", 0, "controls the maximum number of process IDs per pod allowed by the kubelet")
 
 	genericcli.Must(clusterCreateCmd.MarkFlagRequired("name"))
 	genericcli.Must(clusterCreateCmd.MarkFlagRequired("project"))
@@ -339,7 +339,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-remove-from-allowed-cidrs", []string{}, "comma-separated list of external CIDRs to be removed from the allowed CIDRs to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterUpdateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-* [optional].")
 	clusterUpdateCmd.Flags().Bool("high-availability-control-plane", false, "enables a high availability control plane for the cluster, cannot be disabled again")
-	clusterUpdateCmd.Flags().Int64("pod-PID-limit", 1000, "controls the maximum number of process IDs per pod allowed by the kubelet")
+	clusterUpdateCmd.Flags().Int64("kubelet-pod-pid-limit", 0, "controls the maximum number of process IDs per pod allowed by the kubelet")
 
 	genericcli.Must(clusterUpdateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
 	genericcli.Must(clusterUpdateCmd.RegisterFlagCompletionFunc("workerversion", c.comp.VersionListCompletion))
@@ -452,7 +452,7 @@ func (c *config) clusterCreate() error {
 	enableNodeLocalDNS := viper.GetBool("enable-node-local-dns")
 	disableForwardToUpstreamDNS := viper.GetBool("disable-forwarding-to-upstream-dns")
 	highAvailability := strconv.FormatBool(viper.GetBool("high-availability-control-plane"))
-	podPIDLimit := viper.GetInt64("pod-PID-limit")
+	podpidLimit := viper.GetInt64("kubelet-pod-pid-limit")
 
 	var cni string
 	if viper.IsSet("cni") {
@@ -692,8 +692,11 @@ WARNING: You are going to create a cluster that has no default internet access w
 		}
 	}
 
-	if viper.IsSet("pod-PID-limit") {
-		scr.Kubernetes.PodPIDsLimit = &podPIDLimit
+	if viper.IsSet("kubelet-pod-pid-limit") {
+		if !viper.GetBool("yes-i-really-mean-it") {
+			return fmt.Errorf("--kubelet-pod-pid-limit can only be changed in combination with --yes-i-really-mean-it because this change can lead to pods not starting anymore in the cluster")
+		}
+		scr.Kubernetes.PodPIDsLimit = &podpidLimit
 	}
 
 	egressRules := makeEgressRules(egress)
@@ -933,7 +936,7 @@ func (c *config) updateCluster(args []string) error {
 	encryptedStorageClasses := strconv.FormatBool(viper.GetBool("encrypted-storage-classes"))
 	highAvailability := strconv.FormatBool(viper.GetBool("high-availability-control-plane"))
 
-	podPIDLimit := viper.GetInt64("pod-PID-limit")
+	podpidLimit := viper.GetInt64("kubelet-pod-pid-limit")
 
 	workerlabels, err := helper.LabelsToMap(workerlabelslice)
 	if err != nil {
@@ -1300,8 +1303,11 @@ func (c *config) updateCluster(args []string) error {
 		k8s.DefaultPodSecurityStandard = pointer.Pointer(viper.GetString("default-pod-security-standard"))
 	}
 
-	if viper.IsSet("pod-PID-limit") {
-		k8s.PodPIDsLimit = &podPIDLimit
+	if viper.IsSet("kubelet-pod-pid-limit") {
+		if !viper.GetBool("yes-i-really-mean-it") {
+			return fmt.Errorf("--kubelet-pod-pid-limit can only be changed in combination with --yes-i-really-mean-it because this change can lead to pods not starting anymore in the cluster")
+		}
+		k8s.PodPIDsLimit = &podpidLimit
 	}
 
 	cur.Kubernetes = k8s
