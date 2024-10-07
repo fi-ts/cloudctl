@@ -148,7 +148,7 @@ func newPrinter(format, order, tpl string, noHeaders bool, writer io.Writer) (Pr
 		printer = printers.NewYAMLPrinter().WithOut(writer)
 	case "json":
 		printer = printers.NewJSONPrinter().WithOut(writer)
-	case "table", "wide":
+	case "table", "wide", "markdown":
 		printer = newTablePrinter(format, order, noHeaders, nil, writer)
 	case "template":
 		tmpl, err := template.New("t").Funcs(sprig.TxtFuncMap()).Parse(tpl)

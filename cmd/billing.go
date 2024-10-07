@@ -6,6 +6,7 @@ import (
 
 	"github.com/fi-ts/cloud-go/api/client/accounting"
 	"github.com/fi-ts/cloud-go/api/models"
+	"github.com/fi-ts/cloudctl/cmd/sorters"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/jinzhu/now"
@@ -123,6 +124,24 @@ export CLOUDCTL_COSTS_HOUR=0.01        # costs per hour
 			return c.machineUsage()
 		},
 	}
+	machineReservationBillingCmd := &cobra.Command{
+		Use:   "machine-reservation",
+		Short: "look at machine reservation bills",
+		Long: `
+You may want to convert the usage to a price in Euro by using the prices from your contract. You can use the following environment variables:
+
+export CLOUDCTL_COSTS_HOUR=0.01        # costs per hour
+
+⚠ Please be aware that any costs calculated in this fashion can still be different from the final bill as it does not include contract specific details like minimum purchase, discounts, etc.
+`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			err := initBillingOpts()
+			if err != nil {
+				return err
+			}
+			return c.machineReservationUsage()
+		},
+	}
 	productOptionBillingCmd := &cobra.Command{
 		Use:   "product-option",
 		Short: "look at product option bills",
@@ -227,6 +246,7 @@ export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01 # Costs per capacity hour
 	billingCmd.AddCommand(volumeBillingCmd)
 	billingCmd.AddCommand(postgresBillingCmd)
 	billingCmd.AddCommand(machineBillingCmd)
+	billingCmd.AddCommand(machineReservationBillingCmd)
 	billingCmd.AddCommand(productOptionBillingCmd)
 
 	billingOpts = &BillingOpts{}
@@ -281,6 +301,23 @@ export CLOUDCTL_COSTS_STORAGE_GI_HOUR=0.01 # Costs per capacity hour
 	genericcli.Must(machineBillingCmd.RegisterFlagCompletionFunc("size-id", c.comp.SizeListCompletion))
 
 	genericcli.Must(viper.BindPFlags(machineBillingCmd.Flags()))
+
+	machineReservationBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
+	machineReservationBillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
+	machineReservationBillingCmd.Flags().StringVarP(&billingOpts.FromString, "from", "", "", "the start time in the accounting window to look at (optional, defaults to start of the month")
+	machineReservationBillingCmd.Flags().StringVarP(&billingOpts.ToString, "to", "", "", "the end time in the accounting window to look at (optional, defaults to current system time)")
+	machineReservationBillingCmd.Flags().StringVarP(&billingOpts.ProjectID, "project-id", "p", "", "the project to account")
+	machineReservationBillingCmd.Flags().String("id", "", "the id to account")
+	machineReservationBillingCmd.Flags().String("size-id", "", "the size-id to account")
+	machineReservationBillingCmd.Flags().String("partition-id", "", "the partition-id to account")
+
+	genericcli.Must(machineReservationBillingCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
+	genericcli.Must(machineReservationBillingCmd.RegisterFlagCompletionFunc("project-id", c.comp.ProjectListCompletion))
+	genericcli.Must(machineReservationBillingCmd.RegisterFlagCompletionFunc("partition-id", c.comp.PartitionListCompletion))
+	genericcli.Must(machineReservationBillingCmd.RegisterFlagCompletionFunc("size-id", c.comp.SizeListCompletion))
+	genericcli.AddSortFlag(machineReservationBillingCmd, sorters.MachineReservationsBillingUsageSorter())
+
+	genericcli.Must(viper.BindPFlags(machineReservationBillingCmd.Flags()))
 
 	productOptionBillingCmd.Flags().StringVarP(&billingOpts.Tenant, "tenant", "t", "", "the tenant to account")
 	productOptionBillingCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse the arguments 'from' and 'to'")
@@ -488,6 +525,46 @@ func (c *config) machineUsage() error {
 	}
 
 	response, err := c.cloud.Accounting.MachineUsage(accounting.NewMachineUsageParams().WithBody(&cur), nil)
+	if err != nil {
+		return err
+	}
+
+	return c.listPrinter.Print(response.Payload)
+}
+
+func (c *config) machineReservationUsage() error {
+	from := strfmt.DateTime(billingOpts.From)
+	cur := models.V1MachineReservationUsageRequest{
+		From: &from,
+		To:   strfmt.DateTime(billingOpts.To),
+	}
+	if billingOpts.Tenant != "" {
+		cur.Tenant = billingOpts.Tenant
+	}
+	if billingOpts.ProjectID != "" {
+		cur.Projectid = billingOpts.ProjectID
+	}
+	if viper.IsSet("id") {
+		cur.ID = viper.GetString("id")
+	}
+	if viper.IsSet("size-id") {
+		cur.Sizeid = viper.GetString("size-id")
+	}
+	if viper.IsSet("partition-id") {
+		cur.Partition = viper.GetString("partition-id")
+	}
+
+	response, err := c.cloud.Accounting.MachineReservationUsage(accounting.NewMachineReservationUsageParams().WithBody(&cur), nil)
+	if err != nil {
+		return err
+	}
+
+	keys, err := genericcli.ParseSortFlags()
+	if err != nil {
+		return err
+	}
+
+	err = sorters.MachineReservationsBillingUsageSorter().SortBy(response.Payload.Usage, keys...)
 	if err != nil {
 		return err
 	}

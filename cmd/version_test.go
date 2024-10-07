@@ -1,57 +1,45 @@
 package cmd
 
 import (
-	"bytes"
-	"fmt"
 	"runtime"
 	"testing"
 
-	"github.com/fi-ts/cloud-go/api/client"
 	"github.com/fi-ts/cloud-go/api/client/version"
 	"github.com/fi-ts/cloud-go/api/models"
-	mockversion "github.com/fi-ts/cloud-go/test/mocks/version"
+	testclient "github.com/fi-ts/cloud-go/test/client"
+	"github.com/fi-ts/cloudctl/pkg/api"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/metal-stack/v"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 func Test_newVersionCmd(t *testing.T) {
-	v.BuildDate = "1.1.1970"
-	v.GitSHA1 = "abcdef"
-	v.Revision = "v0.0.0"
-	v.Version = "v0.0.0"
-
-	mockVersionService := new(mockversion.ClientService)
-	cloud := client.CloudAPI{
-		Version: mockVersionService,
+	tests := []*test[*api.Version]{
+		{
+			name: "version",
+			cmd: func(want *api.Version) []string {
+				return []string{"version"}
+			},
+			mocks: &testclient.CloudMockFns{
+				Version: func(mock *mock.Mock) {
+					mock.On("Info", testcommon.MatchIgnoreContext(t, version.NewInfoParams()), nil).Return(&version.InfoOK{
+						Payload: &models.RestVersion{
+							Version: pointer.Pointer("server v1.0.0"),
+						},
+					}, nil)
+				},
+			},
+			want: &api.Version{
+				Client: "client v1.0.0, " + runtime.Version(),
+				Server: &models.RestVersion{
+					Version: pointer.Pointer("server v1.0.0"),
+				},
+			},
+		},
 	}
-
-	var out bytes.Buffer
-
-	mockVersionService.On("Info", mock.Anything, mock.Anything).Return(&version.InfoOK{Payload: &models.RestVersion{Name: pointer.Pointer("cloudctl")}}, nil)
-	cfg := &config{
-		cloud:           &cloud,
-		describePrinter: defaultToYAMLPrinter(&out),
+	for _, tt := range tests {
+		v.Version = "client v1.0.0"
+		tt.testCmd(t)
 	}
-	cmd := newVersionCmd(cfg)
-
-	err := cmd.Execute()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	mockVersionService.AssertExpectations(t)
-
-	expected := fmt.Sprintf(`---
-Client: v0.0.0 (abcdef), v0.0.0, 1.1.1970, %s
-Server:
-  builddate: null
-  gitsha1: null
-  min_client_version: null
-  name: cloudctl
-  revision: null
-  version: null
-`, runtime.Version())
-	assert.Equal(t, expected, string(out.String()))
 }

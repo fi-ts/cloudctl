@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/fi-ts/cloud-go/api/client/version"
 	"github.com/fi-ts/cloudctl/pkg/api"
 	"github.com/metal-stack/v"
 	"github.com/spf13/cobra"
@@ -18,7 +19,7 @@ func newVersionCmd(c *config) *cobra.Command {
 				Client: v.V.String(),
 			}
 
-			resp, err := c.cloud.Version.Info(nil, nil)
+			resp, err := c.cloud.Version.Info(version.NewInfoParams(), nil)
 			if err == nil {
 				v.Server = resp.Payload
 			}

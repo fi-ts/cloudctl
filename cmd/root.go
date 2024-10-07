@@ -36,6 +36,26 @@ type config struct {
 	listPrinter     printers.Printer
 }
 
+// Execute is the entrypoint of the cloudctl application
+func Execute() {
+	// the config will be provided with more values on cobra init
+	// cobra flags do not work so early in the game
+	c := &config{
+		fs:   afero.NewOsFs(),
+		out:  os.Stdout,
+		comp: &completion.Completion{},
+	}
+
+	cmd := newRootCmd(c)
+	err := cmd.Execute()
+	if err != nil {
+		if viper.GetBool("debug") {
+			panic(err)
+		}
+		os.Exit(1)
+	}
+}
+
 func newRootCmd(cfg *config) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:          binaryName,
@@ -92,26 +112,6 @@ func newRootCmd(cfg *config) *cobra.Command {
 	return rootCmd
 }
 
-// Execute is the entrypoint of the cloudctl application
-func Execute() {
-	// the config will be provided with more values on cobra init
-	// cobra flags do not work so early in the game
-	c := &config{
-		fs:   afero.NewOsFs(),
-		out:  os.Stdout,
-		comp: &completion.Completion{},
-	}
-
-	cmd := newRootCmd(c)
-	err := cmd.Execute()
-	if err != nil {
-		if viper.GetBool("debug") {
-			panic(err)
-		}
-		os.Exit(1)
-	}
-}
-
 func initConfigWithViperCtx(cfg *config) error {
 	viper.SetEnvPrefix(strings.ToUpper(binaryName))
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
@@ -162,6 +162,10 @@ func initConfigWithViperCtx(cfg *config) error {
 		opts.Level = slog.LevelDebug
 	}
 	cfg.log = slog.New(slog.NewJSONHandler(os.Stdout, opts))
+
+	if cfg.cloud != nil {
+		return nil
+	}
 
 	driverURL := viper.GetString("url")
 	if driverURL == "" && ctx.ApiURL != "" {

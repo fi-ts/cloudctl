@@ -19,7 +19,7 @@ func newPrinterFromCLI(out io.Writer) printers.Printer {
 	case "json":
 		printer = printers.NewJSONPrinter().WithOut(out)
 	case "table", "wide", "markdown":
-		tp := tableprinters.New()
+		tp := tableprinters.New(out)
 
 		tablePrinter := printers.NewTablePrinter(&printers.TablePrinterConfig{
 			ToHeaderAndRows: tp.ToHeaderAndRows,
