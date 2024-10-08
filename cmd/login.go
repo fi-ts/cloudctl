@@ -97,7 +97,7 @@ func newLoginCmd(c *config) *cobra.Command {
 
 				if !thisVersion.Equal(parsedMinVersion) {
 					fmt.Println()
-					fmt.Printf("WARNING: Your cloudctl version %q might not compatible with the cloud-api (supported version is %q). Please run `cloudctl update do` to update to the supported version.", thisVersion, minVersion)
+					fmt.Printf("WARNING: Your cloudctl version %q might not be compatible with the cloud-api (supported version is %q). Please run `cloudctl update do` to update to the supported version.", thisVersion, minVersion)
 					fmt.Println()
 				}
 			}
