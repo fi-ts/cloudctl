@@ -152,7 +152,7 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 		shootStats.apiServer += "🔒"
 	}
 	if shoot.ClusterFeatures != nil && shoot.ClusterFeatures.HighAvailability != nil && *shoot.ClusterFeatures.HighAvailability == "true" {
-		shootStats.apiServer += "🌐"
+		shootStats.apiServer += "🤹"
 	}
 	name := *shoot.Name
 	if shoot.NetworkAccessType != nil {

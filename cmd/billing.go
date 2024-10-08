@@ -751,26 +751,26 @@ func (c *config) networkTrafficUsageCSV(cur *models.V1NetworkUsageRequest) error
 
 func (c *config) s3Usage() error {
 	from := strfmt.DateTime(billingOpts.From)
-	sur := models.V1S3UsageRequest{
+	req := models.V1S3UsageRequest{
 		From: &from,
 		To:   strfmt.DateTime(billingOpts.To),
 	}
 	if billingOpts.Tenant != "" {
-		sur.Tenant = billingOpts.Tenant
+		req.Tenant = billingOpts.Tenant
 	}
 	if billingOpts.ProjectID != "" {
-		sur.Projectid = billingOpts.ProjectID
+		req.Projectid = billingOpts.ProjectID
 	}
 
 	if billingOpts.CSV {
-		return c.s3UsageCSV(&sur)
+		return c.s3UsageCSV(&req)
 	}
-	return c.s3UsageJSON(&sur)
+	return c.s3UsageJSON(&req)
 }
 
-func (c *config) s3UsageJSON(sur *models.V1S3UsageRequest) error {
+func (c *config) s3UsageJSON(req *models.V1S3UsageRequest) error {
 	request := accounting.NewS3UsageParams()
-	request.SetBody(sur)
+	request.SetBody(req)
 
 	response, err := c.cloud.Accounting.S3Usage(request, nil)
 	if err != nil {
@@ -780,9 +780,9 @@ func (c *config) s3UsageJSON(sur *models.V1S3UsageRequest) error {
 	return c.listPrinter.Print(response.Payload)
 }
 
-func (c *config) s3UsageCSV(sur *models.V1S3UsageRequest) error {
+func (c *config) s3UsageCSV(req *models.V1S3UsageRequest) error {
 	request := accounting.NewS3UsageCSVParams()
-	request.SetBody(sur)
+	request.SetBody(req)
 
 	response, err := c.cloud.Accounting.S3UsageCSV(request, nil)
 	if err != nil {
