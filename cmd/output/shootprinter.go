@@ -2,6 +2,7 @@ package output
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -148,12 +149,20 @@ func (s ShootIssuesTablePrinter) Print(data []*models.V1ClusterResponse) {
 
 func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []string, []string) {
 	shootStats := newShootStats(shoot.Status)
+
 	if shoot.KubeAPIServerACL != nil && !*shoot.KubeAPIServerACL.Disabled {
 		shootStats.apiServer += "🔒"
 	}
-	if shoot.ClusterFeatures != nil && shoot.ClusterFeatures.HighAvailability != nil && *shoot.ClusterFeatures.HighAvailability == "true" {
-		shootStats.apiServer += "🤹"
+
+	if shoot.ClusterFeatures != nil {
+		if ok, err := strconv.ParseBool(pointer.SafeDeref(shoot.ClusterFeatures.HighAvailability)); err == nil && ok {
+			shootStats.apiServer += "🤹"
+		}
+		if ok, err := strconv.ParseBool(pointer.SafeDeref(shoot.ClusterFeatures.CalicoEbpfDataplane)); err == nil && ok {
+			shootStats.system += "🐝"
+		}
 	}
+
 	name := *shoot.Name
 	if shoot.NetworkAccessType != nil {
 		if *shoot.NetworkAccessType == models.V1ClusterCreateRequestNetworkAccessTypeForbidden {

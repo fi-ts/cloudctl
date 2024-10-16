@@ -241,6 +241,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
 	clusterCreateCmd.Flags().String("max-pods-per-node", "", "set number of maximum pods per node (default: 510). Lower numbers allow for more node per cluster. [optional]")
 	clusterCreateCmd.Flags().String("cni", "", "the network plugin used in this cluster, defaults to calico. please note that cilium support is still Alpha and we are happy to receive feedback. [optional]")
+	clusterCreateCmd.Flags().Bool("enable-calico-ebpf", false, "enables calico cni to use eBPF data plane and DSR configuration, for increased performance and preserving source IP addresses. [optional]")
 	clusterCreateCmd.Flags().BoolP("enable-node-local-dns", "", false, "enables node local dns cache on the cluster nodes. [optional].")
 	clusterCreateCmd.Flags().BoolP("disable-forwarding-to-upstream-dns", "", false, "disables direct forwarding of queries to external dns servers when node-local-dns is enabled. All dns queries will go through coredns. [optional].")
 	clusterCreateCmd.Flags().StringSlice("kube-apiserver-acl-allowed-cidrs", []string{}, "comma-separated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
@@ -340,6 +341,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-* [optional].")
 	clusterUpdateCmd.Flags().Bool("high-availability-control-plane", false, "enables a high availability control plane for the cluster, cannot be disabled again")
 	clusterUpdateCmd.Flags().Int64("kubelet-pod-pid-limit", 0, "controls the maximum number of process IDs per pod allowed by the kubelet")
+	clusterUpdateCmd.Flags().Bool("enable-calico-ebpf", false, "enables calico cni to use eBPF data plane and DSR configuration, for increased performance and preserving source IP addresses. [optional]")
 
 	genericcli.Must(clusterUpdateCmd.RegisterFlagCompletionFunc("version", c.comp.VersionListCompletion))
 	genericcli.Must(clusterUpdateCmd.RegisterFlagCompletionFunc("workerversion", c.comp.VersionListCompletion))
@@ -453,6 +455,7 @@ func (c *config) clusterCreate() error {
 	disableForwardToUpstreamDNS := viper.GetBool("disable-forwarding-to-upstream-dns")
 	highAvailability := strconv.FormatBool(viper.GetBool("high-availability-control-plane"))
 	podpidLimit := viper.GetInt64("kubelet-pod-pid-limit")
+	calicoEbpf := strconv.FormatBool(viper.GetBool("enable-calico-ebpf"))
 
 	var cni string
 	if viper.IsSet("cni") {
@@ -660,7 +663,6 @@ WARNING: You are going to create a cluster that has no default internet access w
 	}
 
 	if viper.IsSet("kube-apiserver-acl-allowed-cidrs") || viper.IsSet("enable-kube-apiserver-acl") {
-
 		if !viper.GetBool("yes-i-really-mean-it") && viper.IsSet("enable-kube-apiserver-acl") {
 			return fmt.Errorf("--enable-kube-apiserver-acl is set but you forgot to add --yes-i-really-mean-it")
 		}
@@ -679,8 +681,21 @@ WARNING: You are going to create a cluster that has no default internet access w
 		}
 	}
 
+	if viper.IsSet("enable-calico-ebpf") {
+		if activate, _ := strconv.ParseBool(calicoEbpf); activate {
+			if err := genericcli.PromptCustom(&genericcli.PromptConfig{
+				Message:     "Enabling the Calico eBPF feature gate is still a beta feature. Be aware that this may impact the network policies in your cluster as source IP addresses are preserved with this configuration.",
+				ShowAnswers: true,
+				Out:         c.out,
+			}); err != nil {
+				return err
+			}
+		}
+
+		scr.ClusterFeatures.CalicoEbpfDataplane = &calicoEbpf
+	}
+
 	if viper.IsSet("high-availability-control-plane") {
-		scr.ClusterFeatures.HighAvailability = &highAvailability
 		if ha, _ := strconv.ParseBool(highAvailability); ha {
 			if err := genericcli.PromptCustom(&genericcli.PromptConfig{
 				Message:     "Enabling the HA control plane feature gate is still a beta feature. You cannot use it in combination with the cluster forwarding backend of the audit extension. Please be aware that you cannot revert this feature gate after it was enabled.",
@@ -690,6 +705,8 @@ WARNING: You are going to create a cluster that has no default internet access w
 				return err
 			}
 		}
+
+		scr.ClusterFeatures.HighAvailability = &highAvailability
 	}
 
 	if viper.IsSet("kubelet-pod-pid-limit") {
@@ -935,6 +952,7 @@ func (c *config) updateCluster(args []string) error {
 
 	encryptedStorageClasses := strconv.FormatBool(viper.GetBool("encrypted-storage-classes"))
 	highAvailability := strconv.FormatBool(viper.GetBool("high-availability-control-plane"))
+	calicoEbpf := strconv.FormatBool(viper.GetBool("enable-calico-ebpf"))
 
 	podpidLimit := viper.GetInt64("kubelet-pod-pid-limit")
 
@@ -994,8 +1012,20 @@ func (c *config) updateCluster(args []string) error {
 	if viper.IsSet("logacceptedconns") {
 		clusterFeatures.LogAcceptedConnections = &logAcceptedConnections
 	}
+	if viper.IsSet("enable-calico-ebpf") {
+		if activate, _ := strconv.ParseBool(calicoEbpf); activate {
+			if err := genericcli.PromptCustom(&genericcli.PromptConfig{
+				Message:     "Enabling the Calico eBPF feature gate is still a beta feature. Be aware that this may impact the network policies in your cluster as source IP addresses are preserved with this configuration.",
+				ShowAnswers: true,
+				Out:         c.out,
+			}); err != nil {
+				return err
+			}
+		}
+
+		clusterFeatures.CalicoEbpfDataplane = &calicoEbpf
+	}
 	if viper.IsSet("high-availability-control-plane") {
-		clusterFeatures.HighAvailability = &highAvailability
 		if v, _ := strconv.ParseBool(highAvailability); v {
 			if err := genericcli.PromptCustom(&genericcli.PromptConfig{
 				Message:     "Enabling the HA control plane feature gate is still a beta feature. You cannot use it in combination with the cluster forwarding backend of the audit extension. Please be aware that you cannot revert this feature gate after it was enabled.",
@@ -1005,6 +1035,8 @@ func (c *config) updateCluster(args []string) error {
 				return err
 			}
 		}
+
+		clusterFeatures.HighAvailability = &highAvailability
 	}
 
 	workergroupKubernetesVersion := viper.GetString("workerversion")
