@@ -172,7 +172,7 @@ func newPrinter(format, order, tpl string, noHeaders bool, writer io.Writer) (Pr
 	return printer, nil
 }
 
-func newTablePrinter(format, order string, noHeaders bool, template *template.Template, writer io.Writer) tablePrinter {
+func newTablePrinter(format, order string, noHeaders bool, template *template.Template, writer io.Writer) *tablePrinter {
 	tp := tablePrinter{
 		format:    format,
 		wide:      false,
@@ -204,106 +204,107 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 	}
 
 	tp.table = table
-	return tp
+	return &tp
 }
 
-func (t tablePrinter) Type() string {
+func (t *tablePrinter) Type() string {
 	return "table"
 }
 
 // Print a model in a human readable table
-func (t tablePrinter) Print(data interface{}) error {
+func (t *tablePrinter) Print(data interface{}) error {
+	tp := *t
 	switch d := data.(type) {
 	case *models.V1AuditResponse:
-		AuditTablePrinter{t}.Print([]*models.V1AuditResponse{d})
+		AuditTablePrinter{tp}.Print([]*models.V1AuditResponse{d})
 	case []*models.V1AuditResponse:
-		AuditTablePrinter{t}.Print(d)
+		AuditTablePrinter{tp}.Print(d)
 	case *models.V1ClusterResponse:
-		ShootTablePrinter{t}.Print([]*models.V1ClusterResponse{d})
+		ShootTablePrinter{tp}.Print([]*models.V1ClusterResponse{d})
 	case []*models.V1ClusterResponse:
-		ShootTablePrinter{t}.Print(d)
+		ShootTablePrinter{tp}.Print(d)
 	case ShootIssuesResponse:
-		ShootIssuesTablePrinter{t}.Print([]*models.V1ClusterResponse{d})
+		ShootIssuesTablePrinter{tp}.Print([]*models.V1ClusterResponse{d})
 	case ShootIssuesResponses:
-		ShootIssuesTablePrinter{t}.Print(d)
+		ShootIssuesTablePrinter{tp}.Print(d)
 	case []*models.V1beta1Condition:
-		ShootConditionsTablePrinter{t}.Print(d)
+		ShootConditionsTablePrinter{tp}.Print(d)
 	case []*models.V1beta1LastError:
-		ShootLastErrorsTablePrinter{t}.Print(d)
+		ShootLastErrorsTablePrinter{tp}.Print(d)
 	case *models.V1beta1LastOperation:
-		ShootLastOperationTablePrinter{t}.Print(d)
+		ShootLastOperationTablePrinter{tp}.Print(d)
 	case *models.V1ProjectResponse:
-		ProjectTableDetailPrinter{t}.Print(d)
+		ProjectTableDetailPrinter{tp}.Print(d)
 	case []*models.V1ProjectResponse:
-		ProjectTablePrinter{t}.Print(d)
+		ProjectTablePrinter{tp}.Print(d)
 	case []*models.V1TenantResponse:
-		TenantTablePrinter{t}.Print(d)
+		TenantTablePrinter{tp}.Print(d)
 	case *models.V1TenantResponse:
-		TenantTablePrinter{t}.Print([]*models.V1TenantResponse{d})
+		TenantTablePrinter{tp}.Print([]*models.V1TenantResponse{d})
 	case *models.RestHealthResponse:
-		HealthTablePrinter{t}.Print(d)
+		HealthTablePrinter{tp}.Print(d)
 	case map[string]models.RestHealthResponse:
-		HealthTablePrinter{t}.PrintServices(d)
+		HealthTablePrinter{tp}.PrintServices(d)
 	case []*models.ModelsV1IPResponse:
-		IPTablePrinter{t}.Print(d)
+		IPTablePrinter{tp}.Print(d)
 	case *models.ModelsV1IPResponse:
-		IPTablePrinter{t}.Print([]*models.ModelsV1IPResponse{d})
+		IPTablePrinter{tp}.Print([]*models.ModelsV1IPResponse{d})
 	case []*models.V1ProjectInfoResponse:
-		ProjectBillingTablePrinter{t}.Print(d)
+		ProjectBillingTablePrinter{tp}.Print(d)
 	case *models.V1ContainerUsageResponse:
-		ContainerBillingTablePrinter{t}.Print(d)
+		ContainerBillingTablePrinter{tp}.Print(d)
 	case *models.V1ClusterUsageResponse:
-		ClusterBillingTablePrinter{t}.Print(d)
+		ClusterBillingTablePrinter{tp}.Print(d)
 	case *models.V1MachineUsageResponse:
-		MachineBillingTablePrinter{t}.Print(d)
+		MachineBillingTablePrinter{tp}.Print(d)
 	case *models.V1ProductOptionUsageResponse:
-		ProductOptionBillingTablePrinter{t}.Print(d)
+		ProductOptionBillingTablePrinter{tp}.Print(d)
 	case *models.V1IPUsageResponse:
-		IPBillingTablePrinter{t}.Print(d)
+		IPBillingTablePrinter{tp}.Print(d)
 	case *models.V1NetworkUsageResponse:
-		NetworkTrafficBillingTablePrinter{t}.Print(d)
+		NetworkTrafficBillingTablePrinter{tp}.Print(d)
 	case *models.V1S3UsageResponse:
-		S3BillingTablePrinter{t}.Print(d)
+		S3BillingTablePrinter{tp}.Print(d)
 	case *models.V1VolumeUsageResponse:
-		VolumeBillingTablePrinter{t}.Print(d)
+		VolumeBillingTablePrinter{tp}.Print(d)
 	case *models.V1PostgresUsageResponse:
-		PostgresBillingTablePrinter{t}.Print(d)
+		PostgresBillingTablePrinter{tp}.Print(d)
 	case []*models.ModelsV1MachineResponse:
-		MachineTablePrinter{t}.Print(d)
+		MachineTablePrinter{tp}.Print(d)
 	case []*models.V1S3Response:
-		S3TablePrinter{t}.Print(d)
+		S3TablePrinter{tp}.Print(d)
 	case *models.V1VolumeResponse:
-		VolumeTablePrinter{t}.Print([]*models.V1VolumeResponse{d})
+		VolumeTablePrinter{tp}.Print([]*models.V1VolumeResponse{d})
 	case []*models.V1VolumeResponse:
-		VolumeTablePrinter{t}.Print(d)
+		VolumeTablePrinter{tp}.Print(d)
 	case []*models.V1SnapshotResponse:
-		SnapshotTablePrinter{t}.Print(d)
+		SnapshotTablePrinter{tp}.Print(d)
 	case *models.V1SnapshotResponse:
-		SnapshotTablePrinter{t}.Print(pointer.WrapInSlice(d))
+		SnapshotTablePrinter{tp}.Print(pointer.WrapInSlice(d))
 	case []*models.V1QoSPolicyResponse:
-		QoSPolicyTablePrinter{t}.Print(d)
+		QoSPolicyTablePrinter{tp}.Print(d)
 	case *models.V1QoSPolicyResponse:
-		QoSPolicyTablePrinter{t}.Print(pointer.WrapInSlice(d))
+		QoSPolicyTablePrinter{tp}.Print(pointer.WrapInSlice(d))
 	case []*models.V1StorageClusterInfo:
-		VolumeClusterInfoTablePrinter{t}.Print(d)
+		VolumeClusterInfoTablePrinter{tp}.Print(d)
 	case models.V1PostgresPartitionsResponse:
-		PostgresPartitionsTablePrinter{t}.Print(d)
+		PostgresPartitionsTablePrinter{tp}.Print(d)
 	case []*models.V1PostgresVersion:
-		PostgresVersionsTablePrinter{t}.Print(d)
+		PostgresVersionsTablePrinter{tp}.Print(d)
 	case *models.V1PostgresResponse:
-		PostgresTablePrinter{t}.Print([]*models.V1PostgresResponse{d})
+		PostgresTablePrinter{tp}.Print([]*models.V1PostgresResponse{d})
 	case []*models.V1PostgresResponse:
-		PostgresTablePrinter{t}.Print(d)
+		PostgresTablePrinter{tp}.Print(d)
 	case []*models.V1PostgresBackupConfigResponse:
-		PostgresBackupsTablePrinter{t}.Print(d)
+		PostgresBackupsTablePrinter{tp}.Print(d)
 	case *models.V1PostgresBackupConfigResponse:
-		PostgresBackupsTablePrinter{t}.Print([]*models.V1PostgresBackupConfigResponse{d})
+		PostgresBackupsTablePrinter{tp}.Print([]*models.V1PostgresBackupConfigResponse{d})
 	case []*models.V1PostgresBackupEntry:
-		PostgresBackupEntryTablePrinter{t}.Print(d)
+		PostgresBackupEntryTablePrinter{tp}.Print(d)
 	case []*models.V1S3PartitionResponse:
-		S3PartitionTablePrinter{t}.Print(d)
+		S3PartitionTablePrinter{tp}.Print(d)
 	case *api.Contexts:
-		ContextPrinter{t}.Print(d)
+		ContextPrinter{tp}.Print(d)
 	default:
 		return fmt.Errorf("unknown table printer for type: %T", d)
 	}
