@@ -205,3 +205,7 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	tailscale.com v1.72.1 // indirect
 )
+
+replace (
+	github.com/fi-ts/cloud-go => ../cloud-go
+)
