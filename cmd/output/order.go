@@ -296,7 +296,7 @@ func (s ProjectTablePrinter) Order(data []*models.V1ProjectResponse) {
 }
 
 // Order clusterUsage
-func (s *ClusterBillingTablePrinter) Order(data []*models.V1ClusterUsage) {
+func (s ClusterBillingTablePrinter) Order(data []*models.V1ClusterUsage) {
 	cols := strings.Split(s.order, ",")
 	if len(cols) > 0 {
 		sort.SliceStable(data, func(i, j int) bool {
@@ -394,7 +394,7 @@ func (s *ClusterBillingTablePrinter) Order(data []*models.V1ClusterUsage) {
 }
 
 // Order machineUsage
-func (s *MachineBillingTablePrinter) Order(data []*models.V1MachineUsage) {
+func (s MachineBillingTablePrinter) Order(data []*models.V1MachineUsage) {
 	cols := strings.Split(s.order, ",")
 	if len(cols) > 0 {
 		sort.SliceStable(data, func(i, j int) bool {
@@ -492,7 +492,7 @@ func (s *MachineBillingTablePrinter) Order(data []*models.V1MachineUsage) {
 }
 
 // Order productOptionUsage
-func (s *ProductOptionBillingTablePrinter) Order(data []*models.V1ProductOptionUsage) {
+func (s ProductOptionBillingTablePrinter) Order(data []*models.V1ProductOptionUsage) {
 	cols := strings.Split(s.order, ",")
 	if len(cols) > 0 {
 		sort.SliceStable(data, func(i, j int) bool {
@@ -564,7 +564,7 @@ func (s *ProductOptionBillingTablePrinter) Order(data []*models.V1ProductOptionU
 }
 
 // Order s3Usage
-func (s *S3BillingTablePrinter) Order(data []*models.V1S3Usage) {
+func (s S3BillingTablePrinter) Order(data []*models.V1S3Usage) {
 	cols := strings.Split(s.order, ",")
 	if len(cols) > 0 {
 		sort.SliceStable(data, func(i, j int) bool {
@@ -675,7 +675,7 @@ func (s *S3BillingTablePrinter) Order(data []*models.V1S3Usage) {
 }
 
 // Order containerUsage
-func (s *ContainerBillingTablePrinter) Order(data []*models.V1ContainerUsage) {
+func (s ContainerBillingTablePrinter) Order(data []*models.V1ContainerUsage) {
 	cols := strings.Split(s.order, ",")
 	if len(cols) > 0 {
 		sort.SliceStable(data, func(i, j int) bool {
@@ -826,7 +826,7 @@ func (s *ContainerBillingTablePrinter) Order(data []*models.V1ContainerUsage) {
 }
 
 // Order ipUsage
-func (s *IPBillingTablePrinter) Order(data []*models.V1IPUsage) {
+func (s IPBillingTablePrinter) Order(data []*models.V1IPUsage) {
 	cols := strings.Split(s.order, ",")
 	if len(cols) > 0 {
 		sort.SliceStable(data, func(i, j int) bool {
@@ -906,7 +906,7 @@ func (s *IPBillingTablePrinter) Order(data []*models.V1IPUsage) {
 }
 
 // Order volumeUsage
-func (s *NetworkTrafficBillingTablePrinter) Order(data []*models.V1NetworkUsage) {
+func (s NetworkTrafficBillingTablePrinter) Order(data []*models.V1NetworkUsage) {
 	cols := strings.Split(s.order, ",")
 	if len(cols) > 0 {
 		sort.SliceStable(data, func(i, j int) bool {
@@ -1004,7 +1004,7 @@ func (s *NetworkTrafficBillingTablePrinter) Order(data []*models.V1NetworkUsage)
 }
 
 // Order volumeUsage
-func (s *VolumeBillingTablePrinter) Order(data []*models.V1VolumeUsage) {
+func (s VolumeBillingTablePrinter) Order(data []*models.V1VolumeUsage) {
 	cols := strings.Split(s.order, ",")
 	if len(cols) > 0 {
 		sort.SliceStable(data, func(i, j int) bool {
@@ -1102,7 +1102,7 @@ func (s *VolumeBillingTablePrinter) Order(data []*models.V1VolumeUsage) {
 }
 
 // Order ipUsage
-func (s *PostgresBillingTablePrinter) Order(data []*models.V1PostgresUsage) {
+func (s PostgresBillingTablePrinter) Order(data []*models.V1PostgresUsage) {
 	cols := strings.Split(s.order, ",")
 	if len(cols) > 0 {
 		sort.SliceStable(data, func(i, j int) bool {
