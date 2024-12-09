@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
 )
@@ -38,6 +39,9 @@ func (p PostgresTablePrinter) Print(data []*models.V1PostgresResponse) {
 		id := ""
 		if pg.ID != nil {
 			id = *pg.ID
+		}
+		if pg.DisableLoadBalancers {
+			id = color.RedString(id)
 		}
 		description := pg.Description
 		partitionID := pg.PartitionID
