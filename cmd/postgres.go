@@ -342,6 +342,9 @@ postgres=#
 	postgresListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
 	postgresListCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
 
+	postgresDemoteToStandbyCmd.Flags().BoolP("disable-loadbalancers", "", false, "disable connections with the public loadbalancer IP [optional]")
+	postgresPromoteToPrimaryCmd.Flags().BoolP("disable-loadbalancers", "", false, "disable connections with the public loadbalancer IP [optional]")
+
 	genericcli.Must(postgresListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	genericcli.Must(postgresListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 
@@ -516,6 +519,11 @@ func (c *config) postgresPromoteToPrimary(args []string) error {
 		return err
 	}
 
+	var disableLB *bool
+	if viper.GetString("disable-loadbalancers") != "" {
+		disableLB = pointer.Pointer(viper.GetBool("disable-loadbalancers"))
+	}
+
 	params := database.NewGetPostgresParams().WithID(id)
 	resp, err := c.cloud.Database.GetPostgres(params, nil)
 	if err != nil {
@@ -525,11 +533,12 @@ func (c *config) postgresPromoteToPrimary(args []string) error {
 
 	// copy the (minimum) current config
 	body := &models.V1PostgresUpdateRequest{
-		ProjectID:      current.ProjectID,
-		ID:             current.ID,
-		Connection:     current.Connection,
-		AuditLogs:      current.AuditLogs,
-		PostgresParams: current.PostgresParams,
+		ProjectID:            current.ProjectID,
+		ID:                   current.ID,
+		Connection:           current.Connection,
+		AuditLogs:            current.AuditLogs,
+		PostgresParams:       current.PostgresParams,
+		DisableLoadBalancers: disableLB,
 	}
 
 	// abort if there is no configured connection
@@ -560,6 +569,11 @@ func (c *config) postgresDemoteToStandby(args []string) error {
 		return err
 	}
 
+	var disableLB *bool
+	if viper.GetString("disable-loadbalancers") != "" {
+		disableLB = pointer.Pointer(viper.GetBool("disable-loadbalancers"))
+	}
+
 	params := database.NewGetPostgresParams().WithID(id)
 	resp, err := c.cloud.Database.GetPostgres(params, nil)
 	if err != nil {
@@ -569,11 +583,12 @@ func (c *config) postgresDemoteToStandby(args []string) error {
 
 	// copy the (minimum) current config
 	body := &models.V1PostgresUpdateRequest{
-		ProjectID:      current.ProjectID,
-		ID:             current.ID,
-		Connection:     current.Connection,
-		AuditLogs:      current.AuditLogs,
-		PostgresParams: current.PostgresParams,
+		ProjectID:            current.ProjectID,
+		ID:                   current.ID,
+		Connection:           current.Connection,
+		AuditLogs:            current.AuditLogs,
+		PostgresParams:       current.PostgresParams,
+		DisableLoadBalancers: disableLB,
 	}
 
 	// abort if there is no configured connection
