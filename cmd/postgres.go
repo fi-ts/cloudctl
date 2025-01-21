@@ -326,6 +326,7 @@ postgres=#
 	postgresUpdateCmd.Flags().StringP("dedicated-load-balancer-ip", "", "", "an existing ip address for a dedicated load balancer [optional]")
 	postgresUpdateCmd.Flags().StringP("auto-assign-ip-from", "", "", "a network used for auto-assigning an ip for a dedicated load balancer [optional]")
 	postgresUpdateCmd.Flags().IntP("dedicated-load-balancer-port", "", 0, "a port for a dedicated load balancer [optional]")
+	postgresUpdateCmd.Flags().StringP("backup-config", "", "", "backup to use")
 
 	// List
 	postgresListCmd.Flags().StringP("id", "", "", "postgres id to filter [optional]")
@@ -735,6 +736,7 @@ func (c *config) postgresUpdate(args []string) error {
 	lbIP := viper.GetString("dedicated-load-balancer-ip")
 	lbPort := viper.GetInt32("dedicated-load-balancer-port")
 	lbNet := viper.GetString("auto-assign-ip-from")
+	backupConfig := viper.GetString("backup-config")
 
 	id, err := c.postgresID("update", args)
 	if err != nil {
@@ -800,6 +802,10 @@ func (c *config) postgresUpdate(args []string) error {
 
 	if viper.IsSet("auto-assign-ip-from") {
 		pur.Autoassigndedicatedlbipfrom = lbNet
+	}
+
+	if viper.IsSet("backup-config") {
+		pur.Backup = backupConfig
 	}
 
 	// send the update request
