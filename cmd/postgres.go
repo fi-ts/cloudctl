@@ -595,6 +595,12 @@ func (c *config) postgresRestore() error {
 	if err != nil {
 		return err
 	}
+
+	_, err = time.Parse("2006-01-02T15:04:05-07:00", timestamp)
+	if err != nil {
+		return fmt.Errorf("restore.timestamp cannot be parsed:%s, please provied a timestamp similar to e.g. 2021-12-07T15:28:00+01:00", timestamp)
+	}
+
 	pcsr := &models.V1PostgresRestoreRequest{
 		SourceID:    &srcID,
 		Description: desc,
