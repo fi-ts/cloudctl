@@ -244,6 +244,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().Bool("enable-calico-ebpf", false, "enables calico cni to use eBPF data plane and DSR configuration, for increased performance and preserving source IP addresses. [optional]")
 	clusterCreateCmd.Flags().BoolP("enable-node-local-dns", "", false, "enables node local dns cache on the cluster nodes. [optional].")
 	clusterCreateCmd.Flags().BoolP("disable-forwarding-to-upstream-dns", "", false, "disables direct forwarding of queries to external dns servers when node-local-dns is enabled. All dns queries will go through coredns. [optional].")
+	clusterCreateCmd.Flags().BoolP("disable-csi-lvm", "", true, "disables csi-lvm deployment in the cluster, it is deprecated. a way to migrate existing volumes to the successor project csi-driver-lvm will be provided in the future. [optional].")
 	clusterCreateCmd.Flags().StringSlice("kube-apiserver-acl-allowed-cidrs", []string{}, "comma-separated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterCreateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-allowed-cidrs [optional].")
 	clusterCreateCmd.Flags().String("network-isolation", "", "defines restrictions to external network communication for the cluster, can be one of baseline|restricted|isolated. baseline sets no special restrictions to external networks, restricted by default only allows external traffic to explicitly allowed destinations, forbidden disallows communication with external networks except for a limited set of networks. Please consult the documentation for detailed descriptions of the individual modes as these cannot be altered anymore after creation. [optional]")
@@ -335,6 +336,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().BoolP("disable-custom-default-storage-class", "", false, "if set to true, no default class is deployed, you have to set one of your storageclasses manually to default")
 	clusterUpdateCmd.Flags().BoolP("enable-node-local-dns", "", false, "enables node local dns cache on the cluster nodes. [optional]. WARNING: changing this value will lead to rolling of the worker nodes [optional]")
 	clusterUpdateCmd.Flags().BoolP("disable-forwarding-to-upstream-dns", "", false, "disables direct forwarding of queries to external dns servers when node-local-dns is enabled. All dns queries will go through coredns [optional].")
+	clusterUpdateCmd.Flags().BoolP("disable-csi-lvm", "", true, "disables csi-lvm deployment in the cluster, it is deprecated. a way to migrate existing volumes to the successor project csi-driver-lvm will be provided in the future. [optional].")
 	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-set-allowed-cidrs", []string{}, "comma-separated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-add-to-allowed-cidrs", []string{}, "comma-separated list of external CIDRs to add to the allowed CIDRs to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-remove-from-allowed-cidrs", []string{}, "comma-separated list of external CIDRs to be removed from the allowed CIDRs to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
@@ -695,6 +697,10 @@ WARNING: You are going to create a cluster that has no default internet access w
 		scr.ClusterFeatures.CalicoEbpfDataplane = &calicoEbpf
 	}
 
+	if viper.IsSet("disable-csi-lvm") {
+		scr.ClusterFeatures.DisableCsiLvm = pointer.Pointer(strconv.FormatBool(viper.GetBool("disable-csi-lvm")))
+	}
+
 	if viper.IsSet("high-availability-control-plane") {
 		if ha, _ := strconv.ParseBool(highAvailability); ha {
 			if err := genericcli.PromptCustom(&genericcli.PromptConfig{
@@ -1011,6 +1017,9 @@ func (c *config) updateCluster(args []string) error {
 	}
 	if viper.IsSet("logacceptedconns") {
 		clusterFeatures.LogAcceptedConnections = &logAcceptedConnections
+	}
+	if viper.IsSet("disable-csi-lvm") {
+		clusterFeatures.DisableCsiLvm = pointer.Pointer(strconv.FormatBool(viper.GetBool("disable-csi-lvm")))
 	}
 	if viper.IsSet("enable-calico-ebpf") {
 		if activate, _ := strconv.ParseBool(calicoEbpf); activate {
