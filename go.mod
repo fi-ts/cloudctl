@@ -10,7 +10,7 @@ require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.18.0
 	github.com/fi-ts/accounting-go v0.11.0
-	github.com/fi-ts/cloud-go v0.29.4
+	github.com/fi-ts/cloud-go v0.29.10
 	github.com/gardener/gardener v1.91.0
 	github.com/gardener/machine-controller-manager v0.54.0
 	github.com/go-openapi/runtime v0.28.0
@@ -206,5 +206,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	tailscale.com v1.76.6 // indirect
 )
-
-replace github.com/fi-ts/cloud-go => github.com/fi-ts/cloud-go v0.29.5-0.20241202131611-0802531774be
