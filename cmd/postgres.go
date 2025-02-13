@@ -310,7 +310,7 @@ postgres=#
 
 	// Restore
 	postgresRestoreCmd.Flags().StringP("source-postgres-id", "", "", "if of the primary database")
-	postgresRestoreCmd.Flags().StringP("timestamp", "", time.Now().Format(time.RFC3339), "point-in-time to restore to")
+	postgresRestoreCmd.Flags().StringP("timestamp", "", time.Now().Format("2006-01-02T15:04:05-07:00"), "point-in-time to restore to")
 	postgresRestoreCmd.Flags().StringP("version", "", "", "postgres version of the database")
 	postgresRestoreCmd.Flags().StringP("description", "", "", "description of the database")
 	postgresRestoreCmd.Flags().StringP("partition", "", "", "partition where the database should be created. Changing the partition compared to the source database requires administrative privileges")
