@@ -1,6 +1,7 @@
 package completion
 
 import (
+	"slices"
 	"sort"
 	"strconv"
 
@@ -145,7 +146,21 @@ func (c *Completion) ClusterStorageClassListCompletion(cmd *cobra.Command, args 
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	storageClasses := []string{"partition-silver", "partition-gold"}
+	constraintsResp, err := c.cloud.Cluster.ListConstraints(cluster.NewListConstraintsParams(), nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+
+	var storageClasses []string
+
+	if slices.ContainsFunc(constraintsResp.Payload.Networks, func(n *models.V1Network) bool {
+		if !n.DefaultPartitionStorage {
+			return false
+		}
+		return slices.Contains(resp.Payload.AdditionalNetworks, *n.ID)
+	}) {
+		storageClasses = append(storageClasses, "partition-silver", "partition-gold", "partition-gold-encrypted")
+	}
 
 	if disabled, err := strconv.ParseBool(pointer.SafeDeref(resp.Payload.ClusterFeatures.DisableCsiLvm)); err == nil && !disabled {
 		storageClasses = append(storageClasses, "csi-lvm")
