@@ -1,8 +1,6 @@
 module github.com/fi-ts/cloudctl
 
-go 1.23.1
-
-toolchain go1.23.3
+go 1.24
 
 require (
 	github.com/Masterminds/semver/v3 v3.3.0
@@ -10,9 +8,9 @@ require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.18.0
 	github.com/fi-ts/accounting-go v0.11.0
-	github.com/fi-ts/cloud-go v0.29.13-0.20250304073323-01e523230893
-	github.com/gardener/gardener v1.105.3
-	github.com/gardener/machine-controller-manager v0.53.1
+	github.com/fi-ts/cloud-go v0.29.13
+	github.com/gardener/gardener v1.108.2
+	github.com/gardener/machine-controller-manager v0.54.0
 	github.com/go-openapi/runtime v0.28.0
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/go-playground/validator/v10 v10.24.0
@@ -34,16 +32,9 @@ require (
 	github.com/undefinedlabs/go-mpatch v1.0.7
 	golang.org/x/sync v0.11.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.30.3
-	k8s.io/apimachinery v0.31.0
+	k8s.io/api v0.31.2
+	k8s.io/apimachinery v0.31.2
 	sigs.k8s.io/yaml v1.4.0
-)
-
-replace (
-	k8s.io/api => k8s.io/api v0.29.3
-	k8s.io/apimachinery => k8s.io/apimachinery v0.29.3
-	k8s.io/client-go => k8s.io/client-go v0.29.9
-	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.17.6
 )
 
 require (
@@ -144,7 +135,7 @@ require (
 	github.com/mdlayher/sdnotify v1.0.0 // indirect
 	github.com/mdlayher/socket v0.5.0 // indirect
 	github.com/metal-stack/security v0.9.2 // indirect
-	github.com/miekg/dns v1.1.58 // indirect
+	github.com/miekg/dns v1.1.62 // indirect
 	github.com/mitchellh/go-ps v1.0.0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -207,9 +198,9 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gvisor.dev/gvisor v0.0.0-20240722211153-64c016c92987 // indirect
-	k8s.io/apiextensions-apiserver v0.30.3 // indirect
+	k8s.io/apiextensions-apiserver v0.31.2 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
-	k8s.io/utils v0.0.0-20240921022957-49e7df575cb6 // indirect
+	k8s.io/utils v0.0.0-20241104163129-6fe5fd82f078 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	tailscale.com v1.76.6 // indirect

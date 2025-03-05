@@ -333,8 +333,8 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().String("maintenance-begin", "", "defines the beginning of the nightly maintenance time window (e.g. for autoupdates) in the format HHMMSS+ZONE, e.g. \"220000+0100\". [optional]")
 	clusterUpdateCmd.Flags().String("maintenance-end", "", "defines the end of the nightly maintenance time window (e.g. for autoupdates) in the format HHMMSS+ZONE, e.g. \"233000+0100\". [optional]")
 	clusterUpdateCmd.Flags().Bool("encrypted-storage-classes", false, "enables the deployment of encrypted duros storage classes into the cluster. please refer to the user manual to properly use volume encryption.")
-	clusterUpdateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, must be one of the managed storage classes")
-	clusterUpdateCmd.Flags().BoolP("disable-custom-default-storage-class", "", false, "if set to true, no default class is deployed, you have to set one of your storageclasses manually to default")
+	clusterUpdateCmd.Flags().String("default-storage-class", "", "set default storage class to given name, set to empty string in order not to set a default storage class and define one manually")
+	clusterUpdateCmd.Flags().BoolP("disable-custom-default-storage-class", "", false, "do not deploy a user-defined default storage class anymore and make the provider choose the default storage class.")
 	clusterUpdateCmd.Flags().BoolP("enable-node-local-dns", "", false, "enables node local dns cache on the cluster nodes. [optional]. WARNING: changing this value will lead to rolling of the worker nodes [optional]")
 	clusterUpdateCmd.Flags().BoolP("disable-forwarding-to-upstream-dns", "", false, "disables direct forwarding of queries to external dns servers when node-local-dns is enabled. All dns queries will go through coredns [optional].")
 	clusterUpdateCmd.Flags().BoolP("enable-csi-lvm", "", false, "enables csi-lvm deployment in the cluster, which is however deprecated. a way to migrate existing volumes to the successor project csi-driver-lvm will be provided in the future. [optional].")
@@ -357,6 +357,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	genericcli.Must(clusterUpdateCmd.RegisterFlagCompletionFunc("machineimage", c.comp.MachineImageListCompletion))
 	genericcli.Must(clusterUpdateCmd.RegisterFlagCompletionFunc("purpose", c.comp.ClusterPurposeListCompletion))
 	genericcli.Must(clusterUpdateCmd.RegisterFlagCompletionFunc("default-pod-security-standard", c.comp.PodSecurityListCompletion))
+	genericcli.Must(clusterUpdateCmd.RegisterFlagCompletionFunc("default-storage-class", c.comp.ClusterStorageClassListCompletion))
 
 	clusterInputsCmd.Flags().String("partition", "", "partition of the constraints.")
 	genericcli.Must(clusterInputsCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
