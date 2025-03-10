@@ -56,7 +56,7 @@ func (p S3TablePrinter) Print(data []*models.V1S3Response) {
 
 // Print a S3 partitions as table
 func (p S3PartitionTablePrinter) Print(data []*models.V1S3PartitionResponse) {
-	p.wideHeader = []string{"Name", "Endpoint", "Ready"}
+	p.wideHeader = []string{"Name", "Endpoint", "Description", "Ready"}
 	p.shortHeader = p.wideHeader
 	if p.order == "" {
 		p.order = "id"
@@ -79,11 +79,16 @@ func (p S3PartitionTablePrinter) Print(data []*models.V1S3PartitionResponse) {
 			ready = *partition.Ready
 		}
 
+		description := ""
+		if partition.Description != nil {
+			description = *partition.Description
+		}
+
 		readyStatus := color.RedString(circle)
 		if ready {
 			readyStatus = color.GreenString(circle)
 		}
-		wide := []string{name, endpoint, readyStatus}
+		wide := []string{name, endpoint, description, readyStatus}
 		p.addWideData(wide, partition)
 		p.addShortData(wide, partition)
 	}
