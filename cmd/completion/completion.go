@@ -1,7 +1,9 @@
 package completion
 
 import (
+	"slices"
 	"sort"
+	"strconv"
 
 	accountingv1 "github.com/fi-ts/accounting-go/pkg/apis/v1"
 	"github.com/fi-ts/cloud-go/api/client"
@@ -130,6 +132,44 @@ func (c *Completion) clusterMachineListCompletion(clusterIDs []string, includeMa
 		}
 	}
 	return machines, cobra.ShellCompDirectiveNoFileComp
+}
+
+func (c *Completion) ClusterStorageClassListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) != 1 {
+		return []string{"no clusterid given"}, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	clusterID := args[0]
+
+	resp, err := c.cloud.Cluster.FindCluster(cluster.NewFindClusterParams().WithID(clusterID).WithReturnMachines(pointer.Pointer(false)), nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+
+	constraintsResp, err := c.cloud.Cluster.ListConstraints(cluster.NewListConstraintsParams(), nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+
+	var storageClasses []string
+
+	if slices.ContainsFunc(constraintsResp.Payload.Networks, func(n *models.V1Network) bool {
+		if !n.DefaultPartitionStorage {
+			return false
+		}
+		return slices.Contains(resp.Payload.AdditionalNetworks, *n.ID)
+	}) {
+		storageClasses = append(storageClasses, "partition-silver", "partition-gold", "partition-gold-encrypted")
+	}
+
+	if disabled, err := strconv.ParseBool(pointer.SafeDeref(resp.Payload.ClusterFeatures.DisableCsiLvm)); err == nil && !disabled {
+		storageClasses = append(storageClasses, "csi-lvm")
+	}
+	if enabled, err := strconv.ParseBool(pointer.SafeDeref(resp.Payload.ClusterFeatures.EnableCsiDriverLvm)); err == nil && enabled {
+		storageClasses = append(storageClasses, "csi-driver-lvm-linear", "csi-driver-lvm-mirror", "csi-driver-lvm-striped", "csi-lvm")
+	}
+
+	return storageClasses, cobra.ShellCompDirectiveNoFileComp
 }
 
 func (c *Completion) ProjectListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

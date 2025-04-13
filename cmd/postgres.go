@@ -9,6 +9,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
@@ -273,6 +274,8 @@ postgres=#
 	postgresCreateCmd.Flags().StringP("dedicated-load-balancer-ip", "", "", "an existing ip address for a dedicated load balancer [optional]")
 	postgresCreateCmd.Flags().StringP("auto-assign-ip-from", "", "", "a network used for auto-assigning an ip for a dedicated load balancer [optional]")
 	postgresCreateCmd.Flags().IntP("dedicated-load-balancer-port", "", 0, "a port for a dedicated load balancer [optional]")
+	postgresCreateCmd.Flags().BoolP("disable-loadbalancers", "", false, "disable connections with the public loadbalancer IP")
+
 	genericcli.Must(postgresCreateCmd.MarkFlagRequired("description"))
 	genericcli.Must(postgresCreateCmd.MarkFlagRequired("project"))
 	genericcli.Must(postgresCreateCmd.MarkFlagRequired("partition"))
@@ -293,6 +296,8 @@ postgres=#
 	postgresCreateStandbyCmd.Flags().StringP("dedicated-load-balancer-ip", "", "", "an existing ip address for a dedicated load balancer [optional]")
 	postgresCreateStandbyCmd.Flags().StringP("auto-assign-ip-from", "", "", "a network used for auto-assigning an ip for a dedicated load balancer [optional]")
 	postgresCreateStandbyCmd.Flags().IntP("dedicated-load-balancer-port", "", 0, "a port for a dedicated load balancer [optional]")
+	postgresCreateStandbyCmd.Flags().BoolP("disable-loadbalancers", "", false, "disable connections with the public loadbalancer IP")
+
 	genericcli.Must(postgresCreateStandbyCmd.MarkFlagRequired("primary-postgres-id"))
 	genericcli.Must(postgresCreateStandbyCmd.MarkFlagRequired("description"))
 	genericcli.Must(postgresCreateStandbyCmd.MarkFlagRequired("partition"))
@@ -311,6 +316,8 @@ postgres=#
 	postgresRestoreCmd.Flags().StringP("partition", "", "", "partition where the database should be created. Changing the partition compared to the source database requires administrative privileges")
 	postgresRestoreCmd.Flags().StringSliceP("labels", "", []string{}, "labels to add to that postgres database")
 	postgresRestoreCmd.Flags().StringSliceP("maintenance", "", []string{"Sun:22:00-23:00"}, "time specification of the automatic maintenance in the form Weekday:HH:MM-HH-MM [optional]")
+	postgresRestoreCmd.Flags().BoolP("disable-loadbalancers", "", false, "disable connections with the public loadbalancer IP")
+
 	genericcli.Must(postgresRestoreCmd.MarkFlagRequired("source-postgres-id"))
 	genericcli.Must(postgresRestoreCmd.RegisterFlagCompletionFunc("source-postgres-id", c.comp.PostgresListCompletion))
 	genericcli.Must(postgresRestoreCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
@@ -326,6 +333,7 @@ postgres=#
 	postgresUpdateCmd.Flags().StringP("dedicated-load-balancer-ip", "", "", "an existing ip address for a dedicated load balancer [optional]")
 	postgresUpdateCmd.Flags().StringP("auto-assign-ip-from", "", "", "a network used for auto-assigning an ip for a dedicated load balancer [optional]")
 	postgresUpdateCmd.Flags().IntP("dedicated-load-balancer-port", "", 0, "a port for a dedicated load balancer [optional]")
+	postgresUpdateCmd.Flags().BoolP("disable-loadbalancers", "", false, "disable connections with the public loadbalancer IP [optional]")
 	postgresUpdateCmd.Flags().StringP("backup-config", "", "", "backup to use")
 
 	// List
@@ -334,6 +342,9 @@ postgres=#
 	postgresListCmd.Flags().StringP("tenant", "", "", "tenant to filter [optional]")
 	postgresListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
 	postgresListCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
+
+	postgresDemoteToStandbyCmd.Flags().BoolP("disable-loadbalancers", "", false, "disable connections with the public loadbalancer IP [optional]")
+	postgresPromoteToPrimaryCmd.Flags().BoolP("disable-loadbalancers", "", false, "disable connections with the public loadbalancer IP [optional]")
 
 	genericcli.Must(postgresListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	genericcli.Must(postgresListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
@@ -404,6 +415,7 @@ func (c *config) postgresCreate() error {
 	lbIP := viper.GetString("dedicated-load-balancer-ip")
 	lbPort := viper.GetInt32("dedicated-load-balancer-port")
 	lbNet := viper.GetString("auto-assign-ip-from")
+	disableLB := viper.GetBool("disable-loadbalancers")
 
 	var dedicatedloadbalancerip *string
 	if lbIP != "" {
@@ -439,6 +451,7 @@ func (c *config) postgresCreate() error {
 		AuditLogs:                 auditLogs,
 		Dedicatedloadbalancerip:   dedicatedloadbalancerip,
 		Dedicatedloadbalancerport: dedicatedloadbalancerport,
+		DisableLoadBalancers:      disableLB,
 	}
 	if lbNet != "" {
 		pcr.Autoassigndedicatedlbipfrom = lbNet
@@ -470,6 +483,7 @@ func (c *config) postgresCreateStandby() error {
 	if lbPort := viper.GetInt32("dedicated-load-balancer-port"); lbPort != 0 {
 		dedicatedloadbalancerport = &lbPort
 	}
+	disableLB := viper.GetBool("disable-loadbalancers")
 
 	labelMap, err := helper.LabelsToMap(labels)
 	if err != nil {
@@ -484,6 +498,7 @@ func (c *config) postgresCreateStandby() error {
 		Labels:                    labelMap,
 		Dedicatedloadbalancerip:   dedicatedloadbalancerip,
 		Dedicatedloadbalancerport: dedicatedloadbalancerport,
+		DisableLoadBalancers:      disableLB,
 	}
 	if lbNet := viper.GetString("auto-assign-ip-from"); lbNet != "" {
 		pcsr.Autoassigndedicatedlbipfrom = lbNet
@@ -505,6 +520,11 @@ func (c *config) postgresPromoteToPrimary(args []string) error {
 		return err
 	}
 
+	var disableLB *bool
+	if viper.GetString("disable-loadbalancers") != "" {
+		disableLB = pointer.Pointer(viper.GetBool("disable-loadbalancers"))
+	}
+
 	params := database.NewGetPostgresParams().WithID(id)
 	resp, err := c.cloud.Database.GetPostgres(params, nil)
 	if err != nil {
@@ -514,11 +534,12 @@ func (c *config) postgresPromoteToPrimary(args []string) error {
 
 	// copy the (minimum) current config
 	body := &models.V1PostgresUpdateRequest{
-		ProjectID:      current.ProjectID,
-		ID:             current.ID,
-		Connection:     current.Connection,
-		AuditLogs:      current.AuditLogs,
-		PostgresParams: current.PostgresParams,
+		ProjectID:            current.ProjectID,
+		ID:                   current.ID,
+		Connection:           current.Connection,
+		AuditLogs:            current.AuditLogs,
+		PostgresParams:       current.PostgresParams,
+		DisableLoadBalancers: disableLB,
 	}
 
 	// abort if there is no configured connection
@@ -549,6 +570,11 @@ func (c *config) postgresDemoteToStandby(args []string) error {
 		return err
 	}
 
+	var disableLB *bool
+	if viper.GetString("disable-loadbalancers") != "" {
+		disableLB = pointer.Pointer(viper.GetBool("disable-loadbalancers"))
+	}
+
 	params := database.NewGetPostgresParams().WithID(id)
 	resp, err := c.cloud.Database.GetPostgres(params, nil)
 	if err != nil {
@@ -558,11 +584,12 @@ func (c *config) postgresDemoteToStandby(args []string) error {
 
 	// copy the (minimum) current config
 	body := &models.V1PostgresUpdateRequest{
-		ProjectID:      current.ProjectID,
-		ID:             current.ID,
-		Connection:     current.Connection,
-		AuditLogs:      current.AuditLogs,
-		PostgresParams: current.PostgresParams,
+		ProjectID:            current.ProjectID,
+		ID:                   current.ID,
+		Connection:           current.Connection,
+		AuditLogs:            current.AuditLogs,
+		PostgresParams:       current.PostgresParams,
+		DisableLoadBalancers: disableLB,
 	}
 
 	// abort if there is no configured connection
@@ -591,19 +618,27 @@ func (c *config) postgresRestore() error {
 	version := viper.GetString("version")
 	maintenance := viper.GetStringSlice("maintenance")
 	timestamp := viper.GetString("timestamp")
+	disableLB := viper.GetBool("disable-loadbalancers")
 
 	labelMap, err := helper.LabelsToMap(labels)
 	if err != nil {
 		return err
 	}
+
+	_, err = time.Parse("2006-01-02T15:04:05-07:00", timestamp)
+	if err != nil {
+		return fmt.Errorf("restore.timestamp cannot be parsed:%s, please provide a timestamp similar to e.g. 2021-12-07T15:28:00+01:00", timestamp)
+	}
+
 	pcsr := &models.V1PostgresRestoreRequest{
-		SourceID:    &srcID,
-		Description: desc,
-		PartitionID: partition,
-		Version:     version,
-		Maintenance: maintenance,
-		Labels:      labelMap,
-		Timestamp:   timestamp,
+		SourceID:             &srcID,
+		Description:          desc,
+		PartitionID:          partition,
+		Version:              version,
+		Maintenance:          maintenance,
+		Labels:               labelMap,
+		Timestamp:            timestamp,
+		DisableLoadBalancers: disableLB,
 	}
 	request := database.NewRestorePostgresParams()
 	request.SetBody(pcsr)
@@ -736,6 +771,11 @@ func (c *config) postgresUpdate(args []string) error {
 	lbIP := viper.GetString("dedicated-load-balancer-ip")
 	lbPort := viper.GetInt32("dedicated-load-balancer-port")
 	lbNet := viper.GetString("auto-assign-ip-from")
+
+	var disableLB *bool
+	if viper.GetString("disable-loadbalancers") != "" {
+		disableLB = pointer.Pointer(viper.GetBool("disable-loadbalancers"))
+	}
 	backupConfig := viper.GetString("backup-config")
 
 	id, err := c.postgresID("update", args)
@@ -752,11 +792,12 @@ func (c *config) postgresUpdate(args []string) error {
 
 	// copy the (minimum) current config
 	pur := &models.V1PostgresUpdateRequest{
-		ProjectID:      current.ProjectID,
-		ID:             current.ID,
-		Connection:     current.Connection,
-		AuditLogs:      current.AuditLogs,
-		PostgresParams: current.PostgresParams,
+		ProjectID:            current.ProjectID,
+		ID:                   current.ID,
+		Connection:           current.Connection,
+		AuditLogs:            current.AuditLogs,
+		PostgresParams:       current.PostgresParams,
+		DisableLoadBalancers: disableLB,
 	}
 
 	if viper.IsSet("replicas") {
