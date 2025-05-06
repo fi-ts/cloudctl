@@ -15,6 +15,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	ZALANDO_TIMESTAMP_FORMAT = "2006-01-02T15:04:05-07:00"
+)
+
 func newPostgresCmd(c *config) *cobra.Command {
 	postgresCmd := &cobra.Command{
 		Use:   "postgres",
@@ -310,7 +314,7 @@ postgres=#
 
 	// Restore
 	postgresRestoreCmd.Flags().StringP("source-postgres-id", "", "", "if of the primary database")
-	postgresRestoreCmd.Flags().StringP("timestamp", "", time.Now().Format(time.RFC3339), "point-in-time to restore to")
+	postgresRestoreCmd.Flags().StringP("timestamp", "", time.Now().Format(ZALANDO_TIMESTAMP_FORMAT), "point-in-time to restore to")
 	postgresRestoreCmd.Flags().StringP("version", "", "", "postgres version of the database")
 	postgresRestoreCmd.Flags().StringP("description", "", "", "description of the database")
 	postgresRestoreCmd.Flags().StringP("partition", "", "", "partition where the database should be created. Changing the partition compared to the source database requires administrative privileges")
@@ -624,9 +628,9 @@ func (c *config) postgresRestore() error {
 		return err
 	}
 
-	_, err = time.Parse("2006-01-02T15:04:05-07:00", timestamp)
+	_, err = time.Parse(ZALANDO_TIMESTAMP_FORMAT, timestamp)
 	if err != nil {
-		return fmt.Errorf("restore.timestamp cannot be parsed:%s, please provide a timestamp similar to e.g. 2021-12-07T15:28:00+01:00", timestamp)
+		return fmt.Errorf("restore.timestamp cannot be parsed:%s, please provide a timestamp similar to e.g. %s", timestamp, ZALANDO_TIMESTAMP_FORMAT)
 	}
 
 	pcsr := &models.V1PostgresRestoreRequest{
