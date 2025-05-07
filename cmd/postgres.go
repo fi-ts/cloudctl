@@ -1011,7 +1011,7 @@ func (c *config) postgresConnectionString(args []string) error {
 	}
 
 	userpassword := make(map[string]string)
-	if resp.Payload.UserSecret != nil && len(resp.Payload.UserSecret) > 0 {
+	if len(resp.Payload.UserSecret) > 0 {
 		for _, user := range resp.Payload.UserSecret {
 			userpassword[user.Username] = user.Password
 		}

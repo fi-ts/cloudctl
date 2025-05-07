@@ -16,7 +16,9 @@ func (c *config) firewallSSHViaVPN(firewallID string, privateKey []byte, vpn *mo
 	if err != nil {
 		return err
 	}
-	defer v.Close()
+	defer func() {
+		_ = v.Close()
+	}()
 
 	opts := []metalssh.ConnectOpt{metalssh.ConnectOptOutputPrivateKey(privateKey)}
 
