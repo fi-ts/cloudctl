@@ -79,7 +79,7 @@ func Prompt(msg, compare string) error {
 	}
 	text := scanner.Text()
 	if text != compare {
-		return fmt.Errorf("unexpected answer given (%q), aborting...", text)
+		return fmt.Errorf("unexpected answer given (%q), aborting", text)
 	}
 	return nil
 }
@@ -141,7 +141,9 @@ func Edit(id string, getFunc func(id string) ([]byte, error), updateFunc func(fi
 	if err != nil {
 		return err
 	}
-	defer os.Remove(tmpfile.Name())
+	defer func() {
+		_ = os.Remove(tmpfile.Name())
+	}()
 	content, err := getFunc(id)
 	if err != nil {
 		return err
