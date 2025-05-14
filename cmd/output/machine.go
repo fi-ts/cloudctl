@@ -29,8 +29,8 @@ const (
 
 // Print a list of Machines in a table
 func (m MachineTablePrinter) Print(data []*models.ModelsV1MachineResponse) {
-	m.shortHeader = []string{"ID", "", "LAST EVENT", "WHEN", "STARTED", "AGE", "HOSTNAME", "IPs", "SIZE", "IMAGE", "PARTITION"}
-	m.wideHeader = []string{"ID", "", "LAST EVENT", "WHEN", "STARTED", "AGE", "HOSTNAME", "IPs", "SIZE", "IMAGE", "PARTITION"}
+	m.shortHeader = []string{"ID", "", "LAST EVENT", "WHEN", "STARTED", "AGE", "HOSTNAME", "IPs", "SIZE", "IMAGE", "PARTITION", "RACK"}
+	m.wideHeader = []string{"ID", "", "LAST EVENT", "WHEN", "STARTED", "AGE", "HOSTNAME", "IPs", "SIZE", "IMAGE", "PARTITION", "RACK"}
 	m.order = "features,hostname"
 	m.Order(data)
 	for _, machine := range data {
@@ -50,6 +50,7 @@ func (m MachineTablePrinter) Print(data []*models.ModelsV1MachineResponse) {
 		if machine.Partition != nil {
 			partitionID = pointer.SafeDeref(machine.Partition.ID)
 		}
+
 		hostname := pointer.SafeDeref(alloc.Hostname)
 		//truncatedHostname := truncate(hostname, "...", 30)
 
@@ -107,7 +108,7 @@ func (m MachineTablePrinter) Print(data []*models.ModelsV1MachineResponse) {
 			statusEmoji = VPN
 		}
 
-		row := []string{machineID, statusEmoji, lastEvent, when, started, age, hostname, ips, sizeID, image, partitionID}
+		row := []string{machineID, statusEmoji, lastEvent, when, started, age, hostname, ips, sizeID, image, partitionID, machine.Rackid}
 		m.addShortData(row, machine)
 		m.addWideData(row, machine)
 	}
