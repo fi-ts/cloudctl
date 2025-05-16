@@ -334,7 +334,7 @@ postgres=#
 	postgresUpdateCmd.Flags().StringP("auto-assign-ip-from", "", "", "a network used for auto-assigning an ip for a dedicated load balancer [optional]")
 	postgresUpdateCmd.Flags().IntP("dedicated-load-balancer-port", "", 0, "a port for a dedicated load balancer [optional]")
 	postgresUpdateCmd.Flags().BoolP("disable-loadbalancers", "", false, "disable connections with the public loadbalancer IP [optional]")
-	postgresUpdateCmd.Flags().StringP("backup-config", "", "", "backup to use")
+	postgresUpdateCmd.Flags().StringP("backup-config", "", "", "backup config to use. REQUIRES A POD RESTART TO TAKE EFFECT [optional]")
 
 	// List
 	postgresListCmd.Flags().StringP("id", "", "", "postgres id to filter [optional]")
@@ -847,6 +847,7 @@ func (c *config) postgresUpdate(args []string) error {
 
 	if viper.IsSet("backup-config") {
 		pur.Backup = backupConfig
+		fmt.Print("\nHint: The updated backup config will not be used until the pods are restartet. The pods will not restart automatically.\n\n")
 	}
 
 	// send the update request
