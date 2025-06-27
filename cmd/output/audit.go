@@ -22,7 +22,7 @@ func (p AuditTablePrinter) Print(data []*models.V1AuditResponse) {
 
 	for _, trace := range data {
 		var statusCode string
-		if trace.StatusCode != 0 {
+		if trace.StatusCode != nil && *trace.StatusCode != 0 {
 			statusCode = fmt.Sprintf("%d", trace.StatusCode)
 		}
 		row := []string{
