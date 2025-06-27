@@ -202,4 +202,4 @@ require (
 	tailscale.com v1.76.6 // indirect
 )
 
-replace github.com/fi-ts/cloud-go => github.com/fi-ts/cloud-go v0.30.4-0.20250627112729-9c691dc09f2c
+replace github.com/fi-ts/cloud-go => github.com/fi-ts/cloud-go v0.30.4-0.20250627120234-fd1ef19fcb80
