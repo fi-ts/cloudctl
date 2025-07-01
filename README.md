@@ -518,7 +518,7 @@ the command: `cloudctl s3 describe --for-client minio|s3cmd` will echo the requi
 
 ```bash
 $ cloudctl s3 describe --for-client minio --id test --partition=fel-wps101 --project=4fe217b4-3b3d-413e-87fc-fb89054cc70c
-mc config host add test https://s3.test-01-fel-wps101.somedomain.example <your access key> <your secret key>
+mc alias set test https://s3.test-01-fel-wps101.somedomain.example <your access key> <your secret key>
 
 $ mc mb test/testbucket
 Bucket created successfully `test/testbucket`.
