@@ -180,7 +180,7 @@ func (c *config) s3Describe() error {
 	switch client {
 	case "":
 	case "minio":
-		fmt.Printf("mc config host add %s %s %s %s\n", *cfg.ID, *cfg.Endpoint, *cfg.Keys[0].AccessKey, *cfg.Keys[0].SecretKey)
+		fmt.Printf("mc alias set %s %s %s %s\n", *cfg.ID, *cfg.Endpoint, *cfg.Keys[0].AccessKey, *cfg.Keys[0].SecretKey)
 		return nil
 	case "s3cmd":
 		fmt.Printf(s3cmdTemplate, *cfg.Keys[0].AccessKey, *cfg.Endpoint, *cfg.Endpoint, *cfg.Keys[0].SecretKey)
