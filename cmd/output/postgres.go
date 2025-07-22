@@ -116,18 +116,27 @@ func (p PostgresVersionsTablePrinter) Print(data []*models.V1PostgresVersion) {
 	p.render()
 }
 func (p PostgresPartitionsTablePrinter) Print(data models.V1PostgresPartitionsResponse) {
-	p.wideHeader = []string{"Name", "AllowedTenants"}
+	p.wideHeader = []string{"Name", "AllowedTenants", "AllowedStorageClasses"}
 	p.shortHeader = p.wideHeader
 
 	for name, pg := range data {
 		tenants := []string{}
+		scs := []string{}
 		if len(pg.AllowedTenants) == 0 {
 			tenants = []string{"any"}
 		}
 		for k := range pg.AllowedTenants {
 			tenants = append(tenants, k)
 		}
-		wide := []string{name, strings.Join(tenants, ",")}
+
+		if len(pg.AllowedStorageClasses) == 0 {
+			tenants = []string{"none"}
+		}
+		for k := range pg.AllowedStorageClasses {
+			scs = append(scs, k)
+		}
+
+		wide := []string{name, strings.Join(tenants, ","), strings.Join(scs, ",")}
 		short := wide
 
 		p.addWideData(wide, pg)
