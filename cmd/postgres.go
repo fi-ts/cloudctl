@@ -280,6 +280,7 @@ postgres=#
 	postgresCreateCmd.Flags().StringP("auto-assign-ip-from", "", "", "a network used for auto-assigning an ip for a dedicated load balancer [optional]")
 	postgresCreateCmd.Flags().IntP("dedicated-load-balancer-port", "", 0, "a port for a dedicated load balancer [optional]")
 	postgresCreateCmd.Flags().BoolP("disable-loadbalancers", "", false, "disable connections with the public loadbalancer IP")
+	postgresCreateCmd.Flags().StringP("storage-class", "", "", "the storage class to use for the database [optional]")
 
 	genericcli.Must(postgresCreateCmd.MarkFlagRequired("description"))
 	genericcli.Must(postgresCreateCmd.MarkFlagRequired("project"))
@@ -302,6 +303,7 @@ postgres=#
 	postgresCreateStandbyCmd.Flags().StringP("auto-assign-ip-from", "", "", "a network used for auto-assigning an ip for a dedicated load balancer [optional]")
 	postgresCreateStandbyCmd.Flags().IntP("dedicated-load-balancer-port", "", 0, "a port for a dedicated load balancer [optional]")
 	postgresCreateStandbyCmd.Flags().BoolP("disable-loadbalancers", "", false, "disable connections with the public loadbalancer IP")
+	postgresCreateStandbyCmd.Flags().StringP("storage-class", "", "", "the storage class to use for the database [optional]")
 
 	genericcli.Must(postgresCreateStandbyCmd.MarkFlagRequired("primary-postgres-id"))
 	genericcli.Must(postgresCreateStandbyCmd.MarkFlagRequired("description"))
@@ -322,6 +324,7 @@ postgres=#
 	postgresRestoreCmd.Flags().StringSliceP("labels", "", []string{}, "labels to add to that postgres database")
 	postgresRestoreCmd.Flags().StringSliceP("maintenance", "", []string{"Sun:22:00-23:00"}, "time specification of the automatic maintenance in the form Weekday:HH:MM-HH-MM [optional]")
 	postgresRestoreCmd.Flags().BoolP("disable-loadbalancers", "", false, "disable connections with the public loadbalancer IP")
+	postgresRestoreCmd.Flags().StringP("storage-class", "", "", "the storage class to use for the database [optional]")
 
 	genericcli.Must(postgresRestoreCmd.MarkFlagRequired("source-postgres-id"))
 	genericcli.Must(postgresRestoreCmd.RegisterFlagCompletionFunc("source-postgres-id", c.comp.PostgresListCompletion))
@@ -341,6 +344,7 @@ postgres=#
 	postgresUpdateCmd.Flags().BoolP("disable-loadbalancers", "", false, "disable connections with the public loadbalancer IP [optional]")
 	postgresUpdateCmd.Flags().StringP("memoryfactor", "", "", "the memoryfactor to use [optional]")
 	postgresUpdateCmd.Flags().StringP("backup-config", "", "", "backup config to use. REQUIRES A POD RESTART TO TAKE EFFECT [optional]")
+	postgresUpdateCmd.Flags().StringP("storage-class", "", "", "the storage class to use for the database. REQUIRES ADMIN PRIVILEGES [optional]")
 
 	// List
 	postgresListCmd.Flags().StringP("id", "", "", "postgres id to filter [optional]")
@@ -423,6 +427,7 @@ func (c *config) postgresCreate() error {
 	lbNet := viper.GetString("auto-assign-ip-from")
 	disableLB := viper.GetBool("disable-loadbalancers")
 	memfactor := viper.GetInt64("memoryfactor")
+	sc := viper.GetString("storage-class")
 
 	var dedicatedloadbalancerip *string
 	if lbIP != "" {
@@ -465,6 +470,10 @@ func (c *config) postgresCreate() error {
 		pcr.Autoassigndedicatedlbipfrom = lbNet
 	}
 
+	if viper.IsSet("storage-class") {
+		pcr.StorageClass = &sc
+	}
+
 	request := database.NewCreatePostgresParams()
 	request.SetBody(pcr)
 
@@ -497,6 +506,8 @@ func (c *config) postgresCreateStandby() error {
 	if err != nil {
 		return err
 	}
+	sc := viper.GetString("storage-class")
+
 	pcsr := &models.V1PostgresCreateStandbyRequest{
 		PrimaryID:                 &primaryPostgresID,
 		Description:               desc,
@@ -511,6 +522,11 @@ func (c *config) postgresCreateStandby() error {
 	if lbNet := viper.GetString("auto-assign-ip-from"); lbNet != "" {
 		pcsr.Autoassigndedicatedlbipfrom = lbNet
 	}
+
+	if viper.IsSet("storage-class") {
+		pcsr.StorageClass = &sc
+	}
+
 	request := database.NewCreatePostgresStandbyParams()
 	request.SetBody(pcsr)
 
@@ -627,6 +643,7 @@ func (c *config) postgresRestore() error {
 	maintenance := viper.GetStringSlice("maintenance")
 	timestamp := viper.GetString("timestamp")
 	disableLB := viper.GetBool("disable-loadbalancers")
+	sc := viper.GetString("storage-class")
 
 	labelMap, err := helper.LabelsToMap(labels)
 	if err != nil {
@@ -638,7 +655,7 @@ func (c *config) postgresRestore() error {
 		return fmt.Errorf("restore.timestamp cannot be parsed:%s, please provide a timestamp similar to e.g. %s", timestamp, ZALANDO_TIMESTAMP_FORMAT)
 	}
 
-	pcsr := &models.V1PostgresRestoreRequest{
+	prr := &models.V1PostgresRestoreRequest{
 		SourceID:             &srcID,
 		Description:          desc,
 		PartitionID:          partition,
@@ -648,8 +665,11 @@ func (c *config) postgresRestore() error {
 		Timestamp:            timestamp,
 		DisableLoadBalancers: disableLB,
 	}
+	if viper.IsSet("storage-class") {
+		prr.StorageClass = &sc
+	}
 	request := database.NewRestorePostgresParams()
-	request.SetBody(pcsr)
+	request.SetBody(prr)
 
 	response, err := c.cloud.Database.RestorePostgres(request, nil)
 	if err != nil {
@@ -780,6 +800,7 @@ func (c *config) postgresUpdate(args []string) error {
 	lbPort := viper.GetInt32("dedicated-load-balancer-port")
 	lbNet := viper.GetString("auto-assign-ip-from")
 	memfactor := viper.GetInt64("memoryfactor")
+	sc := viper.GetString("storage-class")
 
 	var disableLB *bool
 	if viper.GetString("disable-loadbalancers") != "" {
@@ -860,6 +881,10 @@ func (c *config) postgresUpdate(args []string) error {
 	if viper.IsSet("backup-config") {
 		pur.Backup = backupConfig
 		fmt.Print("\nHint: The updated backup config will not be used until the pods are restartet. The pods will not restart automatically.\n\n")
+	}
+
+	if viper.IsSet("storage-class") {
+		pur.StorageClass = &sc
 	}
 
 	// send the update request

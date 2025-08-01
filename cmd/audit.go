@@ -10,6 +10,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/go-openapi/strfmt"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -98,7 +99,7 @@ func (c *config) auditList() error {
 		ForwardedFor: viper.GetString("forwarded-for"),
 		RemoteAddr:   viper.GetString("remote-addr"),
 		Error:        viper.GetString("error"),
-		StatusCode:   viper.GetInt32("status-code"),
+		StatusCode:   pointer.Pointer(viper.GetInt32("status-code")),
 		Limit:        viper.GetInt64("limit"),
 	}), nil)
 	if err != nil {
