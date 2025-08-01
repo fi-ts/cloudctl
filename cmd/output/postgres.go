@@ -130,7 +130,7 @@ func (p PostgresPartitionsTablePrinter) Print(data models.V1PostgresPartitionsRe
 		}
 
 		if len(pg.AllowedStorageClasses) == 0 {
-			tenants = []string{"none"}
+			scs = []string{"none"}
 		}
 		for k := range pg.AllowedStorageClasses {
 			scs = append(scs, k)
