@@ -466,9 +466,13 @@ func (c *config) clusterCreate() error {
 	if viper.IsSet("cni") {
 		cni = viper.GetString("cni")
 	}
-
-	minsize := viper.GetInt32("minsize")
-	maxsize := viper.GetInt32("maxsize")
+	var minsize,maxsize *int32
+	if viper.IsSet("minsize") {
+		minsize = pointer.Pointer(viper.GetInt32("minsize"))
+	}
+	if viper.IsSet("maxsize") {
+		maxsize = pointer.Pointer(viper.GetInt32("maxsize"))
+	}
 	maxsurge := viper.GetString("maxsurge")
 	maxunavailable := viper.GetString("maxunavailable")
 
@@ -583,8 +587,8 @@ WARNING: You are going to create a cluster that has no default internet access w
 		Purpose:     &purpose,
 		Workers: []*models.V1Worker{
 			{
-				Minimum:        &minsize,
-				Maximum:        &maxsize,
+				Minimum:        minsize,
+				Maximum:        maxsize,
 				MaxSurge:       &maxsurge,
 				MaxUnavailable: &maxunavailable,
 				MachineType:    &machineType,
