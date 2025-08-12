@@ -45,6 +45,10 @@ func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]strin
 		return t.MachineReservationsUsageTable(d, wide)
 	case *models.V1MachineReservationBillingUsageResponse:
 		return t.MachineReservationsBillingTable(d, wide)
+	case *models.V1ProjectResponse:
+		return t.ProjectTable(pointer.WrapInSlice(d), wide)
+	case []*models.V1ProjectResponse:
+		return t.ProjectTable(d, wide)
 
 	default:
 		// fallback to old printer for as long as the migration takes:
