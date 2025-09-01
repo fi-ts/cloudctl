@@ -83,6 +83,11 @@ func (c *config) auditList() error {
 	if err != nil {
 		return err
 	}
+	var psc *int32
+	if viper.IsSet("status-code") {
+		sc := viper.GetInt32("status-code")
+		psc = &sc
+	}
 	resp, err := c.cloud.Audit.FindAuditTraces(audit.NewFindAuditTracesParams().WithBody(&models.V1AuditFindRequest{
 		Body:         viper.GetString("query"),
 		From:         fromDateTime,
@@ -98,7 +103,7 @@ func (c *config) auditList() error {
 		ForwardedFor: viper.GetString("forwarded-for"),
 		RemoteAddr:   viper.GetString("remote-addr"),
 		Error:        viper.GetString("error"),
-		StatusCode:   viper.GetInt32("status-code"),
+		StatusCode:   psc,
 		Limit:        viper.GetInt64("limit"),
 	}), nil)
 	if err != nil {
