@@ -438,6 +438,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCmd.AddCommand(clusterDNSManifestCmd)
 	clusterCmd.AddCommand(clusterMonitoringSecretCmd)
 	clusterCmd.AddCommand(newClusterAuditCmd(c))
+	clusterCmd.AddCommand(newClusterXdrCmd(c))
 
 	return clusterCmd
 }
