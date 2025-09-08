@@ -23,7 +23,7 @@ func (p AuditTablePrinter) Print(data []*models.V1AuditResponse) {
 	for _, trace := range data {
 		var statusCode string
 		if trace.StatusCode != nil && *trace.StatusCode != 0 {
-			statusCode = fmt.Sprintf("%d", trace.StatusCode)
+			statusCode = fmt.Sprintf("%d", *trace.StatusCode)
 		}
 		row := []string{
 			// using Local() is okay for user cli output
