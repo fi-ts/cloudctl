@@ -48,6 +48,7 @@ func newClusterXdrCmd(c *config) *cobra.Command {
 	configureCmd.Flags().String("distributionid", "", "the distribution id for the xdr configuration")
 	configureCmd.Flags().StringSlice("proxies", []string{}, "proxy list for the xdr configuration")
 	configureCmd.Flags().String("customtag", "", "custom tag for the xdr configuration")
+	configureCmd.Flags().Bool("noproxy", false, "disables proxy usage for the xdr configuration")
 
 	clusterXdrCmd.AddCommand(configureCmd, showCmd)
 
@@ -71,6 +72,10 @@ func (c *xdrCmd) configure() error {
 
 	if viper.IsSet("customtag") {
 		xdrConfiguration.CustomTag = pointer.Pointer(viper.GetString("customtag"))
+	}
+
+	if viper.IsSet("noproxy") {
+		xdrConfiguration.NoProxy = pointer.Pointer(viper.GetBool("noproxy"))
 	}
 
 	_, err := c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
