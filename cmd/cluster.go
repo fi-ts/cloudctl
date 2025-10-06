@@ -43,11 +43,25 @@ import (
 	utiltaints "github.com/gardener/machine-controller-manager/pkg/util/taints"
 )
 
+func emojiHelpText() string {
+	return `
+Meaning of the emojis:
+
+🔒 Indicates that a cluster has configured an API server ACL. For cluster machines this emoji indicates that the machines were locked for deletion in metal-stack (only relevant for metal-stack operators).
+🤹 Indicates that a cluster has the high-availability control plane feature gate enabled.
+🐝 Indicates that a cluster has the calico ebpf data plane feature gate enabled.
+⚠️ Indicates that a cluster has issues (used in cluster issues command, e.g. indicates usage of an expired version of Kubernetes or machine image).
+🛡 For cluster firewalls indicates that the firewall has connected successfully through VPN to the metal-stack control plane (only relevant for metal-stack operators).
+`
+}
+
 func newClusterCmd(c *config) *cobra.Command {
 	clusterCmd := &cobra.Command{
 		Use:   "cluster",
 		Short: "manage clusters",
+		Long:  emojiHelpText(),
 	}
+
 	clusterCreateCmd := &cobra.Command{
 		Use:   "create",
 		Short: "create a cluster",
@@ -55,10 +69,10 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterCreate()
 		},
 	}
-
 	clusterListCmd := &cobra.Command{
 		Use:     "list",
 		Short:   "list clusters",
+		Long:    emojiHelpText(),
 		Aliases: []string{"ls"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterList()
@@ -76,6 +90,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterDescribeCmd := &cobra.Command{
 		Use:   "describe <clusterid>",
 		Short: "describe a cluster",
+		Long:  emojiHelpText(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterDescribe(args)
 		},
@@ -117,11 +132,13 @@ func newClusterCmd(c *config) *cobra.Command {
 		Use:     "machine",
 		Aliases: []string{"machines"},
 		Short:   "list and access machines in the cluster",
+		Long:    emojiHelpText(),
 	}
 	clusterMachineListCmd := &cobra.Command{
 		Use:     "ls <clusterid>",
 		Aliases: []string{"list"},
 		Short:   "list machines of the cluster",
+		Long:    emojiHelpText(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterMachines(args)
 		},
@@ -131,6 +148,7 @@ func newClusterCmd(c *config) *cobra.Command {
 		Use:     "issues [<clusterid>]",
 		Aliases: []string{"problems", "warnings"},
 		Short:   "lists cluster issues, shows required actions explicitly when id argument is given",
+		Long:    emojiHelpText(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterIssues(args)
 		},
@@ -467,7 +485,7 @@ func (c *config) clusterCreate() error {
 	if viper.IsSet("cni") {
 		cni = viper.GetString("cni")
 	}
-	var minsize,maxsize *int32
+	var minsize, maxsize *int32
 	if viper.IsSet("minsize") {
 		minsize = pointer.Pointer(viper.GetInt32("minsize"))
 	}
