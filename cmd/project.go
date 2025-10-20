@@ -4,90 +4,59 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"gopkg.in/yaml.v3"
 
 	"github.com/fi-ts/cloud-go/api/client/project"
 	"github.com/fi-ts/cloudctl/cmd/helper"
+	"github.com/fi-ts/cloudctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
+type projectCmd struct {
+	*config
+}
+
 func newProjectCmd(c *config) *cobra.Command {
-	projectCmd := &cobra.Command{
-		Use:   "project",
-		Short: "manage projects",
-		Long:  "a project organizes cloud resources regarding tenancy, quotas, billing and authentication",
-	}
-	projectCreateCmd := &cobra.Command{
-		Use:   "create",
-		Short: "create a project",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.projectCreate()
-		},
-	}
-	projectDescribeCmd := &cobra.Command{
-		Use:   "describe <projectID>",
-		Short: "describe a project",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.projectDescribe(args)
-		},
-		ValidArgsFunction: c.comp.ProjectListCompletion,
-	}
-	projectDeleteCmd := &cobra.Command{
-		Use:     "delete <projectID>",
-		Aliases: []string{"destroy", "rm", "remove"},
-		Short:   "delete a project",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.projectDelete(args)
-		},
-		ValidArgsFunction: c.comp.ProjectListCompletion,
-	}
-	projectApplyCmd := &cobra.Command{
-		Use:   "apply",
-		Short: "create/update a project",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.projectApply()
-		},
-	}
-	projectEditCmd := &cobra.Command{
-		Use:   "edit <projectID>",
-		Short: "edit a project",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.projectEdit(args)
-		},
-		ValidArgsFunction: c.comp.ProjectListCompletion,
-	}
-	projectListCmd := &cobra.Command{
-		Use:     "list",
-		Short:   "list projects",
-		Aliases: []string{"ls"},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.projectList()
-		},
+	w := projectCmd{
+		config: c,
 	}
 
-	projectCreateCmd.Flags().String("name", "", "name of the project, max 10 characters. [required]")
-	projectCreateCmd.Flags().String("description", "", "description of the project. [required]")
-	projectCreateCmd.Flags().String("tenant", "", "create project for given tenant")
-	projectCreateCmd.Flags().StringSlice("label", nil, "add initial label, can be given multiple times to add multiple labels, e.g. --label=foo --label=bar")
-	projectCreateCmd.Flags().StringSlice("annotation", nil, "add initial annotation, must be in the form of key=value, can be given multiple times to add multiple annotations, e.g. --annotation key=value --annotation foo=bar")
-	projectCreateCmd.Flags().Int32("cluster-quota", 0, "cluster quota")
-	projectCreateCmd.Flags().Int32("machine-quota", 0, "machine quota")
-	projectCreateCmd.Flags().Int32("ip-quota", 0, "ip quota")
-	genericcli.Must(projectCreateCmd.MarkFlagRequired("name"))
-	genericcli.Must(projectCreateCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
-
-	projectListCmd.Flags().String("id", "", "show projects of given id")
-	projectListCmd.Flags().String("name", "", "show projects of given name")
-	projectListCmd.Flags().String("tenant", "", "show projects of given tenant")
-	genericcli.Must(projectListCmd.RegisterFlagCompletionFunc("id", c.comp.ProjectListCompletion))
-	genericcli.Must(projectListCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
-
-	projectApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
+	cmdsConfig := &genericcli.CmdsConfig[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse]{
+		BinaryName:      binaryName,
+		GenericCLI:      genericcli.NewGenericCLI(w).WithFS(c.fs),
+		Singular:        "project",
+		Plural:          "projects",
+		Description:     "manage projects, a project organizes cloud resources regarding tenancy, quotas, billing and authentication",
+		Sorter:          sorters.ProjectSorter(),
+		ValidArgsFn:     c.comp.ProjectListCompletion,
+		DescribePrinter: func() printers.Printer { return c.describePrinter },
+		ListPrinter:     func() printers.Printer { return c.listPrinter },
+		CreateCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().String("name", "", "name of the project, max 10 characters. [required]")
+			cmd.Flags().String("description", "", "description of the project. [required]")
+			cmd.Flags().String("tenant", "", "create project for given tenant")
+			cmd.Flags().StringSlice("label", nil, "add initial label, can be given multiple times to add multiple labels, e.g. --label=foo --label=bar")
+			cmd.Flags().StringSlice("annotation", nil, "add initial annotation, must be in the form of key=value, can be given multiple times to add multiple annotations, e.g. --annotation key=value --annotation foo=bar")
+			cmd.Flags().Int32("cluster-quota", 0, "cluster quota")
+			cmd.Flags().Int32("machine-quota", 0, "machine quota")
+			cmd.Flags().Int32("ip-quota", 0, "ip quota")
+			genericcli.Must(cmd.MarkFlagRequired("name"))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
+		},
+		ListCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().String("id", "", "show projects of given id")
+			cmd.Flags().String("name", "", "show projects of given name")
+			cmd.Flags().String("tenant", "", "show projects of given tenant")
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("id", c.comp.ProjectListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
+		},
+		ApplyCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
 	Example project update:
 
 	# cloudctl project describe project1 -o yaml > project1.yaml
@@ -97,103 +66,48 @@ func newProjectCmd(c *config) *cobra.Command {
 	## or via file
 	# cloudctl project apply -f project1.yaml
 	`)
-
-	projectCmd.AddCommand(projectCreateCmd)
-	projectCmd.AddCommand(projectDescribeCmd)
-	projectCmd.AddCommand(projectDeleteCmd)
-	projectCmd.AddCommand(projectListCmd)
-	projectCmd.AddCommand(projectApplyCmd)
-	projectCmd.AddCommand(projectEditCmd)
-	projectCmd.AddCommand(newMachineReservationsCmd(c))
-
-	return projectCmd
-}
-
-func (c *config) projectCreate() error {
-	tenant := viper.GetString("tenant")
-	name := viper.GetString("name")
-	desc := viper.GetString("description")
-	labels := viper.GetStringSlice("label")
-	as := viper.GetStringSlice("annotation")
-	var (
-		clusterQuota, machineQuota, ipQuota *models.V1Quota
-	)
-	if viper.IsSet("cluster-quota") {
-		clusterQuota = &models.V1Quota{Quota: viper.GetInt32("cluster-quota")}
-	}
-	if viper.IsSet("machine-quota") {
-		machineQuota = &models.V1Quota{Quota: viper.GetInt32("machine-quota")}
-	}
-	if viper.IsSet("ip-quota") {
-		ipQuota = &models.V1Quota{Quota: viper.GetInt32("ip-quota")}
-	}
-
-	annotations, err := annotationsAsMap(as)
-	if err != nil {
-		return err
-	}
-
-	pcr := &models.V1ProjectCreateRequest{
-		Name:        name,
-		Description: desc,
-		TenantID:    tenant,
-		Quotas: &models.V1QuotaSet{
-			Cluster: clusterQuota,
-			Machine: machineQuota,
-			IP:      ipQuota,
-		},
-		Meta: &models.V1Meta{
-			Kind:        "Project",
-			Apiversion:  "v1",
-			Annotations: annotations,
-			Labels:      labels,
 		},
 	}
 
-	request := project.NewCreateProjectParams()
-	request.SetBody(pcr)
-
-	response, err := c.cloud.Project.CreateProject(request, nil)
-	if err != nil {
-		return err
-	}
-
-	return c.listPrinter.Print(response.Payload)
+	return genericcli.NewCmds(cmdsConfig, newMachineReservationsCmd(c))
 }
 
-func (c *config) projectDescribe(args []string) error {
-	id, err := c.projectID("describe", args)
+func (c projectCmd) Get(id string) (*models.V1ProjectResponse, error) {
+	resp, err := c.cloud.Project.FindProject(project.NewFindProjectParams().WithID(id), nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	return resp.Payload, nil
+}
+
+func (c projectCmd) Create(rq *models.V1ProjectCreateRequest) (*models.V1ProjectResponse, error) {
+	resp, err := c.cloud.Project.CreateProject(project.NewCreateProjectParams().WithBody(rq), nil)
+	if err != nil {
+		var r *project.CreateProjectConflict
+		if errors.As(err, &r) {
+			return nil, genericcli.AlreadyExistsError()
+		}
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c projectCmd) Describe(id string) (*models.V1ProjectResponse, error) {
 	request := project.NewFindProjectParams()
 	request.SetID(id)
-	p, err := c.cloud.Project.FindProject(request, nil)
-	if err != nil {
-		return err
-	}
-
-	return c.listPrinter.Print(p.Payload)
+	resp, err := c.cloud.Project.FindProject(request, nil)
+	return resp.Payload, err
 }
 
-func (c *config) projectDelete(args []string) error {
-	id, err := c.projectID("delete", args)
-	if err != nil {
-		return err
-	}
-
+func (c projectCmd) Delete(id string) (*models.V1ProjectResponse, error) {
 	request := project.NewDeleteProjectParams().WithID(id)
-
 	response, err := c.cloud.Project.DeleteProject(request, nil)
-	if err != nil {
-		return err
-	}
-
-	return c.listPrinter.Print(response.Payload)
+	return response.Payload, err
 }
 
-func (c *config) projectList() error {
+func (c projectCmd) List() ([]*models.V1ProjectResponse, error) {
 	id := viper.GetString("id")
 	name := viper.GetString("name")
 	tenant := viper.GetString("tenant")
@@ -205,19 +119,12 @@ func (c *config) projectList() error {
 		})
 
 		response, err := c.cloud.Project.FindProjects(pfr, nil)
-		if err != nil {
-			return err
-		}
-
-		return c.listPrinter.Print(response.Payload.Projects)
+		return response.Payload.Projects, err
 	}
 
 	request := project.NewListProjectsParams()
 	response, err := c.cloud.Project.ListProjects(request, nil)
-	if err != nil {
-		return err
-	}
-	return c.listPrinter.Print(response.Payload.Projects)
+	return response.Payload.Projects, err
 }
 
 func (c *config) projectID(verb string, args []string) (string, error) {
@@ -230,7 +137,7 @@ func (c *config) projectID(verb string, args []string) (string, error) {
 	return "", fmt.Errorf("project %s requires exactly one projectID as argument", verb)
 }
 
-func (c *config) projectApply() error {
+func (c projectCmd) ApplyFromFile(from string) (genericcli.BulkResults[*models.V1ProjectResponse], error) {
 	var pars []models.V1ProjectCreateRequest
 	var par models.V1ProjectCreateRequest
 	err := helper.ReadFrom(viper.GetString("file"), &par, func(data interface{}) {
@@ -241,9 +148,9 @@ func (c *config) projectApply() error {
 		par = models.V1ProjectCreateRequest{}
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	var response []*models.V1ProjectResponse
+	var response genericcli.BulkResults[*models.V1ProjectResponse]
 	for i, par := range pars {
 		request := project.NewFindProjectParams()
 		request.SetID(par.Meta.ID)
@@ -251,10 +158,10 @@ func (c *config) projectApply() error {
 		if err != nil {
 			var r *project.FindProjectDefault
 			if !errors.As(err, &r) {
-				return err
+				return response, err
 			}
 			if r.Code() != http.StatusNotFound {
-				return err
+				return response, err
 			}
 		}
 		if p == nil || p.Payload == nil {
@@ -262,9 +169,18 @@ func (c *config) projectApply() error {
 			params.SetBody(&pars[i])
 			resp, err := c.cloud.Project.CreateProject(params, nil)
 			if err != nil {
-				return err
+				response = append(response, genericcli.BulkResult[*models.V1ProjectResponse]{
+					Result: resp.Payload,
+					Action: genericcli.BulkErrorOnCreate,
+					Error:  err,
+				})
+				return response, err
 			}
-			response = append(response, resp.Payload)
+			response = append(response, genericcli.BulkResult[*models.V1ProjectResponse]{
+				Result: resp.Payload,
+				Action: genericcli.BulkCreated,
+				Error:  nil,
+			})
 			continue
 		}
 		if p.Payload.Meta != nil {
@@ -288,19 +204,28 @@ func (c *config) projectApply() error {
 			params.SetBody(pur)
 			resp, err := c.cloud.Project.UpdateProject(params, nil)
 			if err != nil {
-				return err
+				response = append(response, genericcli.BulkResult[*models.V1ProjectResponse]{
+					Result: resp.Payload,
+					Action: genericcli.BulkErrorOnUpdate,
+					Error:  err,
+				})
+				return response, err
 			}
-			response = append(response, resp.Payload)
+			response = append(response, genericcli.BulkResult[*models.V1ProjectResponse]{
+				Result: resp.Payload,
+				Action: genericcli.BulkUpdated,
+				Error:  nil,
+			})
 			continue
 		}
 	}
-	return c.listPrinter.Print(response)
+	return response, err
 }
 
-func (c *config) projectEdit(args []string) error {
+func (c projectCmd) Edit(args []string) (*models.V1ProjectResponse, error) {
 	id, err := c.projectID("edit", args)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	getFunc := func(id string) ([]byte, error) {
@@ -333,7 +258,7 @@ func (c *config) projectEdit(args []string) error {
 		return c.listPrinter.Print(uresp.Payload)
 	}
 
-	return helper.Edit(id, getFunc, updateFunc)
+	return nil, helper.Edit(id, getFunc, updateFunc)
 }
 
 func readProjectUpdateRequests(filename string) ([]models.V1ProjectUpdateRequest, error) {
@@ -352,14 +277,59 @@ func readProjectUpdateRequests(filename string) ([]models.V1ProjectUpdateRequest
 	return purs, nil
 }
 
-func annotationsAsMap(annotations []string) (map[string]string, error) {
-	result := make(map[string]string)
-	for _, a := range annotations {
-		parts := strings.Split(strings.TrimSpace(a), "=")
-		if len(parts) != 2 {
-			return result, fmt.Errorf("given annotation %s does not contain exactly one =", a)
-		}
-		result[parts[0]] = parts[1]
+func (c projectCmd) Update(rq *models.V1ProjectUpdateRequest) (*models.V1ProjectResponse, error) {
+	resp, err := c.cloud.Project.FindProject(project.NewFindProjectParams().WithID(rq.Meta.ID), nil)
+	if err != nil {
+		return nil, err
 	}
-	return result, nil
+
+	rq.Meta.Version = resp.Payload.Meta.Version
+
+	updateResp, err := c.cloud.Project.UpdateProject(project.NewUpdateProjectParams().WithBody(rq), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return updateResp.Payload, nil
+}
+
+func (c projectCmd) Convert(r *models.V1ProjectResponse) (string, *models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, error) {
+	if r.Meta == nil {
+		return "", nil, nil, fmt.Errorf("meta is nil")
+	}
+	return r.Meta.ID, projectResponseToCreate(r), projectResponseToUpdate(r), nil
+}
+
+func projectResponseToCreate(r *models.V1ProjectResponse) *models.V1ProjectCreateRequest {
+	return &models.V1ProjectCreateRequest{
+		Meta: &models.V1Meta{
+			Apiversion:  r.Meta.Apiversion,
+			Kind:        r.Meta.Kind,
+			ID:          r.Meta.ID,
+			Annotations: r.Meta.Annotations,
+			Labels:      r.Meta.Labels,
+			Version:     r.Meta.Version,
+		},
+		Description: r.Description,
+		Name:        r.Name,
+		Quotas:      r.Quotas,
+		TenantID:    r.TenantID,
+	}
+}
+
+func projectResponseToUpdate(r *models.V1ProjectResponse) *models.V1ProjectUpdateRequest {
+	return &models.V1ProjectUpdateRequest{
+		Meta: &models.V1Meta{
+			Apiversion:  r.Meta.Apiversion,
+			Kind:        r.Meta.Kind,
+			ID:          r.Meta.ID,
+			Annotations: r.Meta.Annotations,
+			Labels:      r.Meta.Labels,
+			Version:     r.Meta.Version,
+		},
+		Description: r.Description,
+		Name:        r.Name,
+		Quotas:      r.Quotas,
+		TenantID:    r.TenantID,
+	}
 }
