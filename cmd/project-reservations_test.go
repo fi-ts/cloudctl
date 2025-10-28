@@ -65,15 +65,15 @@ func Test_ProjectMachineReservationsCmd_MultiResult(t *testing.T) {
 				machineReservation2,
 			},
 			wantTable: pointer.Pointer(`
-ID   TENANT   PROJECT     SIZE     AMOUNT   PARTITIONS                DESCRIPTION
-1    fits     project-a   size-a   3        partition-a               for firewalls
-2    fits     project-b   size-b   3        partition-a,partition-b   for machines
+ID  TENANT  PROJECT    SIZE    AMOUNT  PARTITIONS               DESCRIPTION
+1   fits    project-a  size-a  3       partition-a              for firewalls
+2   fits    project-b  size-b  3       partition-a,partition-b  for machines
 `),
 			wantWideTable: pointer.Pointer(`
-ID   TENANT   PROJECT     SIZE     AMOUNT   PARTITIONS                DESCRIPTION     LABELS
-1    fits     project-a   size-a   3        partition-a               for firewalls   for firewalls   size.metal-stack.io/reserved-at=2024-09-19T08:57:40Z
-                                                                                                      size.metal-stack.io/reserved-by=fits
-2    fits     project-b   size-b   3        partition-a,partition-b   for machines    for machines    size.metal-stack.io/reserved-by=fits
+ID  TENANT  PROJECT    SIZE    AMOUNT  PARTITIONS               DESCRIPTION    LABELS
+1   fits    project-a  size-a  3       partition-a              for firewalls  for firewalls  size.metal-stack.io/reserved-at=2024-09-19T08:57:40Z
+                                                                                              size.metal-stack.io/reserved-by=fits
+2   fits    project-b  size-b  3       partition-a,partition-b  for machines   for machines   size.metal-stack.io/reserved-by=fits
 `),
 			template: pointer.Pointer("{{ .sizeid }} {{ .projectid }}"),
 			wantTemplate: pointer.Pointer(`
@@ -81,10 +81,10 @@ size-a project-a
 size-b project-b
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID | TENANT |  PROJECT  |  SIZE  | AMOUNT |       PARTITIONS        |  DESCRIPTION  |
+| ID | TENANT | PROJECT   | SIZE   | AMOUNT | PARTITIONS              | DESCRIPTION   |
 |----|--------|-----------|--------|--------|-------------------------|---------------|
-|  1 | fits   | project-a | size-a |      3 | partition-a             | for firewalls |
-|  2 | fits   | project-b | size-b |      3 | partition-a,partition-b | for machines  |
+| 1  | fits   | project-a | size-a | 3      | partition-a             | for firewalls |
+| 2  | fits   | project-b | size-b | 3      | partition-a,partition-b | for machines  |
 `),
 		},
 		{
@@ -217,22 +217,22 @@ func Test_ProjectMachineReservationsCmd_SingleResult(t *testing.T) {
 			},
 			want: machineReservation1,
 			wantTable: pointer.Pointer(`
-ID   TENANT   PROJECT     SIZE     AMOUNT   PARTITIONS    DESCRIPTION
-1    fits     project-a   size-a   3        partition-a   for firewalls
+ID  TENANT  PROJECT    SIZE    AMOUNT  PARTITIONS   DESCRIPTION
+1   fits    project-a  size-a  3       partition-a  for firewalls
 `),
 			wantWideTable: pointer.Pointer(`
-ID   TENANT   PROJECT     SIZE     AMOUNT   PARTITIONS    DESCRIPTION     LABELS
-1    fits     project-a   size-a   3        partition-a   for firewalls   for firewalls   size.metal-stack.io/reserved-at=2024-09-19T08:57:40Z
-                                                                                          size.metal-stack.io/reserved-by=fits
+ID  TENANT  PROJECT    SIZE    AMOUNT  PARTITIONS   DESCRIPTION    LABELS
+1   fits    project-a  size-a  3       partition-a  for firewalls  for firewalls  size.metal-stack.io/reserved-at=2024-09-19T08:57:40Z
+                                                                                  size.metal-stack.io/reserved-by=fits
 `),
 			template: pointer.Pointer("{{ .sizeid }} {{ .projectid }}"),
 			wantTemplate: pointer.Pointer(`
 size-a project-a
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID | TENANT |  PROJECT  |  SIZE  | AMOUNT | PARTITIONS  |  DESCRIPTION  |
+| ID | TENANT | PROJECT   | SIZE   | AMOUNT | PARTITIONS  | DESCRIPTION   |
 |----|--------|-----------|--------|--------|-------------|---------------|
-|  1 | fits   | project-a | size-a |      3 | partition-a | for firewalls |
+| 1  | fits   | project-a | size-a | 3      | partition-a | for firewalls |
 `),
 		},
 		{
