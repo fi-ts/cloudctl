@@ -57,7 +57,7 @@ func (t *tablePrinter) render() {
 				os.Exit(1)
 			}
 		} else {
-			err := t.table.Bulk(t.wideData)
+			err := t.table.Bulk(t.shortData)
 			if err != nil {
 				fmt.Printf("unable to append data to table: %v", err)
 				os.Exit(1)
