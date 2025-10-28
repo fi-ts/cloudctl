@@ -45,18 +45,18 @@ func (t *tablePrinter) render() {
 	if t.template == nil {
 		if !t.noHeaders {
 			if t.wide {
-				t.table.SetHeader(t.wideHeader)
+				t.table.Header(t.wideHeader)
 			} else {
-				t.table.SetHeader(t.shortHeader)
+				t.table.Header(t.shortHeader)
 			}
 		}
 		if t.wide {
-			t.table.AppendBulk(t.wideData)
+			t.table.Bulk(t.wideData)
 		} else {
-			t.table.AppendBulk(t.shortData)
+			t.table.Bulk(t.shortData)
 		}
 		t.table.Render()
-		t.table.ClearRows()
+		t.table.Reset()
 	} else {
 		rows := t.shortData
 		if t.wide {
@@ -74,7 +74,7 @@ func (t *tablePrinter) render() {
 		t.shortData = [][]string{}
 		t.wideData = [][]string{}
 	}
-	t.table.ClearRows()
+	t.table.Reset()
 }
 func (t *tablePrinter) addShortData(row []string, data interface{}) {
 	if t.wide {
@@ -184,24 +184,6 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 		tp.wide = true
 	}
 	table := tablewriter.NewWriter(writer)
-	switch format {
-	case "template":
-		tp.template = template
-	case "markdown":
-		table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
-		table.SetCenterSeparator("|")
-	default:
-		table.SetHeaderLine(false)
-		table.SetAlignment(tablewriter.ALIGN_LEFT)
-		table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-		table.SetBorder(false)
-		table.SetCenterSeparator("")
-		table.SetColumnSeparator("")
-		table.SetRowSeparator("")
-		table.SetRowLine(false)
-		table.SetTablePadding("\t") // pad with tabs
-		table.SetNoWhiteSpace(true) // no whitespace in front of every line
-	}
 
 	tp.table = table
 	return &tp
