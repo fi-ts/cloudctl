@@ -51,9 +51,9 @@ func (t *tablePrinter) render() {
 			}
 		}
 		if t.wide {
-			t.table.Append(t.wideData)
+			t.table.Bulk(t.wideData)
 		} else {
-			t.table.Append(t.shortData)
+			t.table.Bulk(t.shortData)
 		}
 		t.table.Render()
 		t.table.Reset()
