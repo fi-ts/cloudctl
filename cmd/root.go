@@ -108,6 +108,7 @@ func newRootCmd(cfg *config) *cobra.Command {
 	rootCmd.AddCommand(newIPCmd(cfg))
 	rootCmd.AddCommand(newBillingCmd(cfg))
 	rootCmd.AddCommand(newHealthCmd(cfg))
+	rootCmd.AddCommand(newInstanceCmd(cfg))
 
 	return rootCmd
 }
