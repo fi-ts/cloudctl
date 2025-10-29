@@ -51,11 +51,23 @@ func (t *tablePrinter) render() {
 			}
 		}
 		if t.wide {
-			t.table.Bulk(t.wideData)
+			err := t.table.Bulk(t.wideData)
+			if err != nil {
+				fmt.Printf("unable to append data to table: %v", err)
+				os.Exit(1)
+			}
 		} else {
-			t.table.Bulk(t.shortData)
+			err := t.table.Bulk(t.wideData)
+			if err != nil {
+				fmt.Printf("unable to append data to table: %v", err)
+				os.Exit(1)
+			}
 		}
-		t.table.Render()
+		err := t.table.Render()
+		if err != nil {
+			fmt.Printf("unable to render the output: %v", err)
+			os.Exit(1)
+		}
 		t.table.Reset()
 	} else {
 		rows := t.shortData
