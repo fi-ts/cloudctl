@@ -351,14 +351,10 @@ github.com/metal-stack/duros-go v0.5.4 h1:KAXH1E/5PvT/kMRbYKtsFES5sxipuUFRDpTu0i
 github.com/metal-stack/duros-go v0.5.4/go.mod h1:f8cEW6f+6EK1rlpJnnnWZFiPWTT7gIPJmObEI6zLr1U=
 github.com/metal-stack/metal-go v0.41.2 h1:q6Y6LA8hMWUg4R39hei1LVbtxifnRHbdP+bW9pYgAzM=
 github.com/metal-stack/metal-go v0.41.2/go.mod h1:T0lbyrc+aHlI/GWAu2Og4Fmj4oaj5RD55736jBG0R8Y=
-github.com/metal-stack/metal-lib v0.22.1 h1:kAXOHZOSqBA0NQgYmtONxfY5khyQo8ofEL30QBE5DEY=
-github.com/metal-stack/metal-lib v0.22.1/go.mod h1:QiFb7TpSrvnLAHOlxLiUm1aG+1t5nPHsoDT/bw+F5r8=
-github.com/metal-stack/security v0.9.4 h1:qgB4Yx48Wgi57a/ePWE1gdUn4RjilVySQAFRVIoPKBU=
-github.com/metal-stack/security v0.9.4/go.mod h1:Qya3sKnaZ+1VmayGcMGgCBsVhzBvWYYx9hcvinfXB1Q=
 github.com/metal-stack/metal-lib v0.23.5 h1:ozrkB3DNr3Cqn8nkBvmzc/KKpYqC1j1mv2OVOj8i7Ac=
 github.com/metal-stack/metal-lib v0.23.5/go.mod h1:7uyHIrE19dkLwCZyeh2jmd7IEq5pEpzrzUGLoMN1eqY=
-github.com/metal-stack/security v0.9.3 h1:ZF5rGeZ4fIFe0DFFQWkXsUDCzODyjdrpvKmeaLOz9lo=
-github.com/metal-stack/security v0.9.3/go.mod h1:ENm5kPjqh4uYvn79sAIxd6GZBwtF2GSsGdkLELrB/D4=
+github.com/metal-stack/security v0.9.4 h1:qgB4Yx48Wgi57a/ePWE1gdUn4RjilVySQAFRVIoPKBU=
+github.com/metal-stack/security v0.9.4/go.mod h1:Qya3sKnaZ+1VmayGcMGgCBsVhzBvWYYx9hcvinfXB1Q=
 github.com/metal-stack/updater v1.2.2 h1:gnUrnQgfT20QFMDtFBY89opKoBAkdeI/8T2iwMHNdxs=
 github.com/metal-stack/updater v1.2.2/go.mod h1:JMFgqDgzbRaoZGYArqbI/L3zoAlipaGJKOvdGFu/kNY=
 github.com/metal-stack/v v1.0.3 h1:Sh2oBlnxrCUD+mVpzfC8HiqL045YWkxs0gpTvkjppqs=
