@@ -2,12 +2,6 @@ module github.com/fi-ts/cloudctl
 
 go 1.25
 
-// force a downgrade because otherwise we have compiler errors in tablewriter version
-replace (
-	github.com/metal-stack/metal-lib v0.23.5 => github.com/metal-stack/metal-lib v0.22.1
-	github.com/olekukonko/tablewriter v1.1.0 => github.com/olekukonko/tablewriter v0.0.5
-)
-
 require (
 	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/dcorbe/termui-dpc v0.0.0-20211125210512-9d2673a82dd6
@@ -29,7 +23,7 @@ require (
 	github.com/metal-stack/metal-lib v0.23.5
 	github.com/metal-stack/updater v1.2.2
 	github.com/metal-stack/v v1.0.3
-	github.com/olekukonko/tablewriter v1.1.0
+	github.com/olekukonko/tablewriter v1.0.8
 	github.com/spf13/afero v1.14.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
@@ -159,6 +153,8 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/nsf/termbox-go v1.1.1 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
+	github.com/olekukonko/errors v1.1.0 // indirect
+	github.com/olekukonko/ll v0.0.9 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
