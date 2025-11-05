@@ -18,6 +18,8 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/renderer"
+	"github.com/olekukonko/tablewriter/tw"
 )
 
 type (
@@ -57,7 +59,7 @@ func (t *tablePrinter) render() {
 				os.Exit(1)
 			}
 		} else {
-			err := t.table.Bulk(t.wideData)
+			err := t.table.Bulk(t.shortData)
 			if err != nil {
 				fmt.Printf("unable to append data to table: %v", err)
 				os.Exit(1)
@@ -195,7 +197,7 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 	if format == "wide" {
 		tp.wide = true
 	}
-	table := tablewriter.NewWriter(writer)
+	table := initTable(writer)
 
 	tp.table = table
 	return &tp
@@ -303,4 +305,49 @@ func (t *tablePrinter) Print(data interface{}) error {
 		return fmt.Errorf("unknown table printer for type: %T", d)
 	}
 	return nil
+}
+
+func initTable(w io.Writer) *tablewriter.Table {
+	symbols := tw.NewSymbolCustom("Default").
+		WithColumn("")
+
+	padding := tw.CellPadding{
+		Global: tw.Padding{
+			Right: "  ",
+		},
+	}
+
+	return tablewriter.NewTable(w,
+		tablewriter.WithRenderer(renderer.NewBlueprint(tw.Rendition{
+			Borders: tw.BorderNone,
+			Symbols: symbols,
+			Settings: tw.Settings{
+				Lines: tw.Lines{
+					ShowHeaderLine: tw.Off,
+					ShowFooterLine: tw.Off,
+				},
+				Separators: tw.Separators{
+					BetweenRows:    tw.Off,
+					BetweenColumns: tw.Off,
+					ShowHeader:     tw.Off,
+					ShowFooter:     tw.Off,
+				},
+			},
+		})),
+		tablewriter.WithConfig(tablewriter.Config{
+			Header: tw.CellConfig{
+				Alignment: tw.CellAlignment{
+					Global: tw.AlignLeft,
+				},
+				Padding: padding,
+			},
+			Row: tw.CellConfig{
+				Alignment: tw.CellAlignment{
+					Global: tw.AlignLeft,
+				},
+				Padding: padding,
+			},
+			Behavior: tw.Behavior{TrimSpace: tw.On},
+		}),
+	)
 }
