@@ -197,7 +197,7 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 	if format == "wide" {
 		tp.wide = true
 	}
-	table := initTable(writer)
+	table := initTable(format, writer)
 
 	tp.table = table
 	return &tp
@@ -307,7 +307,46 @@ func (t *tablePrinter) Print(data interface{}) error {
 	return nil
 }
 
-func initTable(w io.Writer) *tablewriter.Table {
+func initTable(format string, w io.Writer) *tablewriter.Table {
+
+	if format == "markdown" {
+		symbols := tw.NewSymbolCustom("Markdown").
+			WithRow("-").
+			WithColumn("|").
+			WithCenter("|").
+			WithMidLeft("|").
+			WithMidRight("|")
+
+		return tablewriter.NewTable(w,
+			tablewriter.WithRenderer(renderer.NewBlueprint(tw.Rendition{
+				Borders: tw.Border{Left: tw.On, Top: tw.Off, Right: tw.On, Bottom: tw.Off},
+				Symbols: symbols,
+				Settings: tw.Settings{
+					Lines: tw.Lines{
+						ShowHeaderLine: tw.On,
+						ShowFooterLine: tw.On,
+					},
+					Separators: tw.Separators{
+						ShowHeader: tw.On,
+						ShowFooter: tw.On,
+					},
+				},
+			})),
+			tablewriter.WithConfig(tablewriter.Config{
+				Header: tw.CellConfig{
+					Alignment: tw.CellAlignment{
+						Global: tw.AlignLeft,
+					},
+				},
+				Row: tw.CellConfig{
+					Alignment: tw.CellAlignment{
+						Global: tw.AlignLeft,
+					},
+				},
+			}),
+		)
+	}
+
 	symbols := tw.NewSymbolCustom("Default").
 		WithColumn("")
 
