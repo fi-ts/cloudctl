@@ -56,7 +56,16 @@ func newClusterXdrCmd(c *config) *cobra.Command {
 }
 
 func (c *xdrCmd) configure() error {
-	xdrConfiguration := &models.V1XDR{}
+	findRequest := cluster.NewFindClusterParams()
+	findRequest.SetID(viper.GetString("cluster-id"))
+	shoot, err := c.c.cloud.Cluster.FindCluster(findRequest, nil)
+	if err != nil {
+		return err
+	}
+
+	xdrConfiguration := &models.V1XDR{
+		Tenant: shoot.Payload.Tenant,
+	}
 
 	if viper.IsSet("disabled") {
 		xdrConfiguration.Disabled = pointer.Pointer(viper.GetBool("disabled"))
@@ -78,7 +87,7 @@ func (c *xdrCmd) configure() error {
 		xdrConfiguration.NoProxy = pointer.Pointer(viper.GetBool("noproxy"))
 	}
 
-	_, err := c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
+	_, err = c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
 		ID:        pointer.Pointer(viper.GetString("cluster-id")),
 		XDRConfig: xdrConfiguration,
 	}), nil)
