@@ -479,7 +479,7 @@ func (c *config) clusterCreate() error {
 	enableNodeLocalDNS := viper.GetBool("enable-node-local-dns")
 	disableForwardToUpstreamDNS := viper.GetBool("disable-forwarding-to-upstream-dns")
 	highAvailability := strconv.FormatBool(viper.GetBool("high-availability-control-plane"))
-	serviceAccountExtendTokenExpiration := strconv.FormatBool(viper.GetBool("service-account-extend-token-expiration"))
+	serviceAccountExtendTokenExpiration := viper.GetBool("service-account-extend-token-expiration")
 	podpidLimit := viper.GetInt64("kubelet-pod-pid-limit")
 	calicoEbpf := strconv.FormatBool(viper.GetBool("enable-calico-ebpf"))
 
@@ -758,7 +758,7 @@ WARNING: You are going to create a cluster that has no default internet access w
 	}
 
 	if viper.IsSet("service-account-extend-token-expiration") {
-		scr.ClusterFeatures.ServiceAccountExtendTokenExpiration = &serviceAccountExtendTokenExpiration
+		scr.Kubernetes.ServiceAccountExtendTokenExpiration = &serviceAccountExtendTokenExpiration
 	}
 
 	if viper.IsSet("kubelet-pod-pid-limit") {
@@ -1004,7 +1004,7 @@ func (c *config) updateCluster(args []string) error {
 
 	encryptedStorageClasses := strconv.FormatBool(viper.GetBool("encrypted-storage-classes"))
 	highAvailability := strconv.FormatBool(viper.GetBool("high-availability-control-plane"))
-	serviceAccountExtendTokenExpiration := strconv.FormatBool(viper.GetBool("service-account-extend-token-expiration"))
+	serviceAccountExtendTokenExpiration := viper.GetBool("service-account-extend-token-expiration")
 	calicoEbpf := strconv.FormatBool(viper.GetBool("enable-calico-ebpf"))
 
 	podpidLimit := viper.GetInt64("kubelet-pod-pid-limit")
@@ -1106,10 +1106,6 @@ func (c *config) updateCluster(args []string) error {
 		}
 
 		clusterFeatures.HighAvailability = &highAvailability
-	}
-
-	if viper.IsSet("service-account-extend-token-expiration") {
-		clusterFeatures.ServiceAccountExtendTokenExpiration = &serviceAccountExtendTokenExpiration
 	}
 
 	workergroupKubernetesVersion := viper.GetString("workerversion")
@@ -1413,6 +1409,10 @@ func (c *config) updateCluster(args []string) error {
 			return fmt.Errorf("--kubelet-pod-pid-limit can only be changed in combination with --yes-i-really-mean-it because this change can lead to pods not starting anymore in the cluster")
 		}
 		k8s.PodPIDsLimit = &podpidLimit
+	}
+
+	if viper.IsSet("service-account-extend-token-expiration") {
+		k8s.ServiceAccountExtendTokenExpiration = &serviceAccountExtendTokenExpiration
 	}
 
 	cur.Kubernetes = k8s
