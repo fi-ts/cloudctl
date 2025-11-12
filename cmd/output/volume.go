@@ -219,7 +219,7 @@ func VolumeManifest(v models.V1VolumeResponse, name, namespace, sc string) error
 
 	if len(v.ConnectedHosts) > 0 {
 		nodes := ConnectedHosts(&v)
-		fmt.Printf("# be cautios! at the time being your volume:%s is still attached to worker node:%s, you can not mount it twice\n", *v.VolumeID, strings.Join(nodes, ","))
+		fmt.Printf("# be cautious! at the time being your volume:%s is still attached to worker node:%s, you can not mount it twice\n", *v.VolumeID, strings.Join(nodes, ","))
 	}
 
 	helper.MustPrintKubernetesResource(pv)
