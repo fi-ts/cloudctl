@@ -26,7 +26,7 @@ func newClusterXdrCmd(c *config) *cobra.Command {
 
 	configureCmd := &cobra.Command{
 		Use:   "configure --cluster-id=<clusterid>",
-		Short: "configure the xdr settings for this cluster",
+		Short: "configure the xdr settings for this cluster (only allowed for provider tenant)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.configure()
 		},
