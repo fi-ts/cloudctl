@@ -66,6 +66,13 @@ func newClusterAuditCmd(c *config) *cobra.Command {
 			return w.splunk()
 		},
 	}
+	s3Cmd := &cobra.Command{
+		Use:   "s3 --cluster-id=<clusterid>",
+		Short: "configure s3 as an audit backend",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.s3()
+		},
+	}
 	clusterForwardingCmd := &cobra.Command{
 		Use:   "cluster-forwarding --cluster-id=<clusterid>",
 		Short: "configure forwarding the audit logs to an audittailer pod in the cluster (not recommended for production, see long help text)",
@@ -96,7 +103,20 @@ func newClusterAuditCmd(c *config) *cobra.Command {
 	splunkCmd.Flags().String("token", "", "the splunk token used to authenticate against the splunk endpoint.")
 	splunkCmd.Flags().String("ca", "", "the path to a ca used for tls connection to splunk endpoint.")
 
-	clusterAuditCmd.AddCommand(modeCmd, policyCmd, splunkCmd, clusterForwardingCmd)
+	s3Cmd.Flags().Bool("enabled", false, "enables s3 audit backend for this cluster.")
+	s3Cmd.Flags().String("access-key", "", "the s3 access key to configure.")
+	s3Cmd.Flags().String("secret-key", "", "the s3 secret key to configure.")
+	s3Cmd.Flags().String("bucket", "", "the s3 bucket to configure.")
+	s3Cmd.Flags().String("endpoint", "", "the s3 endpoint to configure.")
+	s3Cmd.Flags().String("prefix", "", "the s3 prefix to configure.")
+	s3Cmd.Flags().String("region", "", "the s3 region to configure.")
+	s3Cmd.Flags().String("key-format", "", "the s3 key format to configure.")
+	s3Cmd.Flags().Bool("tls", true, "enables tls.")
+	s3Cmd.Flags().String("total-file-size", "", "the s3 total file size to configure.")
+	s3Cmd.Flags().String("upload-timeout", "", "the s3 upload timeout to configure.")
+	s3Cmd.Flags().Bool("use-compression", false, "enables compression.")
+
+	clusterAuditCmd.AddCommand(modeCmd, policyCmd, splunkCmd, s3Cmd, clusterForwardingCmd)
 
 	return clusterAuditCmd
 }
@@ -220,6 +240,64 @@ func (c *auditCmd) splunk() error {
 
 		auditConfiguration.Backends.Splunk.TLS = pointer.Pointer(true)
 		auditConfiguration.Backends.Splunk.Ca = pointer.Pointer(string(ca))
+	}
+
+	_, err := c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
+		ID:    pointer.Pointer(viper.GetString("cluster-id")),
+		Audit: auditConfiguration,
+	}), nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *auditCmd) s3() error {
+	auditConfiguration := &models.V1Audit{}
+
+	if auditConfiguration.Backends == nil {
+		auditConfiguration.Backends = &models.V1AuditBackends{}
+	}
+	if auditConfiguration.Backends.S3 == nil {
+		auditConfiguration.Backends.S3 = &models.V1AuditBackendS3{}
+	}
+
+	if viper.IsSet("enabled") {
+		auditConfiguration.Backends.S3.Enabled = pointer.Pointer(viper.GetBool("enabled"))
+	}
+	if viper.IsSet("access-key") {
+		auditConfiguration.Backends.S3.AccessKey = pointer.Pointer(viper.GetString("access-key"))
+	}
+	if viper.IsSet("secret-key") {
+		auditConfiguration.Backends.S3.SecretKey = pointer.Pointer(viper.GetString("secret-key"))
+	}
+	if viper.IsSet("bucket") {
+		auditConfiguration.Backends.S3.Bucket = pointer.Pointer(viper.GetString("bucket"))
+	}
+	if viper.IsSet("endpoint") {
+		auditConfiguration.Backends.S3.Endpoint = pointer.Pointer(viper.GetString("endpoint"))
+	}
+	if viper.IsSet("prefix") {
+		auditConfiguration.Backends.S3.Prefix = pointer.Pointer(viper.GetString("prefix"))
+	}
+	if viper.IsSet("region") {
+		auditConfiguration.Backends.S3.Region = pointer.Pointer(viper.GetString("region"))
+	}
+	if viper.IsSet("key-format") {
+		auditConfiguration.Backends.S3.S3KeyFormat = pointer.Pointer(viper.GetString("key-format"))
+	}
+	if viper.IsSet("tls") {
+		auditConfiguration.Backends.S3.TLSEnabled = pointer.Pointer(viper.GetBool("tls"))
+	}
+	if viper.IsSet("total-file-size") {
+		auditConfiguration.Backends.S3.TotalFileSize = pointer.Pointer(viper.GetString("total-file-size"))
+	}
+	if viper.IsSet("upload-timeout") {
+		auditConfiguration.Backends.S3.UploadTimeout = pointer.Pointer(viper.GetString("upload-timeout"))
+	}
+	if viper.IsSet("use-compression") {
+		auditConfiguration.Backends.S3.UseCompression = pointer.Pointer(viper.GetBool("use-compression"))
 	}
 
 	_, err := c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
