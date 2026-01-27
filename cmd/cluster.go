@@ -395,6 +395,7 @@ func newClusterCmd(c *config) *cobra.Command {
 
 	// Cluster machine ... --------------------------------------------------------------------
 	clusterMachineSSHCmd.Flags().String("machineid", "", "machine to connect to.")
+	clusterMachineSSHCmd.Flags().String("reason", "", "a short description why access to the vpn is required")
 	genericcli.Must(clusterMachineSSHCmd.MarkFlagRequired("machineid"))
 	genericcli.Must(clusterMachineSSHCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterFirewallListCompletion))
 
@@ -926,13 +927,14 @@ type sshkeypair struct {
 	vpn        *models.V1VPN
 }
 
-func (c *config) sshKeyPair(clusterID string) (*sshkeypair, error) {
-	request := cluster.NewGetSSHKeyPairParams()
-	request.SetID(clusterID)
-	credentials, err := c.cloud.Cluster.GetSSHKeyPair(request, nil)
+func (c *config) sshKeyPair(clusterID string, reason *string) (*sshkeypair, error) {
+	credentials, err := c.cloud.Cluster.GetSSHKeyPair(cluster.NewGetSSHKeyPairParams().WithID(clusterID).WithBody(&models.V1ClusterCredentialsRequest{
+		Reason: reason,
+	}), nil)
 	if err != nil {
 		return nil, err
 	}
+
 	privateKey, err := base64.StdEncoding.DecodeString(*credentials.Payload.SSHKeyPair.PrivateKey)
 	if err != nil {
 		return nil, err
@@ -1939,7 +1941,7 @@ func (c *config) clusterMachineSSH(args []string, console bool) error {
 		return err
 	}
 
-	keypair, err := c.sshKeyPair(cid)
+	keypair, err := c.sshKeyPair(cid, pointer.PointerOrNil(viper.GetString("reason")))
 	if err != nil {
 		return err
 	}
