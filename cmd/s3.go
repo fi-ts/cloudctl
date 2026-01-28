@@ -180,7 +180,7 @@ func (c *config) s3Describe() error {
 	switch client {
 	case "":
 	case "minio":
-		fmt.Printf("mc config host add %s %s %s %s\n", *cfg.ID, *cfg.Endpoint, *cfg.Keys[0].AccessKey, *cfg.Keys[0].SecretKey)
+		fmt.Printf("mc alias set %s %s %s %s\n", *cfg.ID, *cfg.Endpoint, *cfg.Keys[0].AccessKey, *cfg.Keys[0].SecretKey)
 		return nil
 	case "s3cmd":
 		fmt.Printf(s3cmdTemplate, *cfg.Keys[0].AccessKey, *cfg.Endpoint, *cfg.Endpoint, *cfg.Keys[0].SecretKey)
@@ -249,7 +249,7 @@ func (c *config) s3Delete() error {
 	response, err := c.cloud.S3.Deletes3(request, nil)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			return fmt.Errorf("the server took too long to respond. for s3 users with a lot of data the deletion may take longer than configured request timeout. please check again if the deletion was carried out successfully at a later point in time.")
+			return fmt.Errorf("the server took too long to respond. for s3 users with a lot of data the deletion may take longer than configured request timeout. please check again if the deletion was carried out successfully at a later point in time")
 		}
 		return err
 	}

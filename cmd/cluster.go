@@ -43,11 +43,25 @@ import (
 	utiltaints "github.com/gardener/machine-controller-manager/pkg/util/taints"
 )
 
+func emojiHelpText() string {
+	return `
+Meaning of the emojis:
+
+🔒 Indicates that a cluster has configured an API server ACL. For cluster machines this emoji indicates that the machines were locked for deletion in metal-stack (only relevant for metal-stack operators).
+🤹 Indicates that a cluster has the high-availability control plane feature gate enabled.
+🐝 Indicates that a cluster has the calico ebpf data plane feature gate enabled.
+⚠️ Indicates that a cluster has issues (used in cluster issues command, e.g. indicates usage of an expired version of Kubernetes or machine image).
+🛡 For cluster firewalls indicates that the firewall has connected successfully through VPN to the metal-stack control plane (only relevant for metal-stack operators).
+`
+}
+
 func newClusterCmd(c *config) *cobra.Command {
 	clusterCmd := &cobra.Command{
 		Use:   "cluster",
 		Short: "manage clusters",
+		Long:  emojiHelpText(),
 	}
+
 	clusterCreateCmd := &cobra.Command{
 		Use:   "create",
 		Short: "create a cluster",
@@ -55,10 +69,10 @@ func newClusterCmd(c *config) *cobra.Command {
 			return c.clusterCreate()
 		},
 	}
-
 	clusterListCmd := &cobra.Command{
 		Use:     "list",
 		Short:   "list clusters",
+		Long:    emojiHelpText(),
 		Aliases: []string{"ls"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterList()
@@ -76,6 +90,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterDescribeCmd := &cobra.Command{
 		Use:   "describe <clusterid>",
 		Short: "describe a cluster",
+		Long:  emojiHelpText(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterDescribe(args)
 		},
@@ -117,11 +132,13 @@ func newClusterCmd(c *config) *cobra.Command {
 		Use:     "machine",
 		Aliases: []string{"machines"},
 		Short:   "list and access machines in the cluster",
+		Long:    emojiHelpText(),
 	}
 	clusterMachineListCmd := &cobra.Command{
 		Use:     "ls <clusterid>",
 		Aliases: []string{"list"},
 		Short:   "list machines of the cluster",
+		Long:    emojiHelpText(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterMachines(args)
 		},
@@ -131,6 +148,7 @@ func newClusterCmd(c *config) *cobra.Command {
 		Use:     "issues [<clusterid>]",
 		Aliases: []string{"problems", "warnings"},
 		Short:   "lists cluster issues, shows required actions explicitly when id argument is given",
+		Long:    emojiHelpText(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.clusterIssues(args)
 		},
@@ -250,6 +268,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-allowed-cidrs [optional].")
 	clusterCreateCmd.Flags().String("network-isolation", "", "defines restrictions to external network communication for the cluster, can be one of baseline|restricted|isolated. baseline sets no special restrictions to external networks, restricted by default only allows external traffic to explicitly allowed destinations, forbidden disallows communication with external networks except for a limited set of networks. Please consult the documentation for detailed descriptions of the individual modes as these cannot be altered anymore after creation. [optional]")
 	clusterCreateCmd.Flags().Bool("high-availability-control-plane", false, "enables a high availability control plane for the cluster, cannot be disabled again")
+	clusterCreateCmd.Flags().Bool("service-account-extend-token-expiration", false, "extends the token expiration time for projected service accounts tokens")
 	clusterCreateCmd.Flags().Int64("kubelet-pod-pid-limit", 0, "controls the maximum number of process IDs per pod allowed by the kubelet")
 
 	genericcli.Must(clusterCreateCmd.MarkFlagRequired("name"))
@@ -344,6 +363,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-remove-from-allowed-cidrs", []string{}, "comma-separated list of external CIDRs to be removed from the allowed CIDRs to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterUpdateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-* [optional].")
 	clusterUpdateCmd.Flags().Bool("high-availability-control-plane", false, "enables a high availability control plane for the cluster, cannot be disabled again")
+	clusterUpdateCmd.Flags().Bool("service-account-extend-token-expiration", false, "extends the token expiration time for projected service accounts tokens")
 	clusterUpdateCmd.Flags().Int64("kubelet-pod-pid-limit", 0, "controls the maximum number of process IDs per pod allowed by the kubelet")
 	clusterUpdateCmd.Flags().Bool("enable-calico-ebpf", false, "enables calico cni to use eBPF data plane and DSR configuration, for increased performance and preserving source IP addresses. [optional]")
 
@@ -459,6 +479,7 @@ func (c *config) clusterCreate() error {
 	enableNodeLocalDNS := viper.GetBool("enable-node-local-dns")
 	disableForwardToUpstreamDNS := viper.GetBool("disable-forwarding-to-upstream-dns")
 	highAvailability := strconv.FormatBool(viper.GetBool("high-availability-control-plane"))
+	serviceAccountExtendTokenExpiration := viper.GetBool("service-account-extend-token-expiration")
 	podpidLimit := viper.GetInt64("kubelet-pod-pid-limit")
 	calicoEbpf := strconv.FormatBool(viper.GetBool("enable-calico-ebpf"))
 
@@ -466,9 +487,13 @@ func (c *config) clusterCreate() error {
 	if viper.IsSet("cni") {
 		cni = viper.GetString("cni")
 	}
-
-	minsize := viper.GetInt32("minsize")
-	maxsize := viper.GetInt32("maxsize")
+	var minsize, maxsize *int32
+	if viper.IsSet("minsize") {
+		minsize = pointer.Pointer(viper.GetInt32("minsize"))
+	}
+	if viper.IsSet("maxsize") {
+		maxsize = pointer.Pointer(viper.GetInt32("maxsize"))
+	}
 	maxsurge := viper.GetString("maxsurge")
 	maxunavailable := viper.GetString("maxunavailable")
 
@@ -583,8 +608,8 @@ WARNING: You are going to create a cluster that has no default internet access w
 		Purpose:     &purpose,
 		Workers: []*models.V1Worker{
 			{
-				Minimum:        &minsize,
-				Maximum:        &maxsize,
+				Minimum:        minsize,
+				Maximum:        maxsize,
 				MaxSurge:       &maxsurge,
 				MaxUnavailable: &maxunavailable,
 				MachineType:    &machineType,
@@ -721,7 +746,7 @@ WARNING: You are going to create a cluster that has no default internet access w
 	if viper.IsSet("high-availability-control-plane") {
 		if ha, _ := strconv.ParseBool(highAvailability); ha {
 			if err := genericcli.PromptCustom(&genericcli.PromptConfig{
-				Message:     "Enabling the HA control plane feature gate is still a beta feature. You cannot use it in combination with the cluster forwarding backend of the audit extension. Please be aware that you cannot revert this feature gate after it was enabled.",
+				Message:     "You cannot use it in combination with the cluster forwarding backend of the audit extension. Please be aware that you cannot revert this feature gate after it was enabled.",
 				ShowAnswers: true,
 				Out:         c.out,
 			}); err != nil {
@@ -730,6 +755,10 @@ WARNING: You are going to create a cluster that has no default internet access w
 		}
 
 		scr.ClusterFeatures.HighAvailability = &highAvailability
+	}
+
+	if viper.IsSet("service-account-extend-token-expiration") {
+		scr.Kubernetes.ServiceAccountExtendTokenExpiration = &serviceAccountExtendTokenExpiration
 	}
 
 	if viper.IsSet("kubelet-pod-pid-limit") {
@@ -975,6 +1004,7 @@ func (c *config) updateCluster(args []string) error {
 
 	encryptedStorageClasses := strconv.FormatBool(viper.GetBool("encrypted-storage-classes"))
 	highAvailability := strconv.FormatBool(viper.GetBool("high-availability-control-plane"))
+	serviceAccountExtendTokenExpiration := viper.GetBool("service-account-extend-token-expiration")
 	calicoEbpf := strconv.FormatBool(viper.GetBool("enable-calico-ebpf"))
 
 	podpidLimit := viper.GetInt64("kubelet-pod-pid-limit")
@@ -1067,7 +1097,7 @@ func (c *config) updateCluster(args []string) error {
 	if viper.IsSet("high-availability-control-plane") {
 		if v, _ := strconv.ParseBool(highAvailability); v {
 			if err := genericcli.PromptCustom(&genericcli.PromptConfig{
-				Message:     "Enabling the HA control plane feature gate is still a beta feature. You cannot use it in combination with the cluster forwarding backend of the audit extension. Please be aware that you cannot revert this feature gate after it was enabled.",
+				Message:     "You cannot use it in combination with the cluster forwarding backend of the audit extension. Please be aware that you cannot revert this feature gate after it was enabled.",
 				ShowAnswers: true,
 				Out:         c.out,
 			}); err != nil {
@@ -1379,6 +1409,10 @@ func (c *config) updateCluster(args []string) error {
 			return fmt.Errorf("--kubelet-pod-pid-limit can only be changed in combination with --yes-i-really-mean-it because this change can lead to pods not starting anymore in the cluster")
 		}
 		k8s.PodPIDsLimit = &podpidLimit
+	}
+
+	if viper.IsSet("service-account-extend-token-expiration") {
+		k8s.ServiceAccountExtendTokenExpiration = &serviceAccountExtendTokenExpiration
 	}
 
 	cur.Kubernetes = k8s
@@ -1851,7 +1885,9 @@ func (c *config) clusterMachinePackages(args []string) error {
 			if err != nil {
 				return fmt.Errorf("image:%s does not have a package list", id)
 			}
-			defer res.Body.Close()
+			defer func() {
+				_ = res.Body.Close()
+			}()
 			if res.StatusCode >= 400 {
 				return fmt.Errorf("image:%s does not have a package list", id)
 			}
@@ -1860,7 +1896,9 @@ func (c *config) clusterMachinePackages(args []string) error {
 			if err != nil {
 				return err
 			}
-			defer getResp.Body.Close()
+			defer func() {
+				_ = getResp.Body.Close()
+			}()
 			content, err := io.ReadAll(getResp.Body)
 			if err != nil {
 				return err

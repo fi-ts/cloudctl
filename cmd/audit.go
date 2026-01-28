@@ -39,6 +39,9 @@ func newAuditCmd(c *config) *cobra.Command {
 	auditDescribeCmd.Flags().String("phase", "response", "phase of the audit trace. One of [request, response, single, error, opened, closed]")
 	auditDescribeCmd.Flags().Bool("prettify-body", false, "attempts to interpret the body as json and prettifies it")
 
+	auditDescribeCmd.Flags().String("from", "1h", "start of range of the audit traces. e.g. 1h, 10m, 2006-01-02 15:04:05")
+	auditDescribeCmd.Flags().String("to", "", "end of range of the audit traces. e.g. 1h, 10m, 2006-01-02 15:04:05")
+
 	genericcli.Must(auditDescribeCmd.RegisterFlagCompletionFunc("phase", c.comp.AuditPhaseCompletion))
 
 	auditListCmd.Flags().StringP("query", "q", "", "filters audit trace body payloads for the given text.")
@@ -83,6 +86,11 @@ func (c *config) auditList() error {
 	if err != nil {
 		return err
 	}
+	var psc *int32
+	if viper.IsSet("status-code") {
+		sc := viper.GetInt32("status-code")
+		psc = &sc
+	}
 	resp, err := c.cloud.Audit.FindAuditTraces(audit.NewFindAuditTracesParams().WithBody(&models.V1AuditFindRequest{
 		Body:         viper.GetString("query"),
 		From:         fromDateTime,
@@ -98,7 +106,7 @@ func (c *config) auditList() error {
 		ForwardedFor: viper.GetString("forwarded-for"),
 		RemoteAddr:   viper.GetString("remote-addr"),
 		Error:        viper.GetString("error"),
-		StatusCode:   viper.GetInt32("status-code"),
+		StatusCode:   psc,
 		Limit:        viper.GetInt64("limit"),
 	}), nil)
 	if err != nil {
@@ -109,12 +117,23 @@ func (c *config) auditList() error {
 }
 
 func (c *config) auditDescribe(args []string) error {
-	id, err := c.auditID("describe", args)
+	id, err := genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return err
+	}
+
+	fromDateTime, err := eventuallyRelativeDateTime(viper.GetString("from"))
+	if err != nil {
+		return err
+	}
+	toDateTime, err := eventuallyRelativeDateTime(viper.GetString("to"))
 	if err != nil {
 		return err
 	}
 
 	traces, err := c.cloud.Audit.FindAuditTraces(audit.NewFindAuditTracesParams().WithBody(&models.V1AuditFindRequest{
+		From:  fromDateTime,
+		To:    toDateTime,
 		Rqid:  id,
 		Phase: viper.GetString("phase"),
 	}), nil)
@@ -150,14 +169,4 @@ func eventuallyRelativeDateTime(s string) (strfmt.DateTime, error) {
 		return strfmt.DateTime(time.Now().Add(-duration)), nil
 	}
 	return strfmt.ParseDateTime(s)
-}
-
-func (c *config) auditID(verb string, args []string) (string, error) {
-	if len(args) == 0 {
-		return "", fmt.Errorf("audit %s requires projectID as argument", verb)
-	}
-	if len(args) == 1 {
-		return args[0], nil
-	}
-	return "", fmt.Errorf("audit %s requires exactly one projectID as argument", verb)
 }
