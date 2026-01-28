@@ -1,6 +1,8 @@
 package output
 
 import (
+	"strings"
+
 	"github.com/fatih/color"
 	"github.com/fi-ts/cloud-go/api/models"
 )
@@ -56,7 +58,7 @@ func (p S3TablePrinter) Print(data []*models.V1S3Response) {
 
 // Print a S3 partitions as table
 func (p S3PartitionTablePrinter) Print(data []*models.V1S3PartitionResponse) {
-	p.wideHeader = []string{"Name", "Endpoint", "Description", "Ready"}
+	p.wideHeader = []string{"Name", "Endpoint", "Description", "Classification", "Ready"}
 	p.shortHeader = p.wideHeader
 	if p.order == "" {
 		p.order = "id"
@@ -84,11 +86,16 @@ func (p S3PartitionTablePrinter) Print(data []*models.V1S3PartitionResponse) {
 			description = *partition.Description
 		}
 
+		classification := ""
+		if partition.Classification != nil {
+			classification = strings.ToLower(strings.TrimPrefix(*partition.Classification, "CLASSIFICATION_"))
+		}
+
 		readyStatus := color.RedString(circle)
 		if ready {
 			readyStatus = color.GreenString(circle)
 		}
-		wide := []string{name, endpoint, description, readyStatus}
+		wide := []string{name, endpoint, description, classification, readyStatus}
 		p.addWideData(wide, partition)
 		p.addShortData(wide, partition)
 	}
