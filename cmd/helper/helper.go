@@ -72,7 +72,7 @@ func Truncate(input, ellipsis string, maxlength int) string {
 }
 
 // ReadFrom will either read from stdin (-) or a file path an marshall from yaml to data
-func ReadFrom(from string, data interface{}, f func(target interface{})) error {
+func ReadFrom(from string, data any, f func(target any)) error {
 	var reader io.Reader
 	var err error
 	switch from {

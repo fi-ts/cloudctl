@@ -8,7 +8,6 @@ import (
 	"github.com/fi-ts/cloud-go/api/models"
 	testclient "github.com/fi-ts/cloud-go/test/client"
 	"github.com/fi-ts/cloudctl/pkg/api"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/metal-stack/v"
 	"github.com/stretchr/testify/mock"
@@ -25,7 +24,7 @@ func Test_newVersionCmd(t *testing.T) {
 				Version: func(mock *mock.Mock) {
 					mock.On("Info", testcommon.MatchIgnoreContext(t, version.NewInfoParams()), nil).Return(&version.InfoOK{
 						Payload: &models.RestVersion{
-							Version: pointer.Pointer("server v1.0.0"),
+							Version: new("server v1.0.0"),
 						},
 					}, nil)
 				},
@@ -33,7 +32,7 @@ func Test_newVersionCmd(t *testing.T) {
 			want: &api.Version{
 				Client: "client v1.0.0, " + runtime.Version(),
 				Server: &models.RestVersion{
-					Version: pointer.Pointer("server v1.0.0"),
+					Version: new("server v1.0.0"),
 				},
 			},
 		},

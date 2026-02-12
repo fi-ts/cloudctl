@@ -4,7 +4,6 @@ import (
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -60,11 +59,11 @@ func (c *xdrCmd) configure() error {
 	xdrConfiguration := &models.V1XDR{}
 
 	if viper.IsSet("disabled") {
-		xdrConfiguration.Disabled = pointer.Pointer(viper.GetBool("disabled"))
+		xdrConfiguration.Disabled = new(viper.GetBool("disabled"))
 	}
 
 	if viper.IsSet("distributionid") {
-		xdrConfiguration.DistributionID = pointer.Pointer(viper.GetString("distributionid"))
+		xdrConfiguration.DistributionID = new(viper.GetString("distributionid"))
 	}
 
 	if viper.IsSet("proxies") {
@@ -72,15 +71,15 @@ func (c *xdrCmd) configure() error {
 	}
 
 	if viper.IsSet("customtag") {
-		xdrConfiguration.CustomTag = pointer.Pointer(viper.GetString("customtag"))
+		xdrConfiguration.CustomTag = new(viper.GetString("customtag"))
 	}
 
 	if viper.IsSet("noproxy") {
-		xdrConfiguration.NoProxy = pointer.Pointer(viper.GetBool("noproxy"))
+		xdrConfiguration.NoProxy = new(viper.GetBool("noproxy"))
 	}
 
 	_, err := c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
-		ID:        pointer.Pointer(viper.GetString("cluster-id")),
+		ID:        new(viper.GetString("cluster-id")),
 		XDRConfig: xdrConfiguration,
 	}), nil)
 	if err != nil {

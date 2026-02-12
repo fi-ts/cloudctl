@@ -25,7 +25,7 @@ import (
 type (
 	// Printer main Interface for implementations which spits out to specified Writer
 	Printer interface {
-		Print(data interface{}) error
+		Print(data any) error
 	}
 	tablePrinter struct {
 		table       *tablewriter.Table
@@ -90,13 +90,13 @@ func (t *tablePrinter) render() {
 	}
 	t.table.Reset()
 }
-func (t *tablePrinter) addShortData(row []string, data interface{}) {
+func (t *tablePrinter) addShortData(row []string, data any) {
 	if t.wide {
 		return
 	}
 	t.shortData = append(t.shortData, t.rowOrTemplate(row, data))
 }
-func (t *tablePrinter) addWideData(row []string, data interface{}) {
+func (t *tablePrinter) addWideData(row []string, data any) {
 	if !t.wide {
 		return
 	}
@@ -104,7 +104,7 @@ func (t *tablePrinter) addWideData(row []string, data interface{}) {
 }
 
 // rowOrTemplate return either given row or the data rendered with the given template, depending if template is set.
-func (t *tablePrinter) rowOrTemplate(row []string, data interface{}) []string {
+func (t *tablePrinter) rowOrTemplate(row []string, data any) []string {
 	tpl := t.template
 	if tpl != nil {
 		var buf bytes.Buffer
@@ -120,19 +120,19 @@ func (t *tablePrinter) rowOrTemplate(row []string, data interface{}) []string {
 
 // genericObject transforms the input to a struct which has fields with the same name as in the json struct.
 // this is handy for template rendering as the output of -o json|yaml can be used as the input for the template
-func genericObject(input interface{}) map[string]interface{} {
+func genericObject(input any) map[string]any {
 	b, err := json.Marshal(input)
 	if err != nil {
 		fmt.Printf("unable to marshall input:%v", err)
 		os.Exit(1)
 	}
-	var result interface{}
+	var result any
 	err = json.Unmarshal(b, &result)
 	if err != nil {
 		fmt.Printf("unable to unmarshal input:%v", err)
 		os.Exit(1)
 	}
-	return result.(map[string]interface{})
+	return result.(map[string]any)
 
 }
 
@@ -208,7 +208,7 @@ func (t *tablePrinter) Type() string {
 }
 
 // Print a model in a human readable table
-func (t *tablePrinter) Print(data interface{}) error {
+func (t *tablePrinter) Print(data any) error {
 	tp := *t
 	switch d := data.(type) {
 	case *models.V1AuditResponse:
