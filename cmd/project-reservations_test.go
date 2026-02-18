@@ -8,7 +8,6 @@ import (
 	"github.com/fi-ts/cloud-go/api/client/project"
 	"github.com/fi-ts/cloud-go/api/models"
 	testclient "github.com/fi-ts/cloud-go/test/client"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/mock"
@@ -17,29 +16,29 @@ import (
 
 var (
 	machineReservation1 = &models.V1MachineReservationResponse{
-		ID:          pointer.Pointer("1"),
-		Amount:      pointer.Pointer(int32(3)),
+		ID:          new("1"),
+		Amount:      new(int32(3)),
 		Description: "for firewalls",
 		Labels: map[string]string{
 			"size.metal-stack.io/reserved-at": "2024-09-19T08:57:40Z",
 			"size.metal-stack.io/reserved-by": "fits",
 		},
 		Partitionids: []string{"partition-a"},
-		Projectid:    pointer.Pointer("project-a"),
-		Sizeid:       pointer.Pointer("size-a"),
-		Tenant:       pointer.Pointer("fits"),
+		Projectid:    new("project-a"),
+		Sizeid:       new("size-a"),
+		Tenant:       new("fits"),
 	}
 	machineReservation2 = &models.V1MachineReservationResponse{
-		ID:          pointer.Pointer("2"),
-		Amount:      pointer.Pointer(int32(3)),
+		ID:          new("2"),
+		Amount:      new(int32(3)),
 		Description: "for machines",
 		Labels: map[string]string{
 			"size.metal-stack.io/reserved-by": "fits",
 		},
 		Partitionids: []string{"partition-a", "partition-b"},
-		Projectid:    pointer.Pointer("project-b"),
-		Sizeid:       pointer.Pointer("size-b"),
-		Tenant:       pointer.Pointer("fits"),
+		Projectid:    new("project-b"),
+		Sizeid:       new("size-b"),
+		Tenant:       new("fits"),
 	}
 )
 
@@ -64,23 +63,23 @@ func Test_ProjectMachineReservationsCmd_MultiResult(t *testing.T) {
 				machineReservation1,
 				machineReservation2,
 			},
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID  TENANT  PROJECT    SIZE    AMOUNT  PARTITIONS               DESCRIPTION
 1   fits    project-a  size-a  3       partition-a              for firewalls
 2   fits    project-b  size-b  3       partition-a,partition-b  for machines
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  TENANT  PROJECT    SIZE    AMOUNT  PARTITIONS               DESCRIPTION    LABELS
 1   fits    project-a  size-a  3       partition-a              for firewalls  for firewalls  size.metal-stack.io/reserved-at=2024-09-19T08:57:40Z
                                                                                               size.metal-stack.io/reserved-by=fits
 2   fits    project-b  size-b  3       partition-a,partition-b  for machines   for machines   size.metal-stack.io/reserved-by=fits
 `),
-			template: pointer.Pointer("{{ .sizeid }} {{ .projectid }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .sizeid }} {{ .projectid }}"),
+			wantTemplate: new(`
 size-a project-a
 size-b project-b
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID | TENANT | PROJECT   | SIZE   | AMOUNT | PARTITIONS              | DESCRIPTION   |
 |----|--------|-----------|--------|--------|-------------------------|---------------|
 | 1  | fits   | project-a | size-a | 3      | partition-a             | for firewalls |
@@ -97,10 +96,10 @@ size-b project-b
 			mocks: &testclient.CloudMockFns{
 				Project: func(mock *mock.Mock) {
 					mock.On("ListMachineReservations", testcommon.MatchIgnoreContext(t, project.NewListMachineReservationsParams().WithBody(&models.V1MachineReservationFindRequest{
-						Projectid: pointer.Pointer("project-a"),
-						Sizeid:    pointer.Pointer("size-a"),
-						Tenant:    pointer.Pointer("fits"),
-						ID:        pointer.Pointer("1"),
+						Projectid: new("project-a"),
+						Sizeid:    new("size-a"),
+						Tenant:    new("fits"),
+						ID:        new("1"),
 					})), nil).Return(&project.ListMachineReservationsOK{
 						Payload: []*models.V1MachineReservationResponse{
 							machineReservation1,
@@ -123,14 +122,14 @@ size-b project-b
 			mocks: &testclient.CloudMockFns{
 				Project: func(mock *mock.Mock) {
 					mock.On("CreateMachineReservation", testcommon.MatchIgnoreContext(t, project.NewCreateMachineReservationParams().
-						WithBody(toMachineReservationCreateRequest(machineReservation1)).WithForce(pointer.Pointer(false))), nil).
+						WithBody(toMachineReservationCreateRequest(machineReservation1)).WithForce(new(false))), nil).
 						Return(nil, &project.CreateMachineReservationConflict{}).Once()
 					mock.On("UpdateMachineReservation", testcommon.MatchIgnoreContext(t, project.NewUpdateMachineReservationParams().
-						WithBody(toMachineReservationUpdateRequest(machineReservation1)).WithForce(pointer.Pointer(false))), nil).
+						WithBody(toMachineReservationUpdateRequest(machineReservation1)).WithForce(new(false))), nil).
 						Return(&project.UpdateMachineReservationOK{Payload: machineReservation1}, nil)
 
 					mock.On("CreateMachineReservation", testcommon.MatchIgnoreContext(t, project.NewCreateMachineReservationParams().
-						WithBody(toMachineReservationCreateRequest(machineReservation2)).WithForce(pointer.Pointer(false))), nil).
+						WithBody(toMachineReservationCreateRequest(machineReservation2)).WithForce(new(false))), nil).
 						Return(&project.CreateMachineReservationCreated{Payload: machineReservation2}, nil)
 				},
 			},
@@ -150,7 +149,7 @@ size-b project-b
 			mocks: &testclient.CloudMockFns{
 				Project: func(mock *mock.Mock) {
 					mock.On("CreateMachineReservation", testcommon.MatchIgnoreContext(t, project.NewCreateMachineReservationParams().
-						WithBody(toMachineReservationCreateRequest(machineReservation1)).WithForce(pointer.Pointer(false))), nil).
+						WithBody(toMachineReservationCreateRequest(machineReservation1)).WithForce(new(false))), nil).
 						Return(&project.CreateMachineReservationCreated{Payload: machineReservation1}, nil)
 				},
 			},
@@ -169,7 +168,7 @@ size-b project-b
 			mocks: &testclient.CloudMockFns{
 				Project: func(mock *mock.Mock) {
 					mock.On("UpdateMachineReservation", testcommon.MatchIgnoreContext(t, project.NewUpdateMachineReservationParams().
-						WithBody(toMachineReservationUpdateRequest(machineReservation1)).WithForce(pointer.Pointer(false))), nil).
+						WithBody(toMachineReservationUpdateRequest(machineReservation1)).WithForce(new(false))), nil).
 						Return(&project.UpdateMachineReservationOK{Payload: machineReservation1}, nil)
 				},
 			},
@@ -216,20 +215,20 @@ func Test_ProjectMachineReservationsCmd_SingleResult(t *testing.T) {
 				},
 			},
 			want: machineReservation1,
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID  TENANT  PROJECT    SIZE    AMOUNT  PARTITIONS   DESCRIPTION
 1   fits    project-a  size-a  3       partition-a  for firewalls
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  TENANT  PROJECT    SIZE    AMOUNT  PARTITIONS   DESCRIPTION    LABELS
 1   fits    project-a  size-a  3       partition-a  for firewalls  for firewalls  size.metal-stack.io/reserved-at=2024-09-19T08:57:40Z
                                                                                   size.metal-stack.io/reserved-by=fits
 `),
-			template: pointer.Pointer("{{ .sizeid }} {{ .projectid }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .sizeid }} {{ .projectid }}"),
+			wantTemplate: new(`
 size-a project-a
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID | TENANT | PROJECT   | SIZE   | AMOUNT | PARTITIONS  | DESCRIPTION   |
 |----|--------|-----------|--------|--------|-------------|---------------|
 | 1  | fits   | project-a | size-a | 3      | partition-a | for firewalls |
@@ -266,7 +265,7 @@ size-a project-a
 			mocks: &testclient.CloudMockFns{
 				Project: func(mock *mock.Mock) {
 					mock.On("CreateMachineReservation", testcommon.MatchIgnoreContext(t, project.NewCreateMachineReservationParams().
-						WithBody(toMachineReservationCreateRequest(machineReservation1)).WithForce(pointer.Pointer(true))), nil).
+						WithBody(toMachineReservationCreateRequest(machineReservation1)).WithForce(new(true))), nil).
 						Return(&project.CreateMachineReservationCreated{Payload: machineReservation1}, nil)
 				},
 			},

@@ -5,7 +5,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/updater"
 )
 
@@ -44,7 +43,7 @@ func newUpdateCmd(c *config, name string) *cobra.Command {
 			}
 
 			if viper.IsSet("version") && viper.GetString("version") != "latest" {
-				desired = pointer.Pointer(viper.GetString("version"))
+				desired = new(viper.GetString("version"))
 			}
 
 			u, err := updater.New("fi-ts", name, name, desired)

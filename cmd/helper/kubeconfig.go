@@ -8,7 +8,7 @@ import (
 )
 
 func EnrichKubeconfigTpl(tpl string, authContext *auth.AuthContext) ([]byte, error) {
-	cfg := make(map[interface{}]interface{})
+	cfg := make(map[any]any)
 	err := yaml.Unmarshal([]byte(tpl), cfg)
 	if err != nil {
 		return nil, err
@@ -45,10 +45,10 @@ func EnrichKubeconfigTpl(tpl string, authContext *auth.AuthContext) ([]byte, err
 	return mergedKubeconfig, nil
 }
 
-func MergeKubeconfigTpl(currentCfg map[interface{}]interface{}, tpl, contextName, clusterName string, authContext *auth.AuthContext) ([]byte, error) {
+func MergeKubeconfigTpl(currentCfg map[any]any, tpl, contextName, clusterName string, authContext *auth.AuthContext) ([]byte, error) {
 	clusters := &struct {
 		Clusters []struct {
-			Cluster map[string]interface{} `yaml:"cluster"`
+			Cluster map[string]any `yaml:"cluster"`
 		} `yaml:"clusters"`
 	}{}
 

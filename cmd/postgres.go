@@ -9,7 +9,6 @@ import (
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
@@ -530,7 +529,7 @@ func (c *config) postgresPromoteToPrimary(args []string) error {
 
 	var disableLB *bool
 	if viper.GetString("disable-loadbalancers") != "" {
-		disableLB = pointer.Pointer(viper.GetBool("disable-loadbalancers"))
+		disableLB = new(viper.GetBool("disable-loadbalancers"))
 	}
 
 	params := database.NewGetPostgresParams().WithID(id)
@@ -580,7 +579,7 @@ func (c *config) postgresDemoteToStandby(args []string) error {
 
 	var disableLB *bool
 	if viper.GetString("disable-loadbalancers") != "" {
-		disableLB = pointer.Pointer(viper.GetBool("disable-loadbalancers"))
+		disableLB = new(viper.GetBool("disable-loadbalancers"))
 	}
 
 	params := database.NewGetPostgresParams().WithID(id)
@@ -666,7 +665,7 @@ func (c *config) postgresApply() error {
 	var purs []models.V1PostgresUpdateRequest
 	var pur models.V1PostgresUpdateRequest
 
-	err := helper.ReadFrom(viper.GetString("file"), &pur, func(data interface{}) {
+	err := helper.ReadFrom(viper.GetString("file"), &pur, func(data any) {
 		udoc, ok := data.(*models.V1PostgresUpdateRequest)
 		if ok {
 			purs = append(purs, *udoc)
@@ -679,7 +678,7 @@ func (c *config) postgresApply() error {
 		return err
 	}
 
-	err = helper.ReadFrom(viper.GetString("file"), &pcr, func(data interface{}) {
+	err = helper.ReadFrom(viper.GetString("file"), &pcr, func(data any) {
 		cdoc, ok := data.(*models.V1PostgresCreateRequest)
 		if ok {
 			pcrs = append(pcrs, *cdoc)
@@ -783,7 +782,7 @@ func (c *config) postgresUpdate(args []string) error {
 
 	var disableLB *bool
 	if viper.GetString("disable-loadbalancers") != "" {
-		disableLB = pointer.Pointer(viper.GetBool("disable-loadbalancers"))
+		disableLB = new(viper.GetBool("disable-loadbalancers"))
 	}
 	backupConfig := viper.GetString("backup-config")
 
@@ -898,7 +897,7 @@ func (c *config) postgresAcceptRestore(args []string) error {
 func readPostgresUpdateRequests(filename string) ([]models.V1PostgresUpdateRequest, error) {
 	var purs []models.V1PostgresUpdateRequest
 	var pur models.V1PostgresUpdateRequest
-	err := helper.ReadFrom(filename, &pur, func(data interface{}) {
+	err := helper.ReadFrom(filename, &pur, func(data any) {
 		doc := data.(*models.V1PostgresUpdateRequest)
 		purs = append(purs, *doc)
 	})
