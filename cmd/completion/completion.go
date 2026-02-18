@@ -141,7 +141,7 @@ func (c *Completion) ClusterStorageClassListCompletion(cmd *cobra.Command, args 
 
 	clusterID := args[0]
 
-	resp, err := c.cloud.Cluster.FindCluster(cluster.NewFindClusterParams().WithID(clusterID).WithReturnMachines(pointer.Pointer(false)), nil)
+	resp, err := c.cloud.Cluster.FindCluster(cluster.NewFindClusterParams().WithID(clusterID).WithReturnMachines(new(false)), nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
@@ -286,7 +286,6 @@ func (c *Completion) NetworkListCompletion(cmd *cobra.Command, args []string, to
 
 	var names []string
 	for _, n := range sc.Payload.Networks {
-		n := n
 		if n.ID == nil {
 			continue
 		}
@@ -360,11 +359,9 @@ func (c *Completion) SizeListCompletion(cmd *cobra.Command, args []string, toCom
 
 	sizeMap := map[string]bool{}
 	for _, t := range sc.Payload.MachineTypes {
-		t := t
 		sizeMap[t] = true
 	}
 	for _, t := range sc.Payload.FirewallTypes {
-		t := t
 		sizeMap[t] = true
 	}
 

@@ -491,10 +491,10 @@ func (c *config) clusterCreate() error {
 	}
 	var minsize, maxsize *int32
 	if viper.IsSet("minsize") {
-		minsize = pointer.Pointer(viper.GetInt32("minsize"))
+		minsize = new(viper.GetInt32("minsize"))
 	}
 	if viper.IsSet("maxsize") {
-		maxsize = pointer.Pointer(viper.GetInt32("maxsize"))
+		maxsize = new(viper.GetInt32("maxsize"))
 	}
 	maxsurge := viper.GetString("maxsurge")
 	maxunavailable := viper.GetString("maxunavailable")
@@ -504,12 +504,12 @@ func (c *config) clusterCreate() error {
 
 	var defaultPodSecurityStandard *string
 	if viper.IsSet("default-pod-security-standard") {
-		defaultPodSecurityStandard = pointer.Pointer(viper.GetString("default-pod-security-standard"))
+		defaultPodSecurityStandard = new(viper.GetString("default-pod-security-standard"))
 	}
 
 	var networkAccessType *string
 	if viper.IsSet("network-isolation") {
-		networkAccessType = pointer.Pointer(viper.GetString("network-isolation"))
+		networkAccessType = new(viper.GetString("network-isolation"))
 		switch *networkAccessType {
 		case models.V1ClusterCreateRequestNetworkAccessTypeForbidden:
 			fmt.Printf(`
@@ -651,7 +651,7 @@ WARNING: You are going to create a cluster that has no default internet access w
 
 		// default to true for evaluation clusters
 		if purpose == string(v1beta1.ShootPurposeEvaluation) {
-			scr.Maintenance.AutoUpdate.KubernetesVersion = pointer.Pointer(true)
+			scr.Maintenance.AutoUpdate.KubernetesVersion = new(true)
 		}
 		if viper.IsSet("autoupdate-kubernetes") {
 			auto := viper.GetBool("autoupdate-kubernetes")
@@ -709,7 +709,7 @@ WARNING: You are going to create a cluster that has no default internet access w
 
 		scr.KubeAPIServerACL = &models.V1KubeAPIServerACL{
 			CIDRs:    viper.GetStringSlice("kube-apiserver-acl-allowed-cidrs"),
-			Disabled: pointer.Pointer(!viper.GetBool("enable-kube-apiserver-acl")),
+			Disabled: new(!viper.GetBool("enable-kube-apiserver-acl")),
 		}
 	}
 
@@ -738,11 +738,11 @@ WARNING: You are going to create a cluster that has no default internet access w
 			}
 		}
 
-		scr.ClusterFeatures.DisableCsiLvm = pointer.Pointer(strconv.FormatBool(!viper.GetBool("enable-csi-lvm")))
+		scr.ClusterFeatures.DisableCsiLvm = new(strconv.FormatBool(!viper.GetBool("enable-csi-lvm")))
 	}
 
 	if viper.IsSet("enable-csi-driver-lvm") {
-		scr.ClusterFeatures.EnableCsiDriverLvm = pointer.Pointer(strconv.FormatBool(viper.GetBool("enable-csi-driver-lvm")))
+		scr.ClusterFeatures.EnableCsiDriverLvm = new(strconv.FormatBool(viper.GetBool("enable-csi-driver-lvm")))
 	}
 
 	if viper.IsSet("high-availability-control-plane") {
@@ -1028,7 +1028,6 @@ func (c *config) updateCluster(args []string) error {
 
 	var workertaints []*models.V1Taint
 	for _, t := range coreworkertaints {
-		t := t
 		workertaints = append(workertaints, &models.V1Taint{
 			Key:    &t.Key,
 			Value:  t.Value,
@@ -1080,10 +1079,10 @@ func (c *config) updateCluster(args []string) error {
 			}
 		}
 
-		clusterFeatures.DisableCsiLvm = pointer.Pointer(strconv.FormatBool(!viper.GetBool("enable-csi-lvm")))
+		clusterFeatures.DisableCsiLvm = new(strconv.FormatBool(!viper.GetBool("enable-csi-lvm")))
 	}
 	if viper.IsSet("enable-csi-driver-lvm") {
-		clusterFeatures.EnableCsiDriverLvm = pointer.Pointer(strconv.FormatBool(viper.GetBool("enable-csi-driver-lvm")))
+		clusterFeatures.EnableCsiDriverLvm = new(strconv.FormatBool(viper.GetBool("enable-csi-driver-lvm")))
 	}
 	if viper.IsSet("enable-calico-ebpf") {
 		if activate, _ := strconv.ParseBool(calicoEbpf); activate {
@@ -1153,10 +1152,10 @@ func (c *config) updateCluster(args []string) error {
 
 				worker = &models.V1Worker{
 					Name:           &workergroupname,
-					Minimum:        pointer.Pointer(int32(1)),
-					Maximum:        pointer.Pointer(int32(1)),
-					MaxSurge:       pointer.Pointer("1"),
-					MaxUnavailable: pointer.Pointer("0"),
+					Minimum:        new(int32(1)),
+					Maximum:        new(int32(1)),
+					MaxSurge:       new("1"),
+					MaxUnavailable: new("0"),
 					Labels:         workerlabels,
 					Annotations:    workerannotations,
 					Taints:         workertaints,
@@ -1183,7 +1182,6 @@ func (c *config) updateCluster(args []string) error {
 
 			var newWorkers []*models.V1Worker
 			for _, w := range workers {
-				w := w
 				if w.Name != nil && *w.Name == *worker.Name {
 					continue
 				}
@@ -1260,7 +1258,7 @@ func (c *config) updateCluster(args []string) error {
 						return err
 					}
 				}
-				worker.KubernetesVersion = pointer.Pointer(workergroupKubernetesVersion)
+				worker.KubernetesVersion = new(workergroupKubernetesVersion)
 			}
 
 			if maxsurge != "" {
@@ -1332,7 +1330,7 @@ func (c *config) updateCluster(args []string) error {
 		if newACL == nil {
 			newACL = &models.V1KubeAPIServerACL{
 				CIDRs:    []string{},
-				Disabled: pointer.Pointer(true),
+				Disabled: new(true),
 			}
 		}
 
@@ -1340,7 +1338,7 @@ func (c *config) updateCluster(args []string) error {
 			if !viper.GetBool("yes-i-really-mean-it") {
 				return fmt.Errorf("--enable-kube-apiserver-acl is set but you forgot to add --yes-i-really-mean-it")
 			}
-			newACL.Disabled = pointer.Pointer(!viper.GetBool("enable-kube-apiserver-acl"))
+			newACL.Disabled = new(!viper.GetBool("enable-kube-apiserver-acl"))
 		}
 
 		if viper.IsSet("enable-kube-apiserver-acl") && viper.GetBool("enable-kube-apiserver-acl") {
@@ -1405,7 +1403,7 @@ func (c *config) updateCluster(args []string) error {
 		if !viper.GetBool("yes-i-really-mean-it") {
 			return fmt.Errorf("--default-pod-security-standard is set but you forgot to add --yes-i-really-mean-it")
 		}
-		k8s.DefaultPodSecurityStandard = pointer.Pointer(viper.GetString("default-pod-security-standard"))
+		k8s.DefaultPodSecurityStandard = new(viper.GetString("default-pod-security-standard"))
 	}
 
 	if viper.IsSet("kubelet-pod-pid-limit") {
@@ -1508,7 +1506,7 @@ func (c *config) clusterDescribe(args []string) error {
 	findRequest := cluster.NewFindClusterParams()
 	findRequest.SetID(ci)
 	if viper.GetBool("no-machines") {
-		findRequest.WithReturnMachines(pointer.Pointer(false))
+		findRequest.WithReturnMachines(new(false))
 	}
 	shoot, err := c.cloud.Cluster.FindCluster(findRequest, nil)
 	if err != nil {
@@ -1674,7 +1672,7 @@ func (c *config) clusterDNSManifest(args []string) error {
 		return err
 	}
 
-	cluster, err := c.cloud.Cluster.FindCluster(cluster.NewFindClusterParams().WithID(ci).WithReturnMachines(pointer.Pointer(false)), nil)
+	cluster, err := c.cloud.Cluster.FindCluster(cluster.NewFindClusterParams().WithID(ci).WithReturnMachines(new(false)), nil)
 	if err != nil {
 		return err
 	}
@@ -1709,7 +1707,7 @@ func (c *config) clusterDNSManifest(args []string) error {
 				Annotations: annotations,
 			},
 			Spec: networkingv1.IngressSpec{
-				IngressClassName: pointer.Pointer(viper.GetString("ingress-class")),
+				IngressClassName: new(viper.GetString("ingress-class")),
 				Rules: []networkingv1.IngressRule{
 					{
 						Host: domain,

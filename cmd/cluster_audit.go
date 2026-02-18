@@ -108,9 +108,9 @@ func (c *auditCmd) mode(args []string) error {
 	}
 
 	_, err = c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
-		ID: pointer.Pointer(viper.GetString("cluster-id")),
+		ID: new(viper.GetString("cluster-id")),
 		Audit: &models.V1Audit{
-			WebhookMode: pointer.Pointer(mode),
+			WebhookMode: new(mode),
 		},
 	}), nil)
 	if err != nil {
@@ -134,9 +134,9 @@ func (c *auditCmd) auditPolicy() error {
 
 	if viper.GetBool("remove") {
 		_, err := c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
-			ID: pointer.Pointer(viper.GetString("cluster-id")),
+			ID: new(viper.GetString("cluster-id")),
 			Audit: &models.V1Audit{
-				AuditPolicy: pointer.Pointer(""),
+				AuditPolicy: new(""),
 			},
 		}), nil)
 		if err != nil {
@@ -153,9 +153,9 @@ func (c *auditCmd) auditPolicy() error {
 		}
 
 		_, err = c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
-			ID: pointer.Pointer(viper.GetString("cluster-id")),
+			ID: new(viper.GetString("cluster-id")),
 			Audit: &models.V1Audit{
-				AuditPolicy: pointer.Pointer(string(policy)),
+				AuditPolicy: new(string(policy)),
 			},
 		}), nil)
 		if err != nil {
@@ -175,9 +175,9 @@ func (c *auditCmd) disable() error {
 	}
 
 	_, err := c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
-		ID: pointer.Pointer(viper.GetString("cluster-id")),
+		ID: new(viper.GetString("cluster-id")),
 		Audit: &models.V1Audit{
-			Disabled: pointer.Pointer(disabled),
+			Disabled: new(disabled),
 		},
 	}), nil)
 	if err != nil {
@@ -198,19 +198,19 @@ func (c *auditCmd) splunk() error {
 	}
 
 	if viper.IsSet("enabled") {
-		auditConfiguration.Backends.Splunk.Enabled = pointer.Pointer(viper.GetBool("enabled"))
+		auditConfiguration.Backends.Splunk.Enabled = new(viper.GetBool("enabled"))
 	}
 	if viper.IsSet("host") {
-		auditConfiguration.Backends.Splunk.Host = pointer.Pointer(viper.GetString("host"))
+		auditConfiguration.Backends.Splunk.Host = new(viper.GetString("host"))
 	}
 	if viper.IsSet("index") {
-		auditConfiguration.Backends.Splunk.Index = pointer.Pointer(viper.GetString("index"))
+		auditConfiguration.Backends.Splunk.Index = new(viper.GetString("index"))
 	}
 	if viper.IsSet("port") {
-		auditConfiguration.Backends.Splunk.Port = pointer.Pointer(viper.GetString("port"))
+		auditConfiguration.Backends.Splunk.Port = new(viper.GetString("port"))
 	}
 	if viper.IsSet("token") {
-		auditConfiguration.Backends.Splunk.Token = pointer.Pointer(viper.GetString("token"))
+		auditConfiguration.Backends.Splunk.Token = new(viper.GetString("token"))
 	}
 	if viper.IsSet("ca") {
 		ca, err := os.ReadFile(viper.GetString("ca"))
@@ -218,12 +218,12 @@ func (c *auditCmd) splunk() error {
 			return err
 		}
 
-		auditConfiguration.Backends.Splunk.TLS = pointer.Pointer(true)
-		auditConfiguration.Backends.Splunk.Ca = pointer.Pointer(string(ca))
+		auditConfiguration.Backends.Splunk.TLS = new(true)
+		auditConfiguration.Backends.Splunk.Ca = new(string(ca))
 	}
 
 	_, err := c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
-		ID:    pointer.Pointer(viper.GetString("cluster-id")),
+		ID:    new(viper.GetString("cluster-id")),
 		Audit: auditConfiguration,
 	}), nil)
 	if err != nil {
@@ -244,11 +244,11 @@ func (c *auditCmd) clusterForwarding() error {
 	}
 
 	if viper.IsSet("enabled") {
-		auditConfiguration.Backends.ClusterForwarding.Enabled = pointer.Pointer(viper.GetBool("enabled"))
+		auditConfiguration.Backends.ClusterForwarding.Enabled = new(viper.GetBool("enabled"))
 	}
 
 	_, err := c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
-		ID:    pointer.Pointer(viper.GetString("cluster-id")),
+		ID:    new(viper.GetString("cluster-id")),
 		Audit: auditConfiguration,
 	}), nil)
 	if err != nil {

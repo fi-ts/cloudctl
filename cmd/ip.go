@@ -117,7 +117,7 @@ func (c *config) ipStatic(args []string) error {
 	params := ip.NewUpdateIPParams()
 	iur := &models.V1IPUpdateRequest{
 		Ipaddress: &ipAddress,
-		Type:      pointer.Pointer("static"),
+		Type:      new("static"),
 	}
 	if helper.ViperString("name") != nil {
 		iur.Name = *helper.ViperString("name")
@@ -147,7 +147,7 @@ func (c *config) ipAllocate() error {
 	iar := &models.V1IPAllocateRequest{
 		Name:        *helper.ViperString("name"),
 		Description: *helper.ViperString("description"),
-		Type:        pointer.Pointer("static"),
+		Type:        new("static"),
 		Networkid:   helper.ViperString("network"),
 		Projectid:   helper.ViperString("project"),
 		Tags:        helper.ViperStringSlice("tags"),
