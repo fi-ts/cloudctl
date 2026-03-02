@@ -460,6 +460,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCmd.AddCommand(clusterMonitoringSecretCmd)
 	clusterCmd.AddCommand(newClusterAuditCmd(c))
 	clusterCmd.AddCommand(newClusterXdrCmd(c))
+	clusterCmd.AddCommand(newClusterQCACmd(c))
 
 	return clusterCmd
 }
