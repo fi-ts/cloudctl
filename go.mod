@@ -8,7 +8,7 @@ require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.18.0
 	github.com/fi-ts/accounting-go v0.11.1
-	github.com/fi-ts/cloud-go v0.30.19-0.20260305130652-f540859b4445
+	github.com/fi-ts/cloud-go v0.30.19
 	github.com/gardener/gardener v1.123.5
 	github.com/gardener/machine-controller-manager v0.58.0
 	github.com/go-openapi/runtime v0.29.2
