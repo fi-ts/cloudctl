@@ -32,7 +32,12 @@ type (
 
 // Print a volume as table
 func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
+	showStorage := hasMultipleStorageTypes(data)
+
 	p.shortHeader = []string{"ID", "Name", "Size", "Usage", "Replicas", "QoS", "Project", "Tenant", "Partition"}
+	if showStorage {
+		p.shortHeader = append(p.shortHeader, "Storage")
+	}
 	p.wideHeader = append(p.shortHeader, "Nodes")
 	p.Order(data)
 
@@ -79,12 +84,36 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 		nodes := ConnectedHosts(vol)
 
 		short := []string{volumeID, name, size, usage, replica, qos, project, tenant, partition}
+		if showStorage {
+			storageType := ""
+			if vol.StorageType != nil {
+				storageType = *vol.StorageType
+			}
+			short = append(short, storageType)
+		}
 		wide := append(short, strings.Join(nodes, "\n"))
 
 		p.addWideData(wide, vol)
 		p.addShortData(short, vol)
 	}
 	p.render()
+}
+
+func hasMultipleStorageTypes(data []*models.V1VolumeResponse) bool {
+	seen := ""
+	for _, vol := range data {
+		if vol.StorageType == nil {
+			continue
+		}
+		if seen == "" {
+			seen = *vol.StorageType
+			continue
+		}
+		if *vol.StorageType != seen {
+			return true
+		}
+	}
+	return false
 }
 
 // Print an snapshot as table
