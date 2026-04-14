@@ -226,6 +226,12 @@ spec:
 	storageClassName: partition-silver
 */
 func VolumeManifest(v models.V1VolumeResponse, name, namespace, sc string) error {
+	// Determine CSI driver based on storage type
+	csiDriver := "csi.lightbitslabs.com" // default for Duros
+	if v.StorageType != nil && *v.StorageType == "ontap" {
+		csiDriver = "csi.trident.netapp.io"
+	}
+
 	filesystem := corev1.PersistentVolumeFilesystem
 	pv := corev1.PersistentVolume{
 		TypeMeta:   v1.TypeMeta{Kind: "PersistentVolume", APIVersion: "v1"},
@@ -237,7 +243,7 @@ func VolumeManifest(v models.V1VolumeResponse, name, namespace, sc string) error
 			// FIXME add Capacity once figured out
 			PersistentVolumeSource: corev1.PersistentVolumeSource{
 				CSI: &corev1.CSIPersistentVolumeSource{
-					Driver:       "csi.lightbitslabs.com",
+					Driver:       csiDriver,
 					FSType:       "ext4",
 					ReadOnly:     false,
 					VolumeHandle: *v.VolumeHandle,
