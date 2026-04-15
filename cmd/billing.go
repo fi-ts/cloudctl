@@ -565,23 +565,30 @@ func (c *config) excel() error {
 	f := excelize.NewFile()
 	defer func() { genericcli.Must(f.Close()) }()
 
-	f.SetSheetName("Sheet1", "Parameter")
+	genericcli.Must(f.SetSheetName("Sheet1", "Parameter"))
 
 	datePrefix := fmt.Sprintf("%04d-%02d", year, month)
 	clusterSheetName := datePrefix + " Cluster"
-	f.NewSheet(clusterSheetName)
+	_, err = f.NewSheet(clusterSheetName)
+	genericcli.Must(err)
 	containerSheetName := datePrefix + " Container"
-	f.NewSheet(containerSheetName)
+	_, err = f.NewSheet(containerSheetName)
+	genericcli.Must(err)
 	volumeSheetName := datePrefix + " Volume"
-	f.NewSheet(volumeSheetName)
+	_, err = f.NewSheet(volumeSheetName)
+	genericcli.Must(err)
 	ipSheetName := datePrefix + " IPs"
-	f.NewSheet(ipSheetName)
+	_, err = f.NewSheet(ipSheetName)
+	genericcli.Must(err)
 	networkSheetName := datePrefix + " Network traffic"
-	f.NewSheet(networkSheetName)
+	_, err = f.NewSheet(networkSheetName)
+	genericcli.Must(err)
 	s3SheetName := datePrefix + " S3"
-	f.NewSheet(s3SheetName)
+	_, err = f.NewSheet(s3SheetName)
+	genericcli.Must(err)
 	postgresSheetName := datePrefix + " Postgres"
-	f.NewSheet(postgresSheetName)
+	_, err = f.NewSheet(postgresSheetName)
+	genericcli.Must(err)
 
 	// Parameter
 	genericcli.Must(f.SetCellValue("Parameter", "A1", "Finance Cloud Native billing"))
