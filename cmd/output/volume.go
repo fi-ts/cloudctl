@@ -10,6 +10,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8syaml "sigs.k8s.io/yaml"
 )
@@ -240,7 +241,6 @@ func VolumeManifest(v models.V1VolumeResponse, name, namespace, sc string) error
 			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 			VolumeMode:       &filesystem,
 			StorageClassName: sc,
-			// FIXME add Capacity once figured out
 			PersistentVolumeSource: corev1.PersistentVolumeSource{
 				CSI: &corev1.CSIPersistentVolumeSource{
 					Driver:       csiDriver,
@@ -250,6 +250,11 @@ func VolumeManifest(v models.V1VolumeResponse, name, namespace, sc string) error
 				},
 			},
 		},
+	}
+	if v.Size != nil {
+		pv.Spec.Capacity = corev1.ResourceList{
+			corev1.ResourceStorage: *resource.NewQuantity(*v.Size, resource.BinarySI),
+		}
 	}
 
 	if len(v.ConnectedHosts) > 0 {
