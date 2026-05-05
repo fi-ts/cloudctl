@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	goruntime "runtime"
 	"strings"
 	"time"
 
@@ -154,6 +155,23 @@ func MustPrintKubernetesResource(in any) {
 func ClientNoAuth() runtime.ClientAuthInfoWriterFunc {
 	noAuth := func(_ runtime.ClientRequest, _ strfmt.Registry) error { return nil }
 	return runtime.ClientAuthInfoWriterFunc(noAuth)
+}
+
+func OpenBrowser(url string) error {
+	var cmd string
+	var args []string
+
+	switch goruntime.GOOS {
+	case "windows":
+		cmd = "cmd"
+		args = []string{"/c", "start"}
+	case "darwin":
+		cmd = "open"
+	default:
+		cmd = "xdg-open"
+	}
+	args = append(args, url)
+	return exec.Command(cmd, args...).Start()
 }
 
 func ExpandHomeDir(path string) (string, error) {
