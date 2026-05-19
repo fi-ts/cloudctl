@@ -21,6 +21,12 @@ Commandline client for "Kubernetes as a Service" and more!
     - [Delete your cluster](#delete-your-cluster)
     - [Managing ip addresses](#managing-ip-addresses)
   - [Billing](#billing)
+    - [Time Windows](#time-windows)
+    - [Usage Calculation](#usage-calculation)
+    - [Subcommands](#subcommands)
+    - [CSV Export](#csv-export)
+    - [Cost Calculation](#cost-calculation)
+    - [Output Formats](#output-formats)
   - [S3](#s3)
     - [Configuring the minio mc client](#configuring-the-minio-mc-client)
     - [Configuring s3cmd](#configuring-s3cmd)
@@ -438,22 +444,267 @@ Static ip addresses must freed before their project can be deleted.
 
 ## Billing
 
-The usage is calculated always within a time window. The beginning of the time window can be specified by `--from` and if required `--to` specifies the end of the time window to look at. The end defaults to `now`.
+`cloudctl billing` provides usage and cost tracking for all platform resources. Every billing query operates on a time window defined by `--from` and `--to`.
 
-Example calculation:
+### Time Windows
 
-given
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--from` | Start of current month | Beginning of the accounting window |
+| `--to` | Now | End of the accounting window |
+| `--time-format` | `2006-01-02` | Go time layout for parsing `--from` and `--to` |
 
-- pod starts at 12am with 100m cpu resource limits set
-- time window between 12am and 1pm
-- pod resource limits get modified from 100m to 200m at 12:30am
+```bash
+# Current month (default)
+cloudctl billing container -t mytenant
 
-results
+# Specific date range
+cloudctl billing container -t mytenant --from 2024-01-01 --to 2024-01-31
 
-- pod lifetime is 1hour
-- cpu seconds in the time window is the integral of a step function:
-  `1800s * 100ms + 1800s * 200ms = 540000ms*s = 540s*s (=> 30min with cpu:100m and 30min with cpu:200m)`
-- for the sake of readability, the output of cloudctl is made in hours: `540s*s/3600s => 0,15s*h`
+# With custom time format including hours
+cloudctl billing container -t mytenant \
+  --from "2024-01-01 08:00:00" \
+  --to "2024-01-31 17:00:00" \
+  --time-format "2006-01-02 15:04:05"
+```
+
+### Usage Calculation
+
+Usage is calculated as the integral of resource allocation over the time window. When resource limits change mid-window, the calculation tracks each step:
+
+**Example**: A pod starts at 12:00 with 100m CPU, resource limits change to 200m at 12:30, time window is 12:00-13:00.
+
+- CPU seconds = `1800s * 100m + 1800s * 200m = 540 CPU-seconds`
+- Displayed as hours: `540s / 3600 = 0.15 CPU-hours`
+
+### Subcommands
+
+#### Discover Projects
+
+List all projects that have billing data within a time period. Useful for narrowing down larger queries.
+
+```bash
+cloudctl billing projects --from 2024-01-01 --to 2024-01-31
+```
+
+#### Container Billing
+
+Track CPU and memory usage of containers (pods).
+
+```bash
+cloudctl billing container -t mytenant -p <project-id>
+cloudctl billing container -t mytenant -c <cluster-id> -n <namespace>
+cloudctl billing container -t mytenant --annotations team=backend
+```
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--tenant` | `-t` | Tenant to account |
+| `--project-id` | `-p` | Project to account |
+| `--cluster-id` | `-c` | Cluster to account |
+| `--namespace` | `-n` | Namespace to account |
+| `--annotations` | | Filter by annotations |
+| `--csv` | | Export as CSV |
+
+Output fields include pod name, container name, image, lifetime, CPU (core * seconds), and memory (Gi * h).
+
+#### Cluster Billing
+
+Track cluster lifetime and worker group information.
+
+```bash
+cloudctl billing cluster -t mytenant
+cloudctl billing cluster -t mytenant -p <project-id> -c <cluster-id>
+```
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--tenant` | `-t` | Tenant to account |
+| `--project-id` | `-p` | Project to account |
+| `--cluster-id` | `-c` | Cluster to account |
+| `--csv` | | Export as CSV |
+
+Output fields include partition, cluster name, start/end times, lifetime, and worker group details.
+
+#### IP Billing
+
+Track IP address allocation and lifetime.
+
+```bash
+cloudctl billing ip -t mytenant -p <project-id>
+cloudctl billing ip -t mytenant --annotations env=production
+```
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--tenant` | `-t` | Tenant to account |
+| `--project-id` | `-p` | Project to account |
+| `--annotations` | | Filter by annotations |
+| `--csv` | | Export as CSV |
+
+#### Network Traffic Billing
+
+Track incoming, outgoing, and total network traffic in Gigabytes.
+
+```bash
+cloudctl billing network-traffic -t mytenant -p <project-id>
+cloudctl billing network-traffic -t mytenant -c <cluster-id> --device eth0
+```
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--tenant` | `-t` | Tenant to account |
+| `--project-id` | `-p` | Project to account |
+| `--cluster-id` | `-c` | Cluster to account |
+| `--device` | | Network device to account |
+| `--csv` | | Export as CSV |
+
+Output fields include device, incoming (Gi), outgoing (Gi), total (Gi), and lifetime.
+
+#### S3 Billing
+
+Track S3 object storage usage per bucket.
+
+```bash
+cloudctl billing s3 -t mytenant -p <project-id>
+```
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--tenant` | `-t` | Tenant to account |
+| `--project-id` | `-p` | Project to account |
+| `--csv` | | Export as CSV |
+
+Output fields include partition, user, bucket name/ID, object count, and storage (Gi * h).
+
+#### Volume Billing
+
+Track persistent volume (block storage) capacity usage.
+
+```bash
+cloudctl billing volume -t mytenant -p <project-id>
+cloudctl billing volume -t mytenant -c <cluster-id> -n <namespace>
+cloudctl billing volume -t mytenant --annotations team=backend
+```
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--tenant` | `-t` | Tenant to account |
+| `--project-id` | `-p` | Project to account |
+| `--cluster-id` | `-c` | Cluster to account |
+| `--namespace` | `-n` | Namespace to account |
+| `--annotations` | | Filter by annotations |
+| `--csv` | | Export as CSV |
+
+Output fields include volume UUID, name, storage type (e.g. fast, standard), capacity (Gi * h), and lifetime.
+
+#### PostgreSQL Billing
+
+Track CPU, memory, and storage usage of managed PostgreSQL instances.
+
+```bash
+cloudctl billing postgres -t mytenant -p <project-id>
+cloudctl billing postgres -t mytenant --uuid <postgres-uuid>
+```
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--tenant` | `-t` | Tenant to account |
+| `--project-id` | `-p` | Project to account |
+| `--uuid` | | PostgreSQL instance UUID |
+| `--annotations` | | Filter by annotations |
+| `--csv` | | Export as CSV |
+
+Output fields include PostgreSQL ID, description, CPU (core * seconds), memory (Gi * h), storage (Gi * h), and lifetime.
+
+#### Machine Billing
+
+Track bare metal machine allocation and lifetime.
+
+```bash
+cloudctl billing machine -t mytenant -p <project-id>
+cloudctl billing machine -t mytenant --machine-id <id> --size-id c1-xlarge-x86
+```
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--tenant` | `-t` | Tenant to account |
+| `--project-id` | `-p` | Project to account |
+| `--cluster-id` | `-c` | Cluster to account |
+| `--machine-id` | | Specific machine ID |
+| `--size-id` | | Machine size to filter |
+| `--partition-id` | | Partition to filter |
+
+#### Machine Reservation Billing
+
+Track reserved machine slots and their utilization.
+
+```bash
+cloudctl billing machine-reservation -t mytenant -p <project-id>
+cloudctl billing machine-reservation -t mytenant --size-id c1-xlarge-x86 --order tenant,project,size
+```
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--tenant` | `-t` | Tenant to account |
+| `--project-id` | `-p` | Project to account |
+| `--id` | | Reservation ID |
+| `--size-id` | | Machine size to filter |
+| `--partition-id` | | Partition to filter |
+| `--order` | | Sort by columns (e.g. `tenant,project,size,partition`) |
+
+#### Product Option Billing
+
+Track product option lifetime and usage.
+
+```bash
+cloudctl billing product-option -t mytenant -p <project-id>
+cloudctl billing product-option -t mytenant -c <cluster-id> --id <option-id>
+```
+
+| Flag | Short | Description |
+|------|-------|-------------|
+| `--tenant` | `-t` | Tenant to account |
+| `--project-id` | `-p` | Project to account |
+| `--cluster-id` | `-c` | Cluster to account |
+| `--id` | | Product option ID |
+
+### CSV Export
+
+Most billing commands support `--csv` to produce CSV output, which can be redirected to a file:
+
+```bash
+cloudctl billing container -t mytenant --csv > containers.csv
+cloudctl billing volume -t mytenant -p <project-id> --csv > volumes.csv
+```
+
+CSV export is available for: container, cluster, ip, network-traffic, s3, volume, and postgres.
+
+### Cost Calculation
+
+When cost environment variables are configured, accumulated totals in the output include cost estimates in EUR. Set these via environment variables (prefixed with `CLOUDCTL_`) or in the cloudctl config:
+
+| Variable | Applies To | Unit |
+|----------|-----------|------|
+| `costs-cpu-hour` | Container, PostgreSQL | EUR per CPU core hour |
+| `costs-memory-gi-hour` | Container, PostgreSQL | EUR per GiB memory hour |
+| `costs-storage-gi-hour` | S3, Volume, PostgreSQL | EUR per GiB storage hour |
+| `costs-hour` | Cluster, IP, Machine, Machine Reservation, Product Option | EUR per hour |
+| `costs-incoming-network-traffic-gi` | Network Traffic | EUR per GiB incoming |
+| `costs-outgoing-network-traffic-gi` | Network Traffic | EUR per GiB outgoing |
+| `costs-total-network-traffic-gi` | Network Traffic | EUR per GiB total |
+
+### Output Formats
+
+All billing commands support global output format options:
+
+```bash
+cloudctl billing container -t mytenant -o wide       # All columns
+cloudctl billing container -t mytenant -o json        # JSON output
+cloudctl billing container -t mytenant -o yaml        # YAML output
+cloudctl billing container -t mytenant -o markdown    # Markdown table
+cloudctl billing container -t mytenant --no-headers   # Omit column headers
+```
 
 ## S3
 
