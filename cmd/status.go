@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-const statusURL = "https://status.fits.cloud"
+const defaultStatusURL = "https://status.fits.cloud"
 
 func newStatusCmd(c *config) *cobra.Command {
 	statusCmd := &cobra.Command{
@@ -25,6 +25,8 @@ func newStatusCmd(c *config) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("no valid session found, please run `cloudctl login` first: %w", err)
 			}
+
+			statusURL := viper.GetString("status-url")
 
 			listener, err := net.Listen("tcp", "127.0.0.1:0")
 			if err != nil {
@@ -66,5 +68,8 @@ func newStatusCmd(c *config) *cobra.Command {
 			return nil
 		},
 	}
+
+	statusCmd.Flags().String("status-url", defaultStatusURL, "URL of the status page")
+
 	return statusCmd
 }
