@@ -40,7 +40,7 @@ func newStatusCmd(c *config) *cobra.Command {
 				ReadHeaderTimeout: 5 * time.Second,
 				Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					w.Header().Set("Content-Type", "text/html; charset=utf-8")
-					fmt.Fprintf(w, `<!DOCTYPE html>
+					_, _ = fmt.Fprintf(w, `<!DOCTYPE html>
 <html><body>
 <form id="f" method="POST" action="%s/auth/login">
 <input type="hidden" name="token" value="%s">
@@ -57,10 +57,10 @@ func newStatusCmd(c *config) *cobra.Command {
 
 			if err := helper.OpenBrowser(localURL); err != nil {
 				_ = srv.Shutdown(context.Background())
-				fmt.Fprintln(c.out, "Could not open browser automatically.")
-				fmt.Fprintf(c.out, "Please open %s manually (available for 3 seconds).\n", localURL)
+				fmt.Println("Could not open browser automatically.")
+				fmt.Printf("Please open %s manually (available for 3 seconds).\n", localURL)
 			} else {
-				fmt.Fprintln(c.out, "Opening status page in browser...")
+				fmt.Println("Opening status page in browser...")
 			}
 
 			_ = srv.Serve(listener)
