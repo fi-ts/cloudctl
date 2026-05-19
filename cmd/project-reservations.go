@@ -137,7 +137,7 @@ func toMachineReservationUpdateRequest(r *models.V1MachineReservationResponse) *
 func (m machineReservationsCmd) Create(rq *models.V1MachineReservationCreateRequest) (*models.V1MachineReservationResponse, error) {
 	resp, err := m.cloud.Project.CreateMachineReservation(project.NewCreateMachineReservationParams().
 		WithBody(rq).
-		WithForce(pointer.Pointer(viper.GetBool("force"))), nil)
+		WithForce(new(viper.GetBool("force"))), nil)
 	if err != nil {
 		var r *project.CreateMachineReservationConflict
 		if errors.As(err, &r) {
@@ -184,7 +184,7 @@ func (m machineReservationsCmd) List() ([]*models.V1MachineReservationResponse, 
 
 func (m machineReservationsCmd) Update(rq *models.V1MachineReservationUpdateRequest) (*models.V1MachineReservationResponse, error) {
 	resp, err := m.cloud.Project.UpdateMachineReservation(project.NewUpdateMachineReservationParams().WithBody(rq).
-		WithForce(pointer.Pointer(viper.GetBool("force"))), nil)
+		WithForce(new(viper.GetBool("force"))), nil)
 	if err != nil {
 		return nil, err
 	}

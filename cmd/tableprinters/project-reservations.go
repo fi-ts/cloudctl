@@ -11,7 +11,6 @@ import (
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/viper"
 )
 
@@ -51,9 +50,7 @@ func (t *TablePrinter) MachineReservationsTable(data []*models.V1MachineReservat
 		rows = append(rows, row)
 	}
 
-	t.t.MutateTable(func(table *tablewriter.Table) {
-		table.SetAutoWrapText(false)
-	})
+	t.t.DisableAutoWrap(true)
 
 	return header, rows, nil
 }
@@ -99,9 +96,7 @@ func (t *TablePrinter) MachineReservationsUsageTable(data []*models.V1MachineRes
 		rows = append(rows, row)
 	}
 
-	t.t.MutateTable(func(table *tablewriter.Table) {
-		table.SetAutoWrapText(false)
-	})
+	t.t.DisableAutoWrap(true)
 
 	return header, rows, nil
 }

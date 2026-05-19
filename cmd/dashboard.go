@@ -834,7 +834,6 @@ func (k *kubernetesVersions) update(clusters []*models.V1ClusterResponse) ([]*wi
 	versionAmounts := map[string]int{}
 
 	for _, c := range clusters {
-		c := c
 
 		var (
 			version = pointer.SafeDeref(pointer.SafeDeref(c.Kubernetes).Version)
@@ -851,7 +850,6 @@ func (k *kubernetesVersions) update(clusters []*models.V1ClusterResponse) ([]*wi
 	}
 
 	for _, c := range clusters {
-		c := c
 
 		var (
 			version = pointer.SafeDeref(pointer.SafeDeref(c.Kubernetes).Version)
@@ -917,7 +915,7 @@ func (d *dashboardClusterVersionsPane) Render() error {
 		} else {
 			if *c.FirewallControllerVersion == "" {
 				// auto is default, otherwise some clusters will not be aggregated properly
-				c.FirewallControllerVersion = pointer.Pointer("auto")
+				c.FirewallControllerVersion = new("auto")
 			}
 			firewallControllerVersions[*c.FirewallControllerVersion]++
 		}
@@ -1268,7 +1266,7 @@ func newCache(cloud *client.CloudAPI, expiration time.Duration, partition, tenan
 				PartitionID: pointer.PointerOrNil(partition),
 				Tenant:      pointer.PointerOrNil(tenant),
 				Purpose:     pointer.PointerOrNil(purpose),
-			}).WithReturnMachines(pointer.Pointer(false)).WithContext(ctx), nil)
+			}).WithReturnMachines(new(false)).WithContext(ctx), nil)
 			if err != nil {
 				return nil, err
 			}

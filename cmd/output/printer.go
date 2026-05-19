@@ -18,12 +18,14 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/renderer"
+	"github.com/olekukonko/tablewriter/tw"
 )
 
 type (
 	// Printer main Interface for implementations which spits out to specified Writer
 	Printer interface {
-		Print(data interface{}) error
+		Print(data any) error
 	}
 	tablePrinter struct {
 		table       *tablewriter.Table
@@ -45,18 +47,30 @@ func (t *tablePrinter) render() {
 	if t.template == nil {
 		if !t.noHeaders {
 			if t.wide {
-				t.table.SetHeader(t.wideHeader)
+				t.table.Header(t.wideHeader)
 			} else {
-				t.table.SetHeader(t.shortHeader)
+				t.table.Header(t.shortHeader)
 			}
 		}
 		if t.wide {
-			t.table.AppendBulk(t.wideData)
+			err := t.table.Bulk(t.wideData)
+			if err != nil {
+				fmt.Printf("unable to append data to table: %v", err)
+				os.Exit(1)
+			}
 		} else {
-			t.table.AppendBulk(t.shortData)
+			err := t.table.Bulk(t.shortData)
+			if err != nil {
+				fmt.Printf("unable to append data to table: %v", err)
+				os.Exit(1)
+			}
 		}
-		t.table.Render()
-		t.table.ClearRows()
+		err := t.table.Render()
+		if err != nil {
+			fmt.Printf("unable to render the output: %v", err)
+			os.Exit(1)
+		}
+		t.table.Reset()
 	} else {
 		rows := t.shortData
 		if t.wide {
@@ -74,15 +88,15 @@ func (t *tablePrinter) render() {
 		t.shortData = [][]string{}
 		t.wideData = [][]string{}
 	}
-	t.table.ClearRows()
+	t.table.Reset()
 }
-func (t *tablePrinter) addShortData(row []string, data interface{}) {
+func (t *tablePrinter) addShortData(row []string, data any) {
 	if t.wide {
 		return
 	}
 	t.shortData = append(t.shortData, t.rowOrTemplate(row, data))
 }
-func (t *tablePrinter) addWideData(row []string, data interface{}) {
+func (t *tablePrinter) addWideData(row []string, data any) {
 	if !t.wide {
 		return
 	}
@@ -90,7 +104,7 @@ func (t *tablePrinter) addWideData(row []string, data interface{}) {
 }
 
 // rowOrTemplate return either given row or the data rendered with the given template, depending if template is set.
-func (t *tablePrinter) rowOrTemplate(row []string, data interface{}) []string {
+func (t *tablePrinter) rowOrTemplate(row []string, data any) []string {
 	tpl := t.template
 	if tpl != nil {
 		var buf bytes.Buffer
@@ -106,19 +120,19 @@ func (t *tablePrinter) rowOrTemplate(row []string, data interface{}) []string {
 
 // genericObject transforms the input to a struct which has fields with the same name as in the json struct.
 // this is handy for template rendering as the output of -o json|yaml can be used as the input for the template
-func genericObject(input interface{}) map[string]interface{} {
+func genericObject(input any) map[string]any {
 	b, err := json.Marshal(input)
 	if err != nil {
 		fmt.Printf("unable to marshall input:%v", err)
 		os.Exit(1)
 	}
-	var result interface{}
+	var result any
 	err = json.Unmarshal(b, &result)
 	if err != nil {
 		fmt.Printf("unable to unmarshal input:%v", err)
 		os.Exit(1)
 	}
-	return result.(map[string]interface{})
+	return result.(map[string]any)
 
 }
 
@@ -183,25 +197,7 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 	if format == "wide" {
 		tp.wide = true
 	}
-	table := tablewriter.NewWriter(writer)
-	switch format {
-	case "template":
-		tp.template = template
-	case "markdown":
-		table.SetBorders(tablewriter.Border{Left: true, Top: false, Right: true, Bottom: false})
-		table.SetCenterSeparator("|")
-	default:
-		table.SetHeaderLine(false)
-		table.SetAlignment(tablewriter.ALIGN_LEFT)
-		table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-		table.SetBorder(false)
-		table.SetCenterSeparator("")
-		table.SetColumnSeparator("")
-		table.SetRowSeparator("")
-		table.SetRowLine(false)
-		table.SetTablePadding("\t") // pad with tabs
-		table.SetNoWhiteSpace(true) // no whitespace in front of every line
-	}
+	table := initTable(format, writer)
 
 	tp.table = table
 	return &tp
@@ -212,7 +208,7 @@ func (t *tablePrinter) Type() string {
 }
 
 // Print a model in a human readable table
-func (t *tablePrinter) Print(data interface{}) error {
+func (t *tablePrinter) Print(data any) error {
 	tp := *t
 	switch d := data.(type) {
 	case *models.V1AuditResponse:
@@ -309,4 +305,88 @@ func (t *tablePrinter) Print(data interface{}) error {
 		return fmt.Errorf("unknown table printer for type: %T", d)
 	}
 	return nil
+}
+
+func initTable(format string, w io.Writer) *tablewriter.Table {
+
+	if format == "markdown" {
+		symbols := tw.NewSymbolCustom("Markdown").
+			WithRow("-").
+			WithColumn("|").
+			WithCenter("|").
+			WithMidLeft("|").
+			WithMidRight("|")
+
+		return tablewriter.NewTable(w,
+			tablewriter.WithRenderer(renderer.NewBlueprint(tw.Rendition{
+				Borders: tw.Border{Left: tw.On, Top: tw.Off, Right: tw.On, Bottom: tw.Off},
+				Symbols: symbols,
+				Settings: tw.Settings{
+					Lines: tw.Lines{
+						ShowHeaderLine: tw.On,
+						ShowFooterLine: tw.On,
+					},
+					Separators: tw.Separators{
+						ShowHeader: tw.On,
+						ShowFooter: tw.On,
+					},
+				},
+			})),
+			tablewriter.WithConfig(tablewriter.Config{
+				Header: tw.CellConfig{
+					Alignment: tw.CellAlignment{
+						Global: tw.AlignLeft,
+					},
+				},
+				Row: tw.CellConfig{
+					Alignment: tw.CellAlignment{
+						Global: tw.AlignLeft,
+					},
+				},
+			}),
+		)
+	}
+
+	symbols := tw.NewSymbolCustom("Default").
+		WithColumn("")
+
+	padding := tw.CellPadding{
+		Global: tw.Padding{
+			Right: "  ",
+		},
+	}
+
+	return tablewriter.NewTable(w,
+		tablewriter.WithRenderer(renderer.NewBlueprint(tw.Rendition{
+			Borders: tw.BorderNone,
+			Symbols: symbols,
+			Settings: tw.Settings{
+				Lines: tw.Lines{
+					ShowHeaderLine: tw.Off,
+					ShowFooterLine: tw.Off,
+				},
+				Separators: tw.Separators{
+					BetweenRows:    tw.Off,
+					BetweenColumns: tw.Off,
+					ShowHeader:     tw.Off,
+					ShowFooter:     tw.Off,
+				},
+			},
+		})),
+		tablewriter.WithConfig(tablewriter.Config{
+			Header: tw.CellConfig{
+				Alignment: tw.CellAlignment{
+					Global: tw.AlignLeft,
+				},
+				Padding: padding,
+			},
+			Row: tw.CellConfig{
+				Alignment: tw.CellAlignment{
+					Global: tw.AlignLeft,
+				},
+				Padding: padding,
+			},
+			Behavior: tw.Behavior{TrimSpace: tw.On},
+		}),
+	)
 }

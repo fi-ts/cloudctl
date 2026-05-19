@@ -1,5 +1,7 @@
 package helper
 
+import "slices"
+
 import "github.com/spf13/viper"
 
 // AtLeastOneViperStringFlagGiven ensure at least one string flag is given
@@ -24,12 +26,7 @@ func AtLeastOneViperStringSliceFlagGiven(flags ...string) bool {
 
 // AtLeastOneViperBoolFlagGiven ensure at least one bool flag is given
 func AtLeastOneViperBoolFlagGiven(flags ...string) bool {
-	for _, flag := range flags {
-		if viper.GetBool(flag) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(flags, viper.GetBool)
 }
 
 // AtLeastOneViperInt64FlagGiven ensure at least one int64 flag is given

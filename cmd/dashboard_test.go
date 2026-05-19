@@ -6,7 +6,6 @@ import (
 	"github.com/dcorbe/termui-dpc/widgets"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/google/go-cmp/cmp"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 )
 
 func Test_kubernetesVersions_toNodes(t *testing.T) {
@@ -21,12 +20,12 @@ func Test_kubernetesVersions_toNodes(t *testing.T) {
 			name: "initial fill",
 			clusters: []*models.V1ClusterResponse{
 				{
-					ID:        pointer.Pointer("cluster-a-id"),
-					Name:      pointer.Pointer("cluster-a"),
-					ProjectID: pointer.Pointer("project-a"),
-					Tenant:    pointer.Pointer("tenant-a"),
+					ID:        new("cluster-a-id"),
+					Name:      new("cluster-a"),
+					ProjectID: new("project-a"),
+					Tenant:    new("tenant-a"),
 					Kubernetes: &models.V1Kubernetes{
-						Version: pointer.Pointer("1.24.3"),
+						Version: new("1.24.3"),
 					},
 				},
 			},
@@ -86,21 +85,21 @@ func Test_kubernetesVersions_toNodes(t *testing.T) {
 			},
 			clusters: []*models.V1ClusterResponse{
 				{
-					ID:        pointer.Pointer("cluster-a-id"),
-					Name:      pointer.Pointer("cluster-a"),
-					ProjectID: pointer.Pointer("project-a"),
-					Tenant:    pointer.Pointer("tenant-a"),
+					ID:        new("cluster-a-id"),
+					Name:      new("cluster-a"),
+					ProjectID: new("project-a"),
+					Tenant:    new("tenant-a"),
 					Kubernetes: &models.V1Kubernetes{
-						Version: pointer.Pointer("1.24.3"),
+						Version: new("1.24.3"),
 					},
 				},
 				{
-					ID:        pointer.Pointer("cluster-a-id"),
-					Name:      pointer.Pointer("cluster-a"),
-					ProjectID: pointer.Pointer("project-a"),
-					Tenant:    pointer.Pointer("tenant-a"),
+					ID:        new("cluster-a-id"),
+					Name:      new("cluster-a"),
+					ProjectID: new("project-a"),
+					Tenant:    new("tenant-a"),
 					Kubernetes: &models.V1Kubernetes{
-						Version: pointer.Pointer("1.24.3"),
+						Version: new("1.24.3"),
 					},
 				},
 			},

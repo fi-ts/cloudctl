@@ -72,7 +72,6 @@ func (s ShootLastErrorsTablePrinter) Print(data []*models.V1beta1LastError) {
 	s.wideHeader = []string{"Time", "Task", "Description"}
 	s.shortHeader = []string{"Time", "Task", "Description"}
 	for _, e := range data {
-		e := e
 
 		wide := []string{
 			pointer.SafeDeref(&e.LastUpdateTime),

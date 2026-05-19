@@ -39,16 +39,16 @@ func newClusterAuditCmd(c *config) *cobra.Command {
 		Short: "set the audit webhook mode for this cluster",
 		Long: `the webhook mode of the cluster, one of:
 - batch: Buffer events and asynchronously process them in batches.
-- blocking: Block API server responses on processing each individual event.
-- blocking-strict: Same as blocking, but when there is a failure during audit logging at the RequestReceived stage, the whole request to the kube-apiserver fails. This is the default.
+- blocking: Block API server responses on processing each individual event. This is the default.
+- blocking-strict: Same as blocking, but when there is a failure during audit logging at the RequestReceived stage, the whole request to the kube-apiserver fails.
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.mode(args)
 		},
 		ValidArgs: []string{
 			"batch\tBuffer events and asynchronously process them in batches.",
-			"blocking\tBlock API server responses on processing each individual event.",
-			"blocking-strict\tSame as blocking, but when there is a failure during audit logging at the RequestReceived stage, the whole request to the kube-apiserver fails. This is the default.",
+			"blocking\tBlock API server responses on processing each individual event. This is the default.",
+			"blocking-strict\tSame as blocking, but when there is a failure during audit logging at the RequestReceived stage, the whole request to the kube-apiserver fails.",
 		},
 	}
 	policyCmd := &cobra.Command{
@@ -107,10 +107,14 @@ func (c *auditCmd) mode(args []string) error {
 		return err
 	}
 
+	if mode == models.V1AuditWebhookModeBlockingDashStrict && !viper.GetBool("yes-i-really-mean-it") {
+		return fmt.Errorf("WARNING: setting audit mode to blocking-strict may cause kube-apiserver downtime if the log target is unavailable; requires --yes-i-really-mean-it flag to confirm that you understand the risks")
+	}
+
 	_, err = c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
-		ID: pointer.Pointer(viper.GetString("cluster-id")),
+		ID: new(viper.GetString("cluster-id")),
 		Audit: &models.V1Audit{
-			WebhookMode: pointer.Pointer(mode),
+			WebhookMode: new(mode),
 		},
 	}), nil)
 	if err != nil {
@@ -134,9 +138,9 @@ func (c *auditCmd) auditPolicy() error {
 
 	if viper.GetBool("remove") {
 		_, err := c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
-			ID: pointer.Pointer(viper.GetString("cluster-id")),
+			ID: new(viper.GetString("cluster-id")),
 			Audit: &models.V1Audit{
-				AuditPolicy: pointer.Pointer(""),
+				AuditPolicy: new(""),
 			},
 		}), nil)
 		if err != nil {
@@ -153,9 +157,9 @@ func (c *auditCmd) auditPolicy() error {
 		}
 
 		_, err = c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
-			ID: pointer.Pointer(viper.GetString("cluster-id")),
+			ID: new(viper.GetString("cluster-id")),
 			Audit: &models.V1Audit{
-				AuditPolicy: pointer.Pointer(string(policy)),
+				AuditPolicy: new(string(policy)),
 			},
 		}), nil)
 		if err != nil {
@@ -175,9 +179,9 @@ func (c *auditCmd) disable() error {
 	}
 
 	_, err := c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
-		ID: pointer.Pointer(viper.GetString("cluster-id")),
+		ID: new(viper.GetString("cluster-id")),
 		Audit: &models.V1Audit{
-			Disabled: pointer.Pointer(disabled),
+			Disabled: new(disabled),
 		},
 	}), nil)
 	if err != nil {
@@ -198,19 +202,19 @@ func (c *auditCmd) splunk() error {
 	}
 
 	if viper.IsSet("enabled") {
-		auditConfiguration.Backends.Splunk.Enabled = pointer.Pointer(viper.GetBool("enabled"))
+		auditConfiguration.Backends.Splunk.Enabled = new(viper.GetBool("enabled"))
 	}
 	if viper.IsSet("host") {
-		auditConfiguration.Backends.Splunk.Host = pointer.Pointer(viper.GetString("host"))
+		auditConfiguration.Backends.Splunk.Host = new(viper.GetString("host"))
 	}
 	if viper.IsSet("index") {
-		auditConfiguration.Backends.Splunk.Index = pointer.Pointer(viper.GetString("index"))
+		auditConfiguration.Backends.Splunk.Index = new(viper.GetString("index"))
 	}
 	if viper.IsSet("port") {
-		auditConfiguration.Backends.Splunk.Port = pointer.Pointer(viper.GetString("port"))
+		auditConfiguration.Backends.Splunk.Port = new(viper.GetString("port"))
 	}
 	if viper.IsSet("token") {
-		auditConfiguration.Backends.Splunk.Token = pointer.Pointer(viper.GetString("token"))
+		auditConfiguration.Backends.Splunk.Token = new(viper.GetString("token"))
 	}
 	if viper.IsSet("ca") {
 		ca, err := os.ReadFile(viper.GetString("ca"))
@@ -218,12 +222,12 @@ func (c *auditCmd) splunk() error {
 			return err
 		}
 
-		auditConfiguration.Backends.Splunk.TLS = pointer.Pointer(true)
-		auditConfiguration.Backends.Splunk.Ca = pointer.Pointer(string(ca))
+		auditConfiguration.Backends.Splunk.TLS = new(true)
+		auditConfiguration.Backends.Splunk.Ca = new(string(ca))
 	}
 
 	_, err := c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
-		ID:    pointer.Pointer(viper.GetString("cluster-id")),
+		ID:    new(viper.GetString("cluster-id")),
 		Audit: auditConfiguration,
 	}), nil)
 	if err != nil {
@@ -244,11 +248,11 @@ func (c *auditCmd) clusterForwarding() error {
 	}
 
 	if viper.IsSet("enabled") {
-		auditConfiguration.Backends.ClusterForwarding.Enabled = pointer.Pointer(viper.GetBool("enabled"))
+		auditConfiguration.Backends.ClusterForwarding.Enabled = new(viper.GetBool("enabled"))
 	}
 
 	_, err := c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
-		ID:    pointer.Pointer(viper.GetString("cluster-id")),
+		ID:    new(viper.GetString("cluster-id")),
 		Audit: auditConfiguration,
 	}), nil)
 	if err != nil {
