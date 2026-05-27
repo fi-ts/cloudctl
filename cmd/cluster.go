@@ -809,10 +809,8 @@ func (c *config) clusterList() error {
 	project := viper.GetString("project")
 	purpose := viper.GetString("purpose")
 	labels := viper.GetStringSlice("labels")
-	var cfr *models.V1ClusterFindRequest
+	cfr := &models.V1ClusterFindRequest{}
 	if id != "" || name != "" || tenant != "" || partition != "" || seed != "" || project != "" || purpose != "" || len(labels) > 0 {
-		cfr = &models.V1ClusterFindRequest{}
-
 		if id != "" {
 			cfr.ID = &id
 		}
@@ -846,22 +844,13 @@ func (c *config) clusterList() error {
 			cfr.Labels = labelMap
 		}
 	}
-	if cfr != nil {
-		fcp := cluster.NewFindClustersParams()
-		fcp.SetBody(cfr)
-		response, err := c.cloud.Cluster.FindClusters(fcp, nil)
-		if err != nil {
-			return err
-		}
-		return c.listPrinter.Print(response.Payload)
-	}
-
-	request := cluster.NewListClustersParams()
-	shoots, err := c.cloud.Cluster.ListClusters(request, nil)
+	fcp := cluster.NewFindClustersParams()
+	fcp.SetBody(cfr)
+	response, err := c.cloud.Cluster.FindClusters(fcp, nil)
 	if err != nil {
 		return err
 	}
-	return c.listPrinter.Print(shoots.Payload)
+	return c.listPrinter.Print(response.Payload)
 }
 
 func (c *config) clusterKubeconfig(args []string) error {
