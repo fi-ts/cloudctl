@@ -4,13 +4,13 @@ go 1.26
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
-	github.com/dcorbe/termui-dpc v0.0.0-20211125210512-9d2673a82dd6
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.18.0
 	github.com/fi-ts/accounting-go v0.11.1
 	github.com/fi-ts/cloud-go v0.30.19
 	github.com/gardener/gardener v1.123.5
 	github.com/gardener/machine-controller-manager v0.58.0
+	github.com/gizak/termui/v3 v3.1.0
 	github.com/go-openapi/runtime v0.29.2
 	github.com/go-openapi/strfmt v0.25.0
 	github.com/go-playground/validator/v10 v10.30.1
