@@ -194,14 +194,6 @@ func newClusterCmd(c *config) *cobra.Command {
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
 	}
-	clusterMachineReinstallCmd := &cobra.Command{
-		Use:   "reinstall <clusterid>",
-		Short: "reinstall OS image onto a machine/firewall of the cluster",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.clusterMachineReinstall(args)
-		},
-		ValidArgsFunction: c.comp.ClusterListCompletion,
-	}
 	clusterMachinePackagesCmd := &cobra.Command{
 		Use:   "packages <clusterid>",
 		Short: "show packages of the os image which is installed on this machine",
@@ -415,11 +407,6 @@ func newClusterCmd(c *config) *cobra.Command {
 	genericcli.Must(clusterMachineCycleCmd.MarkFlagRequired("machineid"))
 	genericcli.Must(clusterMachineCycleCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterMachineListCompletion))
 
-	clusterMachineReinstallCmd.Flags().String("machineid", "", "machine to reinstall.")
-	clusterMachineReinstallCmd.Flags().String("machineimage", "", "image to reinstall (optional).")
-	genericcli.Must(clusterMachineReinstallCmd.MarkFlagRequired("machineid"))
-	genericcli.Must(clusterMachineReinstallCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterMachineListCompletion))
-
 	clusterMachinePackagesCmd.Flags().String("machineid", "", "machine to connect to.")
 	genericcli.Must(clusterMachinePackagesCmd.MarkFlagRequired("machineid"))
 	genericcli.Must(clusterMachinePackagesCmd.RegisterFlagCompletionFunc("machineid", c.comp.ClusterMachineListCompletion))
@@ -429,7 +416,6 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterMachineCmd.AddCommand(clusterMachineConsoleCmd)
 	clusterMachineCmd.AddCommand(clusterMachineResetCmd)
 	clusterMachineCmd.AddCommand(clusterMachineCycleCmd)
-	clusterMachineCmd.AddCommand(clusterMachineReinstallCmd)
 	clusterMachineCmd.AddCommand(clusterMachinePackagesCmd)
 
 	clusterReconcileCmd.Flags().String("operation", models.V1ClusterReconcileRequestOperationReconcile, fmt.Sprintf("Executes a cluster \"reconcile\" operation, can be one of %s.", strings.Join(completion.ClusterReconcileOperations, "|")))
@@ -1846,32 +1832,6 @@ func (c *config) clusterMachineCycle(args []string) error {
 	request.Body = &models.V1ClusterMachineCycleRequest{Machineid: &mid}
 
 	shoot, err := c.cloud.Cluster.CycleMachine(request, nil)
-	if err != nil {
-		return err
-	}
-
-	ms := shoot.Payload.Machines
-	ms = append(ms, shoot.Payload.Firewalls...)
-
-	return c.listPrinter.Print(ms)
-}
-
-func (c *config) clusterMachineReinstall(args []string) error {
-	cid, err := c.clusterID("reinstall", args)
-	if err != nil {
-		return err
-	}
-	mid := viper.GetString("machineid")
-	img := viper.GetString("machineimage")
-
-	request := cluster.NewReinstallMachineParams()
-	request.SetID(cid)
-	request.Body = &models.V1ClusterMachineReinstallRequest{Machineid: &mid}
-	if img != "" {
-		request.Body.Imageid = img
-	}
-
-	shoot, err := c.cloud.Cluster.ReinstallMachine(request, nil)
 	if err != nil {
 		return err
 	}
