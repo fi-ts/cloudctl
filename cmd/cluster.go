@@ -262,6 +262,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().String("network-isolation", "", "defines restrictions to external network communication for the cluster, can be one of baseline|restricted|isolated. baseline sets no special restrictions to external networks, restricted by default only allows external traffic to explicitly allowed destinations, forbidden disallows communication with external networks except for a limited set of networks. Please consult the documentation for detailed descriptions of the individual modes as these cannot be altered anymore after creation. [optional]")
 	clusterCreateCmd.Flags().Bool("high-availability-control-plane", false, "enables a high availability control plane for the cluster, cannot be disabled again")
 	clusterCreateCmd.Flags().Bool("service-account-extend-token-expiration", false, "extends the token expiration time for projected service accounts tokens")
+	clusterCreateCmd.Flags().Duration("service-account-max-token-expiration", 0, "sets the max token expiration duration for projected service account tokens")
 	clusterCreateCmd.Flags().Int64("kubelet-pod-pid-limit", 0, "controls the maximum number of process IDs per pod allowed by the kubelet")
 
 	genericcli.Must(clusterCreateCmd.MarkFlagRequired("name"))
@@ -358,6 +359,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-* [optional].")
 	clusterUpdateCmd.Flags().Bool("high-availability-control-plane", false, "enables a high availability control plane for the cluster, cannot be disabled again")
 	clusterUpdateCmd.Flags().Bool("service-account-extend-token-expiration", false, "extends the token expiration time for projected service accounts tokens")
+	clusterUpdateCmd.Flags().Duration("service-account-max-token-expiration", 0, "sets the max token expiration duration for projected service account tokens. (set to 0 to use kubernetes default)")
 	clusterUpdateCmd.Flags().Int64("kubelet-pod-pid-limit", 0, "controls the maximum number of process IDs per pod allowed by the kubelet")
 	clusterUpdateCmd.Flags().Bool("enable-calico-ebpf", false, "enables calico cni to use eBPF data plane and DSR configuration, for increased performance and preserving source IP addresses. [optional]")
 
@@ -470,6 +472,7 @@ func (c *config) clusterCreate() error {
 	disableForwardToUpstreamDNS := viper.GetBool("disable-forwarding-to-upstream-dns")
 	highAvailability := strconv.FormatBool(viper.GetBool("high-availability-control-plane"))
 	serviceAccountExtendTokenExpiration := viper.GetBool("service-account-extend-token-expiration")
+	serviceAccountMaxTokenExpiration := viper.GetDuration("service-account-max-token-expiration")
 	podpidLimit := viper.GetInt64("kubelet-pod-pid-limit")
 	calicoEbpf := strconv.FormatBool(viper.GetBool("enable-calico-ebpf"))
 
@@ -752,6 +755,10 @@ WARNING: You are going to create a cluster that has no default internet access w
 		scr.Kubernetes.ServiceAccountExtendTokenExpiration = &serviceAccountExtendTokenExpiration
 	}
 
+	if viper.IsSet("service-account-max-token-expiration") {
+		scr.Kubernetes.ServiceAccountMaxTokenExpiration = new(int64(serviceAccountMaxTokenExpiration))
+	}
+
 	if viper.IsSet("kubelet-pod-pid-limit") {
 		if !viper.GetBool("yes-i-really-mean-it") {
 			return fmt.Errorf("--kubelet-pod-pid-limit can only be changed in combination with --yes-i-really-mean-it because this change can lead to pods not starting anymore in the cluster")
@@ -1003,6 +1010,7 @@ func (c *config) updateCluster(args []string) error {
 	encryptedStorageClasses := strconv.FormatBool(viper.GetBool("encrypted-storage-classes"))
 	highAvailability := strconv.FormatBool(viper.GetBool("high-availability-control-plane"))
 	serviceAccountExtendTokenExpiration := viper.GetBool("service-account-extend-token-expiration")
+	serviceAccountMaxTokenExpiration := viper.GetDuration("service-account-max-token-expiration")
 	calicoEbpf := strconv.FormatBool(viper.GetBool("enable-calico-ebpf"))
 
 	podpidLimit := viper.GetInt64("kubelet-pod-pid-limit")
@@ -1414,6 +1422,9 @@ func (c *config) updateCluster(args []string) error {
 
 	if viper.IsSet("service-account-extend-token-expiration") {
 		k8s.ServiceAccountExtendTokenExpiration = &serviceAccountExtendTokenExpiration
+	}
+	if viper.IsSet("service-account-max-token-expiration") {
+		k8s.ServiceAccountMaxTokenExpiration = new(int64(serviceAccountMaxTokenExpiration))
 	}
 
 	cur.Kubernetes = k8s
