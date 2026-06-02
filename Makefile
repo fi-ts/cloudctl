@@ -33,6 +33,7 @@ build:
 		github.com/fi-ts/cloudctl
 
 	md5sum bin/$(BINARY) > bin/$(BINARY).md5
+	sha512sum bin/$(BINARY) > bin/$(BINARY).sha512
 
 .PHONY: test
 test: build
