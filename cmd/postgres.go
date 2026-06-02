@@ -1019,7 +1019,10 @@ func (c *config) postgresConnectionString(args []string) error {
 	}
 	ip := "localhost"
 	port := int32(5432)
-	if postgres.Status.Socket != nil {
+	if len(postgres.Status.Additionalsockets) > 0 {
+		ip = postgres.Status.Additionalsockets[0].IP
+		port = postgres.Status.Additionalsockets[0].Port
+	} else if postgres.Status.Socket != nil {
 		ip = postgres.Status.Socket.IP
 		port = postgres.Status.Socket.Port
 	}
