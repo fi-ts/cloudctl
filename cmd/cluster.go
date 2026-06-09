@@ -1727,7 +1727,7 @@ func (c *config) clusterDNSManifest(args []string) error {
 							HTTP: &networkingv1.HTTPIngressRuleValue{
 								Paths: []networkingv1.HTTPIngressPath{
 									{
-										PathType: pointer.Pointer(networkingv1.PathTypePrefix),
+										PathType: new(networkingv1.PathTypePrefix),
 										Path:     "/",
 										Backend: networkingv1.IngressBackend{
 											Service: &networkingv1.IngressServiceBackend{
