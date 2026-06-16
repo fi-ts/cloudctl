@@ -1019,12 +1019,19 @@ func (c *config) postgresConnectionString(args []string) error {
 	}
 	ip := "localhost"
 	port := int32(5432)
-	if len(postgres.Status.Additionalsockets) > 0 {
-		ip = postgres.Status.Additionalsockets[0].IP
-		port = postgres.Status.Additionalsockets[0].Port
-	} else if postgres.Status.Socket != nil {
+	if postgres.Status.Socket != nil {
 		ip = postgres.Status.Socket.IP
 		port = postgres.Status.Socket.Port
+	}
+	// when configured, find the PostgresSocket with of the dedicated ip
+	if postgres.Dedicatedloadbalancerip != nil && len(*postgres.Dedicatedloadbalancerip) > 0 {
+		for _, ps := range postgres.Status.Additionalsockets {
+			if ps.IP != *postgres.Dedicatedloadbalancerip {
+				continue
+			}
+			ip = ps.IP
+			port = ps.Port
+		}
 	}
 
 	userpassword := make(map[string]string)
