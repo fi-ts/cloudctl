@@ -55,7 +55,9 @@ func newStatusCmd(c *config) *cobra.Command {
 				_ = srv.Shutdown(context.Background())
 			}()
 
-			if err := helper.OpenBrowser(localURL); err != nil {
+			browser := viper.GetString("browser")
+
+			if err := helper.OpenBrowser(localURL, browser); err != nil {
 				_ = srv.Shutdown(context.Background())
 				fmt.Println("Could not open browser automatically.")
 				fmt.Printf("Please open %s manually (available for 3 seconds).\n", localURL)
@@ -70,6 +72,7 @@ func newStatusCmd(c *config) *cobra.Command {
 	}
 
 	statusCmd.Flags().String("status-url", defaultStatusURL, "URL of the status page")
+	statusCmd.Flags().String("browser", "", "Browser to use (e.g. firefox, chromium, brave)")
 
 	return statusCmd
 }
