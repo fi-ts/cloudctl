@@ -233,6 +233,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().String("firewallcontroller", "", "version of the firewall-controller to use. [optional]")
 	clusterCreateCmd.Flags().BoolP("logacceptedconns", "", false, "also log accepted connections on the cluster firewall [optional]")
 	clusterCreateCmd.Flags().Duration("firewall-health-timeout", 0, "period (e.g. \"20m\") after which a firewall that hasn't achieved ready status is considered dead. Set to 0 to disable. [optional]")
+	clusterCreateCmd.Flags().Duration("firewall-create-timeout", 0, "period (e.g. \"20m\") after which a firewall that hasn't been created is considered dead. Set to 0 to disable. [optional]")
 	clusterCreateCmd.Flags().Int32("minsize", 1, "minimal workers of the cluster.")
 	clusterCreateCmd.Flags().Int32("maxsize", 1, "maximal workers of the cluster.")
 	clusterCreateCmd.Flags().String("maxsurge", "1", "max number (e.g. 1) or percentage (e.g. 10%) of workers created during a update of the cluster.")
@@ -329,6 +330,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().String("firewallcontroller", "", "version of the firewall-controller to use.")
 	clusterUpdateCmd.Flags().BoolP("logacceptedconns", "", false, "enables logging of accepted connections on the cluster firewall")
 	clusterUpdateCmd.Flags().Duration("firewall-health-timeout", 0, "period (e.g. \"20m\") after which a firewall that hasn't achieved ready status is considered dead. Set to 0 to disable.")
+	clusterUpdateCmd.Flags().Duration("firewall-create-timeout", 0, "period (e.g. \"20m\") after which a firewall that hasn't been created is considered dead. Set to 0 to disable.")
 	clusterUpdateCmd.Flags().String("machinetype", "", "machine type to use for the nodes.")
 	clusterUpdateCmd.Flags().String("machineimage", "", "machine image to use for the nodes, must be in the form of <name>-<version> ")
 	clusterUpdateCmd.Flags().StringSlice("addlabels", []string{}, "labels to add to the cluster")
@@ -493,6 +495,7 @@ func (c *config) clusterCreate() error {
 	healthtimeout := viper.GetDuration("healthtimeout")
 	draintimeout := viper.GetDuration("draintimeout")
 	firewallHealthTimeout := viper.GetDuration("firewall-health-timeout")
+	firewallCreateTimeout := viper.GetDuration("firewall-create-timeout")
 
 	var defaultPodSecurityStandard *string
 	if viper.IsSet("default-pod-security-standard") {
@@ -784,6 +787,11 @@ WARNING: You are going to create a cluster that has no default internet access w
 		scr.FirewallHealthTimeout = &fwht
 	}
 
+	if viper.IsSet("firewall-create-timeout") {
+		fwct := int64(firewallCreateTimeout)
+		scr.FirewallCreateTimeout = &fwct
+	}
+
 	request := cluster.NewCreateClusterParams()
 	request.SetBody(scr)
 	shoot, err := c.cloud.Cluster.CreateCluster(request, nil)
@@ -1037,6 +1045,7 @@ func (c *config) updateCluster(args []string) error {
 	healthtimeout := viper.GetDuration("healthtimeout")
 	draintimeout := viper.GetDuration("draintimeout")
 	firewallHealthTimeout := viper.GetDuration("firewall-health-timeout")
+	firewallCreateTimeout := viper.GetDuration("firewall-create-timeout")
 
 	customDefaultStorageClass := current.CustomDefaultStorageClass
 	if viper.IsSet("default-storage-class") && disableDefaultStorageClass {
@@ -1311,6 +1320,10 @@ func (c *config) updateCluster(args []string) error {
 	if viper.IsSet("firewall-health-timeout") {
 		fwht := int64(firewallHealthTimeout)
 		cur.FirewallHealthTimeout = &fwht
+	}
+	if viper.IsSet("firewall-create-timeout") {
+		fwct := int64(firewallCreateTimeout)
+		cur.FirewallCreateTimeout = &fwct
 	}
 	if len(firewallNetworks) > 0 {
 		if !sets.NewString(firewallNetworks...).Equal(sets.NewString(current.AdditionalNetworks...)) {
@@ -1714,7 +1727,7 @@ func (c *config) clusterDNSManifest(args []string) error {
 							HTTP: &networkingv1.HTTPIngressRuleValue{
 								Paths: []networkingv1.HTTPIngressPath{
 									{
-										PathType: pointer.Pointer(networkingv1.PathTypePrefix),
+										PathType: new(networkingv1.PathTypePrefix),
 										Path:     "/",
 										Backend: networkingv1.IngressBackend{
 											Service: &networkingv1.IngressServiceBackend{
