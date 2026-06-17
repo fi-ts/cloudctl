@@ -157,18 +157,22 @@ func ClientNoAuth() runtime.ClientAuthInfoWriterFunc {
 	return runtime.ClientAuthInfoWriterFunc(noAuth)
 }
 
-func OpenBrowser(url string) error {
+func OpenBrowser(url string, browser string) error {
 	var cmd string
 	var args []string
 
-	switch goruntime.GOOS {
-	case "windows":
-		cmd = "cmd"
-		args = []string{"/c", "start"}
-	case "darwin":
-		cmd = "open"
-	default:
-		cmd = "xdg-open"
+	if browser != "" {
+		cmd = browser
+	} else {
+		switch goruntime.GOOS {
+		case "windows":
+			cmd = "cmd"
+			args = []string{"/c", "start"}
+		case "darwin":
+			cmd = "open"
+		default:
+			cmd = "xdg-open"
+		}
 	}
 	args = append(args, url)
 	return exec.Command(cmd, args...).Start()
