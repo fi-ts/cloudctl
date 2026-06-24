@@ -1048,6 +1048,16 @@ func (c *config) postgresConnectionString(args []string) error {
 		ip = postgres.Status.Socket.IP
 		port = postgres.Status.Socket.Port
 	}
+	// when configured, find the PostgresSocket with of the dedicated ip
+	if postgres.Dedicatedloadbalancerip != nil && len(*postgres.Dedicatedloadbalancerip) > 0 {
+		for _, ps := range postgres.Status.Additionalsockets {
+			if ps.IP != *postgres.Dedicatedloadbalancerip {
+				continue
+			}
+			ip = ps.IP
+			port = ps.Port
+		}
+	}
 
 	userpassword := make(map[string]string)
 	if len(resp.Payload.UserSecret) > 0 {
