@@ -7,3 +7,4 @@ cloudctl
 .vscode
 tmp
 result
+.agents/
