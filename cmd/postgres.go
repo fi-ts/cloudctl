@@ -289,6 +289,7 @@ postgres=#
 	genericcli.Must(postgresCreateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	genericcli.Must(postgresCreateCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
 	genericcli.Must(postgresCreateCmd.RegisterFlagCompletionFunc("version", c.comp.PostgresListVersionsCompletion))
+	genericcli.Must(postgresCreateCmd.RegisterFlagCompletionFunc("storage-class", c.comp.PostgresListStorageClassesCompletion))
 
 	// CreateStandby
 	postgresCreateStandbyCmd.Flags().StringP("primary-postgres-id", "", "", "id of the primary database")
@@ -310,6 +311,7 @@ postgres=#
 	genericcli.Must(postgresCreateStandbyCmd.MarkFlagRequired("backup-config"))
 	genericcli.Must(postgresCreateStandbyCmd.RegisterFlagCompletionFunc("primary-postgres-id", c.comp.PostgresListCompletion))
 	genericcli.Must(postgresCreateStandbyCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
+	genericcli.Must(postgresCreateStandbyCmd.RegisterFlagCompletionFunc("storage-class", c.comp.PostgresListStorageClassesCompletion))
 
 	// PromoteToPrimary
 	postgresPromoteToPrimaryCmd.Flags().BoolP("synchronous", "", false, "make the replication synchronous")
@@ -328,6 +330,7 @@ postgres=#
 	genericcli.Must(postgresRestoreCmd.MarkFlagRequired("source-postgres-id"))
 	genericcli.Must(postgresRestoreCmd.RegisterFlagCompletionFunc("source-postgres-id", c.comp.PostgresListCompletion))
 	genericcli.Must(postgresRestoreCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
+	genericcli.Must(postgresRestoreCmd.RegisterFlagCompletionFunc("storage-class", c.comp.PostgresListStorageClassesCompletion))
 
 	// Update
 	postgresUpdateCmd.Flags().IntP("replicas", "", 1, "replicas of the database [optional]")
@@ -344,6 +347,8 @@ postgres=#
 	postgresUpdateCmd.Flags().StringP("memoryfactor", "", "", "the memoryfactor to use [optional]")
 	postgresUpdateCmd.Flags().StringP("backup-config", "", "", "backup config to use. REQUIRES A POD RESTART TO TAKE EFFECT [optional]")
 	postgresUpdateCmd.Flags().StringP("storage-class", "", "", "the storage class to use for the database. REQUIRES ADMIN PRIVILEGES [optional]")
+
+	genericcli.Must(postgresUpdateCmd.RegisterFlagCompletionFunc("storage-class", c.comp.PostgresListStorageClassesCompletion))
 
 	// List
 	postgresListCmd.Flags().StringP("id", "", "", "postgres id to filter [optional]")
