@@ -109,6 +109,8 @@ func newRootCmd(cfg *config) *cobra.Command {
 	rootCmd.AddCommand(newBillingCmd(cfg))
 	rootCmd.AddCommand(newHealthCmd(cfg))
 	rootCmd.AddCommand(newVMCmd(cfg))
+	rootCmd.AddCommand(newLLMCmd(cfg))
+	rootCmd.AddCommand(newDBCmd(cfg))
 
 	return rootCmd
 }

@@ -8,3 +8,4 @@ cloudctl
 tmp
 result
 .agents/
+.kiro/
