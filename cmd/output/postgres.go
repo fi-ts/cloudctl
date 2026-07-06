@@ -8,6 +8,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 )
 
 type (
@@ -125,7 +126,7 @@ func (p PostgresVersionsTablePrinter) Print(data []*models.V1PostgresVersion) {
 	p.render()
 }
 func (p PostgresPartitionsTablePrinter) Print(data models.V1PostgresPartitionsResponse) {
-	p.wideHeader = []string{"Name", "AllowedTenants", "AllowedStorageClasses"}
+	p.wideHeader = []string{"Name", "AllowedTenants", "AllowedStorageClasses", "MemoryFactor", "CPU"}
 	p.shortHeader = p.wideHeader
 
 	for name, pg := range data {
@@ -144,8 +145,26 @@ func (p PostgresPartitionsTablePrinter) Print(data models.V1PostgresPartitionsRe
 		for k := range pg.AllowedStorageClasses {
 			scs = append(scs, k)
 		}
+		memMax, memMin := "-", "-"
+		cpuMax, cpuMin := "-", "-"
+		if pg.Limits != nil {
+			cpuMin, cpuMax = pointer.SafeDerefOrDefault(pg.Limits.Cpumin, "-"), pointer.SafeDerefOrDefault(pg.Limits.Cpumax, "-")
+			maxv := pointer.SafeDeref(pg.Limits.Memoryfactormax)
+			minv := pointer.SafeDeref(pg.Limits.Memoryfactormin)
+			if minv != 0 {
+				memMin = fmt.Sprintf("%d", *pg.Limits.Memoryfactormin)
+			}
+			if maxv != 0 {
+				memMax = fmt.Sprintf("%d", *pg.Limits.Memoryfactormax)
+			}
+		}
 
-		wide := []string{name, strings.Join(tenants, ","), strings.Join(scs, ",")}
+		wide := []string{
+			name,
+			strings.Join(tenants, ","),
+			strings.Join(scs, ","),
+			strings.Join([]string{memMin, memMax}, "/"),
+			strings.Join([]string{cpuMin, cpuMax}, "/")}
 		short := wide
 
 		p.addWideData(wide, pg)
