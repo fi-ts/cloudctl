@@ -12,8 +12,6 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	ui "github.com/dcorbe/termui-dpc"
-	"github.com/dcorbe/termui-dpc/widgets"
 	"github.com/fi-ts/cloud-go/api/client"
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/fi-ts/cloud-go/api/client/health"
@@ -22,6 +20,8 @@ import (
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
+	ui "github.com/gizak/termui/v3"
+	"github.com/gizak/termui/v3/widgets"
 	"github.com/google/go-cmp/cmp"
 	"github.com/metal-stack/metal-lib/pkg/cache"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"

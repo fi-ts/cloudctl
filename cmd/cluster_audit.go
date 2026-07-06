@@ -39,16 +39,16 @@ func newClusterAuditCmd(c *config) *cobra.Command {
 		Short: "set the audit webhook mode for this cluster",
 		Long: `the webhook mode of the cluster, one of:
 - batch: Buffer events and asynchronously process them in batches.
-- blocking: Block API server responses on processing each individual event.
-- blocking-strict: Same as blocking, but when there is a failure during audit logging at the RequestReceived stage, the whole request to the kube-apiserver fails. This is the default.
+- blocking: Block API server responses on processing each individual event. This is the default.
+- blocking-strict: Same as blocking, but when there is a failure during audit logging at the RequestReceived stage, the whole request to the kube-apiserver fails.
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.mode(args)
 		},
 		ValidArgs: []string{
 			"batch\tBuffer events and asynchronously process them in batches.",
-			"blocking\tBlock API server responses on processing each individual event.",
-			"blocking-strict\tSame as blocking, but when there is a failure during audit logging at the RequestReceived stage, the whole request to the kube-apiserver fails. This is the default.",
+			"blocking\tBlock API server responses on processing each individual event. This is the default.",
+			"blocking-strict\tSame as blocking, but when there is a failure during audit logging at the RequestReceived stage, the whole request to the kube-apiserver fails.",
 		},
 	}
 	policyCmd := &cobra.Command{
@@ -105,6 +105,10 @@ func (c *auditCmd) mode(args []string) error {
 	mode, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
+	}
+
+	if mode == models.V1AuditWebhookModeBlockingDashStrict && !viper.GetBool("yes-i-really-mean-it") {
+		return fmt.Errorf("WARNING: setting audit mode to blocking-strict may cause kube-apiserver downtime if the log target is unavailable; requires --yes-i-really-mean-it flag to confirm that you understand the risks")
 	}
 
 	_, err = c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{

@@ -3,8 +3,8 @@ package cmd
 import (
 	"testing"
 
-	"github.com/dcorbe/termui-dpc/widgets"
 	"github.com/fi-ts/cloud-go/api/models"
+	"github.com/gizak/termui/v3/widgets"
 	"github.com/google/go-cmp/cmp"
 )
 
