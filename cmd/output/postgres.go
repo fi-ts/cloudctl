@@ -126,7 +126,7 @@ func (p PostgresVersionsTablePrinter) Print(data []*models.V1PostgresVersion) {
 	p.render()
 }
 func (p PostgresPartitionsTablePrinter) Print(data models.V1PostgresPartitionsResponse) {
-	p.wideHeader = []string{"Name", "AllowedTenants", "AllowedStorageClasses", "MemoryFactor", "CPU"}
+	p.wideHeader = []string{"Name", "AllowedTenants", "AllowedStorageClasses", "MemoryFactor", "CPU", "Storagesize", "MaxInstances"}
 	p.shortHeader = p.wideHeader
 
 	for name, pg := range data {
@@ -146,11 +146,19 @@ func (p PostgresPartitionsTablePrinter) Print(data models.V1PostgresPartitionsRe
 			scs = append(scs, k)
 		}
 		memMax, memMin := "-", "-"
-		cpuMax, cpuMin := "-", "-"
+		cpuMax, cpuMin := memMax, memMin
+		storageMax, storageMin := memMax, memMin
+		maxInstances := ""
 		if pg.Limits != nil {
 			cpuMin, cpuMax = pointer.SafeDerefOrDefault(pg.Limits.Cpumin, "-"), pointer.SafeDerefOrDefault(pg.Limits.Cpumax, "-")
+			storageMin, storageMax = pointer.SafeDerefOrDefault(pg.Limits.Storagesizemin, "-"), pointer.SafeDerefOrDefault(pg.Limits.Storagesizemax, "-")
 			maxv := pointer.SafeDeref(pg.Limits.Memoryfactormax)
 			minv := pointer.SafeDeref(pg.Limits.Memoryfactormin)
+			instmax := pointer.SafeDeref(pg.Limits.Instancesmax)
+
+			if instmax != 0 {
+				maxInstances = fmt.Sprintf("%d", instmax)
+			}
 			if minv != 0 {
 				memMin = fmt.Sprintf("%d", *pg.Limits.Memoryfactormin)
 			}
@@ -164,7 +172,10 @@ func (p PostgresPartitionsTablePrinter) Print(data models.V1PostgresPartitionsRe
 			strings.Join(tenants, ","),
 			strings.Join(scs, ","),
 			strings.Join([]string{memMin, memMax}, "/"),
-			strings.Join([]string{cpuMin, cpuMax}, "/")}
+			strings.Join([]string{cpuMin, cpuMax}, "/"),
+			strings.Join([]string{storageMin, storageMax}, "/"),
+			maxInstances,
+		}
 		short := wide
 
 		p.addWideData(wide, pg)
