@@ -286,6 +286,7 @@ postgres=#
 	genericcli.Must(postgresCreateCmd.MarkFlagRequired("partition"))
 	genericcli.Must(postgresCreateCmd.MarkFlagRequired("backup-config"))
 	genericcli.Must(postgresCreateCmd.MarkFlagRequired("version"))
+	genericcli.Must(postgresCreateCmd.MarkFlagRequired("sources"))
 	genericcli.Must(postgresCreateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	genericcli.Must(postgresCreateCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
 	genericcli.Must(postgresCreateCmd.RegisterFlagCompletionFunc("version", c.comp.PostgresListVersionsCompletion))
