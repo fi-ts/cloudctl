@@ -266,7 +266,7 @@ postgres=#
 	postgresCreateCmd.Flags().StringP("partition", "", "", "partition where the database should be created")
 	postgresCreateCmd.Flags().IntP("replicas", "", 1, "replicas of the database")
 	postgresCreateCmd.Flags().StringP("version", "", "", "version of the database")
-	postgresCreateCmd.Flags().StringSliceP("sources", "", []string{}, "networks which should be allowed to connect in CIDR notation")
+	postgresCreateCmd.Flags().StringSliceP("sources", "", []string{"255.255.255.255/32"}, "networks which should be allowed to connect in CIDR notation")
 	postgresCreateCmd.Flags().StringSliceP("labels", "", []string{}, "labels to add to that postgres database")
 	postgresCreateCmd.Flags().StringP("cpu", "", "500m", "cpus for the database")
 	postgresCreateCmd.Flags().StringP("memoryfactor", "", "", "the memoryfactor to use [optional]")
