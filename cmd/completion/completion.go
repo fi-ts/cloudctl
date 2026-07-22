@@ -445,6 +445,29 @@ func (c *Completion) PostgresListCompletion(cmd *cobra.Command, args []string, t
 	sort.Strings(names)
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
+func (c *Completion) PostgresListStorageClassesCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	request := database.NewGetPostgresPartitionsParams()
+	response, err := c.cloud.Database.GetPostgresPartitions(request, nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+
+	// get the value of the partition flag, if provided
+	partitionName, _ := cmd.Flags().GetString("partition")
+
+	var scs []string
+	for n, pp := range response.Payload {
+		for sc := range pp.AllowedStorageClasses {
+			if partitionName != "" && partitionName != n {
+				// when the partion flag was provided, ignore storage classes of other postgres partitions
+				continue
+			}
+			scs = append(scs, sc)
+		}
+	}
+	sort.Strings(scs)
+	return scs, cobra.ShellCompDirectiveNoFileComp
+}
 
 func (c *Completion) ProductOptionsCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	var options []string
