@@ -741,16 +741,6 @@ WARNING: You are going to create a cluster that has no default internet access w
 	}
 
 	if viper.IsSet("high-availability-control-plane") {
-		if ha, _ := strconv.ParseBool(highAvailability); ha {
-			if err := genericcli.PromptCustom(&genericcli.PromptConfig{
-				Message:     "You cannot use the high availability control plane feature gate in combination with the cluster forwarding backend of the audit extension. Please be aware that you cannot revert this feature gate after it was enabled.",
-				ShowAnswers: true,
-				Out:         c.out,
-			}); err != nil {
-				return err
-			}
-		}
-
 		scr.ClusterFeatures.HighAvailability = &highAvailability
 	}
 
@@ -1099,16 +1089,6 @@ func (c *config) updateCluster(args []string) error {
 		clusterFeatures.CalicoEbpfDataplane = &calicoEbpf
 	}
 	if viper.IsSet("high-availability-control-plane") {
-		if v, _ := strconv.ParseBool(highAvailability); v {
-			if err := genericcli.PromptCustom(&genericcli.PromptConfig{
-				Message:     "You cannot use the high availability control plane feature gate in combination with the cluster forwarding backend of the audit extension. Please be aware that you cannot revert this feature gate after it was enabled.",
-				ShowAnswers: true,
-				Out:         c.out,
-			}); err != nil {
-				return err
-			}
-		}
-
 		clusterFeatures.HighAvailability = &highAvailability
 	}
 
