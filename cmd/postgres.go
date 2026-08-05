@@ -266,7 +266,7 @@ postgres=#
 	postgresCreateCmd.Flags().StringP("partition", "", "", "partition where the database should be created")
 	postgresCreateCmd.Flags().IntP("replicas", "", 1, "replicas of the database")
 	postgresCreateCmd.Flags().StringP("version", "", "", "version of the database")
-	postgresCreateCmd.Flags().StringSliceP("sources", "", []string{"0.0.0.0/0"}, "networks which should be allowed to connect in CIDR notation")
+	postgresCreateCmd.Flags().StringSliceP("sources", "", []string{"255.255.255.255/32"}, "networks which should be allowed to connect in CIDR notation")
 	postgresCreateCmd.Flags().StringSliceP("labels", "", []string{}, "labels to add to that postgres database")
 	postgresCreateCmd.Flags().StringP("cpu", "", "500m", "cpus for the database")
 	postgresCreateCmd.Flags().StringP("memoryfactor", "", "", "the memoryfactor to use [optional]")
@@ -286,6 +286,7 @@ postgres=#
 	genericcli.Must(postgresCreateCmd.MarkFlagRequired("partition"))
 	genericcli.Must(postgresCreateCmd.MarkFlagRequired("backup-config"))
 	genericcli.Must(postgresCreateCmd.MarkFlagRequired("version"))
+	genericcli.Must(postgresCreateCmd.MarkFlagRequired("sources"))
 	genericcli.Must(postgresCreateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	genericcli.Must(postgresCreateCmd.RegisterFlagCompletionFunc("partition", c.comp.PostgresListPartitionsCompletion))
 	genericcli.Must(postgresCreateCmd.RegisterFlagCompletionFunc("version", c.comp.PostgresListVersionsCompletion))
@@ -334,7 +335,7 @@ postgres=#
 
 	// Update
 	postgresUpdateCmd.Flags().IntP("replicas", "", 1, "replicas of the database [optional]")
-	postgresUpdateCmd.Flags().StringSliceP("sources", "", []string{"0.0.0.0/0"}, "networks which should be allowed to connect in CIDR notation [optional]")
+	postgresUpdateCmd.Flags().StringSliceP("sources", "", []string{}, "networks which should be allowed to connect in CIDR notation [optional]")
 	postgresUpdateCmd.Flags().StringSliceP("labels", "", []string{}, "labels to add to that postgres database [optional]")
 	postgresUpdateCmd.Flags().StringP("cpu", "", "500m", "cpus for the database [optional]")
 	postgresUpdateCmd.Flags().StringP("buffer", "", "64Mi", "shared buffer for the database [optional]")
