@@ -154,9 +154,6 @@ func shootData(shoot *models.V1ClusterResponse, withIssues bool) ([]string, []st
 	}
 
 	if shoot.ClusterFeatures != nil {
-		if ok, err := strconv.ParseBool(pointer.SafeDeref(shoot.ClusterFeatures.HighAvailability)); err == nil && ok {
-			shootStats.apiServer += "🤹"
-		}
 		if ok, err := strconv.ParseBool(pointer.SafeDeref(shoot.ClusterFeatures.CalicoEbpfDataplane)); err == nil && ok {
 			shootStats.system += "🐝"
 		}
