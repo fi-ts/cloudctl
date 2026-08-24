@@ -48,7 +48,6 @@ func emojiHelpText() string {
 Meaning of the emojis:
 
 🔒 Indicates that a cluster has configured an API server ACL. For cluster machines this emoji indicates that the machines were locked for deletion in metal-stack (only relevant for metal-stack operators).
-🤹 Indicates that a cluster has the high-availability control plane feature gate enabled.
 🐝 Indicates that a cluster has the calico ebpf data plane feature gate enabled.
 ⚠️ Indicates that a cluster has issues (used in cluster issues command, e.g. indicates usage of an expired version of Kubernetes or machine image).
 🛡 For cluster firewalls indicates that the firewall has connected successfully through VPN to the metal-stack control plane (only relevant for metal-stack operators).
@@ -261,7 +260,6 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().StringSlice("kube-apiserver-acl-allowed-cidrs", []string{}, "comma-separated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterCreateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-allowed-cidrs [optional].")
 	clusterCreateCmd.Flags().String("network-isolation", "", "defines restrictions to external network communication for the cluster, can be one of baseline|restricted|isolated. baseline sets no special restrictions to external networks, restricted by default only allows external traffic to explicitly allowed destinations, forbidden disallows communication with external networks except for a limited set of networks. Please consult the documentation for detailed descriptions of the individual modes as these cannot be altered anymore after creation. [optional]")
-	clusterCreateCmd.Flags().Bool("high-availability-control-plane", false, "enables a high availability control plane for the cluster, cannot be disabled again")
 	clusterCreateCmd.Flags().Bool("service-account-extend-token-expiration", false, "extends the token expiration time for projected service accounts tokens")
 	clusterCreateCmd.Flags().Duration("service-account-max-token-expiration", 0, "sets the max token expiration duration for projected service account tokens")
 	clusterCreateCmd.Flags().Int64("kubelet-pod-pid-limit", 0, "controls the maximum number of process IDs per pod allowed by the kubelet")
@@ -359,7 +357,6 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-add-to-allowed-cidrs", []string{}, "comma-separated list of external CIDRs to add to the allowed CIDRs to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-remove-from-allowed-cidrs", []string{}, "comma-separated list of external CIDRs to be removed from the allowed CIDRs to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterUpdateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-* [optional].")
-	clusterUpdateCmd.Flags().Bool("high-availability-control-plane", false, "enables a high availability control plane for the cluster, cannot be disabled again")
 	clusterUpdateCmd.Flags().Bool("service-account-extend-token-expiration", false, "extends the token expiration time for projected service accounts tokens")
 	clusterUpdateCmd.Flags().Duration("service-account-max-token-expiration", 0, "sets the max token expiration duration for projected service account tokens. (set to 0 to use kubernetes default)")
 	clusterUpdateCmd.Flags().Int64("kubelet-pod-pid-limit", 0, "controls the maximum number of process IDs per pod allowed by the kubelet")
@@ -473,7 +470,6 @@ func (c *config) clusterCreate() error {
 	encryptedStorageClasses := strconv.FormatBool(viper.GetBool("encrypted-storage-classes"))
 	enableNodeLocalDNS := viper.GetBool("enable-node-local-dns")
 	disableForwardToUpstreamDNS := viper.GetBool("disable-forwarding-to-upstream-dns")
-	highAvailability := strconv.FormatBool(viper.GetBool("high-availability-control-plane"))
 	serviceAccountExtendTokenExpiration := viper.GetBool("service-account-extend-token-expiration")
 	serviceAccountMaxTokenExpiration := viper.GetDuration("service-account-max-token-expiration")
 	podpidLimit := viper.GetInt64("kubelet-pod-pid-limit")
@@ -741,10 +737,6 @@ WARNING: You are going to create a cluster that has no default internet access w
 		scr.ClusterFeatures.EnableCsiDriverLvm = new(strconv.FormatBool(viper.GetBool("enable-csi-driver-lvm")))
 	}
 
-	if viper.IsSet("high-availability-control-plane") {
-		scr.ClusterFeatures.HighAvailability = &highAvailability
-	}
-
 	if viper.IsSet("service-account-extend-token-expiration") {
 		scr.Kubernetes.ServiceAccountExtendTokenExpiration = &serviceAccountExtendTokenExpiration
 	}
@@ -996,7 +988,6 @@ func (c *config) updateCluster(args []string) error {
 	disableDefaultStorageClass := viper.GetBool("disable-custom-default-storage-class")
 
 	encryptedStorageClasses := strconv.FormatBool(viper.GetBool("encrypted-storage-classes"))
-	highAvailability := strconv.FormatBool(viper.GetBool("high-availability-control-plane"))
 	serviceAccountExtendTokenExpiration := viper.GetBool("service-account-extend-token-expiration")
 	serviceAccountMaxTokenExpiration := viper.GetDuration("service-account-max-token-expiration")
 	calicoEbpf := strconv.FormatBool(viper.GetBool("enable-calico-ebpf"))
@@ -1088,9 +1079,6 @@ func (c *config) updateCluster(args []string) error {
 		}
 
 		clusterFeatures.CalicoEbpfDataplane = &calicoEbpf
-	}
-	if viper.IsSet("high-availability-control-plane") {
-		clusterFeatures.HighAvailability = &highAvailability
 	}
 
 	workergroupKubernetesVersion := viper.GetString("workerversion")
