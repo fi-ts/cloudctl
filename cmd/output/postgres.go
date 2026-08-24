@@ -8,6 +8,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 )
 
 type (
@@ -125,7 +126,7 @@ func (p PostgresVersionsTablePrinter) Print(data []*models.V1PostgresVersion) {
 	p.render()
 }
 func (p PostgresPartitionsTablePrinter) Print(data models.V1PostgresPartitionsResponse) {
-	p.wideHeader = []string{"Name", "AllowedTenants", "AllowedStorageClasses"}
+	p.wideHeader = []string{"Name", "AllowedTenants", "AllowedStorageClasses", "MemoryFactor", "CPU", "Storagesize", "MaxInstances"}
 	p.shortHeader = p.wideHeader
 
 	for name, pg := range data {
@@ -144,8 +145,37 @@ func (p PostgresPartitionsTablePrinter) Print(data models.V1PostgresPartitionsRe
 		for k := range pg.AllowedStorageClasses {
 			scs = append(scs, k)
 		}
+		memMax, memMin := "-", "-"
+		cpuMax, cpuMin := memMax, memMin
+		storageMax, storageMin := memMax, memMin
+		maxInstances := ""
+		if pg.Limits != nil {
+			cpuMin, cpuMax = pointer.SafeDerefOrDefault(pg.Limits.CPUMin, "-"), pointer.SafeDerefOrDefault(pg.Limits.CPUMax, "-")
+			storageMin, storageMax = pointer.SafeDerefOrDefault(pg.Limits.StorageSizeMin, "-"), pointer.SafeDerefOrDefault(pg.Limits.StorageSizeMax, "-")
+			maxv := pointer.SafeDeref(pg.Limits.MemoryfactorMax)
+			minv := pointer.SafeDeref(pg.Limits.MemoryfactorMin)
+			instmax := pointer.SafeDeref(pg.Limits.InstancesMax)
 
-		wide := []string{name, strings.Join(tenants, ","), strings.Join(scs, ",")}
+			if instmax != 0 {
+				maxInstances = fmt.Sprintf("%d", instmax)
+			}
+			if minv != 0 {
+				memMin = fmt.Sprintf("%d", *pg.Limits.MemoryfactorMin)
+			}
+			if maxv != 0 {
+				memMax = fmt.Sprintf("%d", *pg.Limits.MemoryfactorMax)
+			}
+		}
+
+		wide := []string{
+			name,
+			strings.Join(tenants, ","),
+			strings.Join(scs, ","),
+			strings.Join([]string{memMin, memMax}, "/"),
+			strings.Join([]string{cpuMin, cpuMax}, "/"),
+			strings.Join([]string{storageMin, storageMax}, "/"),
+			maxInstances,
+		}
 		short := wide
 
 		p.addWideData(wide, pg)
