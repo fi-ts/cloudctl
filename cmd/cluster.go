@@ -48,7 +48,6 @@ func emojiHelpText() string {
 Meaning of the emojis:
 
 🔒 Indicates that a cluster has configured an API server ACL. For cluster machines this emoji indicates that the machines were locked for deletion in metal-stack (only relevant for metal-stack operators).
-🤹 Indicates that a cluster has the high-availability control plane feature gate enabled.
 🐝 Indicates that a cluster has the calico ebpf data plane feature gate enabled.
 ⚠️ Indicates that a cluster has issues (used in cluster issues command, e.g. indicates usage of an expired version of Kubernetes or machine image).
 🛡 For cluster firewalls indicates that the firewall has connected successfully through VPN to the metal-stack control plane (only relevant for metal-stack operators).
@@ -233,6 +232,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().String("firewallcontroller", "", "version of the firewall-controller to use. [optional]")
 	clusterCreateCmd.Flags().BoolP("logacceptedconns", "", false, "also log accepted connections on the cluster firewall [optional]")
 	clusterCreateCmd.Flags().Duration("firewall-health-timeout", 0, "period (e.g. \"20m\") after which a firewall that hasn't achieved ready status is considered dead. Set to 0 to disable. [optional]")
+	clusterCreateCmd.Flags().Duration("firewall-create-timeout", 0, "period (e.g. \"20m\") after which a firewall that hasn't been created is considered dead. Set to 0 to disable. [optional]")
 	clusterCreateCmd.Flags().Int32("minsize", 1, "minimal workers of the cluster.")
 	clusterCreateCmd.Flags().Int32("maxsize", 1, "maximal workers of the cluster.")
 	clusterCreateCmd.Flags().String("maxsurge", "1", "max number (e.g. 1) or percentage (e.g. 10%) of workers created during a update of the cluster.")
@@ -260,7 +260,6 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCreateCmd.Flags().StringSlice("kube-apiserver-acl-allowed-cidrs", []string{}, "comma-separated list of external CIDRs allowed to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterCreateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-allowed-cidrs [optional].")
 	clusterCreateCmd.Flags().String("network-isolation", "", "defines restrictions to external network communication for the cluster, can be one of baseline|restricted|isolated. baseline sets no special restrictions to external networks, restricted by default only allows external traffic to explicitly allowed destinations, forbidden disallows communication with external networks except for a limited set of networks. Please consult the documentation for detailed descriptions of the individual modes as these cannot be altered anymore after creation. [optional]")
-	clusterCreateCmd.Flags().Bool("high-availability-control-plane", false, "enables a high availability control plane for the cluster, cannot be disabled again")
 	clusterCreateCmd.Flags().Bool("service-account-extend-token-expiration", false, "extends the token expiration time for projected service accounts tokens")
 	clusterCreateCmd.Flags().Duration("service-account-max-token-expiration", 0, "sets the max token expiration duration for projected service account tokens")
 	clusterCreateCmd.Flags().Int64("kubelet-pod-pid-limit", 0, "controls the maximum number of process IDs per pod allowed by the kubelet")
@@ -329,6 +328,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().String("firewallcontroller", "", "version of the firewall-controller to use.")
 	clusterUpdateCmd.Flags().BoolP("logacceptedconns", "", false, "enables logging of accepted connections on the cluster firewall")
 	clusterUpdateCmd.Flags().Duration("firewall-health-timeout", 0, "period (e.g. \"20m\") after which a firewall that hasn't achieved ready status is considered dead. Set to 0 to disable.")
+	clusterUpdateCmd.Flags().Duration("firewall-create-timeout", 0, "period (e.g. \"20m\") after which a firewall that hasn't been created is considered dead. Set to 0 to disable.")
 	clusterUpdateCmd.Flags().String("machinetype", "", "machine type to use for the nodes.")
 	clusterUpdateCmd.Flags().String("machineimage", "", "machine image to use for the nodes, must be in the form of <name>-<version> ")
 	clusterUpdateCmd.Flags().StringSlice("addlabels", []string{}, "labels to add to the cluster")
@@ -357,7 +357,6 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-add-to-allowed-cidrs", []string{}, "comma-separated list of external CIDRs to add to the allowed CIDRs to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterUpdateCmd.Flags().StringSlice("kube-apiserver-acl-remove-from-allowed-cidrs", []string{}, "comma-separated list of external CIDRs to be removed from the allowed CIDRs to connect to the kube-apiserver (e.g. \"212.34.68.0/24,212.34.89.0/27\")")
 	clusterUpdateCmd.Flags().Bool("enable-kube-apiserver-acl", false, "restricts access from outside to the kube-apiserver to the source ip addresses set by --kube-apiserver-acl-* [optional].")
-	clusterUpdateCmd.Flags().Bool("high-availability-control-plane", false, "enables a high availability control plane for the cluster, cannot be disabled again")
 	clusterUpdateCmd.Flags().Bool("service-account-extend-token-expiration", false, "extends the token expiration time for projected service accounts tokens")
 	clusterUpdateCmd.Flags().Duration("service-account-max-token-expiration", 0, "sets the max token expiration duration for projected service account tokens. (set to 0 to use kubernetes default)")
 	clusterUpdateCmd.Flags().Int64("kubelet-pod-pid-limit", 0, "controls the maximum number of process IDs per pod allowed by the kubelet")
@@ -470,7 +469,6 @@ func (c *config) clusterCreate() error {
 	encryptedStorageClasses := strconv.FormatBool(viper.GetBool("encrypted-storage-classes"))
 	enableNodeLocalDNS := viper.GetBool("enable-node-local-dns")
 	disableForwardToUpstreamDNS := viper.GetBool("disable-forwarding-to-upstream-dns")
-	highAvailability := strconv.FormatBool(viper.GetBool("high-availability-control-plane"))
 	serviceAccountExtendTokenExpiration := viper.GetBool("service-account-extend-token-expiration")
 	serviceAccountMaxTokenExpiration := viper.GetDuration("service-account-max-token-expiration")
 	podpidLimit := viper.GetInt64("kubelet-pod-pid-limit")
@@ -493,6 +491,7 @@ func (c *config) clusterCreate() error {
 	healthtimeout := viper.GetDuration("healthtimeout")
 	draintimeout := viper.GetDuration("draintimeout")
 	firewallHealthTimeout := viper.GetDuration("firewall-health-timeout")
+	firewallCreateTimeout := viper.GetDuration("firewall-create-timeout")
 
 	var defaultPodSecurityStandard *string
 	if viper.IsSet("default-pod-security-standard") {
@@ -737,20 +736,6 @@ WARNING: You are going to create a cluster that has no default internet access w
 		scr.ClusterFeatures.EnableCsiDriverLvm = new(strconv.FormatBool(viper.GetBool("enable-csi-driver-lvm")))
 	}
 
-	if viper.IsSet("high-availability-control-plane") {
-		if ha, _ := strconv.ParseBool(highAvailability); ha {
-			if err := genericcli.PromptCustom(&genericcli.PromptConfig{
-				Message:     "You cannot use the high availability control plane feature gate in combination with the cluster forwarding backend of the audit extension. Please be aware that you cannot revert this feature gate after it was enabled.",
-				ShowAnswers: true,
-				Out:         c.out,
-			}); err != nil {
-				return err
-			}
-		}
-
-		scr.ClusterFeatures.HighAvailability = &highAvailability
-	}
-
 	if viper.IsSet("service-account-extend-token-expiration") {
 		scr.Kubernetes.ServiceAccountExtendTokenExpiration = &serviceAccountExtendTokenExpiration
 	}
@@ -782,6 +767,11 @@ WARNING: You are going to create a cluster that has no default internet access w
 	if viper.IsSet("firewall-health-timeout") {
 		fwht := int64(firewallHealthTimeout)
 		scr.FirewallHealthTimeout = &fwht
+	}
+
+	if viper.IsSet("firewall-create-timeout") {
+		fwct := int64(firewallCreateTimeout)
+		scr.FirewallCreateTimeout = &fwct
 	}
 
 	request := cluster.NewCreateClusterParams()
@@ -997,7 +987,6 @@ func (c *config) updateCluster(args []string) error {
 	disableDefaultStorageClass := viper.GetBool("disable-custom-default-storage-class")
 
 	encryptedStorageClasses := strconv.FormatBool(viper.GetBool("encrypted-storage-classes"))
-	highAvailability := strconv.FormatBool(viper.GetBool("high-availability-control-plane"))
 	serviceAccountExtendTokenExpiration := viper.GetBool("service-account-extend-token-expiration")
 	serviceAccountMaxTokenExpiration := viper.GetDuration("service-account-max-token-expiration")
 	calicoEbpf := strconv.FormatBool(viper.GetBool("enable-calico-ebpf"))
@@ -1037,6 +1026,7 @@ func (c *config) updateCluster(args []string) error {
 	healthtimeout := viper.GetDuration("healthtimeout")
 	draintimeout := viper.GetDuration("draintimeout")
 	firewallHealthTimeout := viper.GetDuration("firewall-health-timeout")
+	firewallCreateTimeout := viper.GetDuration("firewall-create-timeout")
 
 	customDefaultStorageClass := current.CustomDefaultStorageClass
 	if viper.IsSet("default-storage-class") && disableDefaultStorageClass {
@@ -1088,19 +1078,6 @@ func (c *config) updateCluster(args []string) error {
 		}
 
 		clusterFeatures.CalicoEbpfDataplane = &calicoEbpf
-	}
-	if viper.IsSet("high-availability-control-plane") {
-		if v, _ := strconv.ParseBool(highAvailability); v {
-			if err := genericcli.PromptCustom(&genericcli.PromptConfig{
-				Message:     "You cannot use the high availability control plane feature gate in combination with the cluster forwarding backend of the audit extension. Please be aware that you cannot revert this feature gate after it was enabled.",
-				ShowAnswers: true,
-				Out:         c.out,
-			}); err != nil {
-				return err
-			}
-		}
-
-		clusterFeatures.HighAvailability = &highAvailability
 	}
 
 	workergroupKubernetesVersion := viper.GetString("workerversion")
@@ -1311,6 +1288,10 @@ func (c *config) updateCluster(args []string) error {
 	if viper.IsSet("firewall-health-timeout") {
 		fwht := int64(firewallHealthTimeout)
 		cur.FirewallHealthTimeout = &fwht
+	}
+	if viper.IsSet("firewall-create-timeout") {
+		fwct := int64(firewallCreateTimeout)
+		cur.FirewallCreateTimeout = &fwct
 	}
 	if len(firewallNetworks) > 0 {
 		if !sets.NewString(firewallNetworks...).Equal(sets.NewString(current.AdditionalNetworks...)) {
@@ -1714,7 +1695,7 @@ func (c *config) clusterDNSManifest(args []string) error {
 							HTTP: &networkingv1.HTTPIngressRuleValue{
 								Paths: []networkingv1.HTTPIngressPath{
 									{
-										PathType: pointer.Pointer(networkingv1.PathTypePrefix),
+										PathType: new(networkingv1.PathTypePrefix),
 										Path:     "/",
 										Backend: networkingv1.IngressBackend{
 											Service: &networkingv1.IngressServiceBackend{

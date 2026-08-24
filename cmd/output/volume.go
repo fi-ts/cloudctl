@@ -10,6 +10,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8syaml "sigs.k8s.io/yaml"
 )
@@ -32,7 +33,12 @@ type (
 
 // Print a volume as table
 func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
+	showStorage := hasMultipleStorageTypes(data)
+
 	p.shortHeader = []string{"ID", "Name", "Size", "Usage", "Replicas", "QoS", "Project", "Tenant", "Partition"}
+	if showStorage {
+		p.shortHeader = append(p.shortHeader, "Storage")
+	}
 	p.wideHeader = append(p.shortHeader, "Nodes")
 	p.Order(data)
 
@@ -79,12 +85,36 @@ func (p VolumeTablePrinter) Print(data []*models.V1VolumeResponse) {
 		nodes := ConnectedHosts(vol)
 
 		short := []string{volumeID, name, size, usage, replica, qos, project, tenant, partition}
+		if showStorage {
+			storageType := ""
+			if vol.StorageType != nil {
+				storageType = *vol.StorageType
+			}
+			short = append(short, storageType)
+		}
 		wide := append(short, strings.Join(nodes, "\n"))
 
 		p.addWideData(wide, vol)
 		p.addShortData(short, vol)
 	}
 	p.render()
+}
+
+func hasMultipleStorageTypes(data []*models.V1VolumeResponse) bool {
+	seen := ""
+	for _, vol := range data {
+		if vol.StorageType == nil {
+			continue
+		}
+		if seen == "" {
+			seen = *vol.StorageType
+			continue
+		}
+		if *vol.StorageType != seen {
+			return true
+		}
+	}
+	return false
 }
 
 // Print an snapshot as table
@@ -197,6 +227,12 @@ spec:
 	storageClassName: partition-silver
 */
 func VolumeManifest(v models.V1VolumeResponse, name, namespace, sc string) error {
+	// Determine CSI driver based on storage type
+	csiDriver := "csi.lightbitslabs.com" // default for Duros
+	if v.StorageType != nil && *v.StorageType == "ontap" {
+		csiDriver = "csi.trident.netapp.io"
+	}
+
 	filesystem := corev1.PersistentVolumeFilesystem
 	pv := corev1.PersistentVolume{
 		TypeMeta:   v1.TypeMeta{Kind: "PersistentVolume", APIVersion: "v1"},
@@ -205,16 +241,20 @@ func VolumeManifest(v models.V1VolumeResponse, name, namespace, sc string) error
 			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 			VolumeMode:       &filesystem,
 			StorageClassName: sc,
-			// FIXME add Capacity once figured out
 			PersistentVolumeSource: corev1.PersistentVolumeSource{
 				CSI: &corev1.CSIPersistentVolumeSource{
-					Driver:       "csi.lightbitslabs.com",
+					Driver:       csiDriver,
 					FSType:       "ext4",
 					ReadOnly:     false,
 					VolumeHandle: *v.VolumeHandle,
 				},
 			},
 		},
+	}
+	if v.Size != nil {
+		pv.Spec.Capacity = corev1.ResourceList{
+			corev1.ResourceStorage: *resource.NewQuantity(*v.Size, resource.BinarySI),
+		}
 	}
 
 	if len(v.ConnectedHosts) > 0 {

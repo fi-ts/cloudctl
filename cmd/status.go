@@ -16,7 +16,7 @@ import (
 
 const defaultStatusURL = "https://status.fits.cloud"
 
-func newStatusCmd(c *config) *cobra.Command {
+func newStatusCmd() *cobra.Command {
 	statusCmd := &cobra.Command{
 		Use:   "status",
 		Short: "open the status page in the browser",

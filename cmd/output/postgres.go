@@ -150,20 +150,20 @@ func (p PostgresPartitionsTablePrinter) Print(data models.V1PostgresPartitionsRe
 		storageMax, storageMin := memMax, memMin
 		maxInstances := ""
 		if pg.Limits != nil {
-			cpuMin, cpuMax = pointer.SafeDerefOrDefault(pg.Limits.Cpumin, "-"), pointer.SafeDerefOrDefault(pg.Limits.Cpumax, "-")
-			storageMin, storageMax = pointer.SafeDerefOrDefault(pg.Limits.Storagesizemin, "-"), pointer.SafeDerefOrDefault(pg.Limits.Storagesizemax, "-")
-			maxv := pointer.SafeDeref(pg.Limits.Memoryfactormax)
-			minv := pointer.SafeDeref(pg.Limits.Memoryfactormin)
-			instmax := pointer.SafeDeref(pg.Limits.Instancesmax)
+			cpuMin, cpuMax = pointer.SafeDerefOrDefault(pg.Limits.CPUMin, "-"), pointer.SafeDerefOrDefault(pg.Limits.CPUMax, "-")
+			storageMin, storageMax = pointer.SafeDerefOrDefault(pg.Limits.StorageSizeMin, "-"), pointer.SafeDerefOrDefault(pg.Limits.StorageSizeMax, "-")
+			maxv := pointer.SafeDeref(pg.Limits.MemoryfactorMax)
+			minv := pointer.SafeDeref(pg.Limits.MemoryfactorMin)
+			instmax := pointer.SafeDeref(pg.Limits.InstancesMax)
 
 			if instmax != 0 {
 				maxInstances = fmt.Sprintf("%d", instmax)
 			}
 			if minv != 0 {
-				memMin = fmt.Sprintf("%d", *pg.Limits.Memoryfactormin)
+				memMin = fmt.Sprintf("%d", *pg.Limits.MemoryfactorMin)
 			}
 			if maxv != 0 {
-				memMax = fmt.Sprintf("%d", *pg.Limits.Memoryfactormax)
+				memMax = fmt.Sprintf("%d", *pg.Limits.MemoryfactorMax)
 			}
 		}
 
