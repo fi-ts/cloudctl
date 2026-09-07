@@ -139,8 +139,7 @@ func (m machineReservationsCmd) Create(rq *models.V1MachineReservationCreateRequ
 		WithBody(rq).
 		WithForce(new(viper.GetBool("force"))), nil)
 	if err != nil {
-		var r *project.CreateMachineReservationConflict
-		if errors.As(err, &r) {
+		if _, ok := errors.AsType[*project.CreateMachineReservationConflict](err); ok {
 			return nil, genericcli.AlreadyExistsError()
 		}
 		return nil, err

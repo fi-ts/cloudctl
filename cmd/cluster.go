@@ -16,7 +16,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -1459,7 +1458,7 @@ func (c *config) clusterDelete(args []string) error {
 
 	genericcli.Must(c.listPrinter.Print(resp.Payload))
 
-	firstPartOfClusterID := strings.Split(*resp.Payload.ID, "-")[0]
+	firstPartOfClusterID, _, _ := strings.Cut(*resp.Payload.ID, "-")
 	fmt.Println("Please answer some security questions to delete this cluster")
 	err = helper.Prompt("first part of clusterID:", firstPartOfClusterID)
 	if err != nil {
@@ -1675,35 +1674,29 @@ func (c *config) clusterDNSManifest(args []string) error {
 	switch t := viper.GetString("type"); t {
 	case "ingress":
 		ingress := &networkingv1.Ingress{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Ingress",
-				APIVersion: networkingv1.SchemeGroupVersion.String(),
+			Kind:       "Ingress",
+			APIVersion: networkingv1.SchemeGroupVersion.String(),
+			Name:       viper.GetString("name"),
+			Namespace:  viper.GetString("namespace"),
+			Labels: map[string]string{
+				"app": viper.GetString("name"),
 			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      viper.GetString("name"),
-				Namespace: viper.GetString("namespace"),
-				Labels: map[string]string{
-					"app": viper.GetString("name"),
-				},
-				Annotations: annotations,
-			},
+			Annotations: annotations,
 			Spec: networkingv1.IngressSpec{
 				IngressClassName: new(viper.GetString("ingress-class")),
 				Rules: []networkingv1.IngressRule{
 					{
 						Host: domain,
-						IngressRuleValue: networkingv1.IngressRuleValue{
-							HTTP: &networkingv1.HTTPIngressRuleValue{
-								Paths: []networkingv1.HTTPIngressPath{
-									{
-										PathType: new(networkingv1.PathTypePrefix),
-										Path:     "/",
-										Backend: networkingv1.IngressBackend{
-											Service: &networkingv1.IngressServiceBackend{
-												Name: viper.GetString("backend-name"),
-												Port: networkingv1.ServiceBackendPort{
-													Number: viper.GetInt32("backend-port"),
-												},
+						HTTP: &networkingv1.HTTPIngressRuleValue{
+							Paths: []networkingv1.HTTPIngressPath{
+								{
+									PathType: new(networkingv1.PathTypePrefix),
+									Path:     "/",
+									Backend: networkingv1.IngressBackend{
+										Service: &networkingv1.IngressServiceBackend{
+											Name: viper.GetString("backend-name"),
+											Port: networkingv1.ServiceBackendPort{
+												Number: viper.GetInt32("backend-port"),
 											},
 										},
 									},
@@ -1727,18 +1720,14 @@ func (c *config) clusterDNSManifest(args []string) error {
 		resource = ingress
 	case "service":
 		service := &corev1.Service{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Service",
-				APIVersion: corev1.SchemeGroupVersion.String(),
+			Kind:       "Service",
+			APIVersion: corev1.SchemeGroupVersion.String(),
+			Name:       viper.GetString("name"),
+			Namespace:  viper.GetString("namespace"),
+			Labels: map[string]string{
+				"app": viper.GetString("name"),
 			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      viper.GetString("name"),
-				Namespace: viper.GetString("namespace"),
-				Labels: map[string]string{
-					"app": viper.GetString("name"),
-				},
-				Annotations: annotations,
-			},
+			Annotations: annotations,
 			Spec: corev1.ServiceSpec{
 				Type: corev1.ServiceTypeLoadBalancer,
 				Selector: map[string]string{
