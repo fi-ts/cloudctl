@@ -11,7 +11,6 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8syaml "sigs.k8s.io/yaml"
 )
 
@@ -235,8 +234,10 @@ func VolumeManifest(v models.V1VolumeResponse, name, namespace, sc string) error
 
 	filesystem := corev1.PersistentVolumeFilesystem
 	pv := corev1.PersistentVolume{
-		TypeMeta:   v1.TypeMeta{Kind: "PersistentVolume", APIVersion: "v1"},
-		ObjectMeta: v1.ObjectMeta{Name: name, Namespace: namespace},
+		Kind:       "PersistentVolume",
+		APIVersion: corev1.SchemeGroupVersion.Version,
+		Name:       name,
+		Namespace:  namespace,
 		Spec: corev1.PersistentVolumeSpec{
 			AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 			VolumeMode:       &filesystem,
@@ -268,12 +269,11 @@ func VolumeManifest(v models.V1VolumeResponse, name, namespace, sc string) error
 
 func VolumeEncryptionSecretManifest(namespace, passphrase string) error {
 	secret := corev1.Secret{
-		TypeMeta: v1.TypeMeta{Kind: "Secret", APIVersion: "v1"},
-		ObjectMeta: v1.ObjectMeta{
-			Name:      "storage-encryption-key",
-			Namespace: namespace,
-		},
-		Type: corev1.SecretTypeOpaque,
+		Kind:       "Secret",
+		APIVersion: corev1.SchemeGroupVersion.Version,
+		Name:       "storage-encryption-key",
+		Namespace:  namespace,
+		Type:       corev1.SecretTypeOpaque,
 		StringData: map[string]string{
 			"host-encryption-passphrase": passphrase,
 		},

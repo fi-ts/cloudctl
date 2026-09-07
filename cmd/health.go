@@ -16,8 +16,7 @@ func newHealthCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			resp, err := c.cloud.Health.Health(nil, nil)
 			if err != nil {
-				var r *health.HealthInternalServerError
-				if errors.As(err, &r) {
+				if r, ok := errors.AsType[*health.HealthInternalServerError](err); ok {
 					resp = health.NewHealthOK()
 					resp.Payload = r.Payload
 				} else {

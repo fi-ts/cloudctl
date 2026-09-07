@@ -342,8 +342,7 @@ func (d *dashboard) Render() {
 
 	healthResp, err := d.cloud.Health.Health(health.NewHealthParams().WithContext(ctx), nil)
 	if err != nil {
-		var r *health.HealthInternalServerError
-		if errors.As(err, &r) {
+		if r, ok := errors.AsType[*health.HealthInternalServerError](err); ok {
 			healthResp = health.NewHealthOK()
 			healthResp.Payload = r.Payload
 		} else {
@@ -1100,8 +1099,7 @@ func (d *dashboardVolumePane) Render() error {
 
 	clusters, err = d.cache.VolumeClusterInfo(ctx)
 	if err != nil {
-		var typedErr *volume.ClusterInfoDefault
-		if errors.As(err, &typedErr) {
+		if typedErr, ok := errors.AsType[*volume.ClusterInfoDefault](err); ok {
 			if typedErr.Code() != http.StatusForbidden {
 				return err
 			}
