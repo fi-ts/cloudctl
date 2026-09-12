@@ -37,6 +37,8 @@ require (
 	sigs.k8s.io/yaml v1.6.0
 )
 
+replace github.com/fi-ts/cloud-go => ../../cloud-go/extend-xdr-qca-proxy
+
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.12-20260825204119-511051f7f437.2 // indirect
 	buf.build/go/protovalidate v1.4.0 // indirect
