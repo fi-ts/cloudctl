@@ -7,7 +7,7 @@ require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.19.0
 	github.com/fi-ts/accounting-go v0.11.2
-	github.com/fi-ts/cloud-go v0.34.0
+	github.com/fi-ts/cloud-go v0.35.0
 	github.com/gardener/gardener/pkg/apis v1.140.0
 	github.com/gardener/machine-controller-manager v0.62.1
 	github.com/gizak/termui/v3 v3.1.0
@@ -36,8 +36,6 @@ require (
 	k8s.io/apimachinery v0.35.4
 	sigs.k8s.io/yaml v1.6.0
 )
-
-replace github.com/fi-ts/cloud-go => ../../cloud-go/extend-xdr-qca-proxy
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.12-20260825204119-511051f7f437.2 // indirect
