@@ -1,6 +1,11 @@
 package cmd
 
 import (
+	"fmt"
+	"net"
+	"net/url"
+	"strings"
+
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
@@ -44,6 +49,7 @@ func newClusterQCACmd(c *config) *cobra.Command {
 	genericcli.Must(clusterQCACmd.RegisterFlagCompletionFunc("cluster-id", c.comp.ClusterListCompletion))
 
 	configureCmd.Flags().Bool("disabled", false, "disables the entire xdr functionality")
+	configureCmd.Flags().String("proxy", "", "the proxy for the qca configuration, either in the form ip:port or as a parseable url")
 
 	clusterQCACmd.AddCommand(configureCmd, showCmd)
 
@@ -58,6 +64,14 @@ func (c *qcaCmd) configure() error {
 		qcaConfiguration.Disabled = new(viper.GetBool("disabled"))
 	}
 
+	if viper.IsSet("proxy") {
+		proxy, err := parseQCAProxy(viper.GetString("proxy"))
+		if err != nil {
+			return err
+		}
+		qcaConfiguration.Proxy = proxy
+	}
+
 	_, err := c.c.cloud.Cluster.UpdateCluster(cluster.NewUpdateClusterParams().WithBody(&models.V1ClusterUpdateRequest{
 		ID:        new(viper.GetString("cluster-id")),
 		QCAConfig: qcaConfiguration,
@@ -67,6 +81,29 @@ func (c *qcaCmd) configure() error {
 	}
 
 	return nil
+}
+
+func parseQCAProxy(proxy string) (string, error) {
+	if proxy == "" {
+		return "", fmt.Errorf("proxy must not be empty")
+	}
+
+	if strings.Contains(proxy, "://") {
+		u, err := url.Parse(proxy)
+		if err != nil {
+			return "", fmt.Errorf("unable to parse proxy url %q: %w", proxy, err)
+		}
+		if u.Host == "" {
+			return "", fmt.Errorf("invalid proxy url %q: missing host", proxy)
+		}
+		return proxy, nil
+	}
+
+	if _, _, err := net.SplitHostPort(proxy); err != nil {
+		return "", fmt.Errorf("invalid proxy %q, must be in the form ip:port or a parseable url", proxy)
+	}
+
+	return proxy, nil
 }
 
 func (c *qcaCmd) show() error {
