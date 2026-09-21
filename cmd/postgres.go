@@ -356,6 +356,7 @@ postgres=#
 	postgresListCmd.Flags().StringP("tenant", "", "", "tenant to filter [optional]")
 	postgresListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
 	postgresListCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
+	postgresListCmd.Flags().StringP("postgres-version", "", "", "postgres version to filter [optional, semver filter]")
 
 	postgresDemoteToStandbyCmd.Flags().BoolP("disable-loadbalancers", "", false, "disable connections with the public loadbalancer IP [optional]")
 	postgresPromoteToPrimaryCmd.Flags().BoolP("disable-loadbalancers", "", false, "disable connections with the public loadbalancer IP [optional]")
@@ -941,7 +942,7 @@ func readPostgresUpdateRequests(filename string) ([]models.V1PostgresUpdateReque
 }
 
 func (c *config) postgresFind() error {
-	if helper.AtLeastOneViperStringFlagGiven("id", "description", "tenant", "project", "partition") {
+	if helper.AtLeastOneViperStringFlagGiven("id", "description", "tenant", "project", "partition", "postgres-version") {
 		params := database.NewFindPostgresParams()
 		ifr := &models.V1PostgresFindRequest{}
 		id := helper.ViperString("id")
@@ -963,6 +964,10 @@ func (c *config) postgresFind() error {
 		partitionID := helper.ViperString("partition")
 		if partitionID != nil {
 			ifr.PartitionID = *partitionID
+		}
+		versionFilter := helper.ViperString("postgres-version")
+		if versionFilter != nil {
+			ifr.Version = *versionFilter
 		}
 
 		params.SetBody(ifr)
