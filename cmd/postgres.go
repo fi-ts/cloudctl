@@ -11,7 +11,8 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v3"
+
+	k8syaml "sigs.k8s.io/yaml"
 )
 
 const (
@@ -768,7 +769,7 @@ func (c *config) postgresEdit(args []string) error {
 		if err != nil {
 			return nil, err
 		}
-		content, err := yaml.Marshal(resp.Payload)
+		content, err := k8syaml.Marshal(resp.Payload)
 		if err != nil {
 			return nil, err
 		}
