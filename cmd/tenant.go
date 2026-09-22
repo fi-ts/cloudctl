@@ -8,7 +8,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
-	"gopkg.in/yaml.v3"
+	k8syaml "sigs.k8s.io/yaml"
 
 	"github.com/fi-ts/cloud-go/api/client/tenant"
 	"github.com/spf13/cobra"
@@ -189,7 +189,7 @@ func (c *config) tenantEdit(args []string) error {
 		if err != nil {
 			return nil, fmt.Errorf("tenant describe error:%w", err)
 		}
-		content, err := yaml.Marshal(resp.Payload)
+		content, err := k8syaml.Marshal(resp.Payload)
 		if err != nil {
 			return nil, err
 		}
