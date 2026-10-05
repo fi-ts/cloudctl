@@ -66,6 +66,12 @@ jobs:
       - name: Build
         run: |
           make build GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }}
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: cloudctl-${{ matrix.os }}-${{ matrix.arch }}
+          path: bin/cloudctl-*
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
