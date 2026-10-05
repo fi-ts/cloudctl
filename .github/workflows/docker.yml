@@ -80,3 +80,85 @@ jobs:
           files: |
             bin/cloudctl-*
         if: ${{ github.event_name == 'release' }}
+
+  artifact-comment:
+    name: Add artifacts to PR
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      pull-requests: write
+
+    steps:
+      - name: Create or update artifact comment
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const marker = '<!-- cloudctl-build-artifacts -->'
+            const { owner, repo } = context.repo
+            const runId = context.runId
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${runId}`
+            const headSha = context.payload.pull_request.head.sha
+            const commitUrl = `${context.serverUrl}/${owner}/${repo}/commit/${headSha}`
+            const issueNumber = context.issue.number
+
+            const { data: pullRequest } = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: issueNumber,
+            })
+            if (pullRequest.head.sha !== headSha) {
+              core.info('Skipping artifact comment for an outdated PR build')
+              return
+            }
+
+            const artifacts = await github.paginate(
+              github.rest.actions.listWorkflowRunArtifacts,
+              { owner, repo, run_id: runId, per_page: 100 },
+            )
+
+            const artifactLines = artifacts
+              .filter((artifact) => !artifact.expired)
+              .sort((left, right) => left.name.localeCompare(right.name))
+              .map((artifact) => {
+                const url = `${runUrl}/artifacts/${artifact.id}`
+                return `- [${artifact.name}](${url})`
+              })
+
+            const artifactList = artifactLines.length > 0
+              ? artifactLines.join('\n')
+              : '_No artifacts were produced by this run._'
+            const body = `${marker}
+            ## Build artifacts
+
+            Artifacts for commit [\`${headSha.slice(0, 7)}\`](${commitUrl}) from [workflow run #${context.runNumber}](${runUrl}):
+
+            ${artifactList}
+
+            _Artifact links expire according to the repository's retention policy._`
+
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              { owner, repo, issue_number: issueNumber, per_page: 100 },
+            )
+            const previousComment = comments.find((comment) =>
+              comment.user?.type === 'Bot' && comment.body?.includes(marker),
+            )
+
+            if (previousComment) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: previousComment.id,
+                body,
+              })
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                body,
+              })
+            }
