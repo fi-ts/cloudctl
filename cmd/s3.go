@@ -136,6 +136,8 @@ func newS3Cmd(c *config) *cobra.Command {
 	genericcli.Must(s3RemoveKeyCmd.RegisterFlagCompletionFunc("partition", c.comp.S3ListPartitionsCompletion))
 	genericcli.Must(s3RemoveKeyCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 
+	s3PartitionListCmd.Flags().Bool("supported", false, "show only supported, non-deprecated partitions")
+
 	s3Cmd.AddCommand(s3CreateCmd)
 	s3Cmd.AddCommand(s3DescribeCmd)
 	s3Cmd.AddCommand(s3DeleteCmd)
@@ -347,11 +349,26 @@ func (c *config) s3List() error {
 }
 
 func (c *config) s3ListPartitions() error {
+	supportedonly := viper.GetBool("supported")
+
 	request := s3.NewLists3partitionsParams()
 
 	response, err := c.cloud.S3.Lists3partitions(request, nil)
 	if err != nil {
 		return err
 	}
-	return c.listPrinter.Print(response.Payload)
+
+	var result []*models.V1S3PartitionResponse
+
+	if !supportedonly {
+		result = response.Payload
+	} else {
+		for _, part := range response.Payload {
+			if *part.Classification == "CLASSIFICATION_SUPPORTED" {
+				result = append(result, part)
+			}
+		}
+	}
+
+	return c.listPrinter.Print(result)
 }
