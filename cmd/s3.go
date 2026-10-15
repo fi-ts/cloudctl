@@ -7,6 +7,7 @@ import (
 
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 
 	"github.com/fi-ts/cloud-go/api/client/s3"
 	"github.com/spf13/cobra"
@@ -136,7 +137,7 @@ func newS3Cmd(c *config) *cobra.Command {
 	genericcli.Must(s3RemoveKeyCmd.RegisterFlagCompletionFunc("partition", c.comp.S3ListPartitionsCompletion))
 	genericcli.Must(s3RemoveKeyCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 
-	s3PartitionListCmd.Flags().Bool("supported", false, "show only supported, non-deprecated partitions")
+	s3PartitionListCmd.Flags().Bool("unsupported", false, "include unsupported partitions")
 
 	s3Cmd.AddCommand(s3CreateCmd)
 	s3Cmd.AddCommand(s3DescribeCmd)
@@ -349,7 +350,7 @@ func (c *config) s3List() error {
 }
 
 func (c *config) s3ListPartitions() error {
-	supportedonly := viper.GetBool("supported")
+	unsupported := viper.GetBool("unsupported")
 
 	request := s3.NewLists3partitionsParams()
 
@@ -360,11 +361,11 @@ func (c *config) s3ListPartitions() error {
 
 	var result []*models.V1S3PartitionResponse
 
-	if !supportedonly {
+	if unsupported {
 		result = response.Payload
 	} else {
 		for _, part := range response.Payload {
-			if *part.Classification == "CLASSIFICATION_SUPPORTED" {
+			if pointer.SafeDeref(part.Classification) == "CLASSIFICATION_SUPPORTED" {
 				result = append(result, part)
 			}
 		}
