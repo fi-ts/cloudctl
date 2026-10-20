@@ -95,6 +95,7 @@ func newClusterAuditCmd(c *config) *cobra.Command {
 	splunkCmd.Flags().String("port", "", "the splunk port to configure.")
 	splunkCmd.Flags().String("token", "", "the splunk token used to authenticate against the splunk endpoint.")
 	splunkCmd.Flags().String("ca", "", "the path to a ca used for tls connection to splunk endpoint.")
+	splunkCmd.Flags().String("tls-host", "", "the splunk hostname to validate the tls certificate against (optional)")
 
 	clusterAuditCmd.AddCommand(modeCmd, policyCmd, splunkCmd, clusterForwardingCmd)
 
@@ -215,6 +216,9 @@ func (c *auditCmd) splunk() error {
 	}
 	if viper.IsSet("token") {
 		auditConfiguration.Backends.Splunk.Token = new(viper.GetString("token"))
+	}
+	if viper.IsSet("tls-host") {
+		auditConfiguration.Backends.Splunk.Tlshost = viper.GetString("tls-host")
 	}
 	if viper.IsSet("ca") {
 		ca, err := os.ReadFile(viper.GetString("ca"))
