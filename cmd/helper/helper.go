@@ -2,7 +2,7 @@ package helper
 
 import (
 	"bufio"
-	"errors"
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -14,7 +14,6 @@ import (
 
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
-	"gopkg.in/yaml.v3"
 	apiduration "k8s.io/apimachinery/pkg/util/duration"
 	k8syaml "sigs.k8s.io/yaml"
 )
@@ -75,6 +74,7 @@ func Truncate(input, ellipsis string, maxlength int) string {
 // ReadFrom will either read from stdin (-) or a file path an marshall from yaml to data
 func ReadFrom(from string, data any, f func(target any)) error {
 	var reader io.Reader
+	var raw []byte
 	var err error
 	switch from {
 	case "-":
@@ -85,17 +85,29 @@ func ReadFrom(from string, data any, f func(target any)) error {
 			return fmt.Errorf("unable to open %s %w", from, err)
 		}
 	}
-	dec := yaml.NewDecoder(reader)
-	for {
-		err := dec.Decode(data)
-		if errors.Is(err, io.EOF) {
-			break
+
+	sc := bufio.NewScanner(reader)
+	for sc.Scan() {
+		raw = append(raw, sc.Bytes()...)
+		raw = append(raw, []byte("\n")...)
+	}
+	if err := sc.Err(); err != nil {
+		return fmt.Errorf("failed to read from %s %w", from, err)
+	}
+
+	for _, part := range bytes.Split(raw, []byte("---")) {
+		if len(part) == 0 {
+			continue
 		}
+
+		err := k8syaml.Unmarshal(part, data)
 		if err != nil {
-			return fmt.Errorf("decode error: %w", err)
+			return fmt.Errorf("failed to unmarshal: %w", err)
 		}
+
 		f(data)
 	}
+
 	return nil
 }
 
