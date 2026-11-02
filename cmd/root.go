@@ -19,6 +19,8 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	openapiclient "github.com/go-openapi/runtime/client"
 )
 
 const (
@@ -80,6 +82,7 @@ func newRootCmd(cfg *config) *cobra.Command {
 	rootCmd.PersistentFlags().StringP("order", "", "", "order by (comma separated) column(s)")
 	rootCmd.PersistentFlags().BoolP("no-headers", "", false, "omit headers in tables")
 	rootCmd.PersistentFlags().BoolP("debug", "", false, "enable debug")
+	rootCmd.PersistentFlags().Duration("timeout", openapiclient.DefaultTimeout, "the request timeout")
 	rootCmd.PersistentFlags().Bool("force-color", false, "force colored output even without tty")
 	rootCmd.PersistentFlags().StringP("output-format", "o", "table", "output format (table|wide|markdown|json|yaml|template), wide is a table with more columns.")
 	rootCmd.PersistentFlags().StringP("template", "", "", `output template for template output-format, go template format.
@@ -189,7 +192,7 @@ func initConfigWithViperCtx(cfg *config) error {
 		}
 	}
 
-	cloud, err := cloudgo.NewClient(driverURL, apiToken, hmac)
+	cloud, err := cloudgo.NewClient(driverURL, apiToken, hmac, cloudgo.Timeout(viper.GetDuration("timeout")))
 	if err != nil {
 		log.Fatalf("error initializing cloud-api client: %v", err)
 	}
