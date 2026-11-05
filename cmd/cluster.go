@@ -538,7 +538,7 @@ WARNING: You are going to pin the firewall-controller version of the new cluster
 This prevents the firewall-controller from being updated automatically and may leave your cluster without security fixes and new features.
 
 `, firewallController)
-		if err := helper.Prompt("Are absolutely sure? (y/n)", "y"); err != nil {
+		if err := helper.Prompt("Are you absolutely sure? (y/n)", "y"); err != nil {
 			return err
 		}
 	}
@@ -1302,7 +1302,7 @@ WARNING: You are going to pin the firewall-controller version of cluster %q to %
 This prevents the firewall-controller from being updated automatically and may leave your cluster without security fixes and new features.
 
 `, *current.Name, firewallController)
-			if err := helper.Prompt("Are absolutely sure? (y/n)", "y"); err != nil {
+			if err := helper.Prompt("Are you absolutely sure? (y/n)", "y"); err != nil {
 				return err
 			}
 		}
