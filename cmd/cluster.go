@@ -531,6 +531,18 @@ WARNING: You are going to create a cluster that has no default internet access w
 		}
 	}
 
+	if viper.IsSet("firewallcontroller") && firewallController != "auto" {
+		fmt.Printf(`
+WARNING: You are going to pin the firewall-controller version of the new cluster to %q instead of "auto".
+
+This prevents the firewall-controller from being updated automatically and may leave your cluster without security fixes and new features.
+
+`, firewallController)
+		if err := helper.Prompt("Are absolutely sure? (y/n)", "y"); err != nil {
+			return err
+		}
+	}
+
 	labels := viper.GetStringSlice("labels")
 
 	// FIXME helper and validation
@@ -1283,6 +1295,17 @@ func (c *config) updateCluster(args []string) error {
 		cur.FirewallSize = &firewallType
 	}
 	if firewallController != "" {
+		if firewallController != "auto" {
+			fmt.Printf(`
+WARNING: You are going to pin the firewall-controller version of cluster %q to %q instead of "auto".
+
+This prevents the firewall-controller from being updated automatically and may leave your cluster without security fixes and new features.
+
+`, *current.Name, firewallController)
+			if err := helper.Prompt("Are absolutely sure? (y/n)", "y"); err != nil {
+				return err
+			}
+		}
 		cur.FirewallControllerVersion = &firewallController
 	}
 	if viper.IsSet("firewall-health-timeout") {
