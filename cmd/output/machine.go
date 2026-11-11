@@ -73,7 +73,7 @@ func (m MachineTablePrinter) Print(data []*models.ModelsV1MachineResponse) {
 		}
 		if alloc.Created != nil && !created.IsZero() {
 			started = created.Format(time.RFC3339)
-			age = humanizeDuration(time.Since(created))
+			age = HumanizeDuration(time.Since(created))
 		}
 		lastEvent := ""
 		lastEventTime, err := time.Parse(format, machine.Events.LastEventTime)
@@ -84,7 +84,7 @@ func (m MachineTablePrinter) Print(data []*models.ModelsV1MachineResponse) {
 		when := ""
 		if len(machine.Events.Log) > 0 {
 			since := time.Since(lastEventTime)
-			when = humanizeDuration(since)
+			when = HumanizeDuration(since)
 			lastEvent = *machine.Events.Log[0].Event
 		}
 		status := pointer.SafeDeref(machine.Liveliness)
