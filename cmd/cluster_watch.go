@@ -2,13 +2,19 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/fi-ts/cloud-go/api/models"
+	"github.com/fi-ts/cloudctl/cmd/output"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 )
 
 const (
@@ -32,15 +38,22 @@ type watchData struct {
 	shoot  *cluster.FindClusterOK
 }
 
-// Machines returns a slice of cluster worker nodes
-func (wd *watchData) Nodes() []*models.ModelsV1MachineResponse {
+// nodes returns a slice of cluster worker nodes
+func (wd *watchData) nodes() []*models.ModelsV1MachineResponse {
 	ms := wd.shoot.Payload.Machines
 	ms = append(ms, wd.shoot.Payload.Firewalls...)
 	return ms
 }
 
-// Conditions returns a list of cluster status conditions
-func (wd *watchData) Conditions() []*models.V1beta1Condition {
+// nodecount returns the number of nodes
+func (wd *watchData) nodecount() string {
+	ms := wd.shoot.Payload.Machines
+	ms = append(ms, wd.shoot.Payload.Firewalls...)
+	return strconv.Itoa(len(ms))
+}
+
+// conditions returns a list of cluster status conditions
+func (wd *watchData) conditions() []*models.V1beta1Condition {
 	if wd.shoot.Payload != nil && wd.shoot.Payload.Status != nil {
 		return wd.shoot.Payload.Status.Conditions
 	}
@@ -48,8 +61,8 @@ func (wd *watchData) Conditions() []*models.V1beta1Condition {
 	return nil
 }
 
-// LastOperation returns the last cluster operation
-func (wd *watchData) LastOperation() *models.V1beta1LastOperation {
+// lastOperation returns the last cluster operation
+func (wd *watchData) lastOperation() *models.V1beta1LastOperation {
 	if wd.shoot.Payload != nil && wd.shoot.Payload.Status != nil {
 		return wd.shoot.Payload.Status.LastOperation
 	}
@@ -57,8 +70,8 @@ func (wd *watchData) LastOperation() *models.V1beta1LastOperation {
 	return nil
 }
 
-// LastErrors returns a slice of last cluster errors
-func (wd *watchData) LastErrors() []*models.V1beta1LastError {
+// lastErrors returns a slice of last cluster errors
+func (wd *watchData) lastErrors() []*models.V1beta1LastError {
 	if wd.shoot.Payload != nil && wd.shoot.Payload.Status != nil {
 		return wd.shoot.Payload.Status.LastErrors
 	}
@@ -108,16 +121,36 @@ func (wd *watchData) operation() string {
 	return *wd.shoot.Payload.Status.LastOperation.State
 }
 
-func (wd *watchData) progress() string {
-	return fmt.Sprintf("%d%% [%s]",
-		*wd.shoot.Payload.Status.LastOperation.Progress,
-		*wd.shoot.Payload.Status.LastOperation.Type)
+func (wd *watchData) progress() int32 {
+	return *wd.shoot.Payload.Status.LastOperation.Progress
+}
+
+func (wd *watchData) progressType() string {
+	return *wd.shoot.Payload.Status.LastOperation.Type
+}
+
+// our key bindings, not [yet] customizable
+type KeyMap struct {
+	Quit        key.Binding
+	ToggleNodes key.Binding
+}
+
+var DefaultKeyMap = KeyMap{
+	Quit: key.NewBinding(
+		key.WithKeys("q", "ctrl+c"),
+		key.WithHelp("q/ctrl+c", "quit"),
+	),
+	ToggleNodes: key.NewBinding(
+		key.WithKeys("n"),
+		key.WithHelp("n", "toggle node list"),
+	),
 }
 
 // watch is our tea.Model for bubbletea ELM
 type watch struct {
 	data          *watchData
 	width, height int
+	nodes         bool // show or hide node list
 }
 
 // TickMsg is being used as ELM Tick  cmd to do regular work, which in
@@ -157,9 +190,11 @@ func (w watch) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		w.updateDimensions(msg.Width, msg.Height)
 
 	case tea.KeyPressMsg:
-		switch msg.String() {
-		case "ctrl+c", "q":
+		switch {
+		case key.Matches(msg, DefaultKeyMap.Quit):
 			return w, tea.Quit
+		case key.Matches(msg, DefaultKeyMap.ToggleNodes):
+			w.nodes = !w.nodes
 		}
 	}
 
@@ -173,14 +208,193 @@ func (w watch) View() tea.View {
 	if w.data.err != nil {
 		body.WriteString(fmt.Sprint(w.data.err))
 	} else if w.data.shoot != nil {
-		// FIXME: add top row
-		body.WriteString(w.data.id())
+		nodes := w.nodeRowView()
+		help := w.helpView()
+		height := w.canvasHeight(lipgloss.Height(nodes), lipgloss.Height(help))
+
+		top := canvas.Height(height).Render(
+			lipgloss.JoinVertical(
+				lipgloss.Center,
+				w.topRowView(),
+				w.errorRowView(),
+				w.conditionRowView(),
+			))
+
+		if w.nodes {
+			body.WriteString(
+				lipgloss.JoinVertical(
+					lipgloss.Center,
+					top,
+					w.nodeRowView(),
+					w.helpView()))
+		} else {
+			body.WriteString(
+				lipgloss.JoinVertical(
+					lipgloss.Center,
+					top,
+					w.helpView()))
+		}
 	}
 
 	v := tea.NewView(body.String())
 	v.AltScreen = true // fulscreen
 
 	return v
+}
+
+// canvasHeight returns the  height left for the main  canvas, so that
+// there's enough room for nodes+help
+func (w *watch) canvasHeight(nodesHeight, helpHeight int) int {
+	if w.nodes {
+		return w.height - nodesHeight - helpHeight
+	}
+
+	return w.height - helpHeight
+}
+
+// helpView returns the rendered help line
+func (w *watch) helpView() string {
+	keys := strings.Builder{}
+
+	keys.WriteString(helpStyle.Render("Keys: "))
+
+	for _, key := range []key.Binding{DefaultKeyMap.ToggleNodes, DefaultKeyMap.Quit} {
+		keys.WriteString(keyStyle.Render(strings.TrimSpace(key.Help().Key)))
+		keys.WriteString(helpStyle.Render(": "))
+		keys.WriteString(helpStyle.Render(key.Help().Desc))
+	}
+
+	return keyCanvas.Width(w.width).
+		Render(keys.String())
+}
+
+// errorRowView returns the rendered last error row table
+func (w *watch) errorRowView() string {
+	lasterrs := w.data.lastErrors()
+	lastop := w.data.lastOperation()
+
+	view := errorRow.ClearRows().
+		Width(w.width).
+		Headers("LAST EVENTS")
+
+	view.Row(
+		*lastop.LastUpdateTime +
+			" [" + *lastop.Type + "]: " +
+			*lastop.Description,
+	)
+
+	for _, err := range lasterrs {
+		view.Row(
+			err.LastUpdateTime +
+				" [" + err.TaskID + "]: " +
+				*err.Description,
+		)
+	}
+
+	return marginTop.Render(view.Render())
+}
+
+// nodeRowView returns the rendered node row table
+func (w *watch) nodeRowView() string {
+	view := nodeRow.ClearRows().
+		Width(w.width).
+		Headers("HOSTNAME", "STARTED", "AGE", "LAST EVENT", "WHEN", "IMAGE", "RACK")
+
+	for _, node := range w.data.nodes() {
+		alloc := node.Allocation
+		if alloc == nil {
+			continue
+		}
+
+		hostname := pointer.SafeDeref(alloc.Hostname)
+
+		image := ""
+		if alloc.Image != nil {
+			image = pointer.SafeDeref(alloc.Image.ID)
+		}
+
+		started := pointer.SafeDeref(alloc.Created)
+		age := ""
+		format := "2006-01-02T15:04:05.999Z"
+		created, err := time.Parse(format, *alloc.Created)
+		if err != nil {
+			fmt.Printf("unable to parse created time:%s", err)
+			os.Exit(1)
+		}
+		if alloc.Created != nil && !created.IsZero() {
+			started = created.Format(time.RFC3339)
+			age = output.HumanizeDuration(time.Since(created))
+		}
+
+		lastEvent := ""
+		lastEventTime, err := time.Parse(format, node.Events.LastEventTime)
+		if err != nil {
+			fmt.Printf("unable to parse lastevent time:%s", err)
+			os.Exit(1)
+		}
+		when := ""
+		if len(node.Events.Log) > 0 {
+			since := time.Since(lastEventTime)
+			when = output.HumanizeDuration(since)
+			lastEvent = *node.Events.Log[0].Event
+		}
+
+		view.Row(
+			hostname,
+			started,
+			age,
+			lastEvent,
+			when,
+			image,
+			node.Rackid,
+		)
+	}
+
+	return marginTop.Render(view.Render())
+}
+
+// conditionRowView returns the rendered condition row table
+func (w *watch) conditionRowView() string {
+	view := conditionRow.ClearRows().
+		Width(w.width).
+		Headers("TIME", "LOG MESSAGE", "REASON", "TYPE")
+
+	for _, cond := range w.data.conditions() {
+		view.Row(
+			*cond.LastTransitionTime,
+			*cond.Message,
+			*cond.Reason,
+			*cond.Type,
+		)
+	}
+
+	return marginTop.Render(view.Render())
+}
+
+// topRowView returns the rendered top row table
+func (w *watch) topRowView() string {
+	return topRow.ClearRows().
+		Width(w.width).
+		Row(
+			strings.Join([]string{
+				renderTopColumn("     ID", w.data.id()),
+				renderTopColumn("Cluster", w.data.name()),
+				renderTopColumn(" Tenant", w.data.tenant()),
+			}, "\n"),
+
+			strings.Join([]string{
+				renderTopColumn(" K8S Version", w.data.version()),
+				renderTopColumn("   Partition", w.data.partition()),
+				renderTopColumn("Cluster Size", w.data.size()),
+			}, "\n"),
+
+			strings.Join([]string{
+				renderTopColumn("    Nodes", w.data.nodecount()),
+				renderTopColumn("Operation", w.data.operation()),
+				renderTopColumn(" Progress", renderProgress(w.data.progress())),
+			}, "\n"),
+		).
+		Render()
 }
 
 // updateDimensions stores current terminal size
@@ -239,4 +453,36 @@ func (c *config) clusterWatch(args []string) error {
 	}
 
 	return nil
+}
+
+// renderTopColumn formats a top column row with bold caption and normal value
+func renderTopColumn(caption, value string) string {
+	if strings.TrimSpace(caption) != "" {
+		caption += ": "
+	} else {
+		caption += "  "
+	}
+
+	return bold.Render(caption) + value
+}
+
+func renderProgress(progress int32) string {
+	var stl lipgloss.Style
+
+	switch {
+	case progress < 20:
+		stl = red
+	case progress < 40:
+		stl = darkorange
+	case progress < 60:
+		stl = orange
+	case progress < 80:
+		stl = gold
+	case progress > 81 && progress < 100:
+		stl = yellow
+	case progress == 100:
+		stl = green
+	}
+
+	return stl.Render(fmt.Sprintf("%d%%", progress))
 }
