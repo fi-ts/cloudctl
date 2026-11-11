@@ -13,8 +13,10 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/fi-ts/cloud-go/api/client/cluster"
 	"github.com/fi-ts/cloud-go/api/models"
+	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/fi-ts/cloudctl/cmd/output"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/metal-stack/v"
 )
 
 const (
@@ -59,6 +61,32 @@ func (wd *watchData) conditions() []*models.V1beta1Condition {
 	}
 
 	return nil
+}
+
+// seed returns the seed cluster
+func (wd *watchData) seed() string {
+	if wd.shoot.Payload != nil && wd.shoot.Payload.Status != nil {
+		return wd.shoot.Payload.Status.SeedName
+	}
+
+	return ""
+}
+
+// lastupdate returns the timestamp when the cluster has been updated last
+func (wd *watchData) lastupdate() string {
+	lastReconciliation := ""
+
+	if wd.shoot.Payload != nil && wd.shoot.Payload.Status != nil && wd.shoot.Payload.Status.LastOperation.LastUpdateTime != nil {
+
+		lastUpdate, err := time.Parse(time.RFC3339, *wd.shoot.Payload.Status.LastOperation.LastUpdateTime)
+		if err != nil {
+			lastReconciliation = "unknown"
+		} else {
+			lastReconciliation = helper.HumanizeDuration(time.Since(lastUpdate))
+		}
+	}
+
+	return lastReconciliation
 }
 
 // lastOperation returns the last cluster operation
@@ -379,17 +407,20 @@ func (w *watch) topRowView() string {
 			strings.Join([]string{
 				renderTopColumn("     ID", w.data.id()),
 				renderTopColumn("Cluster", w.data.name()),
+				renderTopColumn("Cluster", w.data.seed()),
 				renderTopColumn(" Tenant", w.data.tenant()),
 			}, "\n"),
 
 			strings.Join([]string{
 				renderTopColumn(" K8S Version", w.data.version()),
+				renderTopColumn("      Client", v.Version),
 				renderTopColumn("   Partition", w.data.partition()),
 				renderTopColumn("Cluster Size", w.data.size()),
 			}, "\n"),
 
 			strings.Join([]string{
 				renderTopColumn("    Nodes", w.data.nodecount()),
+				renderTopColumn("  Updated", w.data.lastupdate()+" ago"),
 				renderTopColumn("Operation", w.data.operation()),
 				renderTopColumn(" Progress", renderProgress(w.data.progress())),
 			}, "\n"),

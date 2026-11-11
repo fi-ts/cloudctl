@@ -81,4 +81,7 @@ var (
 
 	keyCanvas = lipgloss.NewStyle().
 			Background(lipgloss.Color("#242424"))
+
+	versionCanvas = lipgloss.NewStyle().
+			AlignHorizontal(lipgloss.Right)
 )
