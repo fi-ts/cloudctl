@@ -172,7 +172,7 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 			clusterName,
 			clusterStart,
 			clusterEnd,
-			humanizeDuration(lifetime),
+			HumanizeDuration(lifetime),
 			averageGroups,
 			workers,
 		}
@@ -184,7 +184,7 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 			clusterName,
 			clusterStart,
 			clusterEnd,
-			humanizeDuration(lifetime),
+			HumanizeDuration(lifetime),
 			averageGroups,
 			workers,
 		}
@@ -194,7 +194,7 @@ func (s ClusterBillingTablePrinter) Print(data *models.V1ClusterUsageResponse) {
 	}
 
 	footer := []string{"Total",
-		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)) + lifetimeCosts(*data.Accumulatedusage.Lifetime), "", "",
+		HumanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)) + lifetimeCosts(*data.Accumulatedusage.Lifetime), "", "",
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
 	wideFooter := make([]string, len(s.wideHeader)-len(footer))
@@ -275,7 +275,7 @@ func (s MachineBillingTablePrinter) Print(data *models.V1MachineUsageResponse) {
 			machineName,
 			clusterID,
 			machineStart,
-			humanizeDuration(lifetime),
+			HumanizeDuration(lifetime),
 		}
 
 		s.addWideData(row, data)
@@ -283,7 +283,7 @@ func (s MachineBillingTablePrinter) Print(data *models.V1MachineUsageResponse) {
 	}
 
 	footer := []string{"Total",
-		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)) + lifetimeCosts(*data.Accumulatedusage.Lifetime), "", "",
+		HumanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)) + lifetimeCosts(*data.Accumulatedusage.Lifetime), "", "",
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
 	wideFooter := make([]string, len(s.wideHeader)-len(footer))
@@ -349,7 +349,7 @@ func (s ProductOptionBillingTablePrinter) Print(data *models.V1ProductOptionUsag
 			option,
 			clusterID,
 			clusterName,
-			humanizeDuration(lifetime),
+			HumanizeDuration(lifetime),
 		}
 
 		s.addWideData(row, data)
@@ -357,7 +357,7 @@ func (s ProductOptionBillingTablePrinter) Print(data *models.V1ProductOptionUsag
 	}
 
 	footer := []string{"Total",
-		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)) + lifetimeCosts(*data.Accumulatedusage.Lifetime), "", "",
+		HumanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)) + lifetimeCosts(*data.Accumulatedusage.Lifetime), "", "",
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
 	wideFooter := make([]string, len(s.wideHeader)-len(footer))
@@ -450,7 +450,7 @@ func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 			name,
 			volumeType,
 			capacity,
-			humanizeDuration(lifetime),
+			HumanizeDuration(lifetime),
 		}
 		short := []string{
 			tenant,
@@ -461,7 +461,7 @@ func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 			name,
 			volumeType,
 			capacity,
-			humanizeDuration(lifetime),
+			HumanizeDuration(lifetime),
 		}
 
 		s.addWideData(wide, data)
@@ -474,7 +474,7 @@ func (s VolumeBillingTablePrinter) Print(data *models.V1VolumeUsageResponse) {
 	}
 	var lifetime string
 	if data.Accumulatedusage.Lifetime != nil {
-		lifetime = humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime))
+		lifetime = HumanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime))
 	}
 	footer := []string{"Total",
 		capacity,
@@ -541,7 +541,7 @@ func (s IPBillingTablePrinter) Print(data *models.V1IPUsageResponse) {
 			ip,
 			start,
 			end,
-			humanizeDuration(lifetime),
+			HumanizeDuration(lifetime),
 		}
 		short := []string{
 			tenant,
@@ -549,7 +549,7 @@ func (s IPBillingTablePrinter) Print(data *models.V1IPUsageResponse) {
 			ip,
 			start,
 			end,
-			humanizeDuration(lifetime),
+			HumanizeDuration(lifetime),
 		}
 
 		s.addWideData(wide, data)
@@ -557,7 +557,7 @@ func (s IPBillingTablePrinter) Print(data *models.V1IPUsageResponse) {
 	}
 
 	footer := []string{"Total",
-		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)) + lifetimeCosts(*data.Accumulatedusage.Lifetime),
+		HumanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)) + lifetimeCosts(*data.Accumulatedusage.Lifetime),
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
 	wideFooter := make([]string, len(s.wideHeader)-len(footer))
@@ -640,7 +640,7 @@ func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResp
 			in,
 			out,
 			total,
-			humanizeDuration(lifetime),
+			HumanizeDuration(lifetime),
 		}
 		short := []string{
 			tenant,
@@ -651,7 +651,7 @@ func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResp
 			in,
 			out,
 			total,
-			humanizeDuration(lifetime),
+			HumanizeDuration(lifetime),
 		}
 
 		s.addWideData(wide, data)
@@ -672,7 +672,7 @@ func (s NetworkTrafficBillingTablePrinter) Print(data *models.V1NetworkUsageResp
 	}
 	var lifetime string
 	if data.Accumulatedusage.Lifetime != nil {
-		lifetime = humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime))
+		lifetime = HumanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime))
 	}
 	footer := []string{"Total",
 		in,
@@ -766,7 +766,7 @@ func (s S3BillingTablePrinter) Print(data *models.V1S3UsageResponse) {
 			end,
 			objects,
 			storage,
-			humanizeDuration(lifetime),
+			HumanizeDuration(lifetime),
 		}
 		short := []string{
 			tenant,
@@ -777,7 +777,7 @@ func (s S3BillingTablePrinter) Print(data *models.V1S3UsageResponse) {
 			bucketID,
 			objects,
 			storage,
-			humanizeDuration(lifetime),
+			HumanizeDuration(lifetime),
 		}
 
 		s.addWideData(wide, data)
@@ -794,7 +794,7 @@ func (s S3BillingTablePrinter) Print(data *models.V1S3UsageResponse) {
 	}
 	var lifetime string
 	if data.Accumulatedusage.Lifetime != nil {
-		lifetime = humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime))
+		lifetime = HumanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime))
 	}
 	footer := []string{"Total",
 		objects,
@@ -905,7 +905,7 @@ func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageRespons
 			podEnd,
 			containerName,
 			containerImage,
-			humanizeDuration(lifetime),
+			HumanizeDuration(lifetime),
 			cpuUsage,
 			memoryUsage,
 		}
@@ -917,7 +917,7 @@ func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageRespons
 			namespace,
 			podName,
 			containerName,
-			humanizeDuration(lifetime),
+			HumanizeDuration(lifetime),
 			cpuUsage,
 			memoryUsage,
 		}
@@ -927,7 +927,7 @@ func (s ContainerBillingTablePrinter) Print(data *models.V1ContainerUsageRespons
 	}
 
 	footer := []string{"Total",
-		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)),
+		HumanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)),
 		humanizeCPU(*data.Accumulatedusage.Cpuseconds) + cpuCosts(*data.Accumulatedusage.Cpuseconds),
 		humanizeMemory(*data.Accumulatedusage.Memoryseconds) + memoryCosts(*data.Accumulatedusage.Memoryseconds),
 	}
@@ -1007,7 +1007,7 @@ func (s PostgresBillingTablePrinter) Print(data *models.V1PostgresUsageResponse)
 			cpu,
 			memory,
 			storage,
-			humanizeDuration(lifetime),
+			HumanizeDuration(lifetime),
 		}
 		short := []string{
 			tenant,
@@ -1017,7 +1017,7 @@ func (s PostgresBillingTablePrinter) Print(data *models.V1PostgresUsageResponse)
 			cpu,
 			memory,
 			storage,
-			humanizeDuration(lifetime),
+			HumanizeDuration(lifetime),
 		}
 
 		s.addWideData(wide, data)
@@ -1028,7 +1028,7 @@ func (s PostgresBillingTablePrinter) Print(data *models.V1PostgresUsageResponse)
 		humanizeCPU(*data.Accumulatedusage.Cpuseconds) + cpuCosts(*data.Accumulatedusage.Cpuseconds),
 		humanizeMemory(*data.Accumulatedusage.Memoryseconds) + memoryCosts(*data.Accumulatedusage.Memoryseconds),
 		humanizeMemory(*data.Accumulatedusage.Storageseconds) + storageCosts(*data.Accumulatedusage.Storageseconds),
-		humanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)),
+		HumanizeDuration(time.Duration(*data.Accumulatedusage.Lifetime)),
 	}
 	shortFooter := make([]string, len(s.shortHeader)-len(footer))
 	wideFooter := make([]string, len(s.wideHeader)-len(footer))
@@ -1055,7 +1055,7 @@ func humanizeMemory(memorySeconds string) string {
 func humanizeCPU(cpuSeconds string) string {
 	duration, err := strconv.ParseInt(cpuSeconds, 10, 64)
 	if err == nil {
-		return humanizeDuration(time.Duration(duration) * time.Second)
+		return HumanizeDuration(time.Duration(duration) * time.Second)
 	}
 	return ""
 }
