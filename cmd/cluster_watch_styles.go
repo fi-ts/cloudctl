@@ -5,15 +5,6 @@ import (
 	"charm.land/lipgloss/v2/table"
 )
 
-func rowStyle(row, col int) lipgloss.Style {
-	switch {
-	case row == table.HeaderRow:
-		return headerStyle
-	default:
-		return lipgloss.NewStyle()
-	}
-}
-
 // lipgloss styles used by cluster watch
 var (
 	topRow = table.New().
@@ -85,3 +76,19 @@ var (
 	versionCanvas = lipgloss.NewStyle().
 			AlignHorizontal(lipgloss.Right)
 )
+
+func rowStyle(row, col int) lipgloss.Style {
+	switch {
+	case row == table.HeaderRow:
+		return headerStyle
+	default:
+		return lipgloss.NewStyle()
+	}
+}
+
+func addCaption(box, title string) string {
+	caption := lipgloss.NewLayer(bold.Render(" " + title + " ")).X(2).Z(1)
+	events := lipgloss.NewLayer(box)
+
+	return lipgloss.NewCompositor(events, caption).Render()
+}

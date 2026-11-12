@@ -302,8 +302,7 @@ func (w *watch) errorRowView() string {
 	lastop := w.data.lastOperation()
 
 	view := errorRow.ClearRows().
-		Width(w.width).
-		Headers("LAST EVENTS")
+		Width(w.width)
 
 	view.Row(
 		*lastop.LastUpdateTime +
@@ -319,7 +318,7 @@ func (w *watch) errorRowView() string {
 		)
 	}
 
-	return marginTop.Render(view.Render())
+	return addCaption(view.Render(), "Last Events")
 }
 
 // nodeRowView returns the rendered node row table
@@ -378,7 +377,7 @@ func (w *watch) nodeRowView() string {
 		)
 	}
 
-	return marginTop.Render(view.Render())
+	return addCaption(view.Render(), "Cluster Nodes")
 }
 
 // conditionRowView returns the rendered condition row table
@@ -396,12 +395,12 @@ func (w *watch) conditionRowView() string {
 		)
 	}
 
-	return marginTop.Render(view.Render())
+	return addCaption(view.Render(), "Cluster Logs")
 }
 
 // topRowView returns the rendered top row table
 func (w *watch) topRowView() string {
-	return topRow.ClearRows().
+	topRow.ClearRows().
 		Width(w.width).
 		Row(
 			strings.Join([]string{
@@ -424,8 +423,9 @@ func (w *watch) topRowView() string {
 				renderTopColumn("Operation", w.data.operation()),
 				renderTopColumn(" Progress", renderProgress(w.data.progress())),
 			}, "\n"),
-		).
-		Render()
+		)
+
+	return addCaption(topRow.Render(), "Cluster Status")
 }
 
 // updateDimensions stores current terminal size
