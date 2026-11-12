@@ -19,8 +19,8 @@ import (
 	"github.com/metal-stack/v"
 )
 
-const (
-	// FIXME: make tickDelay customizable
+var (
+	// tickDelay starts at 5 seconds, but increases if cluster status < 100%
 	tickDelay = time.Second * 5
 )
 
@@ -425,7 +425,7 @@ func (w *watch) topRowView() string {
 			}, "\n"),
 		)
 
-	return addCaption(topRow.Render(), "Cluster Status")
+	return addCaption(topRow.Render(), fmt.Sprintf("Cluster Status %s", tickDelay))
 }
 
 // updateDimensions stores current terminal size
@@ -469,6 +469,12 @@ func (c *config) clusterWatch(args []string) error {
 				shoot, err := c.cloud.Cluster.FindCluster(findRequest, nil)
 				if err != nil {
 					return nil, err
+				}
+
+				if *shoot.Payload.Status.LastOperation.Progress < 100 {
+					tickDelay = time.Second * 2
+				} else {
+					tickDelay = time.Second * 5
 				}
 
 				return shoot, nil
