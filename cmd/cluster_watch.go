@@ -161,6 +161,7 @@ func (wd *watchData) progressType() string {
 type KeyMap struct {
 	Quit        key.Binding
 	ToggleNodes key.Binding
+	ToggleWide  key.Binding
 }
 
 var DefaultKeyMap = KeyMap{
@@ -172,6 +173,10 @@ var DefaultKeyMap = KeyMap{
 		key.WithKeys("n"),
 		key.WithHelp("n", "toggle node list"),
 	),
+	ToggleWide: key.NewBinding(
+		key.WithKeys("w"),
+		key.WithHelp("w", "toggle wide view"),
+	),
 }
 
 // watch is our tea.Model for bubbletea ELM
@@ -179,6 +184,7 @@ type watch struct {
 	data          *watchData
 	width, height int
 	nodes         bool // show or hide node list
+	wide          bool // toggle wide view of logs and nodes
 }
 
 // TickMsg is being used as ELM Tick  cmd to do regular work, which in
@@ -223,6 +229,8 @@ func (w watch) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return w, tea.Quit
 		case key.Matches(msg, DefaultKeyMap.ToggleNodes):
 			w.nodes = !w.nodes
+		case key.Matches(msg, DefaultKeyMap.ToggleWide):
+			w.wide = !w.wide
 		}
 	}
 
@@ -286,7 +294,7 @@ func (w *watch) helpView() string {
 
 	keys.WriteString(helpStyle.Render("Keys: "))
 
-	for _, key := range []key.Binding{DefaultKeyMap.ToggleNodes, DefaultKeyMap.Quit} {
+	for _, key := range []key.Binding{DefaultKeyMap.ToggleNodes, DefaultKeyMap.ToggleWide, DefaultKeyMap.Quit} {
 		keys.WriteString(keyStyle.Render(strings.TrimSpace(key.Help().Key)))
 		keys.WriteString(helpStyle.Render(": "))
 		keys.WriteString(helpStyle.Render(key.Help().Desc))
@@ -324,8 +332,13 @@ func (w *watch) errorRowView() string {
 // nodeRowView returns the rendered node row table
 func (w *watch) nodeRowView() string {
 	view := nodeRow.ClearRows().
-		Width(w.width).
-		Headers("HOSTNAME", "STARTED", "AGE", "LAST EVENT", "WHEN", "IMAGE", "RACK")
+		Width(w.width)
+
+	if w.wide {
+		view.Headers("HOSTNAME", "STARTED", "AGE", "LAST EVENT", "WHEN", "IMAGE", "RACK")
+	} else {
+		view.Headers("HOSTNAME", "AGE", "LAST EVENT", "RACK")
+	}
 
 	for _, node := range w.data.nodes() {
 		alloc := node.Allocation
@@ -366,15 +379,24 @@ func (w *watch) nodeRowView() string {
 			lastEvent = *node.Events.Log[0].Event
 		}
 
-		view.Row(
-			hostname,
-			started,
-			age,
-			lastEvent,
-			when,
-			image,
-			node.Rackid,
-		)
+		if w.wide {
+			view.Row(
+				hostname,
+				started,
+				age,
+				lastEvent,
+				when,
+				image,
+				node.Rackid,
+			)
+		} else {
+			view.Row(
+				hostname,
+				age,
+				lastEvent,
+				node.Rackid,
+			)
+		}
 	}
 
 	return addCaption(view.Render(), "Cluster Nodes")
@@ -383,16 +405,25 @@ func (w *watch) nodeRowView() string {
 // conditionRowView returns the rendered condition row table
 func (w *watch) conditionRowView() string {
 	view := conditionRow.ClearRows().
-		Width(w.width).
-		Headers("TIME", "LOG MESSAGE", "REASON", "TYPE")
+		Width(w.width)
+
+	if w.wide {
+		view.Headers("TIME", "LOG MESSAGE", "REASON", "TYPE")
+	} else {
+		view.Headers()
+	}
 
 	for _, cond := range w.data.conditions() {
-		view.Row(
-			*cond.LastTransitionTime,
-			*cond.Message,
-			*cond.Reason,
-			*cond.Type,
-		)
+		if w.wide {
+			view.Row(
+				*cond.LastTransitionTime,
+				*cond.Message,
+				*cond.Reason,
+				*cond.Type,
+			)
+		} else {
+			view.Row(*cond.LastTransitionTime + "  " + *cond.Message)
+		}
 	}
 
 	return addCaption(view.Render(), "Cluster Logs")
@@ -425,7 +456,7 @@ func (w *watch) topRowView() string {
 			}, "\n"),
 		)
 
-	return addCaption(topRow.Render(), fmt.Sprintf("Cluster Status %s", tickDelay))
+	return addCaption(topRow.Render(), "Cluster Status")
 }
 
 // updateDimensions stores current terminal size
