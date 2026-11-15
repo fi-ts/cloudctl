@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"sort"
 	"strconv"
@@ -45,7 +46,7 @@ func newDashboardCmd(c *config) *cobra.Command {
 		Use:   "dashboard",
 		Short: "shows a live dashboard optimized for operation",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runDashboard(c.cloud)
+			return runDashboard(c)
 		},
 	}
 
@@ -78,8 +79,8 @@ func newDashboardCmd(c *config) *cobra.Command {
 	return dashboardCmd
 }
 
-func runDashboard(cloud *client.CloudAPI) error {
-	d, err := NewDashboard(cloud)
+func runDashboard(c *config) error {
+	d, err := NewDashboard(c)
 	if err != nil {
 		return err
 	}
@@ -97,16 +98,19 @@ func dashboardTabs(cache *apiCache) dashboardTabPanes {
 		NewDashboardClusterHealthPane(cache),
 		NewDashboardClusterVersionsPane(cache),
 		NewDashboardVolumePane(cache),
+		NewDashboardClusterListPane(cache),
 	}
 }
 
 // dashboardTabPane is a single tab of the dashboard. Data is fetched during
 // Refresh and rendered to a string during View, so it composes with bubbletea.
+// Update may return a command, e.g. to trigger an action such as watching a
+// selected cluster.
 type dashboardTabPane interface {
 	Name() string
 	Description() string
 	Refresh(ctx context.Context) error
-	Update(msg tea.KeyPressMsg)
+	Update(msg tea.KeyPressMsg) tea.Cmd
 	View(width, height int) string
 }
 
@@ -126,6 +130,16 @@ type dashboardTickMsg struct{}
 
 // dashboardRefreshMsg is emitted after an ad-hoc refresh (e.g. when switching tabs).
 type dashboardRefreshMsg struct{}
+
+// dashboardSelectClusterMsg requests watching the cluster with the given id.
+type dashboardSelectClusterMsg struct {
+	id string
+}
+
+// dashboardWatchFinishedMsg is emitted after the cluster watch TUI exited.
+type dashboardWatchFinishedMsg struct {
+	err error
+}
 
 // dashboardData holds the shared header state, guarded by a mutex because it is
 // written from refresh commands running in a goroutine while View reads it.
@@ -154,6 +168,10 @@ type dashboard struct {
 
 	data  *dashboardData
 	cloud *client.CloudAPI
+
+	// watchCluster suspends the dashboard and runs the cluster watch TUI for
+	// the given cluster id. It may be nil in tests.
+	watchCluster func(id string) error
 }
 
 // Init is being called once on boot.
@@ -170,6 +188,15 @@ func (d dashboard) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return d, tea.Batch(d.tickCmd(), d.refreshCmd())
 	case dashboardRefreshMsg:
 		return d, nil
+	case dashboardSelectClusterMsg:
+		return d, d.watchClusterCmd(msg.id)
+	case dashboardWatchFinishedMsg:
+		if msg.err != nil {
+			d.data.Lock()
+			d.data.lastErr = msg.err
+			d.data.Unlock()
+		}
+		return d, d.refreshCmd()
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "q", "ctrl+c":
@@ -185,10 +212,37 @@ func (d dashboard) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// pass the event on to the active tab, which may use it
-		d.tabs[d.activeTab].Update(msg)
+		return d, d.tabs[d.activeTab].Update(msg)
 	}
 
 	return d, nil
+}
+
+// dashboardClusterWatchExec adapts an in-process function to the tea.ExecCommand
+// interface, so the dashboard can be suspended while the cluster watch TUI runs.
+type dashboardClusterWatchExec struct {
+	run func() error
+}
+
+func (e dashboardClusterWatchExec) Run() error          { return e.run() }
+func (e dashboardClusterWatchExec) SetStdin(io.Reader)  {}
+func (e dashboardClusterWatchExec) SetStdout(io.Writer) {}
+func (e dashboardClusterWatchExec) SetStderr(io.Writer) {}
+
+// watchClusterCmd suspends the dashboard, runs the cluster watch TUI and
+// resumes the dashboard once it exits.
+func (d dashboard) watchClusterCmd(id string) tea.Cmd {
+	if d.watchCluster == nil {
+		return nil
+	}
+
+	return tea.Exec(dashboardClusterWatchExec{
+		run: func() error {
+			return d.watchCluster(id)
+		},
+	}, func(err error) tea.Msg {
+		return dashboardWatchFinishedMsg{err: err}
+	})
 }
 
 // View renders the whole dashboard.
@@ -355,7 +409,7 @@ func (d dashboard) refresh() {
 	d.data.Unlock()
 }
 
-func NewDashboard(cloud *client.CloudAPI) (*dashboard, error) {
+func NewDashboard(c *config) (*dashboard, error) {
 	if err := dashboardApplyTheme(viper.GetString("color-theme")); err != nil {
 		return nil, err
 	}
@@ -368,10 +422,13 @@ func NewDashboard(cloud *client.CloudAPI) (*dashboard, error) {
 		filterPurpose:   viper.GetString("purpose"),
 		refreshInterval: viper.GetDuration("refresh-interval"),
 		data:            &dashboardData{},
-		cloud:           cloud,
+		cloud:           c.cloud,
+		watchCluster: func(id string) error {
+			return c.clusterWatch([]string{id})
+		},
 	}
 
-	cache := newCache(cloud,
+	cache := newCache(c.cloud,
 		viper.GetDuration("refresh-interval"),
 		viper.GetString("partition"),
 		viper.GetString("tenant"),
@@ -427,14 +484,14 @@ func NewDashboardClusterHealthPane(cache *apiCache) *dashboardClusterHealthPane 
 }
 
 func (d *dashboardClusterHealthPane) Name() string {
-	return "Clusters"
+	return "ClusterHealth"
 }
 
 func (d *dashboardClusterHealthPane) Description() string {
 	return "Cluster health and issues"
 }
 
-func (d *dashboardClusterHealthPane) Update(tea.KeyPressMsg) {}
+func (d *dashboardClusterHealthPane) Update(tea.KeyPressMsg) tea.Cmd { return nil }
 
 func (d *dashboardClusterHealthPane) Refresh(ctx context.Context) error {
 	if !d.sem.TryAcquire(1) { // prevent concurrent updates
@@ -627,13 +684,13 @@ func (d *dashboardClusterVersionsPane) Description() string {
 	return "Cluster version information"
 }
 
-func (d *dashboardClusterVersionsPane) Update(msg tea.KeyPressMsg) {
+func (d *dashboardClusterVersionsPane) Update(msg tea.KeyPressMsg) tea.Cmd {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
 	rows := flattenVersionTree(d.kubernetesVersionsState.previous)
 	if len(rows) == 0 {
-		return
+		return nil
 	}
 
 	switch msg.String() {
@@ -668,7 +725,7 @@ func (d *dashboardClusterVersionsPane) Update(msg tea.KeyPressMsg) {
 	rows = flattenVersionTree(d.kubernetesVersionsState.previous)
 	if len(rows) == 0 {
 		d.selected = 0
-		return
+		return nil
 	}
 	if d.selected < 0 {
 		d.selected = 0
@@ -676,6 +733,8 @@ func (d *dashboardClusterVersionsPane) Update(msg tea.KeyPressMsg) {
 	if d.selected > len(rows)-1 {
 		d.selected = len(rows) - 1
 	}
+
+	return nil
 }
 
 func (d *dashboardClusterVersionsPane) Refresh(ctx context.Context) error {
@@ -1086,7 +1145,7 @@ func (d *dashboardVolumePane) Description() string {
 	return "Volume health, for operators also cluster health"
 }
 
-func (d *dashboardVolumePane) Update(tea.KeyPressMsg) {}
+func (d *dashboardVolumePane) Update(tea.KeyPressMsg) tea.Cmd { return nil }
 
 func (d *dashboardVolumePane) Refresh(ctx context.Context) error {
 	if !d.sem.TryAcquire(1) { // prevent concurrent updates
@@ -1293,6 +1352,186 @@ func (d *dashboardVolumePane) View(width, height int) string {
 	)
 
 	return lipgloss.JoinVertical(lipgloss.Left, top, info, gauges, bottom)
+}
+
+// clusterListItem is a pre-extracted row of the cluster list pane.
+type clusterListItem struct {
+	id         string
+	name       string
+	tenant     string
+	kubernetes string
+	status     string
+}
+
+type dashboardClusterListPane struct {
+	mu  sync.Mutex
+	sem *semaphore.Weighted
+
+	clusters []clusterListItem
+	selected int
+	scroll   int
+
+	cache *apiCache
+}
+
+func NewDashboardClusterListPane(cache *apiCache) *dashboardClusterListPane {
+	return &dashboardClusterListPane{
+		sem:   semaphore.NewWeighted(1),
+		cache: cache,
+	}
+}
+
+func (d *dashboardClusterListPane) Name() string {
+	return "Clusters"
+}
+
+func (d *dashboardClusterListPane) Description() string {
+	return "All clusters, press enter to watch the selected cluster"
+}
+
+func (d *dashboardClusterListPane) Update(msg tea.KeyPressMsg) tea.Cmd {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	switch msg.String() {
+	case "down", "j":
+		if d.selected < len(d.clusters)-1 {
+			d.selected++
+		}
+	case "up", "k":
+		if d.selected > 0 {
+			d.selected--
+		}
+	case "pgdown", "f":
+		d.selected += 10
+	case "pgup", "b":
+		d.selected -= 10
+	case "home", "g":
+		d.selected = 0
+	case "end", "G":
+		d.selected = len(d.clusters) - 1
+	case "enter", " ", "space":
+		if d.selected >= 0 && d.selected < len(d.clusters) {
+			id := d.clusters[d.selected].id
+			if id != "" {
+				return func() tea.Msg {
+					return dashboardSelectClusterMsg{id: id}
+				}
+			}
+		}
+	}
+
+	if d.selected < 0 {
+		d.selected = 0
+	}
+	if d.selected > len(d.clusters)-1 {
+		d.selected = len(d.clusters) - 1
+	}
+
+	return nil
+}
+
+func (d *dashboardClusterListPane) Refresh(ctx context.Context) error {
+	if !d.sem.TryAcquire(1) { // prevent concurrent updates
+		return nil
+	}
+	defer d.sem.Release(1)
+
+	clusters, err := d.cache.Clusters(ctx)
+	if err != nil {
+		return err
+	}
+
+	items := make([]clusterListItem, 0, len(clusters))
+	for _, c := range clusters {
+		status := "unknown"
+		if c.Status != nil && c.Status.LastOperation != nil && c.Status.LastOperation.State != nil && *c.Status.LastOperation.State != "" {
+			status = *c.Status.LastOperation.State
+		}
+
+		items = append(items, clusterListItem{
+			id:         pointer.SafeDeref(c.ID),
+			name:       pointer.SafeDeref(c.Name),
+			tenant:     pointer.SafeDeref(c.Tenant),
+			kubernetes: pointer.SafeDeref(pointer.SafeDeref(c.Kubernetes).Version),
+			status:     status,
+		})
+	}
+
+	sort.Slice(items, func(i, j int) bool {
+		if items[i].name == items[j].name {
+			return items[i].id < items[j].id
+		}
+		return items[i].name < items[j].name
+	})
+
+	d.mu.Lock()
+	d.clusters = items
+	if len(items) == 0 {
+		d.selected = 0
+	} else if d.selected > len(items)-1 {
+		d.selected = len(items) - 1
+	}
+	d.mu.Unlock()
+
+	return nil
+}
+
+func (d *dashboardClusterListPane) View(width, height int) string {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	// the rendered table adds borders, a header and a header separator line
+	const tableOverhead = 4
+	showHint := height-tableOverhead-1 >= 1
+	visibleHeight := height - tableOverhead
+	if showHint {
+		visibleHeight--
+	}
+	if visibleHeight < 1 {
+		visibleHeight = 1
+	}
+
+	if d.selected < d.scroll {
+		d.scroll = d.selected
+	}
+	if d.selected >= d.scroll+visibleHeight {
+		d.scroll = d.selected - visibleHeight + 1
+	}
+	if maxScroll := len(d.clusters) - visibleHeight; maxScroll < 0 {
+		d.scroll = 0
+	} else if d.scroll > maxScroll {
+		d.scroll = maxScroll
+	}
+	if d.scroll < 0 {
+		d.scroll = 0
+	}
+
+	end := d.scroll + visibleHeight
+	if end > len(d.clusters) {
+		end = len(d.clusters)
+	}
+	visible := d.clusters[d.scroll:end]
+
+	rows := make([][]string, 0, len(visible))
+	for _, c := range visible {
+		rows = append(rows, []string{c.name, c.id, c.tenant, c.kubernetes, c.status})
+	}
+
+	table := dashSelectableTable(
+		[]string{"NAME", "ID", "TENANT", "KUBERNETES", "STATUS"},
+		rows,
+		d.selected-d.scroll,
+		width-4,
+	)
+
+	if !showHint {
+		return table
+	}
+
+	hint := dashInactiveTab.Render("Use arrow keys to navigate, press enter to watch the selected cluster.")
+
+	return lipgloss.JoinVertical(lipgloss.Left, table, hint)
 }
 
 type apiCache struct {

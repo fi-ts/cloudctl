@@ -162,8 +162,8 @@ type KeyMap struct {
 
 var DefaultKeyMap = KeyMap{
 	Quit: key.NewBinding(
-		key.WithKeys("q", "ctrl+c"),
-		key.WithHelp("q/ctrl+c", "quit"),
+		key.WithKeys("q", "esc", "ctrl+c"),
+		key.WithHelp("q/esc/ctrl+c", "quit"),
 	),
 	ToggleNodes: key.NewBinding(
 		key.WithKeys("n"),

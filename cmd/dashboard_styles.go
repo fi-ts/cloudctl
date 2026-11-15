@@ -242,3 +242,31 @@ func dashTable(headers []string, rows [][]string, width, height int) string {
 
 	return t.Render()
 }
+
+// dashSelectableTable renders a bordered table like dashTable, but highlights
+// the data row at the given zero-based selected index (pass -1 for none).
+func dashSelectableTable(headers []string, rows [][]string, selected, width int) string {
+	if width < 8 {
+		width = 8
+	}
+
+	t := table.New().
+		Border(lipgloss.RoundedBorder()).
+		BorderStyle(lipgloss.NewStyle().BorderForeground(dashBorderColor)).
+		BaseStyle(dashContentStyle).
+		StyleFunc(func(row, col int) lipgloss.Style {
+			switch {
+			case row == table.HeaderRow:
+				return headerStyle
+			case selected >= 0 && row == selected:
+				return dashSelected
+			default:
+				return lipgloss.NewStyle()
+			}
+		}).
+		Width(width).
+		Headers(headers...).
+		Rows(rows...)
+
+	return t.Render()
+}
