@@ -4,16 +4,15 @@ import (
 	"testing"
 
 	"github.com/fi-ts/cloud-go/api/models"
-	"github.com/gizak/termui/v3/widgets"
 	"github.com/google/go-cmp/cmp"
 )
 
 func Test_kubernetesVersions_toNodes(t *testing.T) {
 	tests := []struct {
 		name        string
-		previous    []*widgets.TreeNode
+		previous    []*versionNode
 		clusters    []*models.V1ClusterResponse
-		want        []*widgets.TreeNode
+		want        []*versionNode
 		wantChanged bool
 	}{
 		{
@@ -29,21 +28,21 @@ func Test_kubernetesVersions_toNodes(t *testing.T) {
 					},
 				},
 			},
-			want: []*widgets.TreeNode{
+			want: []*versionNode{
 				{
-					Value: nodeValue("1.24 (1)"),
-					Nodes: []*widgets.TreeNode{
+					value: "1.24 (1)",
+					kids: []*versionNode{
 						{
-							Value: nodeValue("1.24.3 (1)"),
-							Nodes: []*widgets.TreeNode{
+							value: "1.24.3 (1)",
+							kids: []*versionNode{
 								{
-									Value: nodeValue("tenant-a"),
-									Nodes: []*widgets.TreeNode{
+									value: "tenant-a",
+									kids: []*versionNode{
 										{
-											Value: nodeValue("project-a"),
-											Nodes: []*widgets.TreeNode{
+											value: "project-a",
+											kids: []*versionNode{
 												{
-													Value: nodeValue("cluster-a (cluster-a-id)"),
+													value: "cluster-a (cluster-a-id)",
 												},
 											},
 										},
@@ -58,21 +57,22 @@ func Test_kubernetesVersions_toNodes(t *testing.T) {
 		},
 		{
 			name: "keep expanded child",
-			previous: []*widgets.TreeNode{
+			previous: []*versionNode{
 				{
-					Value: nodeValue("1.24 (2)"),
-					Nodes: []*widgets.TreeNode{
+					value:    "1.24 (2)",
+					expanded: true,
+					kids: []*versionNode{
 						{
-							Value: nodeValue("1.24.3 (2)"),
-							Nodes: []*widgets.TreeNode{
+							value: "1.24.3 (2)",
+							kids: []*versionNode{
 								{
-									Value: nodeValue("tenant-a"),
-									Nodes: []*widgets.TreeNode{
+									value: "tenant-a",
+									kids: []*versionNode{
 										{
-											Value: nodeValue("project-a"),
-											Nodes: []*widgets.TreeNode{
+											value: "project-a",
+											kids: []*versionNode{
 												{
-													Value: nodeValue("cluster-a (cluster-a-id)"),
+													value: "cluster-a (cluster-a-id)",
 												},
 											},
 										},
@@ -103,21 +103,22 @@ func Test_kubernetesVersions_toNodes(t *testing.T) {
 					},
 				},
 			},
-			want: []*widgets.TreeNode{
+			want: []*versionNode{
 				{
-					Value: nodeValue("1.24 (2)"),
-					Nodes: []*widgets.TreeNode{
+					value:    "1.24 (2)",
+					expanded: true,
+					kids: []*versionNode{
 						{
-							Value: nodeValue("1.24.3 (2)"),
-							Nodes: []*widgets.TreeNode{
+							value: "1.24.3 (2)",
+							kids: []*versionNode{
 								{
-									Value: nodeValue("tenant-a"),
-									Nodes: []*widgets.TreeNode{
+									value: "tenant-a",
+									kids: []*versionNode{
 										{
-											Value: nodeValue("project-a"),
-											Nodes: []*widgets.TreeNode{
+											value: "project-a",
+											kids: []*versionNode{
 												{
-													Value: nodeValue("cluster-a (cluster-a-id)"),
+													value: "cluster-a (cluster-a-id)",
 												},
 											},
 										},
@@ -137,7 +138,7 @@ func Test_kubernetesVersions_toNodes(t *testing.T) {
 				previous: tt.previous,
 			}
 			got, got1 := k.update(tt.clusters)
-			if diff := cmp.Diff(got, tt.want, cmp.AllowUnexported(widgets.TreeNode{})); diff != "" {
+			if diff := cmp.Diff(got, tt.want, cmp.AllowUnexported(versionNode{})); diff != "" {
 				t.Errorf("kubernetesVersions.toNodes() diff = %s", diff)
 			}
 			if got1 != tt.wantChanged {

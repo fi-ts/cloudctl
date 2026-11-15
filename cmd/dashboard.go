@@ -4,13 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/Masterminds/semver/v3"
 	"github.com/fi-ts/cloud-go/api/client"
 	"github.com/fi-ts/cloud-go/api/client/cluster"
@@ -20,8 +22,6 @@ import (
 	"github.com/fi-ts/cloud-go/api/models"
 	"github.com/fi-ts/cloudctl/cmd/helper"
 	"github.com/gardener/gardener/pkg/apis/core/v1beta1"
-	ui "github.com/gizak/termui/v3"
-	"github.com/gizak/termui/v3/widgets"
 	"github.com/google/go-cmp/cmp"
 	"github.com/metal-stack/metal-lib/pkg/cache"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
@@ -37,6 +37,7 @@ import (
 
 const (
 	dashboardRequestsContextTimeout = 5 * time.Second
+	dashboardHeaderHeight           = 6
 )
 
 func newDashboardCmd(c *config) *cobra.Command {
@@ -48,7 +49,7 @@ func newDashboardCmd(c *config) *cobra.Command {
 		},
 	}
 
-	tabs := dashboardTabs(nil, nil, nil)
+	tabs := dashboardTabs(nil)
 
 	dashboardCmd.Flags().String("partition", "", "show resources in partition [optional]")
 	dashboardCmd.Flags().String("tenant", "", "show resources of given tenant [optional]")
@@ -77,132 +78,36 @@ func newDashboardCmd(c *config) *cobra.Command {
 	return dashboardCmd
 }
 
-func dashboardApplyTheme(theme string) error {
-	switch theme {
-	case "default":
-		ui.Theme.BarChart.Labels = []ui.Style{ui.NewStyle(ui.ColorWhite)}
-		ui.Theme.BarChart.Nums = []ui.Style{ui.NewStyle(ui.ColorWhite)}
-
-		ui.Theme.Gauge.Bar = ui.ColorWhite
-
-		ui.Theme.Tab.Active = ui.NewStyle(ui.ColorYellow)
-	case "dark":
-		ui.Theme.Default = ui.NewStyle(ui.ColorBlack)
-		ui.Theme.Block.Border = ui.NewStyle(ui.ColorBlack)
-		ui.Theme.Block.Title = ui.NewStyle(ui.ColorBlack)
-
-		ui.Theme.BarChart.Labels = []ui.Style{ui.NewStyle(ui.ColorBlack)}
-		ui.Theme.BarChart.Nums = []ui.Style{ui.NewStyle(ui.ColorBlack)}
-
-		ui.Theme.Gauge.Label = ui.NewStyle(ui.ColorBlack)
-		ui.Theme.Gauge.Label.Fg = ui.ColorBlack
-		ui.Theme.Gauge.Bar = ui.ColorBlack
-
-		ui.Theme.Paragraph.Text = ui.NewStyle(ui.ColorBlack)
-
-		ui.Theme.Tab.Active = ui.NewStyle(ui.ColorYellow)
-		ui.Theme.Tab.Inactive = ui.NewStyle(ui.ColorBlack)
-
-		ui.Theme.Table.Text = ui.NewStyle(ui.ColorBlack)
-	default:
-		return fmt.Errorf("unknown theme: %s", theme)
-	}
-	return nil
-}
-
 func runDashboard(cloud *client.CloudAPI) error {
-	if err := ui.Init(); err != nil {
-		return err
-	}
-	defer ui.Close()
-
-	var (
-		interval      = viper.GetDuration("refresh-interval")
-		width, height = ui.TerminalDimensions()
-
-		uiEvents         = ui.PollEvents()
-		eventPassthrough = make(chan ui.Event, 1)
-		ticker           = time.NewTicker(interval)
-	)
-
-	d, err := NewDashboard(cloud, eventPassthrough)
+	d, err := NewDashboard(cloud)
 	if err != nil {
 		return err
 	}
 
-	d.Resize(0, 0, width, height)
-	d.Render()
-
-	panelNumbers := map[string]bool{}
-	for i := range d.tabs {
-		panelNumbers[strconv.Itoa(i+1)] = true
+	p := tea.NewProgram(d)
+	if _, err := p.Run(); err != nil {
+		return fmt.Errorf("failed to initialize bubbletea ui: %w", err)
 	}
 
-	for {
-		select {
-		case e := <-uiEvents:
-			switch e.ID {
-			case "q", "<C-c>":
-				return nil
-			case "<Resize>":
-				payload := e.Payload.(ui.Resize)
-				var (
-					height = payload.Height
-					width  = payload.Width
-				)
-				d.Resize(0, 0, width, height)
-				ui.Clear()
-				d.Render()
-			default:
-				_, ok := panelNumbers[e.ID]
-				if ok {
-					i, _ := strconv.Atoi(e.ID)
-					d.tabPane.ActiveTabIndex = i - 1
-					ui.Clear()
-					d.Render()
-					continue
-				}
-
-				// passing on the event to other panels that may wanna use it
-				eventPassthrough <- e
-			}
-		case <-ticker.C:
-			d.Render()
-		}
-	}
+	return nil
 }
 
-func dashboardTabs(cache *apiCache, eventChannel chan ui.Event, activePanel func() int) dashboardTabPanes {
+func dashboardTabs(cache *apiCache) dashboardTabPanes {
 	return dashboardTabPanes{
 		NewDashboardClusterHealthPane(cache),
-		NewDashboardClusterVersionsPane(cache, eventChannel, func() bool {
-			return activePanel() == 1
-		}),
+		NewDashboardClusterVersionsPane(cache),
 		NewDashboardVolumePane(cache),
 	}
 }
 
-type dashboard struct {
-	statusHeader *widgets.Paragraph
-	filterHeader *widgets.Paragraph
-
-	filterTenant    string
-	filterPartition string
-	filterPurpose   string
-
-	tabPane *widgets.TabPane
-	tabs    dashboardTabPanes
-
-	sem *semaphore.Weighted
-
-	cloud *client.CloudAPI
-}
-
+// dashboardTabPane is a single tab of the dashboard. Data is fetched during
+// Refresh and rendered to a string during View, so it composes with bubbletea.
 type dashboardTabPane interface {
 	Name() string
 	Description() string
-	Render() error
-	Resize(x1, y1, x2, y2 int)
+	Refresh(ctx context.Context) error
+	Update(msg tea.KeyPressMsg)
+	View(width, height int) string
 }
 
 type dashboardTabPanes []dashboardTabPane
@@ -216,82 +121,183 @@ func (d dashboardTabPanes) FindIndexByName(name string) (int, error) {
 	return 0, fmt.Errorf("tab with name %q not found", name)
 }
 
-func NewDashboard(cloud *client.CloudAPI, eventChannel chan ui.Event) (*dashboard, error) {
-	err := dashboardApplyTheme(viper.GetString("color-theme"))
-	if err != nil {
-		return nil, err
-	}
+// dashboardTickMsg triggers a periodic refresh.
+type dashboardTickMsg struct{}
 
-	d := &dashboard{
-		sem:             semaphore.NewWeighted(1),
-		filterTenant:    viper.GetString("tenant"),
-		filterPartition: viper.GetString("partition"),
-		filterPurpose:   viper.GetString("purpose"),
-		cloud:           cloud,
-	}
+// dashboardRefreshMsg is emitted after an ad-hoc refresh (e.g. when switching tabs).
+type dashboardRefreshMsg struct{}
 
-	d.statusHeader = widgets.NewParagraph()
-	d.statusHeader.Title = "Cloud Dashboard"
-	d.statusHeader.WrapText = false
+// dashboardData holds the shared header state, guarded by a mutex because it is
+// written from refresh commands running in a goroutine while View reads it.
+type dashboardData struct {
+	sync.Mutex
 
-	d.filterHeader = widgets.NewParagraph()
-	d.filterHeader.Title = "Filters"
-	d.filterHeader.WrapText = false
+	apiVersion       string
+	apiHealth        string
+	apiHealthMessage string
+	releaseVersion   string
+	lastUpdate       time.Time
+	lastErr          error
+}
 
-	cache := newCache(cloud,
-		viper.GetDuration("refresh-interval"),
-		viper.GetString("partition"),
-		viper.GetString("tenant"),
-		viper.GetString("purpose"),
-	)
+// dashboard is our tea.Model for the operational dashboard.
+type dashboard struct {
+	width, height int
+	activeTab     int
+	tabs          dashboardTabPanes
 
-	d.tabs = dashboardTabs(cache, eventChannel, func() int {
-		return d.tabPane.ActiveTabIndex
-	})
-	var tabNames []string
-	for i, p := range d.tabs {
-		tabNames = append(tabNames, fmt.Sprintf("(%d) %s", i+1, p.Name()))
-	}
-	d.tabPane = widgets.NewTabPane(tabNames...)
-	d.tabPane.Title = "Tabs"
-	d.tabPane.Border = false
+	filterTenant    string
+	filterPartition string
+	filterPurpose   string
 
-	if viper.IsSet("initial-tab") {
-		initialPanelIndex, err := d.tabs.FindIndexByName(viper.GetString("initial-tab"))
-		if err != nil {
-			return nil, err
+	refreshInterval time.Duration
+
+	data  *dashboardData
+	cloud *client.CloudAPI
+}
+
+// Init is being called once on boot.
+func (d dashboard) Init() tea.Cmd {
+	return tea.Batch(d.refreshCmd(), d.tickCmd())
+}
+
+// Update handles incoming messages and key events.
+func (d dashboard) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		d.width, d.height = msg.Width, msg.Height
+	case dashboardTickMsg:
+		return d, tea.Batch(d.tickCmd(), d.refreshCmd())
+	case dashboardRefreshMsg:
+		return d, nil
+	case tea.KeyPressMsg:
+		switch msg.String() {
+		case "q", "ctrl+c":
+			return d, tea.Quit
 		}
-		d.tabPane.ActiveTabIndex = initialPanelIndex
+
+		if n, err := strconv.Atoi(msg.String()); err == nil && n >= 1 && n <= len(d.tabs) {
+			if d.activeTab != n-1 {
+				d.activeTab = n - 1
+				return d, d.refreshCmd()
+			}
+			return d, nil
+		}
+
+		// pass the event on to the active tab, which may use it
+		d.tabs[d.activeTab].Update(msg)
 	}
 
 	return d, nil
 }
 
-func (d *dashboard) Resize(x1, y1, x2, y2 int) {
-	d.statusHeader.SetRect(x1, y1, x2-25, d.headerHeight())
-	d.filterHeader.SetRect(x2-25, y1, x2, d.headerHeight())
-
-	for _, p := range d.tabs {
-		p.Resize(x1, d.headerHeight(), x2, y2-1)
+// View renders the whole dashboard.
+func (d dashboard) View() tea.View {
+	width, height := d.width, d.height
+	if width <= 0 || height <= 0 {
+		width, height = 80, 24
 	}
 
-	d.tabPane.SetRect(x1, y2-1, x2, y2)
-}
-
-func (d *dashboard) headerHeight() int {
-	return 5
-}
-
-func (d *dashboard) Render() {
-	if !d.sem.TryAcquire(1) { // prevent concurrent updates
-		return
+	paneHeight := height - dashboardHeaderHeight - 2
+	if paneHeight < 4 {
+		paneHeight = 4
 	}
-	defer d.sem.Release(1)
 
-	d.filterHeader.Text = fmt.Sprintf("Tenant=%s\nPartition=%s\nPurpose=%s", d.filterTenant, d.filterPartition, d.filterPurpose)
+	body := lipgloss.JoinVertical(
+		lipgloss.Left,
+		d.headerView(width),
+		d.tabsView(),
+		d.tabs[d.activeTab].View(width, paneHeight),
+		lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#ffffff")).
+			Background(lipgloss.Color("#242424")).
+			Width(width).
+			Render("Switch between tabs with number keys. Press q to quit."),
+	)
 
-	ui.Render(d.filterHeader, d.tabPane)
+	v := tea.NewView(body)
+	v.AltScreen = true // fullscreen
 
+	return v
+}
+
+// headerView renders the status and filter headers side by side.
+func (d dashboard) headerView(width int) string {
+	d.data.Lock()
+	defer d.data.Unlock()
+
+	coloredHealth := d.data.apiHealth
+	switch healthstatus.HealthStatus(d.data.apiHealth) {
+	case healthstatus.HealthStatusHealthy:
+		coloredHealth = lipgloss.NewStyle().Foreground(dashCloseColor).Render(d.data.apiHealth)
+	case healthstatus.HealthStatusDegraded, healthstatus.HealthStatusPartiallyUnhealthy:
+		coloredHealth = lipgloss.NewStyle().Foreground(dashWarnColor).Render(d.data.apiHealth)
+	case healthstatus.HealthStatusUnhealthy:
+		label := d.data.apiHealth
+		if d.data.apiHealthMessage != "" {
+			label = fmt.Sprintf("%s (%s)", d.data.apiHealth, d.data.apiHealthMessage)
+		}
+		coloredHealth = lipgloss.NewStyle().Foreground(dashBadColor).Render(label)
+	}
+
+	versionLine := fmt.Sprintf("cloud-api %s (API Health: %s), cloudctl %s (%s), release %s", d.data.apiVersion, coloredHealth, v.Version, v.GitSHA1, d.data.releaseVersion)
+
+	fetchInfoLine := fmt.Sprintf("Last Update: %s", d.data.lastUpdate.Format("15:04:05"))
+	if d.data.lastErr != nil {
+		fetchInfoLine += lipgloss.NewStyle().Foreground(dashBadColor).Render(fmt.Sprintf(", Update Error: %s", d.data.lastErr))
+	}
+
+	left := lipgloss.JoinVertical(
+		lipgloss.Left,
+		versionLine,
+		fetchInfoLine,
+	)
+
+	right := fmt.Sprintf("Tenant=%s\nPartition=%s\nPurpose=%s", d.filterTenant, d.filterPartition, d.filterPurpose)
+
+	leftWidth := width - 25
+	if leftWidth < 20 {
+		leftWidth = 20
+	}
+
+	return lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		dashPanel("Cloud Dashboard", left, leftWidth),
+		dashPanel("Filters", right, width-leftWidth),
+	)
+}
+
+// tabsView renders the tab bar.
+func (d dashboard) tabsView() string {
+	parts := make([]string, 0, len(d.tabs))
+	for i, t := range d.tabs {
+		label := fmt.Sprintf("(%d) %s", i+1, t.Name())
+		if i == d.activeTab {
+			parts = append(parts, dashActiveTab.Render(label))
+		} else {
+			parts = append(parts, dashInactiveTab.Render(label))
+		}
+	}
+	return strings.Join(parts, "  ")
+}
+
+// tickCmd schedules the next periodic refresh.
+func (d dashboard) tickCmd() tea.Cmd {
+	return tea.Tick(d.refreshInterval, func(time.Time) tea.Msg {
+		return dashboardTickMsg{}
+	})
+}
+
+// refreshCmd refreshes all data in the background.
+func (d dashboard) refreshCmd() tea.Cmd {
+	return func() tea.Msg {
+		d.refresh()
+		return dashboardRefreshMsg{}
+	}
+}
+
+// refresh fetches the header info and the currently active tab's data.
+func (d dashboard) refresh() {
 	var (
 		apiVersion       = "unknown"
 		apiHealth        = "unknown"
@@ -301,60 +307,88 @@ func (d *dashboard) Render() {
 		lastErr error
 	)
 
-	defer func() {
-		var coloredHealth string
-		switch apiHealth {
-		case string(healthstatus.HealthStatusHealthy):
-			coloredHealth = "[" + apiHealth + "](fg:green)"
-		case string(healthstatus.HealthStatusDegraded), string(healthstatus.HealthStatusPartiallyUnhealthy):
-			coloredHealth = "[" + apiHealth + "](fg:yellow)"
-		case string(healthstatus.HealthStatusUnhealthy):
-			if apiHealthMessage != "" {
-				coloredHealth = "[" + apiHealth + fmt.Sprintf(" (%s)](fg:red)", apiHealthMessage)
-			} else {
-				coloredHealth = "[" + apiHealth + "](fg:red)"
-			}
-		default:
-			coloredHealth = apiHealth
-		}
-
-		versionLine := fmt.Sprintf("cloud-api %s (API Health: %s), cloudctl %s (%s), release %s", apiVersion, coloredHealth, v.Version, v.GitSHA1, releaseVersion)
-		fetchInfoLine := fmt.Sprintf("Last Update: %s", time.Now().Format("15:04:05"))
-		if lastErr != nil {
-			fetchInfoLine += fmt.Sprintf(", [Update Error: %s](fg:red)", lastErr)
-		}
-		glossaryLine := "Switch between tabs with number keys. Press q to quit."
-
-		d.statusHeader.Text = fmt.Sprintf("%s\n%s\n%s", versionLine, fetchInfoLine, glossaryLine)
-		ui.Render(d.statusHeader)
-	}()
-
 	ctx, cancel := context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
 	defer cancel()
 
-	var infoResp *version.InfoOK
-	infoResp, lastErr = d.cloud.Version.Info(version.NewInfoParams().WithContext(ctx), nil)
-	if lastErr != nil {
-		return
-	}
-	apiVersion = *infoResp.Payload.Version
-	releaseVersion = infoResp.Payload.ReleaseVersion
-
-	healthResp, err := d.cloud.Health.Health(health.NewHealthParams().WithContext(ctx), nil)
+	infoResp, err := d.cloud.Version.Info(version.NewInfoParams().WithContext(ctx), nil)
 	if err != nil {
-		if r, ok := errors.AsType[*health.HealthInternalServerError](err); ok {
-			healthResp = health.NewHealthOK()
-			healthResp.Payload = r.Payload
-		} else {
-			lastErr = err
-			return
+		lastErr = err
+	} else {
+		if infoResp.Payload.Version != nil {
+			apiVersion = *infoResp.Payload.Version
+		}
+		releaseVersion = infoResp.Payload.ReleaseVersion
+	}
+
+	if lastErr == nil {
+		healthResp, err := d.cloud.Health.Health(health.NewHealthParams().WithContext(ctx), nil)
+		if err != nil {
+			if r, ok := errors.AsType[*health.HealthInternalServerError](err); ok {
+				healthResp = health.NewHealthOK()
+				healthResp.Payload = r.Payload
+			} else {
+				lastErr = err
+			}
+		}
+
+		if healthResp != nil && healthResp.Payload != nil {
+			if healthResp.Payload.Status != nil {
+				apiHealth = *healthResp.Payload.Status
+			}
+			if healthResp.Payload.Message != nil {
+				apiHealthMessage = *healthResp.Payload.Message
+			}
 		}
 	}
 
-	apiHealth = *healthResp.Payload.Status
-	apiHealthMessage = *healthResp.Payload.Message
+	if lastErr == nil {
+		lastErr = d.tabs[d.activeTab].Refresh(ctx)
+	}
 
-	lastErr = d.tabs[d.tabPane.ActiveTabIndex].Render()
+	d.data.Lock()
+	d.data.apiVersion = apiVersion
+	d.data.apiHealth = apiHealth
+	d.data.apiHealthMessage = apiHealthMessage
+	d.data.releaseVersion = releaseVersion
+	d.data.lastUpdate = time.Now()
+	d.data.lastErr = lastErr
+	d.data.Unlock()
+}
+
+func NewDashboard(cloud *client.CloudAPI) (*dashboard, error) {
+	if err := dashboardApplyTheme(viper.GetString("color-theme")); err != nil {
+		return nil, err
+	}
+
+	d := &dashboard{
+		width:           80,
+		height:          24,
+		filterTenant:    viper.GetString("tenant"),
+		filterPartition: viper.GetString("partition"),
+		filterPurpose:   viper.GetString("purpose"),
+		refreshInterval: viper.GetDuration("refresh-interval"),
+		data:            &dashboardData{},
+		cloud:           cloud,
+	}
+
+	cache := newCache(cloud,
+		viper.GetDuration("refresh-interval"),
+		viper.GetString("partition"),
+		viper.GetString("tenant"),
+		viper.GetString("purpose"),
+	)
+
+	d.tabs = dashboardTabs(cache)
+
+	if viper.IsSet("initial-tab") {
+		initialPanelIndex, err := d.tabs.FindIndexByName(viper.GetString("initial-tab"))
+		if err != nil {
+			return nil, err
+		}
+		d.activeTab = initialPanelIndex
+	}
+
+	return d, nil
 }
 
 type dashboardClusterError struct {
@@ -363,66 +397,33 @@ type dashboardClusterError struct {
 	Time         time.Time
 }
 
+var (
+	clusterHealthLabels = []string{"Succeeded", "Progressing", "Unhealthy"}
+	clusterHealthColors = []dashColor{dashCloseColor, dashWarnColor, dashBadColor}
+)
+
 type dashboardClusterHealthPane struct {
-	clusterHealth *widgets.BarChart
-
-	clusterStatusAPI     *widgets.Gauge
-	clusterStatusControl *widgets.Gauge
-	clusterStatusNodes   *widgets.Gauge
-	clusterStatusSystem  *widgets.Gauge
-
-	clusterProblems   *widgets.Table
-	clusterLastErrors *widgets.Table
-
+	mu  sync.Mutex
 	sem *semaphore.Weighted
+
+	clusterHealth []float64
+
+	apiPercent     int
+	controlPercent int
+	nodesPercent   int
+	systemPercent  int
+
+	problems   [][]string
+	lastErrors [][]string
 
 	cache *apiCache
 }
 
 func NewDashboardClusterHealthPane(cache *apiCache) *dashboardClusterHealthPane {
-	d := &dashboardClusterHealthPane{}
-
-	d.sem = semaphore.NewWeighted(1)
-
-	d.clusterHealth = widgets.NewBarChart()
-	d.clusterHealth.Labels = []string{"Succeeded", "Progressing", "Unhealthy"}
-	d.clusterHealth.Title = "Cluster Operation"
-	d.clusterHealth.PaddingLeft = 5
-	d.clusterHealth.BarWidth = 5
-	d.clusterHealth.BarGap = 10
-	d.clusterHealth.BarColors = []ui.Color{ui.ColorGreen, ui.ColorYellow, ui.ColorRed, ui.ColorBlue}
-	if viper.GetString("color-theme") == "default" {
-		d.clusterHealth.NumStyles = []ui.Style{{Fg: ui.ColorWhite}, {Fg: ui.ColorWhite}, {Fg: ui.ColorBlack}, {Fg: ui.ColorWhite}}
+	return &dashboardClusterHealthPane{
+		sem:   semaphore.NewWeighted(1),
+		cache: cache,
 	}
-
-	d.clusterStatusAPI = widgets.NewGauge()
-	d.clusterStatusAPI.Title = "API"
-	d.clusterStatusAPI.BarColor = ui.ColorGreen
-
-	d.clusterStatusControl = widgets.NewGauge()
-	d.clusterStatusControl.Title = "Control"
-	d.clusterStatusControl.BarColor = ui.ColorGreen
-
-	d.clusterStatusNodes = widgets.NewGauge()
-	d.clusterStatusNodes.Title = "Nodes"
-	d.clusterStatusNodes.BarColor = ui.ColorGreen
-
-	d.clusterStatusSystem = widgets.NewGauge()
-	d.clusterStatusSystem.Title = "System"
-	d.clusterStatusSystem.BarColor = ui.ColorGreen
-
-	d.clusterProblems = widgets.NewTable()
-	d.clusterProblems.Title = "Cluster Problems"
-	d.clusterProblems.TextAlignment = ui.AlignLeft
-	d.clusterProblems.RowSeparator = false
-
-	d.clusterLastErrors = widgets.NewTable()
-	d.clusterLastErrors.Title = "Last Errors"
-	d.clusterLastErrors.TextAlignment = ui.AlignLeft
-	d.clusterLastErrors.RowSeparator = false
-
-	d.cache = cache
-	return d
 }
 
 func (d *dashboardClusterHealthPane) Name() string {
@@ -433,32 +434,15 @@ func (d *dashboardClusterHealthPane) Description() string {
 	return "Cluster health and issues"
 }
 
-func (d *dashboardClusterHealthPane) Resize(x1, y1, x2, y2 int) {
-	d.clusterHealth.SetRect(x1, y1, x1+50, y1+12)
+func (d *dashboardClusterHealthPane) Update(tea.KeyPressMsg) {}
 
-	d.clusterStatusAPI.SetRect(x1+50, y1, x2, 3+y1)
-	d.clusterStatusControl.SetRect(x1+50, 3+y1, x2, 6+y1)
-	d.clusterStatusNodes.SetRect(x1+50, 6+y1, x2, 9+y1)
-	d.clusterStatusSystem.SetRect(x1+50, 9+y1, x2, 12+y1)
-
-	tableHeights := int(math.Ceil((float64(y2) - (float64(y1) + 12)) / 2))
-
-	d.clusterProblems.SetRect(x1, 12+y1, x2, y1+12+tableHeights)
-	d.clusterProblems.ColumnWidths = []int{12, x2 - 12}
-
-	d.clusterLastErrors.SetRect(x1, 12+y1+tableHeights, x2, y2)
-	d.clusterLastErrors.ColumnWidths = []int{12, x2 - 12}
-}
-
-func (d *dashboardClusterHealthPane) Render() error {
+func (d *dashboardClusterHealthPane) Refresh(ctx context.Context) error {
 	if !d.sem.TryAcquire(1) { // prevent concurrent updates
 		return nil
 	}
 	defer d.sem.Release(1)
 
 	var (
-		clusters []*models.V1ClusterResponse
-
 		succeeded  int
 		processing int
 		unhealthy  int
@@ -471,9 +455,6 @@ func (d *dashboardClusterHealthPane) Render() error {
 		clusterErrors []dashboardClusterError
 		lastErrors    []dashboardClusterError
 	)
-
-	ctx, cancel := context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
-	defer cancel()
 
 	clusters, err := d.cache.Clusters(ctx)
 	if err != nil {
@@ -550,117 +531,92 @@ func (d *dashboardClusterHealthPane) Render() error {
 		return nil
 	}
 
-	// for some reason the UI hangs when all values are zero...
-	if succeeded > 0 || processing > 0 || unhealthy > 0 {
-		d.clusterHealth.Data = []float64{float64(succeeded), float64(processing), float64(unhealthy)}
-		ui.Render(d.clusterHealth)
-	}
-
 	sort.Slice(clusterErrors, func(i, j int) bool {
 		return clusterErrors[i].Time.After(clusterErrors[j].Time)
 	})
-	rows := [][]string{}
+	problemRows := make([][]string, 0, len(clusterErrors))
 	for _, e := range clusterErrors {
-		rows = append(rows, []string{e.ClusterName, e.ErrorMessage})
+		problemRows = append(problemRows, []string{e.ClusterName, e.ErrorMessage})
 	}
-	d.clusterProblems.Rows = rows
-	ui.Render(d.clusterProblems)
 
 	sort.Slice(lastErrors, func(i, j int) bool {
 		return lastErrors[i].Time.After(lastErrors[j].Time)
 	})
-	rows = [][]string{}
+	lastErrorRows := make([][]string, 0, len(lastErrors))
 	for _, e := range lastErrors {
-		rows = append(rows, []string{e.ClusterName, e.ErrorMessage})
+		lastErrorRows = append(lastErrorRows, []string{e.ClusterName, e.ErrorMessage})
 	}
-	d.clusterLastErrors.Rows = rows
-	ui.Render(d.clusterLastErrors)
 
-	d.clusterStatusAPI.Percent = apiOK * 100 / processedClusters
-	d.clusterStatusControl.Percent = controlOK * 100 / processedClusters
-	d.clusterStatusNodes.Percent = nodesOK * 100 / processedClusters
-	d.clusterStatusSystem.Percent = systemOK * 100 / processedClusters
-
-	ui.Render(d.clusterStatusAPI, d.clusterStatusControl, d.clusterStatusNodes, d.clusterStatusSystem)
+	d.mu.Lock()
+	d.clusterHealth = []float64{float64(succeeded), float64(processing), float64(unhealthy)}
+	d.apiPercent = apiOK * 100 / processedClusters
+	d.controlPercent = controlOK * 100 / processedClusters
+	d.nodesPercent = nodesOK * 100 / processedClusters
+	d.systemPercent = systemOK * 100 / processedClusters
+	d.problems = problemRows
+	d.lastErrors = lastErrorRows
+	d.mu.Unlock()
 
 	return nil
 }
 
+func (d *dashboardClusterHealthPane) View(width, height int) string {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	leftWidth := 50
+	if leftWidth > width/2 {
+		leftWidth = width / 2
+	}
+	if leftWidth < 20 {
+		leftWidth = 20
+	}
+	rightWidth := width - leftWidth
+
+	left := dashPanel("Cluster Operation",
+		dashBarChart(clusterHealthLabels, d.clusterHealth, clusterHealthColors, leftWidth-6), leftWidth)
+
+	gauges := strings.Join([]string{
+		dashGauge("API", d.apiPercent, dashPercentColor(d.apiPercent), rightWidth-6),
+		dashGauge("Control", d.controlPercent, dashPercentColor(d.controlPercent), rightWidth-6),
+		dashGauge("Nodes", d.nodesPercent, dashPercentColor(d.nodesPercent), rightWidth-6),
+		dashGauge("System", d.systemPercent, dashPercentColor(d.systemPercent), rightWidth-6),
+	}, "\n")
+	right := dashPanel("Cluster Status", gauges, rightWidth)
+
+	top := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
+
+	tableHeight := (height - lipgloss.Height(top) - 4) / 2
+	if tableHeight < 3 {
+		tableHeight = 3
+	}
+
+	problems := addCaption(dashTable([]string{"CLUSTER", "MESSAGE"}, d.problems, width-4, tableHeight), "Cluster Problems")
+	lastErrors := addCaption(dashTable([]string{"CLUSTER", "MESSAGE"}, d.lastErrors, width-4, tableHeight), "Last Errors")
+
+	return lipgloss.JoinVertical(lipgloss.Left, top, problems, lastErrors)
+}
+
 type dashboardClusterVersionsPane struct {
-	kubernetesVersions         *widgets.Tree
-	reconciledGardenerVersions *widgets.PieChart
-	firewallControllerVersions *widgets.PieChart
+	mu  sync.Mutex
+	sem *semaphore.Weighted
+
+	gardenerVersions []pieEntry
+	firewallVersions []pieEntry
 
 	kubernetesVersionsState *kubernetesVersions
-
-	sem *semaphore.Weighted
+	selected                int
+	scroll                  int
 
 	cache *apiCache
 }
 
-func NewDashboardClusterVersionsPane(cache *apiCache, eventChannel chan ui.Event, isActive func() bool) *dashboardClusterVersionsPane {
-	d := &dashboardClusterVersionsPane{}
-
-	d.sem = semaphore.NewWeighted(1)
-
-	d.reconciledGardenerVersions = widgets.NewPieChart()
-	d.reconciledGardenerVersions.Title = "Reconciled Gardener Versions"
-	d.reconciledGardenerVersions.PaddingTop = 1
-	d.reconciledGardenerVersions.PaddingBottom = 1
-	d.reconciledGardenerVersions.PaddingRight = 5
-	d.reconciledGardenerVersions.PaddingRight = 5
-
-	d.firewallControllerVersions = widgets.NewPieChart()
-	d.firewallControllerVersions.Title = "Firewall-Controller Versions"
-	d.firewallControllerVersions.PaddingTop = 1
-	d.firewallControllerVersions.PaddingBottom = 1
-	d.firewallControllerVersions.PaddingLeft = 5
-	d.firewallControllerVersions.PaddingRight = 5
-
-	d.kubernetesVersions = widgets.NewTree()
-	d.kubernetesVersions.Title = "Kubernetes Versions"
-	d.kubernetesVersions.TextStyle = ui.NewStyle(ui.ColorYellow)
-	d.kubernetesVersionsState = &kubernetesVersions{}
-
-	go func() {
-		for {
-			e := <-eventChannel
-
-			if isActive != nil && !isActive() {
-				continue
-			}
-			if !d.kubernetesVersionsState.runOnce {
-				continue
-			}
-
-			switch e.ID {
-			case "<Down>":
-				d.kubernetesVersions.ScrollDown()
-			case "<Up>":
-				d.kubernetesVersions.ScrollUp()
-			case "<Space>", "<Enter>":
-				d.kubernetesVersions.ToggleExpand()
-			case "<PageUp>":
-				d.kubernetesVersions.ScrollTop()
-			case "<PageDown>":
-				d.kubernetesVersions.ScrollBottom()
-			case "<Right>":
-				d.kubernetesVersions.Expand()
-			case "<Left>":
-				d.kubernetesVersions.Collapse()
-			case "E":
-				d.kubernetesVersions.ExpandAll()
-			case "C":
-				d.kubernetesVersions.CollapseAll()
-			}
-
-			ui.Render(d.kubernetesVersions)
-		}
-	}()
-
-	d.cache = cache
-
-	return d
+func NewDashboardClusterVersionsPane(cache *apiCache) *dashboardClusterVersionsPane {
+	return &dashboardClusterVersionsPane{
+		sem:                     semaphore.NewWeighted(1),
+		kubernetesVersionsState: &kubernetesVersions{},
+		cache:                   cache,
+	}
 }
 
 func (d *dashboardClusterVersionsPane) Name() string {
@@ -671,13 +627,179 @@ func (d *dashboardClusterVersionsPane) Description() string {
 	return "Cluster version information"
 }
 
-func (d *dashboardClusterVersionsPane) Resize(x1, y1, x2, y2 int) {
-	d.kubernetesVersions.SetRect(x1, y1, x2-40, y2)
+func (d *dashboardClusterVersionsPane) Update(msg tea.KeyPressMsg) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 
-	tableHeights := int(math.Ceil((float64(y2) - (float64(y1))) / 2))
+	rows := flattenVersionTree(d.kubernetesVersionsState.previous)
+	if len(rows) == 0 {
+		return
+	}
 
-	d.reconciledGardenerVersions.SetRect(x2-40, y1, x2, y1+tableHeights)
-	d.firewallControllerVersions.SetRect(x2-40, y1+tableHeights, x2, y2)
+	switch msg.String() {
+	case "down", "j":
+		if d.selected < len(rows)-1 {
+			d.selected++
+		}
+	case "up", "k":
+		if d.selected > 0 {
+			d.selected--
+		}
+	case "pgdown", "f":
+		d.selected += 10
+	case "pgup", "b":
+		d.selected -= 10
+	case "home", "g":
+		d.selected = 0
+	case "end", "G":
+		d.selected = len(rows) - 1
+	case "enter", " ", "space":
+		rows[d.selected].node.expanded = !rows[d.selected].node.expanded
+	case "right", "l":
+		rows[d.selected].node.expanded = true
+	case "left", "h":
+		rows[d.selected].node.expanded = false
+	case "E":
+		setVersionTreeExpanded(d.kubernetesVersionsState.previous, true)
+	case "C":
+		setVersionTreeExpanded(d.kubernetesVersionsState.previous, false)
+	}
+
+	rows = flattenVersionTree(d.kubernetesVersionsState.previous)
+	if len(rows) == 0 {
+		d.selected = 0
+		return
+	}
+	if d.selected < 0 {
+		d.selected = 0
+	}
+	if d.selected > len(rows)-1 {
+		d.selected = len(rows) - 1
+	}
+}
+
+func (d *dashboardClusterVersionsPane) Refresh(ctx context.Context) error {
+	if !d.sem.TryAcquire(1) { // prevent concurrent updates
+		return nil
+	}
+	defer d.sem.Release(1)
+
+	var (
+		gardenerVersions           = pieVersion{}
+		firewallControllerVersions = pieVersion{}
+	)
+
+	clusters, err := d.cache.Clusters(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, c := range clusters {
+		if c.Status == nil || c.Status.Gardener == nil {
+			gardenerVersions["unknown"]++
+		} else {
+			gardenerVersions[*c.Status.Gardener.Version]++
+		}
+
+		if c.FirewallControllerVersion == nil {
+			firewallControllerVersions["unknown"]++
+		} else {
+			if *c.FirewallControllerVersion == "" {
+				// auto is default, otherwise some clusters will not be aggregated properly
+				c.FirewallControllerVersion = new("auto")
+			}
+			firewallControllerVersions[*c.FirewallControllerVersion]++
+		}
+	}
+
+	d.mu.Lock()
+	nodes, _ := d.kubernetesVersionsState.update(clusters)
+	d.gardenerVersions = gardenerVersions.entries()
+	d.firewallVersions = firewallControllerVersions.entries()
+	rows := flattenVersionTree(nodes)
+	if len(rows) == 0 {
+		d.selected = 0
+	} else if d.selected > len(rows)-1 {
+		d.selected = len(rows) - 1
+	}
+	d.mu.Unlock()
+
+	return nil
+}
+
+func (d *dashboardClusterVersionsPane) View(width, height int) string {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	leftWidth := width - 40
+	if leftWidth < 20 {
+		leftWidth = width / 2
+	}
+	if leftWidth < 20 {
+		leftWidth = 20
+	}
+	rightWidth := width - leftWidth
+
+	left := dashPanel("Kubernetes Versions", d.renderTree(height-2), leftWidth)
+	half := (height - 4) / 2
+	if half < 2 {
+		half = 2
+	}
+	right := lipgloss.JoinVertical(lipgloss.Left,
+		dashPanel("Reconciled Gardener Versions", dashMaxLines(dashPie(d.gardenerVersions, rightWidth-6), half), rightWidth),
+		dashPanel("Firewall-Controller Versions", dashMaxLines(dashPie(d.firewallVersions, rightWidth-6), half), rightWidth),
+	)
+
+	return lipgloss.JoinHorizontal(lipgloss.Top, left, right)
+}
+
+func (d *dashboardClusterVersionsPane) renderTree(height int) string {
+	rows := flattenVersionTree(d.kubernetesVersionsState.previous)
+	if len(rows) == 0 {
+		return ""
+	}
+
+	if height < 1 {
+		height = 1
+	}
+
+	if d.selected < d.scroll {
+		d.scroll = d.selected
+	}
+	if d.selected >= d.scroll+height {
+		d.scroll = d.selected - height + 1
+	}
+	if d.scroll < 0 {
+		d.scroll = 0
+	}
+	if maxScroll := len(rows) - height; maxScroll < 0 {
+		d.scroll = 0
+	} else if d.scroll > maxScroll {
+		d.scroll = maxScroll
+	}
+
+	var b strings.Builder
+	for i := d.scroll; i < len(rows) && i < d.scroll+height; i++ {
+		r := rows[i]
+
+		marker := "  "
+		if len(r.node.kids) > 0 {
+			if r.node.expanded {
+				marker = "▾ "
+			} else {
+				marker = "▸ "
+			}
+		}
+
+		line := strings.Repeat("  ", r.depth) + marker + r.node.value
+		if i == d.selected {
+			line = dashSelected.Render(line)
+		}
+		b.WriteString(line)
+		b.WriteString("\n")
+	}
+
+	return strings.TrimRight(b.String(), "\n")
 }
 
 type pieVersion map[string]int
@@ -690,11 +812,17 @@ func (p pieVersion) total() int {
 	return result
 }
 
-func (p pieVersion) toValues() ([]float64, widgets.PieChartLabel) {
+func (p pieVersion) entries() []pieEntry {
 	type version struct {
 		parsedVersion *semver.Version
 		rawVersion    string
+		count         int
 		percentage    float64
+	}
+
+	total := p.total()
+	if total == 0 {
+		return nil
 	}
 
 	var versions []version
@@ -705,7 +833,8 @@ func (p pieVersion) toValues() ([]float64, widgets.PieChartLabel) {
 		versions = append(versions, version{
 			parsedVersion: v,
 			rawVersion:    rawVersion,
-			percentage:    float64(count) / float64(p.total()),
+			count:         count,
+			percentage:    float64(count) / float64(total),
 		})
 	}
 
@@ -724,40 +853,72 @@ func (p pieVersion) toValues() ([]float64, widgets.PieChartLabel) {
 		return versions[i].parsedVersion.LessThan(versions[j].parsedVersion)
 	})
 
-	var result []float64
-
+	result := make([]pieEntry, 0, len(versions))
 	for _, v := range versions {
-		result = append(result, v.percentage)
+		result = append(result, pieEntry{
+			Label:   v.rawVersion,
+			Count:   v.count,
+			Percent: v.percentage,
+		})
 	}
 
-	return result, func(dataIndex int, _ float64) string {
-		d := versions[dataIndex]
-		return fmt.Sprintf("%s (%d%%)", d.rawVersion, int(100*d.percentage))
-	}
+	return result
 }
 
-type nodeValue string
+// versionNode is a node in the kubernetes version tree. The expanded state is
+// carried over between refreshes by reusing matching nodes.
+type versionNode struct {
+	value    string
+	expanded bool
+	kids     []*versionNode
+}
 
-func (v nodeValue) String() string {
-	return string(v)
+type versionTreeRow struct {
+	node  *versionNode
+	depth int
+}
+
+func flattenVersionTree(nodes []*versionNode) []versionTreeRow {
+	var rows []versionTreeRow
+
+	var walk func(ns []*versionNode, depth int)
+	walk = func(ns []*versionNode, depth int) {
+		for _, n := range ns {
+			rows = append(rows, versionTreeRow{node: n, depth: depth})
+			if n.expanded {
+				walk(n.kids, depth+1)
+			}
+		}
+	}
+	walk(nodes, 0)
+
+	return rows
+}
+
+func setVersionTreeExpanded(nodes []*versionNode, expanded bool) {
+	for _, n := range nodes {
+		if len(n.kids) > 0 {
+			n.expanded = expanded
+		}
+		setVersionTreeExpanded(n.kids, expanded)
+	}
 }
 
 type kubernetesVersions struct {
-	runOnce  bool
-	previous []*widgets.TreeNode
+	previous []*versionNode
 }
 
-func (k *kubernetesVersions) update(clusters []*models.V1ClusterResponse) ([]*widgets.TreeNode, bool) {
+func (k *kubernetesVersions) update(clusters []*models.V1ClusterResponse) ([]*versionNode, bool) {
 	var (
-		result []*widgets.TreeNode
+		result []*versionNode
 
-		sortNodesFunc = func(nodes []*widgets.TreeNode) func(i, j int) bool {
+		sortNodesFunc = func(nodes []*versionNode) func(i, j int) bool {
 			return func(i, j int) bool {
-				iParsed, _ := semver.NewVersion(nodes[i].Value.String())
-				jParsed, _ := semver.NewVersion(nodes[j].Value.String())
+				iParsed, _ := semver.NewVersion(nodes[i].value)
+				jParsed, _ := semver.NewVersion(nodes[j].value)
 
 				if iParsed == nil && jParsed == nil {
-					return nodes[i].Value.String() < nodes[j].Value.String()
+					return nodes[i].value < nodes[j].value
 				}
 
 				if iParsed == nil {
@@ -771,63 +932,61 @@ func (k *kubernetesVersions) update(clusters []*models.V1ClusterResponse) ([]*wi
 			}
 		}
 
-		findNode = func(nodes []*widgets.TreeNode, name string) *widgets.TreeNode {
-			var (
-				tree  = &widgets.Tree{}
-				found *widgets.TreeNode
-			)
-			tree.SetNodes(nodes)
-			tree.Walk(func(n *widgets.TreeNode) bool {
-				if n.Value.String() == name {
-					found = n
-					return false
-				}
-				return true
-			})
-			return found
-		}
+		findNode func(nodes []*versionNode, name string) *versionNode
 
-		ensureNode = func(name string) *widgets.TreeNode {
-			if existing := findNode(result, name); existing != nil {
-				return existing
-			}
+		ensureNode func(name string) *versionNode
 
-			if previous := findNode(k.previous, name); previous != nil {
-				result = append(result, previous)
-				return previous
-			}
-
-			newNode := &widgets.TreeNode{
-				Value: nodeValue(name),
-			}
-
-			result = append(result, newNode)
-
-			sort.Slice(result, sortNodesFunc(result))
-
-			return newNode
-		}
-
-		ensureChildNode = func(parent *widgets.TreeNode, childName string) *widgets.TreeNode {
-			if existing := findNode(parent.Nodes, childName); existing != nil {
-				return existing
-			}
-
-			newNode := &widgets.TreeNode{
-				Value: nodeValue(childName),
-			}
-
-			parent.Nodes = append(parent.Nodes, newNode)
-
-			sort.Slice(parent.Nodes, sortNodesFunc(parent.Nodes))
-
-			return newNode
-		}
+		ensureChildNode func(parent *versionNode, childName string) *versionNode
 	)
 
-	defer func() {
-		k.previous = result
-	}()
+	findNode = func(nodes []*versionNode, name string) *versionNode {
+		for _, n := range nodes {
+			if n.value == name {
+				return n
+			}
+			if found := findNode(n.kids, name); found != nil {
+				return found
+			}
+		}
+		return nil
+	}
+
+	ensureNode = func(name string) *versionNode {
+		if existing := findNode(result, name); existing != nil {
+			return existing
+		}
+
+		if previous := findNode(k.previous, name); previous != nil {
+			result = append(result, previous)
+			return previous
+		}
+
+		newNode := &versionNode{
+			value: name,
+		}
+
+		result = append(result, newNode)
+
+		sort.Slice(result, sortNodesFunc(result))
+
+		return newNode
+	}
+
+	ensureChildNode = func(parent *versionNode, childName string) *versionNode {
+		if existing := findNode(parent.kids, childName); existing != nil {
+			return existing
+		}
+
+		newNode := &versionNode{
+			value: childName,
+		}
+
+		parent.kids = append(parent.kids, newNode)
+
+		sort.Slice(parent.kids, sortNodesFunc(parent.kids))
+
+		return newNode
+	}
 
 	majorMinorAmounts := map[string]int{}
 	versionAmounts := map[string]int{}
@@ -876,154 +1035,47 @@ func (k *kubernetesVersions) update(clusters []*models.V1ClusterResponse) ([]*wi
 
 	sort.Slice(result, sortNodesFunc(result))
 
-	k.runOnce = true
+	changed := !cmp.Equal(result, k.previous, cmp.AllowUnexported(versionNode{}))
+	k.previous = result
 
-	return result, !cmp.Equal(result, k.previous, cmp.AllowUnexported(widgets.TreeNode{}))
+	return result, changed
 }
 
-func (d *dashboardClusterVersionsPane) Render() error {
-	if !d.sem.TryAcquire(1) { // prevent concurrent updates
-		return nil
-	}
-	defer d.sem.Release(1)
-
-	var (
-		clusters []*models.V1ClusterResponse
-
-		gardenerVersions           = pieVersion{}
-		firewallControllerVersions = pieVersion{}
-	)
-
-	ctx, cancel := context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
-	defer cancel()
-
-	clusters, err := d.cache.Clusters(ctx)
-	if err != nil {
-		return err
-	}
-
-	for _, c := range clusters {
-		if c.Status == nil || c.Status.Gardener == nil {
-			gardenerVersions["unknown"]++
-		} else {
-			gardenerVersions[*c.Status.Gardener.Version]++
-		}
-
-		if c.FirewallControllerVersion == nil {
-			firewallControllerVersions["unknown"]++
-		} else {
-			if *c.FirewallControllerVersion == "" {
-				// auto is default, otherwise some clusters will not be aggregated properly
-				c.FirewallControllerVersion = new("auto")
-			}
-			firewallControllerVersions[*c.FirewallControllerVersion]++
-		}
-	}
-
-	processedClusters := len(clusters)
-	if processedClusters <= 0 {
-		return nil
-	}
-
-	data, formatter := gardenerVersions.toValues()
-	d.reconciledGardenerVersions.Data = data
-	d.reconciledGardenerVersions.LabelFormatter = formatter
-
-	data, formatter = firewallControllerVersions.toValues()
-	d.firewallControllerVersions.Data = data
-	d.firewallControllerVersions.LabelFormatter = formatter
-
-	toRender := []ui.Drawable{d.reconciledGardenerVersions, d.firewallControllerVersions}
-
-	nodes, changed := d.kubernetesVersionsState.update(clusters)
-	if changed {
-		d.kubernetesVersions.SetNodes(nodes)
-		toRender = append(toRender, d.kubernetesVersions)
-	}
-
-	ui.Render(toRender...)
-
-	return nil
-}
+var (
+	volumeStateLabels      = []string{"Available", "Failed", "Unknown", "Other"}
+	volumeStateColors      = []dashColor{dashCloseColor, dashBadColor, dashBadColor, dashWarnColor}
+	volumeProtectionLabels = []string{"Protected", "Degraded", "Read-Only", "N/A", "Unknown"}
+	volumeProtectionColors = []dashColor{dashCloseColor, dashWarnColor, dashBadColor, dashBadColor, dashBadColor}
+	clusterStateLabels     = []string{"OK", "Warning", "Error", "Other"}
+	clusterStateColors     = []dashColor{dashCloseColor, dashWarnColor, dashBadColor, dashBadColor}
+	serverStateLabels      = []string{"Enabled", "Disabled", "Failed", "Other"}
+	serverStateColors      = []dashColor{dashCloseColor, dashWarnColor, dashBadColor, dashWarnColor}
+)
 
 type dashboardVolumePane struct {
-	volumeUsedSpace *widgets.Paragraph
-
-	volumeProtectionState *widgets.BarChart
-	volumeState           *widgets.BarChart
-	clusterState          *widgets.BarChart
-	serverState           *widgets.BarChart
-
-	physicalFree     *widgets.Gauge
-	compressionRatio *widgets.Gauge
-
+	mu  sync.Mutex
 	sem *semaphore.Weighted
+
+	usedSpaceText string
+
+	volumeState     []float64
+	protectionState []float64
+	clusterState    []float64
+	serverState     []float64
+
+	physicalFreePercent     int
+	physicalFreeColor       dashColor
+	compressionRatioPercent int
 
 	cache *apiCache
 }
 
 func NewDashboardVolumePane(cache *apiCache) *dashboardVolumePane {
-	d := &dashboardVolumePane{}
-
-	d.sem = semaphore.NewWeighted(1)
-
-	d.volumeProtectionState = widgets.NewBarChart()
-	d.volumeProtectionState.Labels = []string{"Protected", "Degraded", "Read-Only", "N/A", "Unknown"}
-	d.volumeProtectionState.Title = "Volume Protection State"
-	d.volumeProtectionState.PaddingLeft = 5
-	d.volumeProtectionState.BarWidth = 5
-	d.volumeProtectionState.BarGap = 10
-	d.volumeProtectionState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorYellow, ui.ColorRed, ui.ColorRed, ui.ColorRed}
-	if viper.GetString("color-theme") == "default" {
-		d.volumeProtectionState.NumStyles = []ui.Style{{Fg: ui.ColorWhite}, {Fg: ui.ColorWhite}, {Fg: ui.ColorBlack}, {Fg: ui.ColorWhite}, {Fg: ui.ColorWhite}}
+	return &dashboardVolumePane{
+		sem:               semaphore.NewWeighted(1),
+		cache:             cache,
+		physicalFreeColor: dashCloseColor,
 	}
-
-	d.volumeState = widgets.NewBarChart()
-	d.volumeState.Labels = []string{"Available", "Failed", "Unknown", "Other"}
-	d.volumeState.Title = "Volume State"
-	d.volumeState.PaddingLeft = 5
-	d.volumeState.BarWidth = 5
-	d.volumeState.BarGap = 10
-	d.volumeState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorRed, ui.ColorRed, ui.ColorYellow}
-	if viper.GetString("color-theme") == "default" {
-		d.volumeState.NumStyles = []ui.Style{{Fg: ui.ColorBlack}, {Fg: ui.ColorWhite}, {Fg: ui.ColorWhite}, {Fg: ui.ColorWhite}}
-	}
-
-	d.volumeUsedSpace = widgets.NewParagraph()
-	d.volumeUsedSpace.Title = "Volume Infos"
-	d.volumeUsedSpace.WrapText = false
-
-	d.physicalFree = widgets.NewGauge()
-	d.physicalFree.Title = "Free Physical Space"
-
-	d.compressionRatio = widgets.NewGauge()
-	d.compressionRatio.Title = "Compression Ratio"
-	d.compressionRatio.BarColor = ui.ColorMagenta
-
-	d.clusterState = widgets.NewBarChart()
-	d.clusterState.Labels = []string{"OK", "Warning", "Error", "Other"}
-	d.clusterState.Title = "Cluster State"
-	d.clusterState.PaddingLeft = 5
-	d.clusterState.BarWidth = 5
-	d.clusterState.BarGap = 10
-	d.clusterState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorYellow, ui.ColorRed, ui.ColorRed}
-	if viper.GetString("color-theme") == "default" {
-		d.clusterState.NumStyles = []ui.Style{{Fg: ui.ColorWhite}, {Fg: ui.ColorWhite}, {Fg: ui.ColorBlack}, {Fg: ui.ColorWhite}}
-	}
-
-	d.serverState = widgets.NewBarChart()
-	d.serverState.Labels = []string{"Enabled", "Disabled", "Failed", "Other"}
-	d.serverState.Title = "Server State"
-	d.serverState.PaddingLeft = 5
-	d.serverState.BarWidth = 5
-	d.serverState.BarGap = 10
-	d.serverState.BarColors = []ui.Color{ui.ColorGreen, ui.ColorYellow, ui.ColorRed, ui.ColorYellow}
-	if viper.GetString("color-theme") == "default" {
-		d.serverState.NumStyles = []ui.Style{{Fg: ui.ColorBlack}, {Fg: ui.ColorWhite}, {Fg: ui.ColorBlack}, {Fg: ui.ColorWhite}}
-	}
-
-	d.cache = cache
-	return d
 }
 
 func (d *dashboardVolumePane) Name() string {
@@ -1034,32 +1086,15 @@ func (d *dashboardVolumePane) Description() string {
 	return "Volume health, for operators also cluster health"
 }
 
-func (d *dashboardVolumePane) Resize(x1, y1, x2, y2 int) {
-	columnWidth := int(math.Ceil((float64(x2) - (float64(x1))) / 2))
-	rowHeight := int(math.Ceil((float64(y2) - (float64(y1))) / 2))
+func (d *dashboardVolumePane) Update(tea.KeyPressMsg) {}
 
-	d.volumeState.SetRect(x1, y1, x1+columnWidth, rowHeight)
-	d.volumeProtectionState.SetRect(columnWidth, y1, x2, rowHeight)
-
-	d.volumeUsedSpace.SetRect(x1, rowHeight, x2, rowHeight+3)
-
-	d.physicalFree.SetRect(x1, rowHeight+3, x1+columnWidth, rowHeight+6)
-	d.compressionRatio.SetRect(columnWidth, rowHeight+3, x2, rowHeight+6)
-
-	d.clusterState.SetRect(x1, rowHeight+6, x1+columnWidth, y2)
-	d.serverState.SetRect(columnWidth, rowHeight+6, x2, y2)
-}
-
-func (d *dashboardVolumePane) Render() error {
+func (d *dashboardVolumePane) Refresh(ctx context.Context) error {
 	if !d.sem.TryAcquire(1) { // prevent concurrent updates
 		return nil
 	}
 	defer d.sem.Release(1)
 
 	var (
-		clusters []*models.V1StorageClusterInfo
-		volumes  []*models.V1VolumeResponse
-
 		volumesProtectionFullyProtected int
 		volumesProtectionDegraded       int
 		volumesProtectionReadOnly       int
@@ -1089,15 +1124,12 @@ func (d *dashboardVolumePane) Render() error {
 		compressionRatio float64
 	)
 
-	ctx, cancel := context.WithTimeout(context.Background(), dashboardRequestsContextTimeout)
-	defer cancel()
-
 	volumes, err := d.cache.Volumes(ctx)
 	if err != nil {
 		return err
 	}
 
-	clusters, err = d.cache.VolumeClusterInfo(ctx)
+	clusterInfos, err := d.cache.VolumeClusterInfo(ctx)
 	if err != nil {
 		if typedErr, ok := errors.AsType[*volume.ClusterInfoDefault](err); ok {
 			if typedErr.Code() != http.StatusForbidden {
@@ -1152,26 +1184,9 @@ func (d *dashboardVolumePane) Render() error {
 		}
 	}
 
-	d.volumeUsedSpace.Text = fmt.Sprintf("Summed up physical size of volumes: %s, logical size: %s.", helper.HumanizeSize(volumesUsedPhysical), helper.HumanizeSize(volumesUsedLogical))
-	ui.Render(d.volumeUsedSpace)
+	usedSpaceText := fmt.Sprintf("Summed up physical size of volumes: %s, logical size: %s.", helper.HumanizeSize(volumesUsedPhysical), helper.HumanizeSize(volumesUsedLogical))
 
-	// for some reason the UI hangs when all values are zero...
-	if volumesAvailable > 0 || volumesFailed > 0 || volumesUnknown > 0 || volumesOther > 0 {
-		d.volumeState.Data = []float64{float64(volumesAvailable), float64(volumesFailed), float64(volumesUnknown), float64(volumesOther)}
-		ui.Render(d.volumeState)
-	}
-
-	// for some reason the UI hangs when all values are zero...
-	if volumesProtectionFullyProtected > 0 || volumesProtectionDegraded > 0 || volumesProtectionReadOnly > 0 || volumesProtectionNotAvailable > 0 || volumesProtectionUnknown > 0 {
-		d.volumeProtectionState.Data = []float64{float64(volumesProtectionFullyProtected), float64(volumesProtectionDegraded), float64(volumesProtectionReadOnly), float64(volumesProtectionNotAvailable), float64(volumesProtectionUnknown)}
-		ui.Render(d.volumeProtectionState)
-	}
-
-	if len(clusters) == 0 {
-		return nil
-	}
-
-	for _, c := range clusters {
+	for _, c := range clusterInfos {
 		if c.Health == nil || c.Health.State == nil {
 			clusterStateOther++
 			continue
@@ -1219,36 +1234,65 @@ func (d *dashboardVolumePane) Render() error {
 		}
 	}
 
-	d.compressionRatio.Percent = int((compressionRatio / float64(len(clusters))) * 100)
-
-	totalStorage := float64(physicalFree + physicalUsed)
-	d.physicalFree.Percent = int((float64(physicalFree) / totalStorage) * 100)
-	if d.physicalFree.Percent < 10 {
-		d.physicalFree.BarColor = ui.ColorRed
-	} else if d.physicalFree.Percent < 30 {
-		d.physicalFree.BarColor = ui.ColorYellow
-	} else {
-		d.physicalFree.BarColor = ui.ColorGreen
+	physicalFreePercent := 0
+	if totalStorage := float64(physicalFree + physicalUsed); totalStorage > 0 {
+		physicalFreePercent = int((float64(physicalFree) / totalStorage) * 100)
 	}
 
-	// for some reason the UI hangs when all values are zero...
-	if d.compressionRatio.Percent > 0 && d.physicalFree.Percent > 0 {
-		ui.Render(d.compressionRatio, d.physicalFree)
+	physicalFreeColor := dashCloseColor
+	switch {
+	case physicalFreePercent < 10:
+		physicalFreeColor = dashBadColor
+	case physicalFreePercent < 30:
+		physicalFreeColor = dashWarnColor
 	}
 
-	// for some reason the UI hangs when all values are zero...
-	if clusterStateOK > 0 || clusterStateError > 0 || clusterStateWarning > 0 || clusterStateOther > 0 {
-		d.clusterState.Data = []float64{float64(clusterStateOK), float64(clusterStateWarning), float64(clusterStateError), float64(clusterStateOther)}
-		ui.Render(d.clusterState)
+	compressionRatioPercent := 0
+	if len(clusterInfos) > 0 {
+		compressionRatioPercent = int((compressionRatio / float64(len(clusterInfos))) * 100)
 	}
 
-	// for some reason the UI hangs when all values are zero...
-	if serversEnabled > 0 || serversDisabled > 0 || serversFailed > 0 || serversOther > 0 {
-		d.serverState.Data = []float64{float64(serversEnabled), float64(serversDisabled), float64(serversFailed), float64(serversOther)}
-		ui.Render(d.serverState)
-	}
+	d.mu.Lock()
+	d.usedSpaceText = usedSpaceText
+	d.volumeState = []float64{float64(volumesAvailable), float64(volumesFailed), float64(volumesUnknown), float64(volumesOther)}
+	d.protectionState = []float64{float64(volumesProtectionFullyProtected), float64(volumesProtectionDegraded), float64(volumesProtectionReadOnly), float64(volumesProtectionNotAvailable), float64(volumesProtectionUnknown)}
+	d.clusterState = []float64{float64(clusterStateOK), float64(clusterStateWarning), float64(clusterStateError), float64(clusterStateOther)}
+	d.serverState = []float64{float64(serversEnabled), float64(serversDisabled), float64(serversFailed), float64(serversOther)}
+	d.physicalFreePercent = physicalFreePercent
+	d.physicalFreeColor = physicalFreeColor
+	d.compressionRatioPercent = compressionRatioPercent
+	d.mu.Unlock()
 
 	return nil
+}
+
+func (d *dashboardVolumePane) View(width, height int) string {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	columnWidth := width / 2
+	if columnWidth < 20 {
+		columnWidth = 20
+	}
+
+	top := lipgloss.JoinHorizontal(lipgloss.Top,
+		dashPanel("Volume State", dashBarChart(volumeStateLabels, d.volumeState, volumeStateColors, columnWidth-6), columnWidth),
+		dashPanel("Volume Protection State", dashBarChart(volumeProtectionLabels, d.protectionState, volumeProtectionColors, width-columnWidth-6), width-columnWidth),
+	)
+
+	info := dashPanel("Volume Infos", d.usedSpaceText, width)
+
+	gauges := lipgloss.JoinHorizontal(lipgloss.Top,
+		dashPanel("Free Physical Space", dashGauge("Free", d.physicalFreePercent, d.physicalFreeColor, columnWidth-6), columnWidth),
+		dashPanel("Compression Ratio", dashGauge("Ratio", d.compressionRatioPercent, lipgloss.Color("#da70d6"), width-columnWidth-6), width-columnWidth),
+	)
+
+	bottom := lipgloss.JoinHorizontal(lipgloss.Top,
+		dashPanel("Cluster State", dashBarChart(clusterStateLabels, d.clusterState, clusterStateColors, columnWidth-6), columnWidth),
+		dashPanel("Server State", dashBarChart(serverStateLabels, d.serverState, serverStateColors, width-columnWidth-6), width-columnWidth),
+	)
+
+	return lipgloss.JoinVertical(lipgloss.Left, top, info, gauges, bottom)
 }
 
 type apiCache struct {

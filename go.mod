@@ -3,8 +3,9 @@ module github.com/fi-ts/cloudctl
 go 1.27
 
 require (
+	charm.land/bubbles/v2 v2.2.1
 	charm.land/bubbletea/v2 v2.1.1
-	charm.land/lipgloss/v2 v2.1.0
+	charm.land/lipgloss/v2 v2.1.1
 	github.com/Masterminds/semver/v3 v3.5.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.19.0
@@ -12,7 +13,6 @@ require (
 	github.com/fi-ts/cloud-go v0.36.0
 	github.com/gardener/gardener/pkg/apis v1.140.0
 	github.com/gardener/machine-controller-manager v0.62.1
-	github.com/gizak/termui/v3 v3.1.0
 	github.com/go-openapi/runtime v0.33.3
 	github.com/go-openapi/strfmt v0.27.4
 	github.com/go-playground/validator/v10 v10.30.4
@@ -45,7 +45,6 @@ require (
 	buf.build/go/protoyaml v0.7.0 // indirect
 	cel.dev/cel-go v0.32.0 // indirect
 	cel.dev/expr v0.25.3 // indirect
-	charm.land/bubbles/v2 v2.2.1 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/BurntSushi/toml v1.6.0 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
@@ -141,11 +140,9 @@ require (
 	github.com/metal-stack/security v0.9.7 // indirect
 	github.com/miekg/dns v1.1.73 // indirect
 	github.com/mitchellh/go-ps v1.0.0 // indirect
-	github.com/mitchellh/go-wordwrap v1.0.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
-	github.com/nsf/termbox-go v1.1.2 // indirect
 	github.com/oklog/ulid/v2 v2.1.2 // indirect
 	github.com/olekukonko/cat v0.0.0-20250911104152-50322a0618f6 // indirect
 	github.com/olekukonko/errors v1.3.0 // indirect
