@@ -252,10 +252,7 @@ func (d dashboard) View() tea.View {
 		width, height = 80, 24
 	}
 
-	paneHeight := height - dashboardHeaderHeight - 2
-	if paneHeight < 4 {
-		paneHeight = 4
-	}
+	paneHeight := max(height-dashboardHeaderHeight-2, 4)
 
 	body := lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -309,10 +306,7 @@ func (d dashboard) headerView(width int) string {
 
 	right := fmt.Sprintf("Tenant=%s\nPartition=%s\nPurpose=%s", d.filterTenant, d.filterPartition, d.filterPurpose)
 
-	leftWidth := width - 25
-	if leftWidth < 20 {
-		leftWidth = 20
-	}
+	leftWidth := max(width-25, 20)
 
 	return lipgloss.JoinHorizontal(
 		lipgloss.Top,
@@ -621,10 +615,7 @@ func (d *dashboardClusterHealthPane) View(width, height int) string {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	leftWidth := 50
-	if leftWidth > width/2 {
-		leftWidth = width / 2
-	}
+	leftWidth := min(50, width/2)
 	if leftWidth < 20 {
 		leftWidth = 20
 	}
@@ -643,10 +634,7 @@ func (d *dashboardClusterHealthPane) View(width, height int) string {
 
 	top := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
 
-	tableHeight := (height - lipgloss.Height(top) - 4) / 2
-	if tableHeight < 3 {
-		tableHeight = 3
-	}
+	tableHeight := max((height-lipgloss.Height(top)-4)/2, 3)
 
 	problems := addCaption(dashTable([]string{"CLUSTER", "MESSAGE"}, d.problems, width-4, tableHeight), "Cluster Problems")
 	lastErrors := addCaption(dashTable([]string{"CLUSTER", "MESSAGE"}, d.lastErrors, width-4, tableHeight), "Last Errors")
@@ -800,10 +788,7 @@ func (d *dashboardClusterVersionsPane) View(width, height int) string {
 	rightWidth := width - leftWidth
 
 	left := dashPanel("Kubernetes Versions", d.renderTree(height-2), leftWidth)
-	half := (height - 4) / 2
-	if half < 2 {
-		half = 2
-	}
+	half := max((height-4)/2, 2)
 	right := lipgloss.JoinVertical(lipgloss.Left,
 		dashPanel("Reconciled Gardener Versions", dashMaxLines(dashPie(d.gardenerVersions, rightWidth-6), half), rightWidth),
 		dashPanel("Firewall-Controller Versions", dashMaxLines(dashPie(d.firewallVersions, rightWidth-6), half), rightWidth),
@@ -1329,10 +1314,7 @@ func (d *dashboardVolumePane) View(width, height int) string {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	columnWidth := width / 2
-	if columnWidth < 20 {
-		columnWidth = 20
-	}
+	columnWidth := max(width/2, 20)
 
 	top := lipgloss.JoinHorizontal(lipgloss.Top,
 		dashPanel("Volume State", dashBarChart(volumeStateLabels, d.volumeState, volumeStateColors, columnWidth-6), columnWidth),
@@ -1507,10 +1489,7 @@ func (d *dashboardClusterListPane) View(width, height int) string {
 		d.scroll = 0
 	}
 
-	end := d.scroll + visibleHeight
-	if end > len(d.clusters) {
-		end = len(d.clusters)
-	}
+	end := min(d.scroll+visibleHeight, len(d.clusters))
 	visible := d.clusters[d.scroll:end]
 
 	rows := make([][]string, 0, len(visible))

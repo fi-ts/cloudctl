@@ -106,10 +106,7 @@ func dashBarChart(labels []string, values []float64, colors []dashColor, width i
 		}
 	}
 
-	barWidth := width - labelWidth - 10
-	if barWidth < 4 {
-		barWidth = 4
-	}
+	barWidth := max(width-labelWidth-10, 4)
 
 	var b strings.Builder
 	for i, label := range labels {
@@ -149,10 +146,7 @@ func dashGauge(label string, percent int, color dashColor, width int) string {
 
 	const labelWidth = 12
 
-	barWidth := width - labelWidth - 7
-	if barWidth < 4 {
-		barWidth = 4
-	}
+	barWidth := max(width-labelWidth-7, 4)
 
 	filled := percent * barWidth / 100
 	bar := lipgloss.NewStyle().Foreground(color).Render(strings.Repeat("█", filled)) +
@@ -189,10 +183,7 @@ func dashPie(entries []pieEntry, width int) string {
 		}
 	}
 
-	barWidth := width - labelWidth - 10
-	if barWidth < 4 {
-		barWidth = 4
-	}
+	barWidth := max(width-labelWidth-10, 4)
 
 	var b strings.Builder
 	for i, e := range entries {
