@@ -153,10 +153,6 @@ func (wd *watchData) progress() int32 {
 	return *wd.shoot.Payload.Status.LastOperation.Progress
 }
 
-func (wd *watchData) progressType() string {
-	return *wd.shoot.Payload.Status.LastOperation.Type
-}
-
 // our key bindings, not [yet] customizable
 type KeyMap struct {
 	Quit        key.Binding
@@ -166,8 +162,8 @@ type KeyMap struct {
 
 var DefaultKeyMap = KeyMap{
 	Quit: key.NewBinding(
-		key.WithKeys("q", "ctrl+c"),
-		key.WithHelp("q/ctrl+c", "quit"),
+		key.WithKeys("q", "esc", "ctrl+c"),
+		key.WithHelp("q/esc/ctrl+c", "quit"),
 	),
 	ToggleNodes: key.NewBinding(
 		key.WithKeys("n"),
@@ -242,7 +238,7 @@ func (w watch) View() tea.View {
 	body := strings.Builder{}
 
 	if w.data.err != nil {
-		body.WriteString(fmt.Sprint(w.data.err))
+		fmt.Fprint(&body, w.data.err)
 	} else if w.data.shoot != nil {
 		nodes := w.nodeRowView()
 		help := w.helpView()

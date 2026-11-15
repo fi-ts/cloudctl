@@ -39,8 +39,6 @@ var (
 
 	canvas = lipgloss.NewStyle()
 
-	marginTop = lipgloss.NewStyle().MarginTop(1)
-
 	bold = lipgloss.NewStyle().Bold(true)
 
 	red = lipgloss.NewStyle().
@@ -72,14 +70,11 @@ var (
 
 	keyCanvas = lipgloss.NewStyle().
 			Background(lipgloss.Color("#242424"))
-
-	versionCanvas = lipgloss.NewStyle().
-			AlignHorizontal(lipgloss.Right)
 )
 
 func rowStyle(row, col int) lipgloss.Style {
-	switch {
-	case row == table.HeaderRow:
+	switch row {
+	case table.HeaderRow:
 		return headerStyle
 	default:
 		return lipgloss.NewStyle()
