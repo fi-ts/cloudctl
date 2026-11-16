@@ -216,6 +216,16 @@ func newClusterCmd(c *config) *cobra.Command {
 		},
 		ValidArgsFunction: c.comp.ClusterListCompletion,
 	}
+	clusterWatchCmd := &cobra.Command{
+		Use:     "watch <clusterid>",
+		Aliases: []string{"top"},
+		Short:   "live view of cluster status",
+		Long:    emojiHelpText(),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.clusterWatch(args)
+		},
+		ValidArgsFunction: c.comp.ClusterListCompletion,
+	}
 
 	clusterCreateCmd.Flags().String("name", "", "name of the cluster, max 10 characters. [required]")
 	clusterCreateCmd.Flags().String("description", "", "description of the cluster. [optional]")
@@ -446,6 +456,7 @@ func newClusterCmd(c *config) *cobra.Command {
 	clusterCmd.AddCommand(clusterIssuesCmd)
 	clusterCmd.AddCommand(clusterDNSManifestCmd)
 	clusterCmd.AddCommand(clusterMonitoringSecretCmd)
+	clusterCmd.AddCommand(clusterWatchCmd)
 	clusterCmd.AddCommand(newClusterAuditCmd(c))
 	clusterCmd.AddCommand(newClusterXdrCmd(c))
 	clusterCmd.AddCommand(newClusterQCACmd(c))
