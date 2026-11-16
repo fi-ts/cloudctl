@@ -240,13 +240,17 @@ func (w watch) View() tea.View {
 	help := w.helpView()
 
 	if w.data.err != nil {
+		// error is shown centered, so we pad the errobox on the top and bottom
 		errors := w.errorView()
-		height := w.canvasHeight(lipgloss.Height(errors), lipgloss.Height(help))
+		pad := w.errorPadHeight(lipgloss.Height(errors), lipgloss.Height(help))
+		gap := w.height - (pad * 2) - lipgloss.Height(help) - lipgloss.Height(errors)
 
 		body.WriteString(
 			lipgloss.JoinVertical(
 				lipgloss.Center,
-				canvas.Height(height).Render(errors),
+				canvas.Height(pad).Render(""),
+				errors,
+				canvas.Height(pad+gap).Render(""),
 				w.helpView()))
 
 	} else if w.data.shoot != nil {
@@ -311,6 +315,11 @@ func (w *watch) canvasHeight(nodesHeight, helpHeight int) int {
 	}
 
 	return w.height - helpHeight
+}
+
+// errorPadHeight returns the height for the padding below and above the error box
+func (w *watch) errorPadHeight(errorHeight, helpHeight int) int {
+	return (w.height - helpHeight - errorHeight) / 2
 }
 
 // helpView returns the rendered help line

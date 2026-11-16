@@ -73,9 +73,13 @@ var (
 
 	errorStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			Padding(1)
+			PaddingTop(1).
+			PaddingBottom(1).
+			PaddingLeft(3).
+			PaddingRight(3)
 )
 
+// rowStyle returns the appropriate style for tables, depending on row type
 func rowStyle(row, col int) lipgloss.Style {
 	switch row {
 	case table.HeaderRow:
@@ -85,6 +89,7 @@ func rowStyle(row, col int) lipgloss.Style {
 	}
 }
 
+// addCaption writes a caption on the top left corner of a box
 func addCaption(box, title string) string {
 	caption := lipgloss.NewLayer(bold.Render(" " + title + " ")).X(2).Z(1)
 	events := lipgloss.NewLayer(box)
