@@ -3,6 +3,7 @@ module github.com/fi-ts/cloudctl
 go 1.27
 
 require (
+	charm.land/bubbles/v2 v2.2.1
 	charm.land/bubbletea/v2 v2.1.1
 	charm.land/lipgloss/v2 v2.1.0
 	github.com/Masterminds/semver/v3 v3.5.0
@@ -45,7 +46,6 @@ require (
 	buf.build/go/protoyaml v0.7.0 // indirect
 	cel.dev/cel-go v0.32.0 // indirect
 	cel.dev/expr v0.25.3 // indirect
-	charm.land/bubbles/v2 v2.2.1 // indirect
 	filippo.io/edwards25519 v1.2.0 // indirect
 	github.com/BurntSushi/toml v1.6.0 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect

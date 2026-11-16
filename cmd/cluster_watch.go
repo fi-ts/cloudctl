@@ -237,11 +237,20 @@ func (w watch) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (w watch) View() tea.View {
 	body := strings.Builder{}
 
+	help := w.helpView()
+
 	if w.data.err != nil {
-		body.WriteString(w.data.err.Error())
+		errors := w.errorView()
+		height := w.canvasHeight(lipgloss.Height(errors), lipgloss.Height(help))
+
+		body.WriteString(
+			lipgloss.JoinVertical(
+				lipgloss.Center,
+				canvas.Height(height).Render(errors),
+				w.helpView()))
+
 	} else if w.data.shoot != nil {
 		nodes := w.nodeRowView()
-		help := w.helpView()
 		height := w.canvasHeight(lipgloss.Height(nodes), lipgloss.Height(help))
 
 		top := canvas.Height(height).Render(
@@ -272,6 +281,26 @@ func (w watch) View() tea.View {
 	v.AltScreen = true // fulscreen
 
 	return v
+}
+
+// errorView renders cloud api errors, if any
+func (w *watch) errorView() string {
+	if w.data.err == nil {
+		return ""
+	}
+
+	body := strings.Builder{}
+	title := "Cloud API Error"
+
+	switch e := w.data.err.(type) {
+	case *cluster.FindClusterDefault:
+		body.WriteString(e.Payload.Error())
+	default:
+		title = "Error:"
+		body.WriteString(e.Error())
+	}
+
+	return addCaption(errorStyle.Render(body.String()), red.Render(title))
 }
 
 // canvasHeight returns the  height left for the main  canvas, so that

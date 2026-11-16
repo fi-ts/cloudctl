@@ -70,6 +70,10 @@ var (
 
 	keyCanvas = lipgloss.NewStyle().
 			Background(lipgloss.Color("#242424"))
+
+	errorStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			Padding(1)
 )
 
 func rowStyle(row, col int) lipgloss.Style {
