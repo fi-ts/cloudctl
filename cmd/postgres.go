@@ -402,6 +402,7 @@ postgres=#
 	postgresBackupAutoCreateCmd.Flags().StringP("schedule", "", "30 00 * * *", "backup schedule in cron syntax")
 	postgresBackupAutoCreateCmd.Flags().Int32P("retention", "", int32(10), "number of backups per database to retain")
 	postgresBackupAutoCreateCmd.Flags().StringP("partition", "", "", "the postgres partition this backup configuration is mainly used in. This e.g. automatically selects the recommended S3 partition for the (auto-created) S3 bucket.")
+	postgresBackupAutoCreateCmd.Flags().StringP("s3-partition", "", "", "use another s3 partition than the default associated with the postgres partition")
 	genericcli.Must(postgresBackupAutoCreateCmd.MarkFlagRequired("name"))
 	genericcli.Must(postgresBackupAutoCreateCmd.MarkFlagRequired("project"))
 	genericcli.Must(postgresBackupAutoCreateCmd.MarkFlagRequired("partition"))
@@ -1112,6 +1113,7 @@ func (c *config) postgresBackupCreate(autocreate bool) error {
 	s3Accesskey := viper.GetString("s3-accesskey")
 	s3Secretkey := viper.GetString("s3-secretkey")
 	s3Encryptionkey := viper.GetString("s3-encryptionkey")
+	s3Partition := viper.GetString("s3-partition")
 
 	bcr := &models.V1PostgresBackupConfigCreateRequest{
 		Name:      name,
@@ -1119,9 +1121,14 @@ func (c *config) postgresBackupCreate(autocreate bool) error {
 		Schedule:  schedule,
 		Retention: retention,
 	}
+
 	if autocreate {
 		bcr.Autocreate = true
 		bcr.Partition = partition
+
+		if s3Partition != "" {
+			bcr.S3Partition = s3Partition
+		}
 	} else {
 		bcr.S3Endpoint = s3Endpoint
 		bcr.S3BucketName = s3BucketName
