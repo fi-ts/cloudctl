@@ -30,6 +30,12 @@ func newLoginCmd(c *config) *cobra.Command {
 				// do not store, only print to console
 				handler = printTokenHandler
 			} else {
+				// if more than one kubeconfig is specified, error out
+				_, err := api.GetAuthContext(viper.GetString("kubeconfig"))
+				if err != nil {
+					return err
+				}
+
 				cs, err := api.GetContexts()
 				if err != nil {
 					return err
