@@ -12,7 +12,7 @@ import (
 	"github.com/fi-ts/cloud-go/api/models"
 )
 
-func humanizeDuration(duration time.Duration) string {
+func HumanizeDuration(duration time.Duration) string {
 	days := int64(duration.Hours() / 24)
 	hours := int64(math.Mod(duration.Hours(), 24))
 	minutes := int64(math.Mod(duration.Minutes(), 60))
